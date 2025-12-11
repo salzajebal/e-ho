@@ -1,28 +1,232 @@
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { MarketData, useChartData } from "@/lib/marketData";
-import { useMemo } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createChart, ColorType, CandlestickSeries, CandlestickData, Time } from "lightweight-charts";
+import type { IChartApi, ISeriesApi } from "lightweight-charts";
+import { MarketData } from "@/lib/marketData";
 
 interface PriceChartProps {
   symbol: string;
   data: MarketData;
 }
 
+type TimeFrame = '1m' | '5m' | '15m' | '1h' | '1d';
+
+const timeFrameLabels: Record<TimeFrame, string> = {
+  '1m': '1분',
+  '5m': '5분',
+  '15m': '15분',
+  '1h': '1시간',
+  '1d': '1일'
+};
+
+function generateCandleData(basePrice: number, count: number, intervalMinutes: number): CandlestickData<Time>[] {
+  const data: CandlestickData<Time>[] = [];
+  let currentPrice = basePrice * 0.995;
+  const now = Math.floor(Date.now() / 1000);
+  const intervalSeconds = intervalMinutes * 60;
+
+  for (let i = count - 1; i >= 0; i--) {
+    const time = (now - i * intervalSeconds) as Time;
+    const volatility = 0.003;
+    
+    const open = currentPrice;
+    const change = open * volatility * (Math.random() - 0.5) * 2;
+    const close = open + change;
+    const high = Math.max(open, close) * (1 + Math.random() * 0.002);
+    const low = Math.min(open, close) * (1 - Math.random() * 0.002);
+
+    data.push({ time, open, high, low, close });
+    currentPrice = close;
+  }
+
+  return data;
+}
+
 export function PriceChart({ symbol, data }: PriceChartProps) {
-  const chartData = useChartData(symbol, data.price);
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+  const chartRef = useRef<IChartApi | null>(null);
+  const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
+  const [timeFrame, setTimeFrame] = useState<TimeFrame>('5m');
+  const lastSymbolRef = useRef<string>(symbol);
+  const lastTimeFrameRef = useRef<TimeFrame>(timeFrame);
+  const lastPriceRef = useRef<number>(data.price);
 
   const isPositive = data.change >= 0;
-  const strokeColor = isPositive ? "#0ECB81" : "#F6465D";
-  const gradientId = `gradient-${symbol.replace(/[^a-zA-Z]/g, '')}`;
 
-  // Calculate Y-axis domain with padding
-  const yDomain = useMemo(() => {
-    if (chartData.length === 0) return ['auto', 'auto'];
-    const prices = chartData.map(d => d.close);
-    const min = Math.min(...prices);
-    const max = Math.max(...prices);
-    const padding = (max - min) * 0.1 || max * 0.01;
-    return [min - padding, max + padding];
-  }, [chartData]);
+  const getIntervalMinutes = (tf: TimeFrame): number => {
+    switch (tf) {
+      case '1m': return 1;
+      case '5m': return 5;
+      case '15m': return 15;
+      case '1h': return 60;
+      case '1d': return 1440;
+    }
+  };
+
+  // Initialize chart
+  useEffect(() => {
+    if (!chartContainerRef.current) return;
+
+    const chart = createChart(chartContainerRef.current, {
+      layout: {
+        background: { type: ColorType.Solid, color: 'transparent' },
+        textColor: '#848e9c',
+      },
+      grid: {
+        vertLines: { color: 'rgba(42, 46, 57, 0.5)' },
+        horzLines: { color: 'rgba(42, 46, 57, 0.5)' },
+      },
+      crosshair: {
+        mode: 1,
+        vertLine: {
+          width: 1,
+          color: '#758696',
+          style: 3,
+          labelBackgroundColor: '#2B2B43',
+        },
+        horzLine: {
+          width: 1,
+          color: '#758696',
+          style: 3,
+          labelBackgroundColor: '#2B2B43',
+        },
+      },
+      rightPriceScale: {
+        borderColor: '#2B2B43',
+        scaleMargins: { top: 0.1, bottom: 0.1 },
+      },
+      timeScale: {
+        borderColor: '#2B2B43',
+        timeVisible: true,
+        secondsVisible: false,
+      },
+      handleScroll: { mouseWheel: true, pressedMouseMove: true },
+      handleScale: { axisPressedMouseMove: true, mouseWheel: true, pinch: true },
+    });
+
+    // v5 API: Use addSeries with CandlestickSeries
+    const candlestickSeries = chart.addSeries(CandlestickSeries, {
+      upColor: '#0ECB81',
+      downColor: '#F6465D',
+      borderDownColor: '#F6465D',
+      borderUpColor: '#0ECB81',
+      wickDownColor: '#F6465D',
+      wickUpColor: '#0ECB81',
+    });
+
+    // Set initial data
+    const initialData = generateCandleData(data.price, 100, getIntervalMinutes(timeFrame));
+    candlestickSeries.setData(initialData);
+    chart.timeScale().fitContent();
+
+    chartRef.current = chart;
+    seriesRef.current = candlestickSeries;
+
+    // Handle resize
+    const handleResize = () => {
+      if (chartContainerRef.current && chartRef.current) {
+        chartRef.current.applyOptions({
+          width: chartContainerRef.current.clientWidth,
+          height: chartContainerRef.current.clientHeight,
+        });
+      }
+    };
+
+    const resizeObserver = new ResizeObserver(handleResize);
+    resizeObserver.observe(chartContainerRef.current);
+    handleResize();
+
+    return () => {
+      resizeObserver.disconnect();
+      chart.remove();
+      chartRef.current = null;
+      seriesRef.current = null;
+    };
+  }, []);
+
+  // Update chart when symbol or timeframe changes
+  useEffect(() => {
+    if (!seriesRef.current || !chartRef.current) return;
+
+    if (symbol !== lastSymbolRef.current || timeFrame !== lastTimeFrameRef.current) {
+      const newData = generateCandleData(data.price, 100, getIntervalMinutes(timeFrame));
+      seriesRef.current.setData(newData);
+      chartRef.current.timeScale().fitContent();
+      lastSymbolRef.current = symbol;
+      lastTimeFrameRef.current = timeFrame;
+    }
+  }, [symbol, timeFrame, data.price]);
+
+  // Update price ref for interval
+  useEffect(() => {
+    lastPriceRef.current = data.price;
+  }, [data.price]);
+
+  // Real-time updates - update the last candle with current price
+  useEffect(() => {
+    if (!seriesRef.current) return;
+
+    const intervalMs = getIntervalMinutes(timeFrame) * 60 * 1000;
+    const intervalSec = intervalMs / 1000;
+    
+    // Initialize with the current interval's start time
+    let currentIntervalStart = Math.floor(Date.now() / intervalMs) * intervalMs / 1000;
+    let currentCandle: CandlestickData<Time> = {
+      time: currentIntervalStart as Time,
+      open: lastPriceRef.current,
+      high: lastPriceRef.current,
+      low: lastPriceRef.current,
+      close: lastPriceRef.current,
+    };
+
+    // Delay first update to ensure chart is ready
+    const startDelay = setTimeout(() => {
+      if (seriesRef.current) {
+        try {
+          seriesRef.current.update(currentCandle);
+        } catch {}
+      }
+    }, 100);
+
+    const updateInterval = setInterval(() => {
+      if (!seriesRef.current) return;
+
+      const now = Date.now();
+      const newIntervalStart = Math.floor(now / intervalMs) * intervalMs / 1000;
+      const price = lastPriceRef.current;
+
+      if (newIntervalStart > currentIntervalStart) {
+        // New candle period - create new candle
+        currentIntervalStart = newIntervalStart;
+        currentCandle = {
+          time: newIntervalStart as Time,
+          open: price,
+          high: price,
+          low: price,
+          close: price,
+        };
+      } else {
+        // Same period - update existing candle
+        currentCandle = {
+          time: currentIntervalStart as Time,
+          open: currentCandle.open,
+          high: Math.max(currentCandle.high, price),
+          low: Math.min(currentCandle.low, price),
+          close: price,
+        };
+      }
+
+      try {
+        seriesRef.current.update(currentCandle);
+      } catch {
+        // Silently ignore update errors
+      }
+    }, 1000);
+
+    return () => {
+      clearTimeout(startDelay);
+      clearInterval(updateInterval);
+    };
+  }, [timeFrame, symbol]);
 
   return (
     <div className="flex flex-col h-full bg-card relative overflow-hidden">
@@ -66,77 +270,26 @@ export function PriceChart({ symbol, data }: PriceChartProps) {
           </div>
         </div>
 
-        <div className="ml-auto hidden xl:flex gap-1 text-xs font-medium text-muted-foreground">
-          <button className="px-2 py-1 hover:text-primary transition-colors">1분</button>
-          <button className="px-2 py-1 text-primary bg-muted/30 rounded">5분</button>
-          <button className="px-2 py-1 hover:text-primary transition-colors">15분</button>
-          <button className="px-2 py-1 hover:text-primary transition-colors">1시간</button>
-          <button className="px-2 py-1 hover:text-primary transition-colors">1일</button>
+        <div className="ml-auto flex gap-1 text-xs font-medium">
+          {(Object.keys(timeFrameLabels) as TimeFrame[]).map((tf) => (
+            <button
+              key={tf}
+              onClick={() => setTimeFrame(tf)}
+              data-testid={`timeframe-${tf}`}
+              className={`px-2 py-1 rounded transition-all ${
+                timeFrame === tf
+                  ? 'text-primary bg-primary/20'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/30'
+              }`}
+            >
+              {timeFrameLabels[tf]}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Chart Area */}
-      <div className="flex-1 w-full min-h-0 p-2">
-        {chartData.length > 0 ? (
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-              <defs>
-                <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={strokeColor} stopOpacity={0.3}/>
-                  <stop offset="100%" stopColor={strokeColor} stopOpacity={0.02}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid 
-                strokeDasharray="3 3" 
-                stroke="rgba(132, 142, 156, 0.1)" 
-                vertical={false} 
-              />
-              <XAxis 
-                dataKey="time" 
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: '#848e9c', fontSize: 11 }}
-                minTickGap={50}
-                interval="preserveStartEnd"
-              />
-              <YAxis 
-                domain={yDomain as [number, number]}
-                orientation="right"
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: '#848e9c', fontSize: 11 }}
-                tickFormatter={(val) => val.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                width={70}
-              />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#1e2329', 
-                  borderColor: '#2b3139', 
-                  borderRadius: '4px',
-                  color: '#eaecef' 
-                }}
-                labelStyle={{ color: '#848e9c' }}
-                itemStyle={{ color: '#eaecef' }}
-                formatter={(value: number) => [value.toLocaleString(undefined, { minimumFractionDigits: 2 }), '가격']}
-              />
-              <Area 
-                type="monotone" 
-                dataKey="close" 
-                stroke={strokeColor} 
-                strokeWidth={2}
-                fillOpacity={1} 
-                fill={`url(#${gradientId})`}
-                isAnimationActive={false}
-                dot={false}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        ) : (
-          <div className="flex items-center justify-center h-full text-muted-foreground">
-            차트 데이터 로딩중...
-          </div>
-        )}
-      </div>
+      {/* TradingView Lightweight Chart */}
+      <div className="flex-1 w-full min-h-0" ref={chartContainerRef} />
     </div>
   );
 }
