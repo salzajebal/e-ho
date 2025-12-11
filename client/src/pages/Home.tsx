@@ -23,10 +23,8 @@ export default function Home() {
   // Update positions PnL based on live market data
   const updatedPositions = positions.map(pos => {
     const currentMarket = marketData.find(m => m.symbol === pos.symbol);
-    if (!currentMarket) return pos;
-
     const entryPrice = parseFloat(pos.entryPrice);
-    const currentPrice = currentMarket.price;
+    const currentPrice = currentMarket?.price || entryPrice;
     const priceDiff = currentPrice - entryPrice;
     const pnlRaw = pos.side === 'long' ? priceDiff : -priceDiff;
     const sizeInUnits = parseFloat(pos.size) / entryPrice;
@@ -36,7 +34,7 @@ export default function Home() {
     return {
       id: pos.id.toString(),
       symbol: pos.symbol,
-      side: pos.side,
+      side: pos.side as 'long' | 'short',
       size: parseFloat(pos.size),
       leverage: pos.leverage,
       entryPrice,
