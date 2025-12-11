@@ -28,8 +28,8 @@ export default function Login() {
       <div className="relative z-10 min-h-screen flex items-center justify-center p-6">
         <div className="w-full max-w-md">
           <div className="text-center mb-10">
-            <h1 className="text-5xl md:text-6xl font-light tracking-[0.2em] text-white mb-3">
-              명인<span className="font-semibold text-yellow-400">FX</span>
+            <h1 className="text-5xl md:text-6xl font-bold tracking-[0.15em] text-white mb-3">
+              명인<span className="text-yellow-400">FX</span>
             </h1>
             <div className="w-24 h-[1px] bg-gradient-to-r from-transparent via-yellow-500 to-transparent mx-auto mb-4" />
             <p className="text-gray-400 text-sm tracking-[0.3em] uppercase">Premium Binary Options Trading</p>
