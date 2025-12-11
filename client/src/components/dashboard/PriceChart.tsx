@@ -67,34 +67,34 @@ export function PriceChart({ symbol, data }: PriceChartProps) {
           </div>
           
           <div className="flex flex-col hidden sm:flex">
-            <span className="text-xs text-muted-foreground">24h Change</span>
+            <span className="text-xs text-muted-foreground">24시간 변동</span>
             <span className={`text-sm font-mono ${isPositive ? 'text-up' : 'text-down'}`}>
               {data.change.toFixed(2)} {data.changePercent.toFixed(2)}%
             </span>
           </div>
           
           <div className="flex flex-col hidden sm:flex">
-            <span className="text-xs text-muted-foreground">24h High</span>
+            <span className="text-xs text-muted-foreground">24시간 고가</span>
             <span className="text-sm font-mono text-foreground">{data.high.toLocaleString()}</span>
           </div>
           
           <div className="flex flex-col hidden sm:flex">
-            <span className="text-xs text-muted-foreground">24h Low</span>
+            <span className="text-xs text-muted-foreground">24시간 저가</span>
             <span className="text-sm font-mono text-foreground">{data.low.toLocaleString()}</span>
           </div>
 
            <div className="flex flex-col hidden md:flex">
-            <span className="text-xs text-muted-foreground">24h Volume</span>
+            <span className="text-xs text-muted-foreground">24시간 거래량</span>
             <span className="text-sm font-mono text-foreground">{data.volume.toLocaleString()}</span>
           </div>
         </div>
 
         <div className="ml-auto hidden xl:flex gap-1 text-xs font-medium text-muted-foreground">
-          <button className="px-2 py-1 hover:text-primary">15m</button>
-          <button className="px-2 py-1 text-primary bg-muted/30 rounded">1H</button>
-          <button className="px-2 py-1 hover:text-primary">4H</button>
-          <button className="px-2 py-1 hover:text-primary">1D</button>
-          <button className="px-2 py-1 hover:text-primary">1W</button>
+          <button className="px-2 py-1 hover:text-primary">15분</button>
+          <button className="px-2 py-1 text-primary bg-muted/30 rounded">1시간</button>
+          <button className="px-2 py-1 hover:text-primary">4시간</button>
+          <button className="px-2 py-1 hover:text-primary">1일</button>
+          <button className="px-2 py-1 hover:text-primary">1주</button>
         </div>
       </div>
 

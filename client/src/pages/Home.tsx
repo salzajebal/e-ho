@@ -73,11 +73,11 @@ export default function Home() {
       {/* Footer / Status Bar */}
       <div className="h-6 bg-card border-t border-border flex items-center px-4 text-[10px] text-muted-foreground justify-between">
         <div className="flex gap-4">
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-up"></span> Operational</span>
-          <span>Latency: 14ms</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-up"></span> 정상 작동</span>
+          <span>지연시간: 14ms</span>
         </div>
         <div>
-          Mock Trading Environment
+          모의 거래 환경
         </div>
       </div>
     </div>

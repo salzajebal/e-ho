@@ -12,11 +12,11 @@ export function Navbar() {
           <span className="hidden sm:inline-block tracking-tight text-foreground">BINANCE</span>
         </Link>
         <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-muted-foreground">
-          <Link href="#" className="hover:text-primary transition-colors">Markets</Link>
-          <Link href="#" className="hover:text-primary transition-colors">Trade</Link>
-          <Link href="#" className="hover:text-primary transition-colors">Derivatives</Link>
-          <Link href="#" className="hover:text-primary transition-colors">Earn</Link>
-          <Link href="#" className="hover:text-primary transition-colors">Finance</Link>
+          <Link href="#" className="hover:text-primary transition-colors">마켓</Link>
+          <Link href="#" className="hover:text-primary transition-colors">거래</Link>
+          <Link href="#" className="hover:text-primary transition-colors">파생상품</Link>
+          <Link href="#" className="hover:text-primary transition-colors">수익창출</Link>
+          <Link href="#" className="hover:text-primary transition-colors">금융</Link>
         </nav>
       </div>
 
@@ -25,7 +25,7 @@ export function Navbar() {
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <input 
             type="text" 
-            placeholder="Search coin, pair" 
+            placeholder="코인, 페어 검색" 
             className="h-9 w-64 rounded-full bg-background pl-9 pr-4 text-sm outline-none focus:ring-1 focus:ring-primary transition-all placeholder:text-muted-foreground/50 border border-transparent focus:border-primary/20"
           />
         </div>
@@ -38,8 +38,8 @@ export function Navbar() {
             <Bell className="h-5 w-5" />
           </button>
           <div className="h-4 w-[1px] bg-border mx-1"></div>
-          <button className="hidden sm:flex text-sm font-medium hover:text-primary transition-colors">Log In</button>
-          <button className="hidden sm:flex bg-primary text-primary-foreground px-4 py-1.5 rounded-md text-sm font-semibold hover:brightness-110 transition-all">Sign Up</button>
+          <button className="hidden sm:flex text-sm font-medium hover:text-primary transition-colors">로그인</button>
+          <button className="hidden sm:flex bg-primary text-primary-foreground px-4 py-1.5 rounded-md text-sm font-semibold hover:brightness-110 transition-all">회원가입</button>
           <button className="md:hidden p-2 hover:text-foreground">
             <Menu className="h-6 w-6" />
           </button>

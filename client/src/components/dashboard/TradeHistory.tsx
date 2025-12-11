@@ -30,13 +30,13 @@ export function TradeHistory({ currentPrice }: { currentPrice: number }) {
   return (
     <div className="flex flex-col h-full w-full lg:w-[280px] shrink-0 border-l border-border bg-card">
       <div className="flex items-center px-4 h-10 border-b border-border">
-        <h2 className="text-sm font-semibold text-muted-foreground">Market Trades</h2>
+        <h2 className="text-sm font-semibold text-muted-foreground">시장 체결</h2>
       </div>
 
       <div className="flex px-4 py-2 text-xs font-medium text-muted-foreground">
-        <span className="flex-1 text-left">Price</span>
-        <span className="flex-1 text-right">Amount</span>
-        <span className="flex-1 text-right">Time</span>
+        <span className="flex-1 text-left">가격</span>
+        <span className="flex-1 text-right">수량</span>
+        <span className="flex-1 text-right">시간</span>
       </div>
 
       <div className="flex-1 overflow-y-auto">

@@ -12,13 +12,13 @@ export function MarketOverview({ data, onSelect, selectedSymbol }: MarketOvervie
   return (
     <div className="flex flex-col h-full bg-card border-x border-border w-full lg:w-[320px] shrink-0">
       <div className="flex items-center px-4 h-10 border-b border-border bg-muted/20">
-        <h2 className="text-sm font-semibold text-muted-foreground">Markets</h2>
+        <h2 className="text-sm font-semibold text-muted-foreground">마켓 목록</h2>
       </div>
       
       <div className="flex px-4 py-2 text-xs font-medium text-muted-foreground border-b border-border/50">
-        <span className="flex-1">Pair</span>
-        <span className="w-24 text-right">Price</span>
-        <span className="w-16 text-right">Change</span>
+        <span className="flex-1">자산</span>
+        <span className="w-24 text-right">현재가</span>
+        <span className="w-16 text-right">변동</span>
       </div>
 
       <div className="flex-1 overflow-y-auto">
