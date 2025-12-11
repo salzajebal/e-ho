@@ -59,11 +59,19 @@ export function useRegister() {
   const [, setLocation] = useLocation();
 
   return useMutation({
-    mutationFn: async ({ username, password }: { username: string; password: string }) => {
+    mutationFn: async (data: { 
+      username: string; 
+      password: string;
+      name: string;
+      phone: string;
+      bankName: string;
+      accountHolder: string;
+      accountNumber: string;
+    }) => {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify(data),
       });
       if (!res.ok) {
         const error = await res.json();

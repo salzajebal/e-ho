@@ -8,6 +8,11 @@ export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
+  name: text("name"),
+  phone: text("phone"),
+  bankName: text("bank_name"),
+  accountHolder: text("account_holder"),
+  accountNumber: text("account_number"),
   balance: decimal("balance", { precision: 20, scale: 0 }).notNull().default("10000000"),
   role: text("role").notNull().default("user"), // 'user' or 'admin'
   isActive: boolean("is_active").notNull().default(true),
@@ -17,6 +22,11 @@ export const users = pgTable("users", {
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
+  name: true,
+  phone: true,
+  bankName: true,
+  accountHolder: true,
+  accountNumber: true,
 });
 
 export const loginSchema = z.object({
@@ -27,10 +37,11 @@ export const loginSchema = z.object({
 export const registerSchema = z.object({
   username: z.string().min(3, "아이디는 3자 이상이어야 합니다"),
   password: z.string().min(4, "비밀번호는 4자 이상이어야 합니다"),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "비밀번호가 일치하지 않습니다",
-  path: ["confirmPassword"],
+  name: z.string().min(1, "이름을 입력해주세요"),
+  phone: z.string().min(10, "올바른 휴대폰 번호를 입력해주세요"),
+  bankName: z.string().min(1, "은행을 선택해주세요"),
+  accountHolder: z.string().min(1, "예금주를 입력해주세요"),
+  accountNumber: z.string().min(1, "계좌번호를 입력해주세요"),
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -71,3 +82,26 @@ export interface BetDisplay extends Bet {
   timeRemaining?: number;
   currentPrice?: number;
 }
+
+// Korean banks list
+export const KOREAN_BANKS = [
+  "KB국민은행",
+  "신한은행",
+  "우리은행",
+  "하나은행",
+  "SC제일은행",
+  "한국씨티은행",
+  "케이뱅크",
+  "카카오뱅크",
+  "토스뱅크",
+  "NH농협은행",
+  "IBK기업은행",
+  "KDB산업은행",
+  "수협은행",
+  "대구은행",
+  "부산은행",
+  "광주은행",
+  "전북은행",
+  "경남은행",
+  "제주은행",
+] as const;

@@ -59,7 +59,7 @@ export async function registerRoutes(
   // Register
   app.post("/api/auth/register", async (req, res) => {
     try {
-      const { username, password } = req.body;
+      const { username, password, name, phone, bankName, accountHolder, accountNumber } = req.body;
 
       if (!username || username.length < 3) {
         return res.status(400).json({ error: "아이디는 3자 이상이어야 합니다" });
@@ -69,12 +69,40 @@ export async function registerRoutes(
         return res.status(400).json({ error: "비밀번호는 4자 이상이어야 합니다" });
       }
 
+      if (!name) {
+        return res.status(400).json({ error: "이름을 입력해주세요" });
+      }
+
+      if (!phone || phone.length < 10) {
+        return res.status(400).json({ error: "올바른 휴대폰 번호를 입력해주세요" });
+      }
+
+      if (!bankName) {
+        return res.status(400).json({ error: "은행을 선택해주세요" });
+      }
+
+      if (!accountHolder) {
+        return res.status(400).json({ error: "예금주를 입력해주세요" });
+      }
+
+      if (!accountNumber) {
+        return res.status(400).json({ error: "계좌번호를 입력해주세요" });
+      }
+
       const existing = await storage.getUserByUsername(username);
       if (existing) {
         return res.status(400).json({ error: "이미 사용 중인 아이디입니다" });
       }
 
-      const user = await storage.createUser({ username, password });
+      const user = await storage.createUser({ 
+        username, 
+        password, 
+        name, 
+        phone, 
+        bankName, 
+        accountHolder, 
+        accountNumber 
+      });
       req.session.userId = user.id;
 
       res.json({
