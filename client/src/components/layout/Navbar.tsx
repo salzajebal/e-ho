@@ -20,6 +20,7 @@ export function Navbar({ onSelectSymbol, selectedSymbol }: NavbarProps) {
   const logout = useLogout();
 
   const quickAssets = [
+    { symbol: 'BTC/USDT', label: '비트코인', icon: Coins },
     { symbol: 'USD/KRW', label: '달러', icon: DollarSign },
     { symbol: 'WTI', label: '오일', icon: Droplets },
     { symbol: 'XAU/USD', label: '금', icon: Coins },
