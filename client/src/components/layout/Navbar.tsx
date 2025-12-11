@@ -14,9 +14,6 @@ export function Navbar() {
         <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-muted-foreground">
           <Link href="#" className="hover:text-primary transition-colors">마켓</Link>
           <Link href="#" className="hover:text-primary transition-colors">거래</Link>
-          <Link href="#" className="hover:text-primary transition-colors">파생상품</Link>
-          <Link href="#" className="hover:text-primary transition-colors">수익창출</Link>
-          <Link href="#" className="hover:text-primary transition-colors">금융</Link>
         </nav>
       </div>
 
