@@ -33,11 +33,11 @@ export function OrderForm({ currentPrice, symbol, onOrder }: OrderFormProps) {
 
   return (
     <div className="flex flex-col h-full bg-card border-l border-border w-full lg:w-[320px] shrink-0">
-      <div className="flex items-center px-4 h-10 border-b border-border bg-muted/20">
+      <div className="flex items-center px-4 h-10 border-b border-border bg-muted/20 shrink-0">
         <h2 className="text-sm font-semibold text-muted-foreground">주문</h2>
       </div>
 
-      <div className="p-4 space-y-6">
+      <div className="p-4 space-y-6 flex-1 overflow-y-auto">
         <Tabs defaultValue="market" className="w-full" onValueChange={(v) => setOrderType(v as any)}>
           <TabsList className="grid w-full grid-cols-2 bg-muted/20">
             <TabsTrigger value="limit">지정가</TabsTrigger>
