@@ -7,7 +7,7 @@ import { PriceChart } from "@/components/dashboard/PriceChart";
 import { BettingForm } from "@/components/dashboard/BettingForm";
 import { BetsPanel } from "@/components/dashboard/BetsPanel";
 import { useMarketData } from "@/lib/marketData";
-import { useBets, useCreateBet, useSettleBet, useUserBalance } from "@/hooks/use-bets";
+import { useBets, useBetHistory, useCreateBet, useSettleBet, useUserBalance } from "@/hooks/use-bets";
 import { useAuth } from "@/hooks/use-auth";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { toast } from "sonner";
@@ -18,10 +18,17 @@ export default function Home() {
   const marketData = useMarketData();
   
   const { data: user } = useAuth();
-  const { data: bets = [] } = useBets();
+  const { data: activeBets = [] } = useBets();
+  const { data: historyBets = [] } = useBetHistory();
   const createBet = useCreateBet();
   const settleBet = useSettleBet();
   const { data: balanceData } = useUserBalance();
+
+  const allBets = useMemo(() => {
+    const historyIds = new Set(historyBets.map(b => b.id));
+    const uniqueActiveBets = activeBets.filter(b => !historyIds.has(b.id));
+    return [...uniqueActiveBets, ...historyBets];
+  }, [activeBets, historyBets]);
 
   const currentMarket = marketData.find(m => m.symbol === selectedSymbol) || marketData[0];
 
@@ -86,7 +93,7 @@ export default function Home() {
             <ResizablePanel defaultSize={40} minSize={20}>
               <div className="h-full">
                 <BetsPanel 
-                  bets={bets} 
+                  bets={allBets} 
                   currentPrices={currentPrices}
                   onBetExpire={handleBetExpire}
                 />
