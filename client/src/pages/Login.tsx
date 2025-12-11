@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useLogin } from "@/hooks/use-auth";
 import { TrendingUp } from "lucide-react";
+import bgImage from "@assets/telegram-cloud-photo-size-4-5897754842564856605-x_1765438445097.jpg";
 
 export default function Login() {
   const [username, setUsername] = useState("");
@@ -20,9 +21,7 @@ export default function Login() {
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: `url('/attached_assets/telegram-cloud-photo-size-4-5897754842564856605-x_1765438445097.jpg')`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
+          backgroundImage: `url(${bgImage})`,
         }}
       />
       <div className="absolute inset-0 bg-black/40" />
