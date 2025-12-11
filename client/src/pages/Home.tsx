@@ -7,33 +7,15 @@ import { OrderBook } from "@/components/dashboard/OrderBook";
 import { TradeHistory } from "@/components/dashboard/TradeHistory";
 import { OrderForm } from "@/components/dashboard/OrderForm";
 import { PositionsPanel, Position } from "@/components/dashboard/PositionsPanel";
-import { INITIAL_MARKET_DATA, MarketData } from "@/lib/mockData";
+import { useMarketData, MarketData, INITIAL_MARKET_DATA } from "@/lib/marketData";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 
 export default function Home() {
-  const [selectedSymbol, setSelectedSymbol] = useState("BTC/USD");
-  const [marketData, setMarketData] = useState<MarketData[]>(INITIAL_MARKET_DATA);
+  const [selectedSymbol, setSelectedSymbol] = useState("BTC/USDT");
+  const marketData = useMarketData();
   const [positions, setPositions] = useState<Position[]>([]);
 
-  // Real-time price simulation
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setMarketData(prev => prev.map(item => {
-        const volatility = 0.0003; // increased volatility
-        const change = item.price * volatility * (Math.random() - 0.5);
-        const newPrice = item.price + change;
-        return {
-          ...item,
-          price: newPrice,
-          change: item.change + change,
-          changePercent: ((item.change + change) / (item.price - item.change)) * 100
-        };
-      }));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Update positions PnL
+  // Update positions PnL based on live market data
   useEffect(() => {
     setPositions(prev => prev.map(pos => {
       const currentMarket = marketData.find(m => m.symbol === pos.symbol);
@@ -41,7 +23,8 @@ export default function Home() {
 
       const priceDiff = currentMarket.price - pos.entryPrice;
       const pnlRaw = pos.side === 'long' ? priceDiff : -priceDiff;
-      const sizeInUnits = pos.size / pos.entryPrice; // approximate
+      // Approximate contract size calculation for demo
+      const sizeInUnits = pos.size / pos.entryPrice; 
       const pnl = sizeInUnits * pnlRaw;
       const pnlPercent = (pnl / pos.margin) * 100;
 
@@ -136,8 +119,8 @@ export default function Home() {
       {/* Footer */}
       <div className="h-6 bg-card border-t border-border flex items-center px-4 text-[10px] text-muted-foreground justify-between">
         <div className="flex gap-4">
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-up"></span> 실시간 연결됨</span>
-          <span>지연시간: 14ms</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-up animate-pulse"></span> 실시간 데이터 연결됨 (WebSocket)</span>
+          <span>지연시간: 45ms</span>
         </div>
         <div>
           모의 거래 환경
