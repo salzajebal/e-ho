@@ -32,7 +32,7 @@ const DURATIONS = [
 const MULTIPLIER = 1.90;
 
 export function BettingForm({ currentPrice, symbol, balance, onBet }: BettingFormProps) {
-  const [amount, setAmount] = useState<string>("100");
+  const [amount, setAmount] = useState<string>("10000");
   const [duration, setDuration] = useState<number>(60);
   const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; direction: 'long' | 'short' | null }>({
     open: false,
@@ -50,8 +50,8 @@ export function BettingForm({ currentPrice, symbol, balance, onBet }: BettingFor
       return false;
     }
 
-    if (numAmount < 10) {
-      toast.error("최소 베팅금액은 10 USDT입니다.");
+    if (numAmount < 1000) {
+      toast.error("최소 베팅금액은 1,000원입니다.");
       return false;
     }
 
@@ -74,7 +74,7 @@ export function BettingForm({ currentPrice, symbol, balance, onBet }: BettingFor
       const numAmount = parseFloat(amount);
       onBet(confirmDialog.direction, numAmount, duration);
       toast.success(`${confirmDialog.direction === 'long' ? '📈 LONG' : '📉 SHORT'} 베팅 완료!`, {
-        description: `${symbol} | ${DURATIONS.find(d => d.value === duration)?.label} | ${numAmount.toLocaleString()} USDT`,
+        description: `${symbol} | ${DURATIONS.find(d => d.value === duration)?.label} | ${numAmount.toLocaleString()}원`,
       });
     }
     setConfirmDialog({ open: false, direction: null });
@@ -97,7 +97,7 @@ export function BettingForm({ currentPrice, symbol, balance, onBet }: BettingFor
           <div className="flex justify-between text-xs">
             <span className="text-muted-foreground">가용 잔고</span>
             <span className="text-foreground font-mono font-semibold">
-              {availableBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
+              {availableBalance.toLocaleString()}원
             </span>
           </div>
           
@@ -134,17 +134,18 @@ export function BettingForm({ currentPrice, symbol, balance, onBet }: BettingFor
         </div>
 
         <div className="space-y-2">
-          <label className="text-xs text-muted-foreground">베팅 금액 (USDT)</label>
+          <label className="text-xs text-muted-foreground">베팅 금액 (원)</label>
           <div className="relative">
             <Input 
               type="number" 
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="font-mono text-lg text-right pr-14 h-12 bg-input border-border focus-visible:ring-primary"
+              className="font-mono text-lg text-right pr-10 h-12 bg-input border-border focus-visible:ring-primary"
               data-testid="input-bet-amount"
-              min="10"
+              min="1000"
+              step="1000"
             />
-            <span className="absolute right-3 top-3.5 text-sm text-muted-foreground">USDT</span>
+            <span className="absolute right-3 top-3.5 text-sm text-muted-foreground">원</span>
           </div>
           <div className="grid grid-cols-4 gap-2">
             {[0.1, 0.25, 0.5, 1].map((percent) => (
@@ -162,11 +163,11 @@ export function BettingForm({ currentPrice, symbol, balance, onBet }: BettingFor
         <div className="bg-muted/20 rounded-lg p-3 space-y-2">
           <div className="flex justify-between text-xs">
             <span className="text-muted-foreground">베팅 금액</span>
-            <span className="text-foreground font-mono">{betAmount.toLocaleString()} USDT</span>
+            <span className="text-foreground font-mono">{betAmount.toLocaleString()}원</span>
           </div>
           <div className="flex justify-between text-xs">
             <span className="text-muted-foreground">예상 수익 (승리 시)</span>
-            <span className="text-up font-mono font-semibold">+{potentialWin.toFixed(2)} USDT</span>
+            <span className="text-up font-mono font-semibold">+{Math.floor(potentialWin).toLocaleString()}원</span>
           </div>
         </div>
 
@@ -234,11 +235,11 @@ export function BettingForm({ currentPrice, symbol, balance, onBet }: BettingFor
                   </div>
                   <div className="flex justify-between border-t border-border pt-2 mt-2">
                     <span className="text-muted-foreground">베팅 금액</span>
-                    <span className="text-foreground font-mono font-bold">{betAmount.toLocaleString()} USDT</span>
+                    <span className="text-foreground font-mono font-bold">{betAmount.toLocaleString()}원</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">예상 수익</span>
-                    <span className="text-up font-mono font-bold">+{potentialWin.toFixed(2)} USDT</span>
+                    <span className="text-up font-mono font-bold">+{Math.floor(potentialWin).toLocaleString()}원</span>
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground text-center">

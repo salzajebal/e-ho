@@ -93,9 +93,9 @@ export function useSettleBet() {
       queryClient.invalidateQueries({ queryKey: ["/api/user/balance"] });
       
       if (data.outcome === 'win') {
-        toast.success(`🎉 베팅 성공! +${parseFloat(data.payout).toFixed(2)} USDT`);
+        toast.success(`🎉 베팅 성공! +${Math.floor(parseFloat(data.payout)).toLocaleString()}원`);
       } else {
-        toast.error(`베팅 실패! -${parseFloat(data.amount).toFixed(2)} USDT`);
+        toast.error(`베팅 실패! -${Math.floor(parseFloat(data.amount)).toLocaleString()}원`);
       }
     },
   });

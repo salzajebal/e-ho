@@ -8,7 +8,7 @@ export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
-  balance: decimal("balance", { precision: 20, scale: 8 }).notNull().default("100000"),
+  balance: decimal("balance", { precision: 20, scale: 0 }).notNull().default("10000000"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

@@ -102,7 +102,7 @@ export default function Home() {
           <span>배당률: 1.90x</span>
         </div>
         <div className="flex items-center gap-2">
-          <span>잔고: {balanceData?.balance ? parseFloat(balanceData.balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'} USDT</span>
+          <span>잔고: {balanceData?.balance ? Math.floor(parseFloat(balanceData.balance)).toLocaleString() : '0'}원</span>
         </div>
       </div>
     </div>
