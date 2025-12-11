@@ -1,17 +1,17 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertPositionSchema, insertTradeSchema } from "@shared/schema";
+import { insertBetSchema } from "@shared/schema";
 import { z } from "zod";
+
+// Store for current market prices (updated by client)
+const marketPrices: Record<string, number> = {};
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  // Demo user (for simplicity, no auth required in this mock exchange)
-  const DEMO_USER_ID = "demo-user";
-
-  // Initialize demo user if doesn't exist
+  // Demo user (for simplicity, no auth required)
   app.use(async (req, res, next) => {
     try {
       let user = await storage.getUserByUsername("demo");
@@ -42,25 +42,64 @@ export async function registerRoutes(
     }
   });
 
-  // Get open positions
-  app.get("/api/positions", async (req, res) => {
+  // Update market price (called by frontend)
+  app.post("/api/market/price", async (req, res) => {
     try {
-      const userId = (req as any).userId;
-      const openPositions = await storage.getPositions(userId, true);
-      res.json(openPositions);
+      const { symbol, price } = req.body;
+      if (symbol && typeof price === 'number') {
+        marketPrices[symbol] = price;
+      }
+      res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ error: "Failed to fetch positions" });
+      res.status(500).json({ error: "Failed to update price" });
     }
   });
 
-  // Create new position (open trade)
-  app.post("/api/positions", async (req, res) => {
+  // Get active bets
+  app.get("/api/bets", async (req, res) => {
     try {
       const userId = (req as any).userId;
-      const body = insertPositionSchema.parse({
-        ...req.body,
-        userId,
-      });
+      const activeBets = await storage.getActiveBets(userId);
+      res.json(activeBets);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch bets" });
+    }
+  });
+
+  // Get bet history
+  app.get("/api/bets/history", async (req, res) => {
+    try {
+      const userId = (req as any).userId;
+      const allBets = await storage.getBets(userId);
+      res.json(allBets);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch bet history" });
+    }
+  });
+
+  // Place a new bet
+  app.post("/api/bets", async (req, res) => {
+    try {
+      const userId = (req as any).userId;
+      const { symbol, direction, amount, duration, strikePrice, multiplier } = req.body;
+
+      // Validate input
+      if (!symbol || !direction || !amount || !duration || !strikePrice) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      if (!['long', 'short'].includes(direction)) {
+        return res.status(400).json({ error: "Direction must be 'long' or 'short'" });
+      }
+
+      if (![60, 120, 180, 300].includes(duration)) {
+        return res.status(400).json({ error: "Duration must be 60, 120, 180, or 300 seconds" });
+      }
+
+      const betAmount = parseFloat(amount);
+      if (isNaN(betAmount) || betAmount <= 0) {
+        return res.status(400).json({ error: "Invalid bet amount" });
+      }
 
       // Check user balance
       const user = await storage.getUser(userId);
@@ -68,111 +107,90 @@ export async function registerRoutes(
         return res.status(404).json({ error: "User not found" });
       }
 
-      const requiredMargin = parseFloat(body.margin);
       const currentBalance = parseFloat(user.balance);
-
-      if (currentBalance < requiredMargin) {
+      if (currentBalance < betAmount) {
         return res.status(400).json({ error: "Insufficient balance" });
       }
 
-      // Create position
-      const position = await storage.createPosition(body);
+      // Calculate expiry time
+      const expiresAt = new Date(Date.now() + duration * 1000);
 
-      // Deduct margin from balance
-      const newBalance = (currentBalance - requiredMargin).toString();
-      await storage.updateUserBalance(userId, newBalance);
-
-      // Record trade
-      await storage.createTrade({
+      // Create bet
+      const bet = await storage.createBet({
         userId,
-        positionId: position.id,
-        symbol: body.symbol,
-        side: body.side,
-        type: "open",
-        price: body.entryPrice,
-        size: body.size,
-        leverage: body.leverage,
-        pnl: null,
+        symbol,
+        direction,
+        amount: amount.toString(),
+        duration,
+        strikePrice: strikePrice.toString(),
+        multiplier: (multiplier || 1.90).toString(),
+        expiresAt,
       });
 
-      res.json(position);
+      // Deduct bet amount from balance
+      const newBalance = (currentBalance - betAmount).toString();
+      await storage.updateUserBalance(userId, newBalance);
+
+      res.json(bet);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: error.errors });
-      }
-      res.status(500).json({ error: "Failed to create position" });
+      console.error("Failed to place bet:", error);
+      res.status(500).json({ error: "Failed to place bet" });
     }
   });
 
-  // Update position (for PnL tracking)
-  app.patch("/api/positions/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const updates = req.body;
-      const position = await storage.updatePosition(id, updates);
-      res.json(position);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to update position" });
-    }
-  });
-
-  // Close position
-  app.post("/api/positions/:id/close", async (req, res) => {
+  // Settle a bet (called when timer expires)
+  app.post("/api/bets/:id/settle", async (req, res) => {
     try {
       const userId = (req as any).userId;
       const id = parseInt(req.params.id);
-      const { closePrice, pnl } = req.body;
+      const { closePrice } = req.body;
 
-      const position = await storage.getPosition(id);
-      if (!position) {
-        return res.status(404).json({ error: "Position not found" });
+      const bet = await storage.getBet(id);
+      if (!bet) {
+        return res.status(404).json({ error: "Bet not found" });
       }
 
-      if (position.userId !== userId) {
+      if (bet.userId !== userId) {
         return res.status(403).json({ error: "Unauthorized" });
       }
 
-      // Close position
-      const closedPosition = await storage.closePosition(id, closePrice, pnl);
-
-      // Return margin + pnl to balance
-      const user = await storage.getUser(userId);
-      if (user) {
-        const margin = parseFloat(position.margin);
-        const profit = parseFloat(pnl);
-        const currentBalance = parseFloat(user.balance);
-        const newBalance = (currentBalance + margin + profit).toString();
-        await storage.updateUserBalance(userId, newBalance);
+      if (bet.outcome !== 'pending') {
+        return res.status(400).json({ error: "Bet already settled" });
       }
 
-      // Record trade
-      await storage.createTrade({
-        userId,
-        positionId: position.id,
-        symbol: position.symbol,
-        side: position.side,
-        type: "close",
-        price: closePrice,
-        size: position.size,
-        leverage: position.leverage,
-        pnl,
-      });
+      const strikePrice = parseFloat(bet.strikePrice);
+      const closePriceNum = parseFloat(closePrice);
+      const betAmount = parseFloat(bet.amount);
+      const multiplier = parseFloat(bet.multiplier);
 
-      res.json(closedPosition);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to close position" });
-    }
-  });
+      // Determine outcome
+      let outcome: 'win' | 'lose';
+      if (bet.direction === 'long') {
+        outcome = closePriceNum > strikePrice ? 'win' : 'lose';
+      } else {
+        outcome = closePriceNum < strikePrice ? 'win' : 'lose';
+      }
 
-  // Get trade history
-  app.get("/api/trades", async (req, res) => {
-    try {
-      const userId = (req as any).userId;
-      const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
-      const trades = await storage.getTrades(userId, limit);
-      res.json(trades);
+      // Calculate payout
+      const payout = outcome === 'win' ? betAmount * multiplier : 0;
+
+      // Settle the bet
+      const settledBet = await storage.settleBet(id, closePrice, outcome, payout.toString());
+
+      // Credit payout to user if won
+      if (outcome === 'win') {
+        const user = await storage.getUser(userId);
+        if (user) {
+          const currentBalance = parseFloat(user.balance);
+          const newBalance = (currentBalance + payout).toString();
+          await storage.updateUserBalance(userId, newBalance);
+        }
+      }
+
+      res.json(settledBet);
     } catch (error) {
-      res.status(500).json({ error: "Failed to fetch trades" });
+      console.error("Failed to settle bet:", error);
+      res.status(500).json({ error: "Failed to settle bet" });
     }
   });
 

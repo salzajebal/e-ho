@@ -1,6 +1,6 @@
-import { type User, type InsertUser, type Position, type InsertPosition, type Trade, type InsertTrade, users, positions, trades } from "@shared/schema";
+import { type User, type InsertUser, type Bet, type InsertBet, users, bets } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, lt, sql } from "drizzle-orm";
 
 export interface IStorage {
   // User methods
@@ -9,16 +9,13 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUserBalance(userId: string, newBalance: string): Promise<void>;
 
-  // Position methods
-  getPositions(userId: string, isOpen?: boolean): Promise<Position[]>;
-  getPosition(id: number): Promise<Position | undefined>;
-  createPosition(position: InsertPosition): Promise<Position>;
-  updatePosition(id: number, updates: Partial<InsertPosition>): Promise<Position>;
-  closePosition(id: number, closePrice: string, pnl: string): Promise<Position>;
-
-  // Trade methods
-  getTrades(userId: string, limit?: number): Promise<Trade[]>;
-  createTrade(trade: InsertTrade): Promise<Trade>;
+  // Bet methods
+  getBets(userId: string, outcome?: string): Promise<Bet[]>;
+  getActiveBets(userId: string): Promise<Bet[]>;
+  getBet(id: number): Promise<Bet | undefined>;
+  createBet(bet: InsertBet): Promise<Bet>;
+  settleBet(id: number, closePrice: string, outcome: 'win' | 'lose', payout: string): Promise<Bet>;
+  getExpiredPendingBets(): Promise<Bet[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -47,67 +44,59 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, userId));
   }
 
-  // Position methods
-  async getPositions(userId: string, isOpen?: boolean): Promise<Position[]> {
-    const conditions = [eq(positions.userId, userId)];
-    if (isOpen !== undefined) {
-      conditions.push(eq(positions.isOpen, isOpen));
+  // Bet methods
+  async getBets(userId: string, outcome?: string): Promise<Bet[]> {
+    const conditions = [eq(bets.userId, userId)];
+    if (outcome !== undefined) {
+      conditions.push(eq(bets.outcome, outcome));
     }
-    return await db.select().from(positions)
+    return await db.select().from(bets)
       .where(and(...conditions))
-      .orderBy(desc(positions.openedAt));
+      .orderBy(desc(bets.createdAt));
   }
 
-  async getPosition(id: number): Promise<Position | undefined> {
-    const [position] = await db.select().from(positions).where(eq(positions.id, id));
-    return position || undefined;
+  async getActiveBets(userId: string): Promise<Bet[]> {
+    return await db.select().from(bets)
+      .where(and(
+        eq(bets.userId, userId),
+        eq(bets.outcome, 'pending')
+      ))
+      .orderBy(desc(bets.createdAt));
   }
 
-  async createPosition(position: InsertPosition): Promise<Position> {
-    const [newPosition] = await db
-      .insert(positions)
-      .values(position)
+  async getBet(id: number): Promise<Bet | undefined> {
+    const [bet] = await db.select().from(bets).where(eq(bets.id, id));
+    return bet || undefined;
+  }
+
+  async createBet(bet: InsertBet): Promise<Bet> {
+    const [newBet] = await db
+      .insert(bets)
+      .values(bet)
       .returning();
-    return newPosition;
+    return newBet;
   }
 
-  async updatePosition(id: number, updates: Partial<InsertPosition>): Promise<Position> {
-    const [updated] = await db
-      .update(positions)
-      .set(updates)
-      .where(eq(positions.id, id))
-      .returning();
-    return updated;
-  }
-
-  async closePosition(id: number, closePrice: string, pnl: string): Promise<Position> {
-    const [closed] = await db
-      .update(positions)
+  async settleBet(id: number, closePrice: string, outcome: 'win' | 'lose', payout: string): Promise<Bet> {
+    const [settled] = await db
+      .update(bets)
       .set({ 
-        isOpen: false, 
-        closedAt: new Date(),
-        markPrice: closePrice,
-        pnl
+        closePrice,
+        outcome,
+        payout,
+        settledAt: new Date(),
       })
-      .where(eq(positions.id, id))
+      .where(eq(bets.id, id))
       .returning();
-    return closed;
+    return settled;
   }
 
-  // Trade methods
-  async getTrades(userId: string, limit: number = 50): Promise<Trade[]> {
-    return await db.select().from(trades)
-      .where(eq(trades.userId, userId))
-      .orderBy(desc(trades.executedAt))
-      .limit(limit);
-  }
-
-  async createTrade(trade: InsertTrade): Promise<Trade> {
-    const [newTrade] = await db
-      .insert(trades)
-      .values(trade)
-      .returning();
-    return newTrade;
+  async getExpiredPendingBets(): Promise<Bet[]> {
+    return await db.select().from(bets)
+      .where(and(
+        eq(bets.outcome, 'pending'),
+        lt(bets.expiresAt, new Date())
+      ));
   }
 }
 
