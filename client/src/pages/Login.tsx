@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useLogin } from "@/hooks/use-auth";
 import { TrendingUp } from "lucide-react";
-import bgImage from "@assets/stock_images/bitcoin_cryptocurren_a6d34b3a.jpg";
+import bgImage from "@assets/generated_images/bitcoin_with_trading_chart.png";
 
 export default function Login() {
   const [username, setUsername] = useState("");
