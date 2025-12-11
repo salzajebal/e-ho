@@ -10,18 +10,26 @@ import { toast } from "sonner";
 interface OrderFormProps {
   currentPrice: number;
   symbol: string;
+  balance?: string;
   onOrder: (type: 'long' | 'short', amount: number, leverage: number) => void;
 }
 
-export function OrderForm({ currentPrice, symbol, onOrder }: OrderFormProps) {
+export function OrderForm({ currentPrice, symbol, balance, onOrder }: OrderFormProps) {
   const [leverage, setLeverage] = useState([20]);
   const [amount, setAmount] = useState<string>("1000");
   const [orderType, setOrderType] = useState<"limit" | "market">("market");
+
+  const availableBalance = balance ? parseFloat(balance) : 100000;
 
   const handleOrder = (side: 'long' | 'short') => {
     const numAmount = parseFloat(amount);
     if (isNaN(numAmount) || numAmount <= 0) {
       toast.error("유효한 수량을 입력해주세요.");
+      return;
+    }
+
+    if (numAmount > availableBalance) {
+      toast.error("잔고가 부족합니다.");
       return;
     }
     
@@ -49,7 +57,9 @@ export function OrderForm({ currentPrice, symbol, onOrder }: OrderFormProps) {
           <div className="space-y-2">
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>가용 자산</span>
-              <span className="text-foreground font-mono">100,000.00 USDT</span>
+              <span className="text-foreground font-mono">
+                {availableBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
+              </span>
             </div>
           </div>
 
@@ -92,6 +102,7 @@ export function OrderForm({ currentPrice, symbol, onOrder }: OrderFormProps) {
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 className="font-mono text-right pr-12 bg-input border-border focus-visible:ring-primary"
+                data-testid="input-order-amount"
               />
               <span className="absolute right-3 top-2.5 text-xs text-muted-foreground">USDT</span>
             </div>
@@ -101,12 +112,14 @@ export function OrderForm({ currentPrice, symbol, onOrder }: OrderFormProps) {
             <Button 
               className="w-full bg-up hover:bg-up/90 text-white font-semibold"
               onClick={() => handleOrder('long')}
+              data-testid="button-long"
             >
               매수 / 롱
             </Button>
             <Button 
               className="w-full bg-down hover:bg-down/90 text-white font-semibold"
               onClick={() => handleOrder('short')}
+              data-testid="button-short"
             >
               매도 / 숏
             </Button>
@@ -119,7 +132,7 @@ export function OrderForm({ currentPrice, symbol, onOrder }: OrderFormProps) {
             </span>
             <span>최대 매수</span>
             <span className="text-right text-foreground font-mono">
-              {(100000 * leverage[0]).toLocaleString()} USDT
+              {(availableBalance * leverage[0]).toLocaleString()} USDT
             </span>
           </div>
         </div>

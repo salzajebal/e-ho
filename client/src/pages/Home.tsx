@@ -4,62 +4,83 @@ import { Ticker } from "@/components/dashboard/Ticker";
 import { MarketOverview } from "@/components/dashboard/MarketOverview";
 import { PriceChart } from "@/components/dashboard/PriceChart";
 import { OrderBook } from "@/components/dashboard/OrderBook";
-import { TradeHistory } from "@/components/dashboard/TradeHistory";
 import { OrderForm } from "@/components/dashboard/OrderForm";
-import { PositionsPanel, Position } from "@/components/dashboard/PositionsPanel";
-import { useMarketData, MarketData, INITIAL_MARKET_DATA } from "@/lib/marketData";
+import { PositionsPanel } from "@/components/dashboard/PositionsPanel";
+import { useMarketData, INITIAL_MARKET_DATA } from "@/lib/marketData";
+import { usePositions, useCreatePosition, useClosePosition, useUserBalance } from "@/hooks/use-positions";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 
 export default function Home() {
   const [selectedSymbol, setSelectedSymbol] = useState("BTC/USDT");
   const marketData = useMarketData();
-  const [positions, setPositions] = useState<Position[]>([]);
+  
+  // Fetch real positions from backend
+  const { data: positions = [] } = usePositions();
+  const createPosition = useCreatePosition();
+  const closePosition = useClosePosition();
+  const { data: balanceData } = useUserBalance();
 
   // Update positions PnL based on live market data
-  useEffect(() => {
-    setPositions(prev => prev.map(pos => {
-      const currentMarket = marketData.find(m => m.symbol === pos.symbol);
-      if (!currentMarket) return pos;
+  const updatedPositions = positions.map(pos => {
+    const currentMarket = marketData.find(m => m.symbol === pos.symbol);
+    if (!currentMarket) return pos;
 
-      const priceDiff = currentMarket.price - pos.entryPrice;
-      const pnlRaw = pos.side === 'long' ? priceDiff : -priceDiff;
-      // Approximate contract size calculation for demo
-      const sizeInUnits = pos.size / pos.entryPrice; 
-      const pnl = sizeInUnits * pnlRaw;
-      const pnlPercent = (pnl / pos.margin) * 100;
+    const entryPrice = parseFloat(pos.entryPrice);
+    const currentPrice = currentMarket.price;
+    const priceDiff = currentPrice - entryPrice;
+    const pnlRaw = pos.side === 'long' ? priceDiff : -priceDiff;
+    const sizeInUnits = parseFloat(pos.size) / entryPrice;
+    const pnl = sizeInUnits * pnlRaw;
+    const pnlPercent = (pnl / parseFloat(pos.margin)) * 100;
 
-      return {
-        ...pos,
-        markPrice: currentMarket.price,
-        pnl,
-        pnlPercent
-      };
-    }));
-  }, [marketData]);
+    return {
+      id: pos.id.toString(),
+      symbol: pos.symbol,
+      side: pos.side,
+      size: parseFloat(pos.size),
+      leverage: pos.leverage,
+      entryPrice,
+      markPrice: currentPrice,
+      liquidationPrice: parseFloat(pos.liquidationPrice),
+      margin: parseFloat(pos.margin),
+      pnl,
+      pnlPercent,
+    };
+  });
 
   const currentMarket = marketData.find(m => m.symbol === selectedSymbol) || marketData[0];
 
   const handleOrder = (type: 'long' | 'short', amount: number, leverage: number) => {
-    const newPosition: Position = {
-      id: Math.random().toString(36).substr(2, 9),
+    const entryPrice = currentMarket.price;
+    const size = amount * leverage;
+    const liquidationPrice = type === 'long' 
+      ? entryPrice * (1 - 1/leverage) 
+      : entryPrice * (1 + 1/leverage);
+
+    createPosition.mutate({
       symbol: selectedSymbol,
       side: type,
-      size: amount * leverage,
+      size: size.toString(),
       leverage,
-      entryPrice: currentMarket.price,
-      markPrice: currentMarket.price,
-      liquidationPrice: type === 'long' 
-        ? currentMarket.price * (1 - 1/leverage) 
-        : currentMarket.price * (1 + 1/leverage),
-      margin: amount,
-      pnl: 0,
-      pnlPercent: 0
-    };
-    setPositions(prev => [newPosition, ...prev]);
+      entryPrice: entryPrice.toString(),
+      markPrice: entryPrice.toString(),
+      liquidationPrice: liquidationPrice.toString(),
+      margin: amount.toString(),
+      pnl: "0",
+      pnlPercent: "0",
+      isOpen: true,
+    });
   };
 
   const handleClosePosition = (id: string) => {
-    setPositions(prev => prev.filter(p => p.id !== id));
+    const position = updatedPositions.find(p => p.id === id);
+    if (!position) return;
+
+    closePosition.mutate({
+      id: parseInt(id),
+      closePrice: position.markPrice.toString(),
+      pnl: position.pnl.toString(),
+    });
   };
 
   return (
@@ -90,13 +111,13 @@ export default function Home() {
             
             <ResizablePanel defaultSize={35} minSize={20}>
               <div className="h-full">
-                <PositionsPanel positions={positions} onClosePosition={handleClosePosition} />
+                <PositionsPanel positions={updatedPositions} onClosePosition={handleClosePosition} />
               </div>
             </ResizablePanel>
           </ResizablePanelGroup>
         </div>
 
-        {/* Right: Order Book + Trades + Order Form */}
+        {/* Right: Order Book + Order Form */}
         <div className="flex flex-col border-l border-border w-[320px] shrink-0">
           <ResizablePanelGroup direction="vertical">
              <ResizablePanel defaultSize={50} minSize={30} className="hidden lg:block">
@@ -110,6 +131,7 @@ export default function Home() {
                  currentPrice={currentMarket.price} 
                  symbol={selectedSymbol}
                  onOrder={handleOrder}
+                 balance={balanceData?.balance}
                />
              </ResizablePanel>
           </ResizablePanelGroup>
@@ -122,8 +144,8 @@ export default function Home() {
           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-up animate-pulse"></span> 실시간 데이터 연결됨 (WebSocket)</span>
           <span>지연시간: 45ms</span>
         </div>
-        <div>
-          모의 거래 환경
+        <div className="flex items-center gap-2">
+          <span>잔고: {balanceData?.balance ? parseFloat(balanceData.balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'} USDT</span>
         </div>
       </div>
     </div>
