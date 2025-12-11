@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { useRegister } from "@/hooks/use-auth";
 import { TrendingUp, Gift } from "lucide-react";
 import { toast } from "sonner";
-import bgImage from "@assets/telegram-cloud-photo-size-4-5897754842564856605-x_1765438445097.jpg";
+import bgImage from "@assets/stock_images/bitcoin_cryptocurren_a6d34b3a.jpg";
 
 export default function Register() {
   const [username, setUsername] = useState("");
