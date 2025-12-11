@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useLocation } from "wouter";
 import { Navbar } from "@/components/layout/Navbar";
 import { Ticker } from "@/components/dashboard/Ticker";
 import { MarketOverview } from "@/components/dashboard/MarketOverview";
@@ -7,12 +8,16 @@ import { BettingForm } from "@/components/dashboard/BettingForm";
 import { BetsPanel } from "@/components/dashboard/BetsPanel";
 import { useMarketData } from "@/lib/marketData";
 import { useBets, useCreateBet, useSettleBet, useUserBalance } from "@/hooks/use-bets";
+import { useAuth } from "@/hooks/use-auth";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
+import { toast } from "sonner";
 
 export default function Home() {
   const [selectedSymbol, setSelectedSymbol] = useState("BTC/USDT");
+  const [, setLocation] = useLocation();
   const marketData = useMarketData();
   
+  const { data: user } = useAuth();
   const { data: bets = [] } = useBets();
   const createBet = useCreateBet();
   const settleBet = useSettleBet();
@@ -29,6 +34,12 @@ export default function Home() {
   }, [marketData]);
 
   const handleBet = (direction: 'long' | 'short', amount: number, duration: number) => {
+    if (!user) {
+      toast.error("로그인이 필요합니다");
+      setLocation("/login");
+      return;
+    }
+    
     createBet.mutate({
       symbol: selectedSymbol,
       direction,

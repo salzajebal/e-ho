@@ -9,12 +9,28 @@ export const users = pgTable("users", {
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   balance: decimal("balance", { precision: 20, scale: 0 }).notNull().default("10000000"),
+  role: text("role").notNull().default("user"), // 'user' or 'admin'
+  isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
+});
+
+export const loginSchema = z.object({
+  username: z.string().min(3, "아이디는 3자 이상이어야 합니다"),
+  password: z.string().min(4, "비밀번호는 4자 이상이어야 합니다"),
+});
+
+export const registerSchema = z.object({
+  username: z.string().min(3, "아이디는 3자 이상이어야 합니다"),
+  password: z.string().min(4, "비밀번호는 4자 이상이어야 합니다"),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "비밀번호가 일치하지 않습니다",
+  path: ["confirmPassword"],
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;

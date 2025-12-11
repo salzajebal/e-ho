@@ -8,6 +8,9 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUserBalance(userId: string, newBalance: string): Promise<void>;
+  getAllUsers(): Promise<User[]>;
+  updateUser(id: string, data: Partial<{ balance: string; role: string; isActive: boolean }>): Promise<User>;
+  deleteUser(id: string): Promise<void>;
 
   // Bet methods
   getBets(userId: string, outcome?: string): Promise<Bet[]>;
@@ -16,6 +19,7 @@ export interface IStorage {
   createBet(bet: InsertBet): Promise<Bet>;
   settleBet(id: number, closePrice: string, outcome: 'win' | 'lose', payout: string): Promise<Bet>;
   getExpiredPendingBets(): Promise<Bet[]>;
+  getAllBets(): Promise<Bet[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -42,6 +46,22 @@ export class DatabaseStorage implements IStorage {
     await db.update(users)
       .set({ balance: newBalance })
       .where(eq(users.id, userId));
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users).orderBy(desc(users.createdAt));
+  }
+
+  async updateUser(id: string, data: Partial<{ balance: string; role: string; isActive: boolean }>): Promise<User> {
+    const [updated] = await db.update(users)
+      .set(data)
+      .where(eq(users.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    await db.delete(users).where(eq(users.id, id));
   }
 
   // Bet methods
@@ -97,6 +117,10 @@ export class DatabaseStorage implements IStorage {
         eq(bets.outcome, 'pending'),
         lt(bets.expiresAt, new Date())
       ));
+  }
+
+  async getAllBets(): Promise<Bet[]> {
+    return await db.select().from(bets).orderBy(desc(bets.createdAt));
   }
 }
 

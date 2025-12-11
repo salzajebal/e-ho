@@ -1,38 +1,161 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertBetSchema } from "@shared/schema";
+import { insertBetSchema, loginSchema } from "@shared/schema";
 import { z } from "zod";
+import session from "express-session";
+import MemoryStore from "memorystore";
 
-// Store for current market prices (updated by client)
-const marketPrices: Record<string, number> = {};
+const SessionStore = MemoryStore(session);
+
+declare module "express-session" {
+  interface SessionData {
+    userId?: string;
+  }
+}
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  // Demo user (for simplicity, no auth required)
-  app.use(async (req, res, next) => {
+  // Session middleware
+  app.use(
+    session({
+      secret: process.env.SESSION_SECRET || "myinfx-secret-key-2024",
+      resave: false,
+      saveUninitialized: false,
+      store: new SessionStore({
+        checkPeriod: 86400000,
+      }),
+      cookie: {
+        secure: false,
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000,
+      },
+    })
+  );
+
+  // Auth middleware helper
+  const requireAuth = (req: Request, res: Response, next: NextFunction) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "로그인이 필요합니다" });
+    }
+    next();
+  };
+
+  const requireAdmin = async (req: Request, res: Response, next: NextFunction) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "로그인이 필요합니다" });
+    }
+    const user = await storage.getUser(req.session.userId);
+    if (!user || user.role !== "admin") {
+      return res.status(403).json({ error: "관리자 권한이 필요합니다" });
+    }
+    next();
+  };
+
+  // ==================== AUTH ROUTES ====================
+
+  // Register
+  app.post("/api/auth/register", async (req, res) => {
     try {
-      let user = await storage.getUserByUsername("demo");
-      if (!user) {
-        user = await storage.createUser({
-          username: "demo",
-          password: "demo123",
-        });
+      const { username, password } = req.body;
+
+      if (!username || username.length < 3) {
+        return res.status(400).json({ error: "아이디는 3자 이상이어야 합니다" });
       }
-      (req as any).userId = user.id;
-      next();
+
+      if (!password || password.length < 4) {
+        return res.status(400).json({ error: "비밀번호는 4자 이상이어야 합니다" });
+      }
+
+      const existing = await storage.getUserByUsername(username);
+      if (existing) {
+        return res.status(400).json({ error: "이미 사용 중인 아이디입니다" });
+      }
+
+      const user = await storage.createUser({ username, password });
+      req.session.userId = user.id;
+
+      res.json({
+        id: user.id,
+        username: user.username,
+        balance: user.balance,
+        role: user.role,
+      });
     } catch (error) {
-      next(error);
+      console.error("Register error:", error);
+      res.status(500).json({ error: "회원가입에 실패했습니다" });
     }
   });
 
-  // Get user balance
-  app.get("/api/user/balance", async (req, res) => {
+  // Login
+  app.post("/api/auth/login", async (req, res) => {
     try {
-      const userId = (req as any).userId;
-      const user = await storage.getUser(userId);
+      const { username, password } = req.body;
+
+      const user = await storage.getUserByUsername(username);
+      if (!user || user.password !== password) {
+        return res.status(401).json({ error: "아이디 또는 비밀번호가 올바르지 않습니다" });
+      }
+
+      if (!user.isActive) {
+        return res.status(403).json({ error: "비활성화된 계정입니다. 관리자에게 문의하세요." });
+      }
+
+      req.session.userId = user.id;
+
+      res.json({
+        id: user.id,
+        username: user.username,
+        balance: user.balance,
+        role: user.role,
+      });
+    } catch (error) {
+      console.error("Login error:", error);
+      res.status(500).json({ error: "로그인에 실패했습니다" });
+    }
+  });
+
+  // Logout
+  app.post("/api/auth/logout", (req, res) => {
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ error: "로그아웃에 실패했습니다" });
+      }
+      res.json({ success: true });
+    });
+  });
+
+  // Get current user
+  app.get("/api/auth/me", async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.json(null);
+      }
+
+      const user = await storage.getUser(req.session.userId);
+      if (!user) {
+        return res.json(null);
+      }
+
+      res.json({
+        id: user.id,
+        username: user.username,
+        balance: user.balance,
+        role: user.role,
+      });
+    } catch (error) {
+      res.json(null);
+    }
+  });
+
+  // ==================== USER ROUTES ====================
+
+  // Get user balance
+  app.get("/api/user/balance", requireAuth, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.session.userId!);
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
@@ -42,24 +165,12 @@ export async function registerRoutes(
     }
   });
 
-  // Update market price (called by frontend)
-  app.post("/api/market/price", async (req, res) => {
-    try {
-      const { symbol, price } = req.body;
-      if (symbol && typeof price === 'number') {
-        marketPrices[symbol] = price;
-      }
-      res.json({ success: true });
-    } catch (error) {
-      res.status(500).json({ error: "Failed to update price" });
-    }
-  });
+  // ==================== BETTING ROUTES ====================
 
   // Get active bets
-  app.get("/api/bets", async (req, res) => {
+  app.get("/api/bets", requireAuth, async (req, res) => {
     try {
-      const userId = (req as any).userId;
-      const activeBets = await storage.getActiveBets(userId);
+      const activeBets = await storage.getActiveBets(req.session.userId!);
       res.json(activeBets);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch bets" });
@@ -67,10 +178,9 @@ export async function registerRoutes(
   });
 
   // Get bet history
-  app.get("/api/bets/history", async (req, res) => {
+  app.get("/api/bets/history", requireAuth, async (req, res) => {
     try {
-      const userId = (req as any).userId;
-      const allBets = await storage.getBets(userId);
+      const allBets = await storage.getBets(req.session.userId!);
       res.json(allBets);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch bet history" });
@@ -78,12 +188,11 @@ export async function registerRoutes(
   });
 
   // Place a new bet
-  app.post("/api/bets", async (req, res) => {
+  app.post("/api/bets", requireAuth, async (req, res) => {
     try {
-      const userId = (req as any).userId;
+      const userId = req.session.userId!;
       const { symbol, direction, amount, duration, strikePrice, multiplier } = req.body;
 
-      // Validate input
       if (!symbol || !direction || !amount || !duration || !strikePrice) {
         return res.status(400).json({ error: "Missing required fields" });
       }
@@ -101,7 +210,6 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Invalid bet amount" });
       }
 
-      // Check user balance
       const user = await storage.getUser(userId);
       if (!user) {
         return res.status(404).json({ error: "User not found" });
@@ -109,13 +217,11 @@ export async function registerRoutes(
 
       const currentBalance = parseFloat(user.balance);
       if (currentBalance < betAmount) {
-        return res.status(400).json({ error: "Insufficient balance" });
+        return res.status(400).json({ error: "잔고가 부족합니다" });
       }
 
-      // Calculate expiry time
       const expiresAt = new Date(Date.now() + duration * 1000);
 
-      // Create bet
       const bet = await storage.createBet({
         userId,
         symbol,
@@ -127,7 +233,6 @@ export async function registerRoutes(
         expiresAt,
       });
 
-      // Deduct bet amount from balance
       const newBalance = (currentBalance - betAmount).toString();
       await storage.updateUserBalance(userId, newBalance);
 
@@ -138,10 +243,10 @@ export async function registerRoutes(
     }
   });
 
-  // Settle a bet (called when timer expires)
-  app.post("/api/bets/:id/settle", async (req, res) => {
+  // Settle a bet
+  app.post("/api/bets/:id/settle", requireAuth, async (req, res) => {
     try {
-      const userId = (req as any).userId;
+      const userId = req.session.userId!;
       const id = parseInt(req.params.id);
       const { closePrice } = req.body;
 
@@ -163,7 +268,6 @@ export async function registerRoutes(
       const betAmount = parseFloat(bet.amount);
       const multiplier = parseFloat(bet.multiplier);
 
-      // Determine outcome
       let outcome: 'win' | 'lose';
       if (bet.direction === 'long') {
         outcome = closePriceNum > strikePrice ? 'win' : 'lose';
@@ -171,13 +275,9 @@ export async function registerRoutes(
         outcome = closePriceNum < strikePrice ? 'win' : 'lose';
       }
 
-      // Calculate payout
       const payout = outcome === 'win' ? betAmount * multiplier : 0;
-
-      // Settle the bet
       const settledBet = await storage.settleBet(id, closePrice, outcome, payout.toString());
 
-      // Credit payout to user if won
       if (outcome === 'win') {
         const user = await storage.getUser(userId);
         if (user) {
@@ -191,6 +291,109 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Failed to settle bet:", error);
       res.status(500).json({ error: "Failed to settle bet" });
+    }
+  });
+
+  // ==================== ADMIN ROUTES ====================
+
+  // Get all users
+  app.get("/api/admin/users", requireAdmin, async (req, res) => {
+    try {
+      const allUsers = await storage.getAllUsers();
+      res.json(allUsers.map(u => ({
+        id: u.id,
+        username: u.username,
+        balance: u.balance,
+        role: u.role,
+        isActive: u.isActive,
+        createdAt: u.createdAt,
+      })));
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
+  // Update user
+  app.patch("/api/admin/users/:id", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { balance, role, isActive } = req.body;
+
+      const updateData: any = {};
+      if (balance !== undefined) updateData.balance = balance.toString();
+      if (role !== undefined) updateData.role = role;
+      if (isActive !== undefined) updateData.isActive = isActive;
+
+      const updated = await storage.updateUser(id, updateData);
+      res.json({
+        id: updated.id,
+        username: updated.username,
+        balance: updated.balance,
+        role: updated.role,
+        isActive: updated.isActive,
+        createdAt: updated.createdAt,
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update user" });
+    }
+  });
+
+  // Delete user
+  app.delete("/api/admin/users/:id", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      if (id === req.session.userId) {
+        return res.status(400).json({ error: "자기 자신은 삭제할 수 없습니다" });
+      }
+
+      await storage.deleteUser(id);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete user" });
+    }
+  });
+
+  // Get all bets (admin)
+  app.get("/api/admin/bets", requireAdmin, async (req, res) => {
+    try {
+      const allBets = await storage.getAllBets();
+      res.json(allBets);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch bets" });
+    }
+  });
+
+  // Get dashboard stats
+  app.get("/api/admin/stats", requireAdmin, async (req, res) => {
+    try {
+      const allUsers = await storage.getAllUsers();
+      const allBets = await storage.getAllBets();
+      
+      const totalUsers = allUsers.length;
+      const activeUsers = allUsers.filter(u => u.isActive).length;
+      const totalBets = allBets.length;
+      const pendingBets = allBets.filter(b => b.outcome === 'pending').length;
+      const wonBets = allBets.filter(b => b.outcome === 'win').length;
+      const lostBets = allBets.filter(b => b.outcome === 'lose').length;
+      
+      const totalBetAmount = allBets.reduce((sum, b) => sum + parseFloat(b.amount), 0);
+      const totalPayout = allBets.filter(b => b.outcome === 'win').reduce((sum, b) => sum + parseFloat(b.payout || '0'), 0);
+      const profit = totalBetAmount - totalPayout;
+
+      res.json({
+        totalUsers,
+        activeUsers,
+        totalBets,
+        pendingBets,
+        wonBets,
+        lostBets,
+        totalBetAmount,
+        totalPayout,
+        profit,
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch stats" });
     }
   });
 
