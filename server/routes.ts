@@ -464,13 +464,71 @@ export async function registerRoutes(
     }
   });
 
-  // Get all bets (admin)
+  // Get all bets with usernames (admin)
   app.get("/api/admin/bets", requireAdmin, async (req, res) => {
     try {
-      const allBets = await storage.getAllBets();
+      const allBets = await storage.getAllBetsWithUsers();
       res.json(allBets);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch bets" });
+    }
+  });
+
+  // Update bet outcome (admin)
+  app.patch("/api/admin/bets/:id", requireAdmin, async (req, res) => {
+    try {
+      const betId = parseInt(req.params.id);
+      const { outcome, closePrice } = req.body;
+
+      if (!['win', 'lose'].includes(outcome)) {
+        return res.status(400).json({ error: "Invalid outcome" });
+      }
+
+      const bet = await storage.getBet(betId);
+      if (!bet) {
+        return res.status(404).json({ error: "Bet not found" });
+      }
+
+      const oldOutcome = bet.outcome;
+      
+      // Skip if outcome is already the same (prevent double-click issues)
+      if (oldOutcome === outcome) {
+        return res.json({ success: true, bet, message: "No change" });
+      }
+
+      const oldPayout = parseFloat(bet.payout || '0');
+      const betAmount = parseFloat(bet.amount);
+      const multiplier = parseFloat(bet.multiplier);
+      const newPayout = outcome === 'win' ? betAmount * multiplier : 0;
+
+      // Calculate balance change based on outcome transition
+      let balanceChange = 0;
+      if (oldOutcome === 'win') {
+        // Was win, remove old payout
+        balanceChange -= oldPayout;
+      }
+      if (outcome === 'win') {
+        // Now win, add new payout
+        balanceChange += newPayout;
+      }
+
+      // Update bet outcome
+      const updated = await storage.updateBetOutcome(betId, outcome, closePrice || bet.strikePrice);
+
+      // Adjust user balance
+      if (balanceChange !== 0) {
+        const user = await storage.getUser(bet.userId);
+        if (user) {
+          const currentBalance = parseFloat(user.balance);
+          const newBalance = Math.max(0, currentBalance + balanceChange).toString();
+          await storage.updateUserBalance(bet.userId, newBalance);
+        }
+      }
+
+      res.json({ success: true, bet: updated });
+    } catch (error) {
+      console.error("Failed to update bet:", error);
+      res.status(500).json({ error: "Failed to update bet" });
     }
   });
 

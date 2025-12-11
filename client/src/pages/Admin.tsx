@@ -13,14 +13,15 @@ import {
   TrendingUp,
   Edit2,
   Trash2,
-  Check,
-  X,
   RefreshCw,
   UserPlus,
   Eye,
   EyeOff,
   Snowflake,
   Play,
+  Target,
+  Check,
+  X,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -67,6 +68,24 @@ interface AdminUser {
   createdAt: string;
 }
 
+interface AdminBet {
+  id: number;
+  userId: string;
+  username: string;
+  symbol: string;
+  direction: string;
+  amount: string;
+  duration: number;
+  strikePrice: string;
+  closePrice: string | null;
+  payout: string | null;
+  multiplier: string;
+  outcome: string;
+  expiresAt: string;
+  createdAt: string;
+  settledAt: string | null;
+}
+
 interface AdminStats {
   totalUsers: number;
   activeUsers: number;
@@ -86,13 +105,22 @@ const KOREAN_BANKS = [
   "광주은행", "전북은행", "경남은행", "제주은행",
 ];
 
+const SYMBOL_NAMES: Record<string, string> = {
+  'BTCUSDT': 'BTC/USDT',
+  'ETHUSDT': 'ETH/USDT',
+  'USDKRW': 'USD/KRW',
+  'GOLD': 'Gold',
+  'OIL': 'Oil',
+  'HSI': 'Hang Seng',
+};
+
 export default function Admin() {
   const { data: auth, isLoading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
   const logout = useLogout();
   const queryClient = useQueryClient();
 
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'users'>('users');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'bets'>('users');
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
   const [createUserOpen, setCreateUserOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
@@ -129,6 +157,17 @@ export default function Admin() {
       return res.json();
     },
     enabled: auth?.role === 'admin',
+  });
+
+  const { data: bets = [], refetch: refetchBets } = useQuery<AdminBet[]>({
+    queryKey: ["/api/admin/bets"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/bets");
+      if (!res.ok) throw new Error("Failed to fetch bets");
+      return res.json();
+    },
+    enabled: auth?.role === 'admin',
+    refetchInterval: 5000,
   });
 
   const createUser = useMutation({
@@ -201,6 +240,27 @@ export default function Admin() {
     },
   });
 
+  const updateBetOutcome = useMutation({
+    mutationFn: async ({ betId, outcome }: { betId: number; outcome: 'win' | 'lose' }) => {
+      const res = await fetch(`/api/admin/bets/${betId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ outcome }),
+      });
+      if (!res.ok) throw new Error("Failed to update bet");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/bets"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      toast.success("베팅 결과가 변경되었습니다");
+    },
+    onError: () => {
+      toast.error("변경에 실패했습니다");
+    },
+  });
+
   if (authLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -226,6 +286,15 @@ export default function Admin() {
       day: '2-digit',
       hour: '2-digit',
       minute: '2-digit',
+    });
+  };
+
+  const formatTime = (dateStr: string | null) => {
+    if (!dateStr) return '-';
+    return new Date(dateStr).toLocaleTimeString('ko-KR', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
     });
   };
 
@@ -271,6 +340,18 @@ export default function Admin() {
             <Users className="w-4 h-4" />
             회원 관리
           </button>
+          <button
+            onClick={() => setActiveTab('bets')}
+            className={cn(
+              "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+              activeTab === 'bets'
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+            )}
+          >
+            <Target className="w-4 h-4" />
+            베팅 관리
+          </button>
         </nav>
 
         <div className="p-3 border-t border-border space-y-2">
@@ -301,7 +382,7 @@ export default function Admin() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h1 className="text-2xl font-bold">대시보드</h1>
-              <Button variant="outline" size="sm" onClick={() => { refetchStats(); refetchUsers(); }}>
+              <Button variant="outline" size="sm" onClick={() => { refetchStats(); refetchUsers(); refetchBets(); }}>
                 <RefreshCw className="w-4 h-4 mr-2" />
                 새로고침
               </Button>
@@ -451,6 +532,107 @@ export default function Admin() {
                         </td>
                       </tr>
                     ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'bets' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold">베팅 관리</h1>
+              <Button variant="outline" size="sm" onClick={() => refetchBets()}>
+                <RefreshCw className="w-4 h-4 mr-2" />
+                새로고침
+              </Button>
+            </div>
+
+            <div className="bg-card border border-border rounded-lg overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/30">
+                    <tr className="text-left text-muted-foreground">
+                      <th className="px-3 py-2 whitespace-nowrap">종목</th>
+                      <th className="px-3 py-2 whitespace-nowrap">회원아이디</th>
+                      <th className="px-3 py-2 whitespace-nowrap">방향</th>
+                      <th className="px-3 py-2 whitespace-nowrap">배팅금액</th>
+                      <th className="px-3 py-2 whitespace-nowrap">배당</th>
+                      <th className="px-3 py-2 whitespace-nowrap">배팅시간</th>
+                      <th className="px-3 py-2 whitespace-nowrap">결과</th>
+                      <th className="px-3 py-2 whitespace-nowrap text-right">관리</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bets.map((bet) => (
+                      <tr key={bet.id} className="border-t border-border/50 hover:bg-muted/10">
+                        <td className="px-3 py-2 font-medium">
+                          {SYMBOL_NAMES[bet.symbol] || bet.symbol}
+                        </td>
+                        <td className="px-3 py-2">{bet.username}</td>
+                        <td className="px-3 py-2">
+                          <span className={cn(
+                            "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
+                            bet.direction === 'long' ? "bg-up/20 text-up" : "bg-down/20 text-down"
+                          )}>
+                            {bet.direction === 'long' ? 'LONG' : 'SHORT'}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 font-mono">{formatMoney(bet.amount)}</td>
+                        <td className="px-3 py-2 font-mono">x{bet.multiplier}</td>
+                        <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">
+                          {formatDate(bet.createdAt)}
+                        </td>
+                        <td className="px-3 py-2">
+                          <span className={cn(
+                            "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
+                            bet.outcome === 'win' ? "bg-up/20 text-up" :
+                            bet.outcome === 'lose' ? "bg-down/20 text-down" :
+                            "bg-yellow-500/20 text-yellow-500"
+                          )}>
+                            {bet.outcome === 'win' ? '적중' : bet.outcome === 'lose' ? '미적중' : '진행중'}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2">
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              onClick={() => updateBetOutcome.mutate({ betId: bet.id, outcome: 'win' })}
+                              disabled={updateBetOutcome.isPending}
+                              className={cn(
+                                "p-1.5 rounded transition-colors",
+                                bet.outcome === 'win' 
+                                  ? "bg-up text-white" 
+                                  : "hover:bg-up/20 text-up"
+                              )}
+                              title="적중 처리"
+                            >
+                              <Check className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => updateBetOutcome.mutate({ betId: bet.id, outcome: 'lose' })}
+                              disabled={updateBetOutcome.isPending}
+                              className={cn(
+                                "p-1.5 rounded transition-colors",
+                                bet.outcome === 'lose' 
+                                  ? "bg-down text-white" 
+                                  : "hover:bg-down/20 text-down"
+                              )}
+                              title="미적중 처리"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {bets.length === 0 && (
+                      <tr>
+                        <td colSpan={8} className="px-3 py-8 text-center text-muted-foreground">
+                          베팅 기록이 없습니다
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>

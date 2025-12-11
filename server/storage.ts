@@ -161,6 +161,38 @@ export class DatabaseStorage implements IStorage {
 
     return { totalBet, totalWin, betCount, winCount };
   }
+
+  async updateBetOutcome(betId: number, outcome: 'win' | 'lose', closePrice: string): Promise<Bet> {
+    const bet = await this.getBet(betId);
+    if (!bet) throw new Error("Bet not found");
+
+    const betAmount = parseFloat(bet.amount);
+    const multiplier = parseFloat(bet.multiplier);
+    const payout = outcome === 'win' ? (betAmount * multiplier).toString() : '0';
+
+    const [updated] = await db.update(bets)
+      .set({ 
+        outcome,
+        closePrice,
+        payout,
+        settledAt: new Date(),
+      })
+      .where(eq(bets.id, betId))
+      .returning();
+
+    return updated;
+  }
+
+  async getAllBetsWithUsers(): Promise<(Bet & { username: string })[]> {
+    const allBets = await db.select().from(bets).orderBy(desc(bets.createdAt));
+    const allUsers = await this.getAllUsers();
+    const userMap = new Map(allUsers.map(u => [u.id, u.username]));
+
+    return allBets.map(bet => ({
+      ...bet,
+      username: userMap.get(bet.userId) || 'Unknown',
+    }));
+  }
 }
 
 export const storage = new DatabaseStorage();
