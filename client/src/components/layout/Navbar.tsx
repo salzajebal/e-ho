@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Search, Globe, Bell, Menu, DollarSign, Droplets, Coins, TrendingUp, LogOut, Shield } from "lucide-react";
+import { Menu, DollarSign, Droplets, Coins, TrendingUp, LogOut, Shield } from "lucide-react";
 import { useAuth, useLogout } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import {
@@ -55,24 +55,7 @@ export function Navbar({ onSelectSymbol, selectedSymbol }: NavbarProps) {
       </div>
 
       <div className="ml-auto flex items-center gap-4">
-        <div className="hidden lg:flex items-center relative">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <input 
-            type="text" 
-            placeholder="코인, 페어 검색" 
-            className="h-9 w-64 rounded-full bg-background pl-9 pr-4 text-sm outline-none focus:ring-1 focus:ring-primary transition-all placeholder:text-muted-foreground/50 border border-transparent focus:border-primary/20"
-          />
-        </div>
-        
         <div className="flex items-center gap-3 text-muted-foreground">
-          <button className="p-2 hover:text-foreground hover:bg-muted/20 rounded-md transition-colors">
-            <Globe className="h-5 w-5" />
-          </button>
-          <button className="p-2 hover:text-foreground hover:bg-muted/20 rounded-md transition-colors">
-            <Bell className="h-5 w-5" />
-          </button>
-          <div className="h-4 w-[1px] bg-border mx-1"></div>
-          
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
