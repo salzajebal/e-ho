@@ -1,4 +1,4 @@
-# Binance-Style Binary Options Trading Platform
+# 명인FX - Binary Options Trading Platform
 
 ## Overview
 
