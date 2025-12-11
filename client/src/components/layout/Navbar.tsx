@@ -1,19 +1,43 @@
-import { Link } from "wouter";
-import { Search, Globe, Grid, Bell, User, Menu } from "lucide-react";
+import { Search, Globe, Bell, Menu, DollarSign, Droplets, Coins, TrendingUp } from "lucide-react";
 
-export function Navbar() {
+interface NavbarProps {
+  onSelectSymbol?: (symbol: string) => void;
+  selectedSymbol?: string;
+}
+
+export function Navbar({ onSelectSymbol, selectedSymbol }: NavbarProps) {
+  const quickAssets = [
+    { symbol: 'USD/KRW', label: '달러', icon: DollarSign },
+    { symbol: 'WTI', label: '오일', icon: Droplets },
+    { symbol: 'XAU/USD', label: '금', icon: Coins },
+    { symbol: 'HSI', label: '항생', icon: TrendingUp },
+  ];
+
   return (
     <header className="flex h-16 items-center border-b border-border bg-card px-4 lg:px-6">
       <div className="flex items-center gap-6">
-        <Link href="/" className="flex items-center gap-2 font-bold text-xl text-primary hover:opacity-90 transition-opacity">
+        <a href="/" className="flex items-center gap-2 font-bold text-xl text-primary hover:opacity-90 transition-opacity">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-primary fill-current">
             <path d="M12 0L3 9L12 18L21 9L12 0ZM12 24L21 15L12 6L3 15L12 24Z" />
           </svg>
           <span className="hidden sm:inline-block tracking-tight text-foreground">BINANCE</span>
-        </Link>
-        <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-muted-foreground">
-          <Link href="#" className="hover:text-primary transition-colors">마켓</Link>
-          <Link href="#" className="hover:text-primary transition-colors">거래</Link>
+        </a>
+        <nav className="hidden md:flex items-center gap-1 text-sm font-medium">
+          {quickAssets.map(asset => (
+            <button
+              key={asset.symbol}
+              onClick={() => onSelectSymbol?.(asset.symbol)}
+              data-testid={`nav-asset-${asset.symbol}`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all ${
+                selectedSymbol === asset.symbol 
+                  ? 'bg-primary/20 text-primary' 
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/30'
+              }`}
+            >
+              <asset.icon className="h-4 w-4" />
+              <span>{asset.label}</span>
+            </button>
+          ))}
         </nav>
       </div>
 

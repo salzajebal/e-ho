@@ -83,7 +83,7 @@ export default function Home() {
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground overflow-hidden font-sans">
-      <Navbar />
+      <Navbar onSelectSymbol={setSelectedSymbol} selectedSymbol={selectedSymbol} />
       <Ticker data={marketData} />
       
       <main className="flex-1 flex min-h-0 overflow-hidden">
