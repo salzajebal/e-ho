@@ -3,7 +3,6 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useLogin } from "@/hooks/use-auth";
-import { TrendingUp } from "lucide-react";
 import bgImage from "@assets/generated_images/bitcoin_with_trading_chart.png";
 
 export default function Login() {
@@ -28,14 +27,12 @@ export default function Login() {
       
       <div className="relative z-10 min-h-screen flex items-center justify-center p-6">
         <div className="w-full max-w-md">
-          <div className="text-center mb-8">
-            <div className="flex items-center justify-center gap-3 mb-3">
-              <TrendingUp className="w-10 h-10 text-yellow-500" />
-              <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500 bg-clip-text text-transparent">
-                명인FX
-              </h1>
-            </div>
-            <p className="text-gray-300 text-lg">프리미엄 바이너리 옵션 트레이딩</p>
+          <div className="text-center mb-10">
+            <h1 className="text-5xl md:text-6xl font-light tracking-[0.2em] text-white mb-3">
+              명인<span className="font-semibold text-yellow-400">FX</span>
+            </h1>
+            <div className="w-24 h-[1px] bg-gradient-to-r from-transparent via-yellow-500 to-transparent mx-auto mb-4" />
+            <p className="text-gray-400 text-sm tracking-[0.3em] uppercase">Premium Binary Options Trading</p>
           </div>
 
           <div className="relative">
