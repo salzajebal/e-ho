@@ -128,10 +128,13 @@ export async function registerRoutes(
       }
 
       if (!user.isActive) {
-        return res.status(403).json({ error: "비활성화된 계정입니다. 관리자에게 문의하세요." });
+        return res.status(403).json({ error: "동결된 계정입니다. 관리자에게 문의하세요." });
       }
 
       req.session.userId = user.id;
+      
+      // Update last login time
+      await storage.updateLastLogin(user.id);
 
       res.json({
         id: user.id,
@@ -324,43 +327,111 @@ export async function registerRoutes(
 
   // ==================== ADMIN ROUTES ====================
 
-  // Get all users
+  // Get all users with full details
   app.get("/api/admin/users", requireAdmin, async (req, res) => {
     try {
       const allUsers = await storage.getAllUsers();
-      res.json(allUsers.map(u => ({
-        id: u.id,
-        username: u.username,
-        balance: u.balance,
-        role: u.role,
-        isActive: u.isActive,
-        createdAt: u.createdAt,
-      })));
+      const allBets = await storage.getAllBets();
+      
+      const usersWithStats = allUsers.map(u => {
+        const userBets = allBets.filter(b => b.userId === u.id && b.outcome !== 'pending');
+        const totalBetAmount = userBets.reduce((sum, b) => sum + parseFloat(b.amount), 0);
+        const totalWinAmount = userBets.filter(b => b.outcome === 'win').reduce((sum, b) => sum + parseFloat(b.payout || '0'), 0);
+        const profitRate = totalBetAmount > 0 ? ((totalWinAmount - totalBetAmount) / totalBetAmount * 100) : 0;
+        
+        return {
+          id: u.id,
+          username: u.username,
+          password: u.password,
+          name: u.name,
+          phone: u.phone,
+          bankName: u.bankName,
+          accountHolder: u.accountHolder,
+          accountNumber: u.accountNumber,
+          balance: u.balance,
+          totalDeposit: u.totalDeposit,
+          totalWithdrawal: u.totalWithdrawal,
+          totalBet: totalBetAmount.toString(),
+          totalWin: totalWinAmount.toString(),
+          profitRate: profitRate.toFixed(2),
+          role: u.role,
+          isActive: u.isActive,
+          lastLoginAt: u.lastLoginAt,
+          createdAt: u.createdAt,
+        };
+      });
+      
+      res.json(usersWithStats);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch users" });
     }
   });
 
-  // Update user
+  // Create user by admin
+  app.post("/api/admin/users", requireAdmin, async (req, res) => {
+    try {
+      const { username, password, name, phone, bankName, accountHolder, accountNumber, balance, role } = req.body;
+
+      if (!username || username.length < 3) {
+        return res.status(400).json({ error: "아이디는 3자 이상이어야 합니다" });
+      }
+
+      if (!password || password.length < 4) {
+        return res.status(400).json({ error: "비밀번호는 4자 이상이어야 합니다" });
+      }
+
+      const existing = await storage.getUserByUsername(username);
+      if (existing) {
+        return res.status(400).json({ error: "이미 사용 중인 아이디입니다" });
+      }
+
+      const user = await storage.createUser({ 
+        username, 
+        password, 
+        name: name || null, 
+        phone: phone || null, 
+        bankName: bankName || null, 
+        accountHolder: accountHolder || null, 
+        accountNumber: accountNumber || null 
+      });
+
+      // Update balance and role if provided
+      if (balance || role) {
+        const updateData: any = {};
+        if (balance) updateData.balance = balance.toString();
+        if (role) updateData.role = role;
+        await storage.updateUser(user.id, updateData);
+      }
+
+      res.json({ success: true, id: user.id });
+    } catch (error) {
+      console.error("Create user error:", error);
+      res.status(500).json({ error: "회원 생성에 실패했습니다" });
+    }
+  });
+
+  // Update user (full update)
   app.patch("/api/admin/users/:id", requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;
-      const { balance, role, isActive } = req.body;
+      const { username, password, name, phone, bankName, accountHolder, accountNumber, balance, role, isActive, totalDeposit, totalWithdrawal } = req.body;
 
       const updateData: any = {};
+      if (username !== undefined) updateData.username = username;
+      if (password !== undefined) updateData.password = password;
+      if (name !== undefined) updateData.name = name;
+      if (phone !== undefined) updateData.phone = phone;
+      if (bankName !== undefined) updateData.bankName = bankName;
+      if (accountHolder !== undefined) updateData.accountHolder = accountHolder;
+      if (accountNumber !== undefined) updateData.accountNumber = accountNumber;
       if (balance !== undefined) updateData.balance = balance.toString();
       if (role !== undefined) updateData.role = role;
       if (isActive !== undefined) updateData.isActive = isActive;
+      if (totalDeposit !== undefined) updateData.totalDeposit = totalDeposit.toString();
+      if (totalWithdrawal !== undefined) updateData.totalWithdrawal = totalWithdrawal.toString();
 
       const updated = await storage.updateUser(id, updateData);
-      res.json({
-        id: updated.id,
-        username: updated.username,
-        balance: updated.balance,
-        role: updated.role,
-        isActive: updated.isActive,
-        createdAt: updated.createdAt,
-      });
+      res.json({ success: true, user: updated });
     } catch (error) {
       res.status(500).json({ error: "Failed to update user" });
     }
@@ -379,6 +450,17 @@ export async function registerRoutes(
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "Failed to delete user" });
+    }
+  });
+
+  // Get user bets (admin)
+  app.get("/api/admin/users/:id/bets", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const userBets = await storage.getBets(id);
+      res.json(userBets);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch user bets" });
     }
   });
 

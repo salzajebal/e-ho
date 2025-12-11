@@ -9,8 +9,10 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUserBalance(userId: string, newBalance: string): Promise<void>;
   getAllUsers(): Promise<User[]>;
-  updateUser(id: string, data: Partial<{ balance: string; role: string; isActive: boolean }>): Promise<User>;
+  updateUser(id: string, data: Partial<User>): Promise<User>;
   deleteUser(id: string): Promise<void>;
+  updateLastLogin(userId: string): Promise<void>;
+  updateUserStats(userId: string, betAmount: number, winAmount: number): Promise<void>;
 
   // Bet methods
   getBets(userId: string, outcome?: string): Promise<Bet[]>;
@@ -20,6 +22,7 @@ export interface IStorage {
   settleBet(id: number, closePrice: string, outcome: 'win' | 'lose', payout: string): Promise<Bet>;
   getExpiredPendingBets(): Promise<Bet[]>;
   getAllBets(): Promise<Bet[]>;
+  getUserBetStats(userId: string): Promise<{ totalBet: number; totalWin: number; betCount: number; winCount: number }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -52,7 +55,7 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(users).orderBy(desc(users.createdAt));
   }
 
-  async updateUser(id: string, data: Partial<{ balance: string; role: string; isActive: boolean }>): Promise<User> {
+  async updateUser(id: string, data: Partial<User>): Promise<User> {
     const [updated] = await db.update(users)
       .set(data)
       .where(eq(users.id, id))
@@ -61,7 +64,29 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteUser(id: string): Promise<void> {
+    await db.delete(bets).where(eq(bets.userId, id));
     await db.delete(users).where(eq(users.id, id));
+  }
+
+  async updateLastLogin(userId: string): Promise<void> {
+    await db.update(users)
+      .set({ lastLoginAt: new Date() })
+      .where(eq(users.id, userId));
+  }
+
+  async updateUserStats(userId: string, betAmount: number, winAmount: number): Promise<void> {
+    const user = await this.getUser(userId);
+    if (!user) return;
+
+    const newTotalBet = (parseFloat(user.totalBet || '0') + betAmount).toString();
+    const newTotalWin = (parseFloat(user.totalWin || '0') + winAmount).toString();
+
+    await db.update(users)
+      .set({ 
+        totalBet: newTotalBet,
+        totalWin: newTotalWin,
+      })
+      .where(eq(users.id, userId));
   }
 
   // Bet methods
@@ -121,6 +146,20 @@ export class DatabaseStorage implements IStorage {
 
   async getAllBets(): Promise<Bet[]> {
     return await db.select().from(bets).orderBy(desc(bets.createdAt));
+  }
+
+  async getUserBetStats(userId: string): Promise<{ totalBet: number; totalWin: number; betCount: number; winCount: number }> {
+    const userBets = await this.getBets(userId);
+    const settledBets = userBets.filter(b => b.outcome !== 'pending');
+    
+    const totalBet = settledBets.reduce((sum, b) => sum + parseFloat(b.amount), 0);
+    const totalWin = settledBets
+      .filter(b => b.outcome === 'win')
+      .reduce((sum, b) => sum + parseFloat(b.payout || '0'), 0);
+    const betCount = settledBets.length;
+    const winCount = settledBets.filter(b => b.outcome === 'win').length;
+
+    return { totalBet, totalWin, betCount, winCount };
   }
 }
 

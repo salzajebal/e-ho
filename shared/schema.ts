@@ -14,8 +14,13 @@ export const users = pgTable("users", {
   accountHolder: text("account_holder"),
   accountNumber: text("account_number"),
   balance: decimal("balance", { precision: 20, scale: 0 }).notNull().default("10000000"),
+  totalDeposit: decimal("total_deposit", { precision: 20, scale: 0 }).notNull().default("0"),
+  totalWithdrawal: decimal("total_withdrawal", { precision: 20, scale: 0 }).notNull().default("0"),
+  totalBet: decimal("total_bet", { precision: 20, scale: 0 }).notNull().default("0"),
+  totalWin: decimal("total_win", { precision: 20, scale: 0 }).notNull().default("0"),
   role: text("role").notNull().default("user"), // 'user' or 'admin'
   isActive: boolean("is_active").notNull().default(true),
+  lastLoginAt: timestamp("last_login_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
