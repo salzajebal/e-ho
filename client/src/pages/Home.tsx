@@ -1,83 +1,48 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Ticker } from "@/components/dashboard/Ticker";
 import { MarketOverview } from "@/components/dashboard/MarketOverview";
 import { PriceChart } from "@/components/dashboard/PriceChart";
-import { OrderBook } from "@/components/dashboard/OrderBook";
-import { OrderForm } from "@/components/dashboard/OrderForm";
-import { PositionsPanel } from "@/components/dashboard/PositionsPanel";
-import { useMarketData, INITIAL_MARKET_DATA } from "@/lib/marketData";
-import { usePositions, useCreatePosition, useClosePosition, useUserBalance } from "@/hooks/use-positions";
+import { BettingForm } from "@/components/dashboard/BettingForm";
+import { BetsPanel } from "@/components/dashboard/BetsPanel";
+import { useMarketData } from "@/lib/marketData";
+import { useBets, useCreateBet, useSettleBet, useUserBalance } from "@/hooks/use-bets";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 
 export default function Home() {
   const [selectedSymbol, setSelectedSymbol] = useState("BTC/USDT");
   const marketData = useMarketData();
   
-  // Fetch real positions from backend
-  const { data: positions = [] } = usePositions();
-  const createPosition = useCreatePosition();
-  const closePosition = useClosePosition();
+  const { data: bets = [] } = useBets();
+  const createBet = useCreateBet();
+  const settleBet = useSettleBet();
   const { data: balanceData } = useUserBalance();
-
-  // Update positions PnL based on live market data
-  const updatedPositions = positions.map(pos => {
-    const currentMarket = marketData.find(m => m.symbol === pos.symbol);
-    const entryPrice = parseFloat(pos.entryPrice);
-    const currentPrice = currentMarket?.price || entryPrice;
-    const priceDiff = currentPrice - entryPrice;
-    const pnlRaw = pos.side === 'long' ? priceDiff : -priceDiff;
-    const sizeInUnits = parseFloat(pos.size) / entryPrice;
-    const pnl = sizeInUnits * pnlRaw;
-    const pnlPercent = (pnl / parseFloat(pos.margin)) * 100;
-
-    return {
-      id: pos.id.toString(),
-      symbol: pos.symbol,
-      side: pos.side as 'long' | 'short',
-      size: parseFloat(pos.size),
-      leverage: pos.leverage,
-      entryPrice,
-      markPrice: currentPrice,
-      liquidationPrice: parseFloat(pos.liquidationPrice),
-      margin: parseFloat(pos.margin),
-      pnl,
-      pnlPercent,
-    };
-  });
 
   const currentMarket = marketData.find(m => m.symbol === selectedSymbol) || marketData[0];
 
-  const handleOrder = (type: 'long' | 'short', amount: number, leverage: number) => {
-    const entryPrice = currentMarket.price;
-    const size = amount * leverage;
-    const liquidationPrice = type === 'long' 
-      ? entryPrice * (1 - 1/leverage) 
-      : entryPrice * (1 + 1/leverage);
+  const currentPrices = useMemo(() => {
+    const prices: Record<string, number> = {};
+    marketData.forEach(m => {
+      prices[m.symbol] = m.price;
+    });
+    return prices;
+  }, [marketData]);
 
-    createPosition.mutate({
+  const handleBet = (direction: 'long' | 'short', amount: number, duration: number) => {
+    createBet.mutate({
       symbol: selectedSymbol,
-      side: type,
-      size: size.toString(),
-      leverage,
-      entryPrice: entryPrice.toString(),
-      markPrice: entryPrice.toString(),
-      liquidationPrice: liquidationPrice.toString(),
-      margin: amount.toString(),
-      pnl: "0",
-      pnlPercent: "0",
-      isOpen: true,
+      direction,
+      amount,
+      duration,
+      strikePrice: currentMarket.price,
+      multiplier: 1.90,
     });
   };
 
-  const handleClosePosition = (id: string) => {
-    const position = updatedPositions.find(p => p.id === id);
-    if (!position) return;
-
-    closePosition.mutate({
-      id: parseInt(id),
-      closePrice: position.markPrice.toString(),
-      pnl: position.pnl.toString(),
+  const handleBetExpire = (bet: any, currentPrice: number) => {
+    settleBet.mutate({
+      id: bet.id,
+      closePrice: currentPrice,
     });
   };
 
@@ -96,10 +61,10 @@ export default function Home() {
            />
         </div>
 
-        {/* Center: Chart + Positions */}
+        {/* Center: Chart + Bets */}
         <div className="flex-1 flex flex-col min-w-0">
           <ResizablePanelGroup direction="vertical">
-            <ResizablePanel defaultSize={65} minSize={30}>
+            <ResizablePanel defaultSize={60} minSize={30}>
               <div className="h-full border-b border-border">
                 <PriceChart symbol={selectedSymbol} data={currentMarket} />
               </div>
@@ -107,40 +72,34 @@ export default function Home() {
             
             <ResizableHandle withHandle />
             
-            <ResizablePanel defaultSize={35} minSize={20}>
+            <ResizablePanel defaultSize={40} minSize={20}>
               <div className="h-full">
-                <PositionsPanel positions={updatedPositions} onClosePosition={handleClosePosition} />
+                <BetsPanel 
+                  bets={bets} 
+                  currentPrices={currentPrices}
+                  onBetExpire={handleBetExpire}
+                />
               </div>
             </ResizablePanel>
           </ResizablePanelGroup>
         </div>
 
-        {/* Right: Order Book + Order Form */}
+        {/* Right: Betting Form */}
         <div className="flex flex-col border-l border-border w-[320px] shrink-0">
-          <ResizablePanelGroup direction="vertical">
-             <ResizablePanel defaultSize={50} minSize={30} className="hidden lg:block">
-               <OrderBook currentPrice={currentMarket.price} />
-             </ResizablePanel>
-             
-             <ResizableHandle className="hidden lg:flex" />
-             
-             <ResizablePanel defaultSize={50} minSize={40}>
-               <OrderForm 
-                 currentPrice={currentMarket.price} 
-                 symbol={selectedSymbol}
-                 onOrder={handleOrder}
-                 balance={balanceData?.balance}
-               />
-             </ResizablePanel>
-          </ResizablePanelGroup>
+          <BettingForm 
+            currentPrice={currentMarket.price} 
+            symbol={selectedSymbol}
+            onBet={handleBet}
+            balance={balanceData?.balance}
+          />
         </div>
       </main>
       
       {/* Footer */}
       <div className="h-6 bg-card border-t border-border flex items-center px-4 text-[10px] text-muted-foreground justify-between">
         <div className="flex gap-4">
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-up animate-pulse"></span> 실시간 데이터 연결됨 (WebSocket)</span>
-          <span>지연시간: 45ms</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-up animate-pulse"></span> 실시간 데이터 연결됨</span>
+          <span>배당률: 1.90x</span>
         </div>
         <div className="flex items-center gap-2">
           <span>잔고: {balanceData?.balance ? parseFloat(balanceData.balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'} USDT</span>
