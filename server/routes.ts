@@ -4,10 +4,9 @@ import { storage } from "./storage";
 import { insertBetSchema, loginSchema } from "@shared/schema";
 import { z } from "zod";
 import session from "express-session";
-import connectPgSimple from "connect-pg-simple";
-import { pool } from "./db";
+import MemoryStore from "memorystore";
 
-const PgSessionStore = connectPgSimple(session);
+const SessionStore = MemoryStore(session);
 
 declare module "express-session" {
   interface SessionData {
@@ -19,16 +18,14 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  // Session middleware with PostgreSQL store for better cold-start performance
+  // Session middleware
   app.use(
     session({
       secret: process.env.SESSION_SECRET || "myinfx-secret-key-2024",
       resave: false,
       saveUninitialized: false,
-      store: new PgSessionStore({
-        pool: pool,
-        tableName: "session",
-        createTableIfMissing: true,
+      store: new SessionStore({
+        checkPeriod: 86400000,
       }),
       cookie: {
         secure: false,
