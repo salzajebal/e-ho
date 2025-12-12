@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth, useLogout } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
@@ -261,6 +261,13 @@ export default function Admin() {
     },
   });
 
+  // Redirect non-admin users to login
+  useEffect(() => {
+    if (!authLoading && (!auth || auth.role !== 'admin')) {
+      setLocation("/login");
+    }
+  }, [auth, authLoading, setLocation]);
+
   if (authLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -270,8 +277,11 @@ export default function Admin() {
   }
 
   if (!auth || auth.role !== 'admin') {
-    setLocation("/login");
-    return null;
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
   }
 
   const toggleFreeze = (user: AdminUser) => {
