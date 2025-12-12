@@ -54,6 +54,11 @@ export async function registerRoutes(
     next();
   };
 
+  // Health check endpoint for faster deployment
+  app.get("/api/health", (_req, res) => {
+    res.status(200).json({ status: "ok" });
+  });
+
   // ==================== AUTH ROUTES ====================
 
   // Register
