@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth, useLogout } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
@@ -22,6 +22,7 @@ import {
   Target,
   Check,
   X,
+  Shield,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -114,6 +115,96 @@ const SYMBOL_NAMES: Record<string, string> = {
   'HSI': 'Hang Seng',
 };
 
+function AdminLogin() {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const queryClient = useQueryClient();
+
+  const adminLogin = useMutation({
+    mutationFn: async ({ username, password }: { username: string; password: string }) => {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "로그인에 실패했습니다");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      if (data.role !== 'admin') {
+        toast.error("관리자 권한이 없습니다");
+        fetch("/api/auth/logout", { method: "POST" });
+        return;
+      }
+      queryClient.setQueryData(["/api/auth/me"], data);
+      toast.success("관리자 로그인 성공");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    adminLogin.mutate({ username, password });
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-6">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
+            <Shield className="w-8 h-8 text-primary" />
+          </div>
+          <h1 className="text-3xl font-bold text-white mb-2">
+            명인<span className="text-yellow-400">FX</span> 관리자
+          </h1>
+          <p className="text-gray-400 text-sm">관리자 계정으로 로그인하세요</p>
+        </div>
+
+        <div className="bg-card border border-border rounded-xl p-6 shadow-xl">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm text-muted-foreground">관리자 아이디</label>
+              <Input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="아이디 입력"
+                className="h-11"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm text-muted-foreground">비밀번호</label>
+              <Input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="비밀번호 입력"
+                className="h-11"
+                required
+              />
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full h-11 mt-2"
+              disabled={adminLogin.isPending}
+            >
+              {adminLogin.isPending ? "로그인 중..." : "관리자 로그인"}
+            </Button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Admin() {
   const { data: auth, isLoading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
@@ -126,7 +217,6 @@ export default function Admin() {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
 
-  // Create user form state
   const [newUser, setNewUser] = useState({
     username: '',
     password: '',
@@ -261,13 +351,7 @@ export default function Admin() {
     },
   });
 
-  // Redirect non-admin users to login
-  useEffect(() => {
-    if (!authLoading && (!auth || auth.role !== 'admin')) {
-      setLocation("/login");
-    }
-  }, [auth, authLoading, setLocation]);
-
+  // Show loading while checking auth
   if (authLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -276,12 +360,9 @@ export default function Admin() {
     );
   }
 
+  // Show admin login if not logged in or not admin
   if (!auth || auth.role !== 'admin') {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
-      </div>
-    );
+    return <AdminLogin />;
   }
 
   const toggleFreeze = (user: AdminUser) => {
@@ -296,15 +377,6 @@ export default function Admin() {
       day: '2-digit',
       hour: '2-digit',
       minute: '2-digit',
-    });
-  };
-
-  const formatTime = (dateStr: string | null) => {
-    if (!dateStr) return '-';
-    return new Date(dateStr).toLocaleTimeString('ko-KR', {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
     });
   };
 

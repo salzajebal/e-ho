@@ -33,9 +33,7 @@ function Router() {
     <Switch>
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
-      <Route path="/admin">
-        {() => <ProtectedRoute component={Admin} />}
-      </Route>
+      <Route path="/admin" component={Admin} />
       <Route path="/">
         {() => <ProtectedRoute component={Home} />}
       </Route>
