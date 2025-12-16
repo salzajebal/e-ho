@@ -109,13 +109,12 @@ export async function registerRoutes(
         accountHolder, 
         accountNumber 
       });
-      req.session.userId = user.id;
 
+      // Don't auto-login - user needs admin approval first
       res.json({
-        id: user.id,
-        username: user.username,
-        balance: user.balance,
-        role: user.role,
+        success: true,
+        message: "회원가입이 완료되었습니다. 관리자 승인 후 로그인이 가능합니다.",
+        pendingApproval: true,
       });
     } catch (error) {
       console.error("Register error:", error);
@@ -139,6 +138,15 @@ export async function registerRoutes(
       
       if (!user || user.password !== password) {
         return res.status(401).json({ error: "아이디 또는 비밀번호가 올바르지 않습니다" });
+      }
+
+      // Check approval status first
+      if (user.approvalStatus === 'pending') {
+        return res.status(403).json({ error: "가입 승인 대기중입니다. 관리자 승인 후 로그인이 가능합니다." });
+      }
+
+      if (user.approvalStatus === 'rejected') {
+        return res.status(403).json({ error: "가입이 거절되었습니다. 고객센터에 문의해주세요." });
       }
 
       if (!user.isActive) {
