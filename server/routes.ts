@@ -125,9 +125,16 @@ export async function registerRoutes(
   // Login
   app.post("/api/auth/login", async (req, res) => {
     try {
+      console.log("Login attempt:", req.body?.username);
       const { username, password } = req.body;
 
+      if (!username || !password) {
+        return res.status(400).json({ error: "아이디와 비밀번호를 입력해주세요" });
+      }
+
       const user = await storage.getUserByUsername(username);
+      console.log("User found:", user ? "yes" : "no");
+      
       if (!user || user.password !== password) {
         return res.status(401).json({ error: "아이디 또는 비밀번호가 올바르지 않습니다" });
       }
@@ -138,9 +145,14 @@ export async function registerRoutes(
 
       req.session.userId = user.id;
       
-      // Update last login time
-      await storage.updateLastLogin(user.id);
+      // Update last login time - wrapped in try-catch to not fail login
+      try {
+        await storage.updateLastLogin(user.id);
+      } catch (updateError) {
+        console.error("Failed to update last login time:", updateError);
+      }
 
+      console.log("Login successful:", username);
       res.json({
         id: user.id,
         username: user.username,
@@ -149,7 +161,7 @@ export async function registerRoutes(
       });
     } catch (error) {
       console.error("Login error:", error);
-      res.status(500).json({ error: "로그인에 실패했습니다" });
+      res.status(500).json({ error: "로그인에 실패했습니다: " + (error instanceof Error ? error.message : String(error)) });
     }
   });
 
