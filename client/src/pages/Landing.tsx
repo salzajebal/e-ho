@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Shield, Zap, Headphones, TrendingUp, Lock, Award, X } from "lucide-react";
-import { useLogin, useRegister, useAuth } from "@/hooks/use-auth";
+import { useLogin, useRegister, useAuth, useLogout } from "@/hooks/use-auth";
 import { toast } from "sonner";
 
 const KOREAN_BANKS = [
@@ -115,13 +115,19 @@ export default function Landing() {
   
   const login = useLogin();
   const register = useRegister();
+  const logout = useLogout();
   const { data: user } = useAuth();
   const [, setLocation] = useLocation();
   const marketData = useLandingMarketData();
 
   const handleTradeClick = () => {
     if (user) {
-      setLocation("/trade");
+      // Redirect based on role
+      if (user.role === 'admin') {
+        setLocation("/admin");
+      } else {
+        setLocation("/trade");
+      }
     } else {
       setShowLoginModal(true);
     }
@@ -205,15 +211,27 @@ export default function Landing() {
             
             {/* Navigation */}
             <nav className="hidden md:flex items-center gap-6">
-              <Link href="/trade" className="text-gray-300 hover:text-orange-500 transition-colors text-sm font-medium" data-testid="nav-options-trading">
+              <button 
+                onClick={handleTradeClick}
+                className="text-gray-300 hover:text-orange-500 transition-colors text-sm font-medium" 
+                data-testid="nav-options-trading"
+              >
                 옵션거래
-              </Link>
-              <Link href="/trade" className="text-gray-300 hover:text-orange-500 transition-colors text-sm font-medium" data-testid="nav-trade-history">
+              </button>
+              <button 
+                onClick={handleTradeClick}
+                className="text-gray-300 hover:text-orange-500 transition-colors text-sm font-medium" 
+                data-testid="nav-trade-history"
+              >
                 거래내역
-              </Link>
-              <Link href="/trade" className="text-gray-300 hover:text-orange-500 transition-colors text-sm font-medium" data-testid="nav-deposit-withdraw">
+              </button>
+              <button 
+                onClick={handleTradeClick}
+                className="text-gray-300 hover:text-orange-500 transition-colors text-sm font-medium" 
+                data-testid="nav-deposit-withdraw"
+              >
                 입출금
-              </Link>
+              </button>
               <a href="#" className="text-gray-300 hover:text-orange-500 transition-colors text-sm font-medium" data-testid="nav-customer-service">
                 고객센터
               </a>
@@ -222,21 +240,56 @@ export default function Landing() {
           
           {/* Auth Buttons */}
           <div className="flex items-center gap-3">
-            <Button 
-              variant="ghost" 
-              className="text-gray-300 hover:text-white hover:bg-white/10" 
-              data-testid="button-header-login"
-              onClick={() => setShowLoginModal(true)}
-            >
-              로그인
-            </Button>
-            <Button 
-              className="bg-orange-500 hover:bg-orange-600 text-white font-semibold" 
-              data-testid="button-header-register"
-              onClick={() => setShowRegisterModal(true)}
-            >
-              회원가입
-            </Button>
+            {user ? (
+              <>
+                <span className="text-gray-300 text-sm">
+                  {user.username}님
+                </span>
+                {user.role === 'admin' ? (
+                  <Button 
+                    className="bg-orange-500 hover:bg-orange-600 text-white font-semibold" 
+                    data-testid="button-header-admin"
+                    onClick={() => setLocation("/admin")}
+                  >
+                    관리자
+                  </Button>
+                ) : (
+                  <Button 
+                    className="bg-orange-500 hover:bg-orange-600 text-white font-semibold" 
+                    data-testid="button-header-trade"
+                    onClick={() => setLocation("/trade")}
+                  >
+                    거래하기
+                  </Button>
+                )}
+                <Button 
+                  variant="ghost" 
+                  className="text-gray-300 hover:text-white hover:bg-white/10" 
+                  data-testid="button-header-logout"
+                  onClick={() => logout.mutate()}
+                >
+                  로그아웃
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button 
+                  variant="ghost" 
+                  className="text-gray-300 hover:text-white hover:bg-white/10" 
+                  data-testid="button-header-login"
+                  onClick={() => setShowLoginModal(true)}
+                >
+                  로그인
+                </Button>
+                <Button 
+                  className="bg-orange-500 hover:bg-orange-600 text-white font-semibold" 
+                  data-testid="button-header-register"
+                  onClick={() => setShowRegisterModal(true)}
+                >
+                  회원가입
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </header>
