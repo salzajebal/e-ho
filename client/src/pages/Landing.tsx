@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Shield, Zap, Headphones, TrendingUp, Lock, Award, X, Gift } from "lucide-react";
+import { Shield, Zap, Headphones, TrendingUp, Lock, Award, X } from "lucide-react";
 import { useLogin, useRegister } from "@/hooks/use-auth";
 import { toast } from "sonner";
 
@@ -666,18 +666,6 @@ export default function Landing() {
                 </div>
                 <h2 className="text-xl font-bold text-white mb-1">회원가입</h2>
                 <p className="text-gray-400 text-sm">지금 가입하고 거래를 시작하세요</p>
-              </div>
-              
-              <div className="mb-4 p-3 rounded-xl bg-gradient-to-r from-emerald-500/20 to-emerald-600/20 border border-emerald-500/30">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
-                    <Gift className="w-5 h-5 text-emerald-400" />
-                  </div>
-                  <div>
-                    <p className="text-emerald-400 font-semibold text-sm">신규 가입 보너스</p>
-                    <p className="text-emerald-300/70 text-xs">1,000만원 데모 잔고 즉시 지급</p>
-                  </div>
-                </div>
               </div>
               
               <form onSubmit={handleRegisterSubmit} className="space-y-3">
