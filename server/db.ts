@@ -34,17 +34,31 @@ pool.on('connect', () => {
 export const db = drizzle(pool, { schema });
 
 export async function testConnection(): Promise<boolean> {
-  try {
-    console.log('Testing database connection...');
-    const client = await pool.connect();
-    const result = await client.query('SELECT NOW() as time');
-    client.release();
-    console.log('Database connection test successful at:', result.rows[0]?.time);
-    return true;
-  } catch (error) {
-    console.error('Database connection test failed:', error instanceof Error ? error.message : error);
-    return false;
+  const maxRetries = 5;
+  const baseDelay = 2000;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`Testing database connection (attempt ${attempt}/${maxRetries})...`);
+      const client = await pool.connect();
+      const result = await client.query('SELECT NOW() as time');
+      client.release();
+      console.log('Database connection test successful at:', result.rows[0]?.time);
+      return true;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error(`Database connection attempt ${attempt} failed:`, errorMessage);
+      
+      if (attempt < maxRetries) {
+        const delay = baseDelay * Math.pow(2, attempt - 1);
+        console.log(`Retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
   }
+  
+  console.error('All database connection attempts failed');
+  return false;
 }
 
 export async function initializeDatabase(): Promise<void> {
