@@ -149,8 +149,8 @@ function AdminLogin() {
     },
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent | React.MouseEvent) => {
+    if (e) e.preventDefault();
     console.log("Admin login attempt:", username);
     
     try {
@@ -204,7 +204,7 @@ function AdminLogin() {
         </div>
 
         <div className="bg-card border border-border rounded-xl p-6 shadow-xl">
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm text-muted-foreground">관리자 아이디</label>
               <Input
@@ -213,7 +213,7 @@ function AdminLogin() {
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="아이디 입력"
                 className="h-11"
-                required
+                data-testid="input-admin-username"
               />
             </div>
 
@@ -225,18 +225,20 @@ function AdminLogin() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="비밀번호 입력"
                 className="h-11"
-                required
+                data-testid="input-admin-password"
               />
             </div>
 
             <Button
-              type="submit"
+              type="button"
               className="w-full h-11 mt-2"
-              disabled={adminLogin.isPending}
+              disabled={!username || !password}
+              onClick={handleSubmit}
+              data-testid="button-admin-login"
             >
-              {adminLogin.isPending ? "로그인 중..." : "관리자 로그인"}
+              관리자 로그인
             </Button>
-          </form>
+          </div>
         </div>
       </div>
     </div>
