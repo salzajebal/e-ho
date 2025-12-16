@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,11 +6,130 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Shield, Zap, Headphones, TrendingUp, Lock, Award, X } from "lucide-react";
 import { useLogin } from "@/hooks/use-auth";
 
+interface LandingMarketData {
+  symbol: string;
+  name: string;
+  price: number;
+  changePercent: number;
+  priceHistory: number[];
+}
+
+function useLandingMarketData() {
+  const [markets, setMarkets] = useState<LandingMarketData[]>([
+    { symbol: "BTC/USDT", name: "Bitcoin", price: 104235.82, changePercent: 2.34, priceHistory: [] },
+    { symbol: "ETH/USDT", name: "Ethereum", price: 3892.45, changePercent: 1.87, priceHistory: [] },
+    { symbol: "NDX", name: "NASDAQ 100", price: 21453.20, changePercent: 0.51, priceHistory: [] },
+    { symbol: "SP500", name: "S&P 500", price: 6051.09, changePercent: 0.57, priceHistory: [] },
+  ]);
+  
+  const wsRef = useRef<WebSocket | null>(null);
+  const historyRef = useRef<Record<string, number[]>>({
+    "BTC/USDT": [],
+    "ETH/USDT": [],
+    "NDX": [],
+    "SP500": [],
+  });
+
+  useEffect(() => {
+    // Initialize price history with some variation
+    ["BTC/USDT", "ETH/USDT", "NDX", "SP500"].forEach(symbol => {
+      const basePrice = markets.find(m => m.symbol === symbol)?.price || 100;
+      const history: number[] = [];
+      let price = basePrice * 0.995;
+      for (let i = 0; i < 20; i++) {
+        price = price + (Math.random() - 0.45) * price * 0.002;
+        history.push(price);
+      }
+      historyRef.current[symbol] = history;
+    });
+    
+    setMarkets(prev => prev.map(m => ({
+      ...m,
+      priceHistory: [...historyRef.current[m.symbol]]
+    })));
+
+    // Connect to Binance WebSocket for BTC and ETH
+    const ws = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@ticker/ethusdt@ticker');
+    
+    ws.onmessage = (event) => {
+      const msg = JSON.parse(event.data);
+      const symbol = msg.s === 'BTCUSDT' ? 'BTC/USDT' : msg.s === 'ETHUSDT' ? 'ETH/USDT' : null;
+      
+      if (symbol) {
+        const newPrice = parseFloat(msg.c);
+        const changePercent = parseFloat(msg.P);
+        
+        // Update history
+        historyRef.current[symbol] = [...historyRef.current[symbol].slice(-19), newPrice];
+        
+        setMarkets(prev => prev.map(m => {
+          if (m.symbol === symbol) {
+            return {
+              ...m,
+              price: newPrice,
+              changePercent: changePercent,
+              priceHistory: [...historyRef.current[symbol]]
+            };
+          }
+          return m;
+        }));
+      }
+    };
+    
+    wsRef.current = ws;
+
+    // Simulate NASDAQ and S&P 500 updates
+    const simInterval = setInterval(() => {
+      setMarkets(prev => prev.map(m => {
+        if (m.symbol === 'NDX' || m.symbol === 'SP500') {
+          const volatility = 0.0003;
+          const change = m.price * volatility * (Math.random() - 0.48);
+          const newPrice = m.price + change;
+          
+          historyRef.current[m.symbol] = [...historyRef.current[m.symbol].slice(-19), newPrice];
+          
+          return {
+            ...m,
+            price: newPrice,
+            changePercent: m.changePercent + (Math.random() - 0.5) * 0.01,
+            priceHistory: [...historyRef.current[m.symbol]]
+          };
+        }
+        return m;
+      }));
+    }, 1000);
+
+    return () => {
+      if (wsRef.current) wsRef.current.close();
+      clearInterval(simInterval);
+    };
+  }, []);
+
+  return markets;
+}
+
+function generateSparklinePath(prices: number[]): string {
+  if (prices.length < 2) return "M0,25 L120,25";
+  
+  const min = Math.min(...prices);
+  const max = Math.max(...prices);
+  const range = max - min || 1;
+  
+  const points = prices.map((price, i) => {
+    const x = (i / (prices.length - 1)) * 120;
+    const y = 45 - ((price - min) / range) * 40;
+    return `${x},${y}`;
+  });
+  
+  return `M${points.join(' L')}`;
+}
+
 export default function Landing() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const login = useLogin();
+  const marketData = useLandingMarketData();
 
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -144,73 +263,80 @@ export default function Landing() {
       <section className="py-20 px-4 bg-[#0f0f15]">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-10">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              <span className="text-green-400 text-sm font-medium">LIVE</span>
+            </div>
             <h2 className="text-2xl md:text-3xl font-bold mb-2">실시간 마켓</h2>
             <p className="text-gray-400">글로벌 시장을 실시간으로 확인하세요</p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              { name: "Bitcoin", symbol: "BTC/USDT", price: "104,235.82", change: "+2.34%", positive: true, chartPath: "M0,40 L10,35 L20,38 L30,30 L40,32 L50,25 L60,28 L70,20 L80,22 L90,15 L100,18 L110,10 L120,12" },
-              { name: "Ethereum", symbol: "ETH/USDT", price: "3,892.45", change: "+1.87%", positive: true, chartPath: "M0,35 L10,38 L20,30 L30,33 L40,28 L50,32 L60,25 L70,28 L80,20 L90,23 L100,18 L110,15 L120,12" },
-              { name: "NASDAQ 100", symbol: "NDX", price: "21,453.20", change: "+0.51%", positive: true, chartPath: "M0,30 L10,32 L20,28 L30,30 L40,25 L50,28 L60,22 L70,25 L80,20 L90,22 L100,18 L110,20 L120,15" },
-              { name: "S&P 500", symbol: "SP500", price: "6,051.09", change: "+0.57%", positive: true, chartPath: "M0,38 L10,35 L20,37 L30,32 L40,34 L50,28 L60,30 L70,25 L80,27 L90,22 L100,24 L110,18 L120,20" },
-            ].map((item, index) => (
-              <div 
-                key={index}
-                className="bg-gradient-to-br from-[#1a1a24] to-[#12121a] border border-white/10 rounded-xl p-5 hover:border-orange-500/50 transition-all cursor-pointer group"
-                data-testid={`card-market-${index}`}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-orange-500/20 rounded-full flex items-center justify-center group-hover:bg-orange-500/30 transition-colors">
-                      <TrendingUp className="w-5 h-5 text-orange-500" />
+            {marketData.map((item, index) => {
+              const isPositive = item.changePercent >= 0;
+              const chartPath = generateSparklinePath(item.priceHistory);
+              const formattedPrice = item.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+              const formattedChange = `${isPositive ? '+' : ''}${item.changePercent.toFixed(2)}%`;
+              
+              return (
+                <div 
+                  key={item.symbol}
+                  className="bg-gradient-to-br from-[#1a1a24] to-[#12121a] border border-white/10 rounded-xl p-5 hover:border-orange-500/50 transition-all cursor-pointer group"
+                  data-testid={`card-market-${index}`}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-orange-500/20 rounded-full flex items-center justify-center group-hover:bg-orange-500/30 transition-colors">
+                        <TrendingUp className="w-5 h-5 text-orange-500" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-white">{item.name}</h3>
+                        <p className="text-xs text-gray-500">{item.symbol}</p>
+                      </div>
                     </div>
+                    <div className={`text-xs font-medium px-2 py-1 rounded ${isPositive ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                      {formattedChange}
+                    </div>
+                  </div>
+                  
+                  {/* Mini Chart - Real-time */}
+                  <div className="h-12 mb-3 overflow-hidden">
+                    <svg width="100%" height="48" viewBox="0 0 120 50" preserveAspectRatio="none">
+                      <defs>
+                        <linearGradient id={`gradient-${index}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                          <stop offset="0%" stopColor={isPositive ? "#22c55e" : "#ef4444"} stopOpacity="0.3" />
+                          <stop offset="100%" stopColor={isPositive ? "#22c55e" : "#ef4444"} stopOpacity="0" />
+                        </linearGradient>
+                      </defs>
+                      <path
+                        d={`${chartPath} L120,50 L0,50 Z`}
+                        fill={`url(#gradient-${index})`}
+                      />
+                      <path
+                        d={chartPath}
+                        fill="none"
+                        stroke={isPositive ? "#22c55e" : "#ef4444"}
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="transition-all duration-300"
+                      />
+                    </svg>
+                  </div>
+                  
+                  <div className="flex items-end justify-between">
                     <div>
-                      <h3 className="font-semibold text-white">{item.name}</h3>
-                      <p className="text-xs text-gray-500">{item.symbol}</p>
+                      <p className="text-xs text-gray-500 mb-1">현재가</p>
+                      <p className="text-lg font-bold text-white transition-all">${formattedPrice}</p>
                     </div>
-                  </div>
-                  <div className={`text-xs font-medium px-2 py-1 rounded ${item.positive ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
-                    {item.change}
+                    <Link href="/trade">
+                      <Button size="sm" className="bg-orange-500/20 hover:bg-orange-500 text-orange-400 hover:text-white text-xs transition-all" data-testid={`button-trade-${item.symbol}`}>
+                        거래하기
+                      </Button>
+                    </Link>
                   </div>
                 </div>
-                
-                {/* Mini Chart */}
-                <div className="h-12 mb-3 overflow-hidden">
-                  <svg width="100%" height="48" viewBox="0 0 120 50" preserveAspectRatio="none">
-                    <defs>
-                      <linearGradient id={`gradient-${index}`} x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stopColor={item.positive ? "#22c55e" : "#ef4444"} stopOpacity="0.3" />
-                        <stop offset="100%" stopColor={item.positive ? "#22c55e" : "#ef4444"} stopOpacity="0" />
-                      </linearGradient>
-                    </defs>
-                    <path
-                      d={`${item.chartPath} L120,50 L0,50 Z`}
-                      fill={`url(#gradient-${index})`}
-                    />
-                    <path
-                      d={item.chartPath}
-                      fill="none"
-                      stroke={item.positive ? "#22c55e" : "#ef4444"}
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </div>
-                
-                <div className="flex items-end justify-between">
-                  <div>
-                    <p className="text-xs text-gray-500 mb-1">현재가</p>
-                    <p className="text-lg font-bold text-white">${item.price}</p>
-                  </div>
-                  <Link href="/trade">
-                    <Button size="sm" className="bg-orange-500/20 hover:bg-orange-500 text-orange-400 hover:text-white text-xs transition-all" data-testid={`button-trade-${item.symbol}`}>
-                      거래하기
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
