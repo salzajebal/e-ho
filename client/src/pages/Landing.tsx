@@ -313,7 +313,7 @@ export default function Landing() {
             <h2 className="text-2xl md:text-3xl font-bold mb-2">실시간 마켓</h2>
             <p className="text-gray-400">글로벌 시장을 실시간으로 확인하세요</p>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="flex flex-wrap justify-center gap-4">
             {marketData.map((item, index) => {
               const isPositive = item.changePercent >= 0;
               const chartPath = generateSparklinePath(item.priceHistory);
@@ -323,7 +323,7 @@ export default function Landing() {
               return (
                 <div 
                   key={item.symbol}
-                  className="bg-gradient-to-br from-[#1a1a24] to-[#12121a] border border-white/10 rounded-xl p-5 hover:border-orange-500/50 transition-all cursor-pointer group"
+                  className="w-full sm:w-[280px] bg-gradient-to-br from-[#1a1a24] to-[#12121a] border border-white/10 rounded-xl p-5 hover:border-orange-500/50 transition-all cursor-pointer group"
                   data-testid={`card-market-${index}`}
                 >
                   <div className="flex items-center justify-between mb-3">
