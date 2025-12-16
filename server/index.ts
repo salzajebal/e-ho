@@ -75,7 +75,11 @@ app.use((req, res, next) => {
     }
 
     console.log("Initializing database...");
-    await initializeDatabase();
+    try {
+      await initializeDatabase();
+    } catch (dbError) {
+      console.error("Database initialization failed, continuing anyway:", dbError instanceof Error ? dbError.message : dbError);
+    }
 
     console.log("Registering routes...");
     await registerRoutes(httpServer, app);
