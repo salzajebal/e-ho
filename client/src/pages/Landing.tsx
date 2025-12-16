@@ -682,9 +682,9 @@ export default function Landing() {
             <div>
               <h4 className="font-semibold mb-4 text-gray-300">옵션거래</h4>
               <ul className="space-y-2 text-gray-500 text-sm">
-                <li><Link href="/trade" className="hover:text-orange-500 transition-colors" data-testid="link-trade-btc">BTC 거래</Link></li>
-                <li><Link href="/trade" className="hover:text-orange-500 transition-colors" data-testid="link-trade-eth">ETH 거래</Link></li>
-                <li><Link href="/trade" className="hover:text-orange-500 transition-colors" data-testid="link-trade-nasdaq">NASDAQ 거래</Link></li>
+                <li><Link href="/trade" className="hover:text-orange-500 transition-colors" data-testid="link-trade-nasdaq">NASDAQ 100</Link></li>
+                <li><Link href="/trade" className="hover:text-orange-500 transition-colors" data-testid="link-trade-sp500">S&P 500</Link></li>
+                <li><Link href="/trade" className="hover:text-orange-500 transition-colors" data-testid="link-trade-aapl">Apple (AAPL)</Link></li>
               </ul>
             </div>
             <div>
