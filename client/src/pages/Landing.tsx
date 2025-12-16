@@ -16,7 +16,6 @@ interface LandingMarketData {
 
 function useLandingMarketData() {
   const [markets, setMarkets] = useState<LandingMarketData[]>([
-    { symbol: "BTC/USDT", name: "Bitcoin", price: 104235.82, changePercent: 2.34, priceHistory: [] },
     { symbol: "ETH/USDT", name: "Ethereum", price: 3892.45, changePercent: 1.87, priceHistory: [] },
     { symbol: "NDX", name: "NASDAQ 100", price: 21453.20, changePercent: 0.51, priceHistory: [] },
     { symbol: "SP500", name: "S&P 500", price: 6051.09, changePercent: 0.57, priceHistory: [] },
@@ -24,7 +23,6 @@ function useLandingMarketData() {
   
   const wsRef = useRef<WebSocket | null>(null);
   const historyRef = useRef<Record<string, number[]>>({
-    "BTC/USDT": [],
     "ETH/USDT": [],
     "NDX": [],
     "SP500": [],
@@ -32,7 +30,7 @@ function useLandingMarketData() {
 
   useEffect(() => {
     // Initialize price history with some variation
-    ["BTC/USDT", "ETH/USDT", "NDX", "SP500"].forEach(symbol => {
+    ["ETH/USDT", "NDX", "SP500"].forEach(symbol => {
       const basePrice = markets.find(m => m.symbol === symbol)?.price || 100;
       const history: number[] = [];
       let price = basePrice * 0.995;
@@ -48,12 +46,12 @@ function useLandingMarketData() {
       priceHistory: [...historyRef.current[m.symbol]]
     })));
 
-    // Connect to Binance WebSocket for BTC and ETH
-    const ws = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@ticker/ethusdt@ticker');
+    // Connect to Binance WebSocket for ETH only
+    const ws = new WebSocket('wss://stream.binance.com:9443/ws/ethusdt@ticker');
     
     ws.onmessage = (event) => {
       const msg = JSON.parse(event.data);
-      const symbol = msg.s === 'BTCUSDT' ? 'BTC/USDT' : msg.s === 'ETHUSDT' ? 'ETH/USDT' : null;
+      const symbol = msg.s === 'ETHUSDT' ? 'ETH/USDT' : null;
       
       if (symbol) {
         const newPrice = parseFloat(msg.c);
