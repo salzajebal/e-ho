@@ -98,6 +98,26 @@ export const settings = pgTable("settings", {
 
 export type Setting = typeof settings.$inferSelect;
 
+// Messages table (admin to user messages)
+export const messages = pgTable("messages", {
+  id: serial("id").primaryKey(),
+  senderId: varchar("sender_id").notNull().references(() => users.id),
+  receiverId: varchar("receiver_id").notNull().references(() => users.id),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  isRead: boolean("is_read").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertMessageSchema = createInsertSchema(messages).omit({
+  id: true,
+  isRead: true,
+  createdAt: true,
+});
+
+export type InsertMessage = z.infer<typeof insertMessageSchema>;
+export type Message = typeof messages.$inferSelect;
+
 // Korean banks list
 export const KOREAN_BANKS = [
   "KB국민은행",

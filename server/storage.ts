@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Bet, type InsertBet, type Setting, users, bets, settings } from "@shared/schema";
+import { type User, type InsertUser, type Bet, type InsertBet, type Setting, type Message, type InsertMessage, users, bets, settings, messages } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, lt, sql } from "drizzle-orm";
 
@@ -30,6 +30,13 @@ export interface IStorage {
   // Settings methods
   getSetting(key: string): Promise<string | undefined>;
   setSetting(key: string, value: string): Promise<void>;
+
+  // Message methods
+  createMessage(message: InsertMessage): Promise<Message>;
+  getMessagesForUser(userId: string): Promise<Message[]>;
+  getUnreadMessagesForUser(userId: string): Promise<Message[]>;
+  markMessageAsRead(messageId: number): Promise<void>;
+  markAllMessagesAsRead(userId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -236,6 +243,39 @@ export class DatabaseStorage implements IStorage {
         target: settings.key,
         set: { value, updatedAt: new Date() },
       });
+  }
+
+  // Message methods
+  async createMessage(message: InsertMessage): Promise<Message> {
+    const [newMessage] = await db.insert(messages).values(message).returning();
+    return newMessage;
+  }
+
+  async getMessagesForUser(userId: string): Promise<Message[]> {
+    return await db.select().from(messages)
+      .where(eq(messages.receiverId, userId))
+      .orderBy(desc(messages.createdAt));
+  }
+
+  async getUnreadMessagesForUser(userId: string): Promise<Message[]> {
+    return await db.select().from(messages)
+      .where(and(
+        eq(messages.receiverId, userId),
+        eq(messages.isRead, false)
+      ))
+      .orderBy(desc(messages.createdAt));
+  }
+
+  async markMessageAsRead(messageId: number): Promise<void> {
+    await db.update(messages)
+      .set({ isRead: true })
+      .where(eq(messages.id, messageId));
+  }
+
+  async markAllMessagesAsRead(userId: string): Promise<void> {
+    await db.update(messages)
+      .set({ isRead: true })
+      .where(eq(messages.receiverId, userId));
   }
 }
 

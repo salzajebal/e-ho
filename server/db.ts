@@ -117,6 +117,19 @@ export async function initializeDatabase(): Promise<void> {
       )
     `);
     console.log('Settings table ready');
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS messages (
+        id SERIAL PRIMARY KEY,
+        sender_id VARCHAR NOT NULL REFERENCES users(id),
+        receiver_id VARCHAR NOT NULL REFERENCES users(id),
+        title TEXT NOT NULL,
+        content TEXT NOT NULL,
+        is_read BOOLEAN NOT NULL DEFAULT false,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )
+    `);
+    console.log('Messages table ready');
     
     client.release();
     
