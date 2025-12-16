@@ -140,6 +140,7 @@ function AdminLogin() {
         return;
       }
       queryClient.setQueryData(["/api/auth/me"], data);
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
       toast.success("관리자 로그인 성공");
     },
     onError: (error: Error) => {
