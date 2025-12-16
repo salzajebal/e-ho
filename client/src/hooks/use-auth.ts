@@ -45,7 +45,7 @@ export function useLogin() {
       if (data.role === 'admin') {
         setLocation("/admin");
       } else {
-        setLocation("/");
+        setLocation("/trade");
       }
     },
     onError: (error: Error) => {
@@ -82,7 +82,7 @@ export function useRegister() {
     onSuccess: (data) => {
       queryClient.setQueryData(["/api/auth/me"], data);
       toast.success("회원가입이 완료되었습니다!");
-      setLocation("/");
+      setLocation("/trade");
     },
     onError: (error: Error) => {
       toast.error(error.message);
@@ -104,7 +104,7 @@ export function useLogout() {
       queryClient.setQueryData(["/api/auth/me"], null);
       queryClient.clear();
       toast.success("로그아웃되었습니다");
-      setLocation("/login");
+      setLocation("/");
     },
   });
 }
