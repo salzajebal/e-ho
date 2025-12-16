@@ -9,6 +9,9 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUserBalance(userId: string, newBalance: string): Promise<void>;
   getAllUsers(): Promise<User[]>;
+  getPendingUsers(): Promise<User[]>;
+  approveUser(userId: string): Promise<User>;
+  rejectUser(userId: string): Promise<User>;
   updateUser(id: string, data: Partial<User>): Promise<User>;
   deleteUser(id: string): Promise<void>;
   updateLastLogin(userId: string): Promise<void>;
@@ -57,6 +60,28 @@ export class DatabaseStorage implements IStorage {
 
   async getAllUsers(): Promise<User[]> {
     return await db.select().from(users).orderBy(desc(users.createdAt));
+  }
+
+  async getPendingUsers(): Promise<User[]> {
+    return await db.select().from(users)
+      .where(eq(users.approvalStatus, 'pending'))
+      .orderBy(desc(users.createdAt));
+  }
+
+  async approveUser(userId: string): Promise<User> {
+    const [updated] = await db.update(users)
+      .set({ approvalStatus: 'approved' })
+      .where(eq(users.id, userId))
+      .returning();
+    return updated;
+  }
+
+  async rejectUser(userId: string): Promise<User> {
+    const [updated] = await db.update(users)
+      .set({ approvalStatus: 'rejected' })
+      .where(eq(users.id, userId))
+      .returning();
+    return updated;
   }
 
   async updateUser(id: string, data: Partial<User>): Promise<User> {
