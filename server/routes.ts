@@ -383,6 +383,7 @@ export async function registerRoutes(
           profitRate: profitRate.toFixed(2),
           role: u.role,
           isActive: u.isActive,
+          approvalStatus: u.approvalStatus,
           lastLoginAt: u.lastLoginAt,
           createdAt: u.createdAt,
         };
@@ -391,6 +392,40 @@ export async function registerRoutes(
       res.json(usersWithStats);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
+  // Get pending users for approval
+  app.get("/api/admin/pending-users", requireAdmin, async (req, res) => {
+    try {
+      const pendingUsers = await storage.getPendingUsers();
+      res.json(pendingUsers);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch pending users" });
+    }
+  });
+
+  // Approve user registration
+  app.post("/api/admin/users/:id/approve", requireAdmin, async (req, res) => {
+    try {
+      const userId = req.params.id;
+      const user = await storage.approveUser(userId);
+      res.json({ success: true, user });
+    } catch (error) {
+      console.error("Failed to approve user:", error);
+      res.status(500).json({ error: "Failed to approve user" });
+    }
+  });
+
+  // Reject user registration
+  app.post("/api/admin/users/:id/reject", requireAdmin, async (req, res) => {
+    try {
+      const userId = req.params.id;
+      const user = await storage.rejectUser(userId);
+      res.json({ success: true, user });
+    } catch (error) {
+      console.error("Failed to reject user:", error);
+      res.status(500).json({ error: "Failed to reject user" });
     }
   });
 
