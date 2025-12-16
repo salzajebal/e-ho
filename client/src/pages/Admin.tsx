@@ -118,40 +118,15 @@ const SYMBOL_NAMES: Record<string, string> = {
 function AdminLogin() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const queryClient = useQueryClient();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const adminLogin = useMutation({
-    mutationFn: async ({ username, password }: { username: string; password: string }) => {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
-        credentials: "include",
-      });
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "로그인에 실패했습니다");
-      }
-      return res.json();
-    },
-    onSuccess: (data) => {
-      if (data.role !== 'admin') {
-        toast.error("관리자 권한이 없습니다");
-        fetch("/api/auth/logout", { method: "POST", credentials: "include" });
-        return;
-      }
-      queryClient.setQueryData(["/api/auth/me"], data);
-      toast.success("관리자 로그인 성공");
-      window.location.reload();
-    },
-    onError: (error: Error) => {
-      toast.error(error.message);
-    },
-  });
-
-  const handleSubmit = async (e?: React.FormEvent | React.MouseEvent) => {
-    if (e) e.preventDefault();
-    console.log("Admin login attempt:", username);
+  const doLogin = async () => {
+    if (!username || !password) {
+      toast.error("아이디와 비밀번호를 입력해주세요");
+      return;
+    }
+    
+    setIsLoading(true);
     
     try {
       const res = await fetch("/api/auth/login", {
@@ -161,28 +136,33 @@ function AdminLogin() {
         credentials: "include",
       });
       
-      console.log("Login response status:", res.status);
-      
       if (!res.ok) {
         const error = await res.json();
         toast.error(error.error || "로그인에 실패했습니다");
+        setIsLoading(false);
         return;
       }
       
       const data = await res.json();
-      console.log("Login data:", data);
       
       if (data.role !== 'admin') {
         toast.error("관리자 권한이 없습니다");
         await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+        setIsLoading(false);
         return;
       }
       
       toast.success("관리자 로그인 성공");
       window.location.reload();
     } catch (error) {
-      console.error("Login error:", error);
       toast.error("로그인에 실패했습니다");
+      setIsLoading(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      doLogin();
     }
   };
 
@@ -207,37 +187,39 @@ function AdminLogin() {
           <div className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm text-muted-foreground">관리자 아이디</label>
-              <Input
+              <input
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
+                onKeyDown={handleKeyDown}
                 placeholder="아이디 입력"
-                className="h-11"
+                className="w-full h-11 px-3 rounded-md border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 data-testid="input-admin-username"
               />
             </div>
 
             <div className="space-y-2">
               <label className="text-sm text-muted-foreground">비밀번호</label>
-              <Input
+              <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={handleKeyDown}
                 placeholder="비밀번호 입력"
-                className="h-11"
+                className="w-full h-11 px-3 rounded-md border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 data-testid="input-admin-password"
               />
             </div>
 
-            <Button
+            <button
               type="button"
-              className="w-full h-11 mt-2"
-              disabled={!username || !password}
-              onClick={handleSubmit}
+              className="w-full h-11 mt-2 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isLoading || !username || !password}
+              onClick={doLogin}
               data-testid="button-admin-login"
             >
-              관리자 로그인
-            </Button>
+              {isLoading ? "로그인 중..." : "관리자 로그인"}
+            </button>
           </div>
         </div>
       </div>
