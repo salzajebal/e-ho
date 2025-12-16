@@ -12,16 +12,21 @@ if (!process.env.DATABASE_URL) {
 }
 
 console.log("Initializing database connection...");
+console.log("Database URL prefix:", process.env.DATABASE_URL?.substring(0, 30) + "...");
+
+const isProduction = process.env.NODE_ENV === "production";
 
 export const pool = new Pool({ 
   connectionString: process.env.DATABASE_URL,
-  connectionTimeoutMillis: 10000,
+  connectionTimeoutMillis: 15000,
   idleTimeoutMillis: 30000,
-  max: 10,
+  max: 20,
+  statement_timeout: 30000,
+  ssl: isProduction ? { rejectUnauthorized: false } : false,
 });
 
 pool.on('error', (err) => {
-  console.error('Unexpected database pool error:', err);
+  console.error('Unexpected database pool error:', err.message);
 });
 
 pool.on('connect', () => {
@@ -32,13 +37,14 @@ export const db = drizzle(pool, { schema });
 
 export async function testConnection(): Promise<boolean> {
   try {
+    console.log('Testing database connection...');
     const client = await pool.connect();
-    await client.query('SELECT 1');
+    const result = await client.query('SELECT NOW() as time');
     client.release();
-    console.log('Database connection test successful');
+    console.log('Database connection test successful at:', result.rows[0]?.time);
     return true;
   } catch (error) {
-    console.error('Database connection test failed:', error);
+    console.error('Database connection test failed:', error instanceof Error ? error.message : error);
     return false;
   }
 }

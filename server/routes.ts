@@ -127,15 +127,16 @@ export async function registerRoutes(
   // Login
   app.post("/api/auth/login", async (req, res) => {
     try {
-      console.log("Login attempt:", req.body?.username);
+      console.log("Login attempt:", req.body?.username, "ENV:", process.env.NODE_ENV);
       const { username, password } = req.body;
 
       if (!username || !password) {
         return res.status(400).json({ error: "아이디와 비밀번호를 입력해주세요" });
       }
 
+      console.log("Querying database for user...");
       const user = await storage.getUserByUsername(username);
-      console.log("User found:", user ? "yes" : "no");
+      console.log("User found:", user ? "yes" : "no", "DB query completed");
       
       if (!user || user.password !== password) {
         return res.status(401).json({ error: "아이디 또는 비밀번호가 올바르지 않습니다" });
