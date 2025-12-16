@@ -2,7 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
-import { testConnection } from "./db";
+import { testConnection, initializeDatabase } from "./db";
 
 console.log("Starting server initialization...");
 console.log("NODE_ENV:", process.env.NODE_ENV);
@@ -73,6 +73,9 @@ app.use((req, res, next) => {
     if (!dbConnected) {
       console.error("Failed to connect to database. Server will start but may have issues.");
     }
+
+    console.log("Initializing database...");
+    await initializeDatabase();
 
     console.log("Registering routes...");
     await registerRoutes(httpServer, app);
