@@ -25,6 +25,8 @@ import {
   Shield,
   UserCheck,
   Bell,
+  MessageSquare,
+  Send,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -235,7 +237,11 @@ export default function Admin() {
   const logout = useLogout();
   const queryClient = useQueryClient();
 
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'bets' | 'settings' | 'approvals'>('users');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'bets' | 'settings' | 'approvals' | 'messages'>('users');
+  const [messageDialogOpen, setMessageDialogOpen] = useState(false);
+  const [messageRecipient, setMessageRecipient] = useState<AdminUser | null>(null);
+  const [messageTitle, setMessageTitle] = useState("");
+  const [messageContent, setMessageContent] = useState("");
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
   const [createUserOpen, setCreateUserOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
@@ -362,6 +368,38 @@ export default function Admin() {
       toast.error("거절에 실패했습니다");
     },
   });
+
+  const sendMessage = useMutation({
+    mutationFn: async ({ receiverId, title, content }: { receiverId: string; title: string; content: string }) => {
+      const res = await fetch("/api/admin/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ receiverId, title, content }),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to send message");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      setMessageDialogOpen(false);
+      setMessageRecipient(null);
+      setMessageTitle("");
+      setMessageContent("");
+      toast.success("쪽지가 전송되었습니다");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const openMessageDialog = (user: AdminUser) => {
+    setMessageRecipient(user);
+    setMessageTitle("");
+    setMessageContent("");
+    setMessageDialogOpen(true);
+  };
 
   // Update telegram link when settings load
   useEffect(() => {
@@ -589,6 +627,18 @@ export default function Admin() {
           >
             <Target className="w-4 h-4" />
             베팅 관리
+          </button>
+          <button
+            onClick={() => setActiveTab('messages')}
+            className={cn(
+              "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+              activeTab === 'messages'
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+            )}
+          >
+            <MessageSquare className="w-4 h-4" />
+            쪽지 보내기
           </button>
           <button
             onClick={() => setActiveTab('settings')}
@@ -967,6 +1017,67 @@ export default function Admin() {
           </div>
         )}
 
+        {activeTab === 'messages' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold">쪽지 보내기</h1>
+            </div>
+
+            <div className="bg-card border border-border rounded-lg">
+              <div className="p-4 border-b border-border">
+                <p className="text-sm text-muted-foreground">회원을 선택하여 쪽지를 보내세요</p>
+              </div>
+              <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50 sticky top-0">
+                    <tr>
+                      <th className="px-3 py-2 text-left font-medium">아이디</th>
+                      <th className="px-3 py-2 text-left font-medium">이름</th>
+                      <th className="px-3 py-2 text-left font-medium">잔고</th>
+                      <th className="px-3 py-2 text-left font-medium">상태</th>
+                      <th className="px-3 py-2 text-center font-medium">쪽지</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {users.filter(u => u.role !== 'admin').map((user) => (
+                      <tr key={user.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="px-3 py-2 font-medium">{user.username}</td>
+                        <td className="px-3 py-2">{user.name || '-'}</td>
+                        <td className="px-3 py-2">{formatMoney(user.balance)}</td>
+                        <td className="px-3 py-2">
+                          {user.isActive ? (
+                            <span className="text-up text-xs">활성</span>
+                          ) : (
+                            <span className="text-down text-xs">비활성</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => openMessageDialog(user)}
+                            className="gap-1"
+                          >
+                            <Send className="w-3 h-3" />
+                            쪽지 보내기
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                    {users.filter(u => u.role !== 'admin').length === 0 && (
+                      <tr>
+                        <td colSpan={5} className="px-3 py-8 text-center text-muted-foreground">
+                          회원이 없습니다
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
         {activeTab === 'settings' && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -1256,6 +1367,56 @@ export default function Admin() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Send Message Dialog */}
+      <Dialog open={messageDialogOpen} onOpenChange={setMessageDialogOpen}>
+        <DialogContent className="bg-card border-border max-w-lg">
+          <DialogHeader>
+            <DialogTitle>쪽지 보내기</DialogTitle>
+          </DialogHeader>
+          {messageRecipient && (
+            <div className="space-y-4 mt-4">
+              <div className="p-3 bg-muted/50 rounded-lg">
+                <p className="text-sm">
+                  <span className="text-muted-foreground">수신자:</span>{' '}
+                  <span className="font-medium">{messageRecipient.username}</span>
+                  {messageRecipient.name && <span className="text-muted-foreground"> ({messageRecipient.name})</span>}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-medium">제목</label>
+                <Input
+                  value={messageTitle}
+                  onChange={(e) => setMessageTitle(e.target.value)}
+                  placeholder="쪽지 제목을 입력하세요"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-medium">내용</label>
+                <textarea
+                  value={messageContent}
+                  onChange={(e) => setMessageContent(e.target.value)}
+                  placeholder="쪽지 내용을 입력하세요"
+                  className="w-full min-h-[120px] px-3 py-2 bg-background border border-border rounded-md text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" onClick={() => setMessageDialogOpen(false)}>취소</Button>
+                <Button
+                  onClick={() => sendMessage.mutate({
+                    receiverId: messageRecipient.id,
+                    title: messageTitle,
+                    content: messageContent,
+                  })}
+                  disabled={sendMessage.isPending || !messageTitle.trim() || !messageContent.trim()}
+                >
+                  {sendMessage.isPending ? '전송 중...' : '전송'}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
