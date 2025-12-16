@@ -625,6 +625,75 @@ export async function registerRoutes(
     }
   });
 
+  // ==================== MESSAGE ROUTES ====================
+
+  // Send message to user (admin only)
+  app.post("/api/admin/messages", requireAdmin, async (req, res) => {
+    try {
+      const { receiverId, title, content } = req.body;
+      if (!receiverId || !title || !content) {
+        return res.status(400).json({ error: "수신자, 제목, 내용을 모두 입력해주세요" });
+      }
+
+      const senderId = req.session.userId!;
+      const message = await storage.createMessage({
+        senderId,
+        receiverId,
+        title,
+        content,
+      });
+
+      res.json({ success: true, message });
+    } catch (error) {
+      console.error("Send message error:", error);
+      res.status(500).json({ error: "메시지 전송에 실패했습니다" });
+    }
+  });
+
+  // Get user messages (for logged-in user)
+  app.get("/api/messages", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const userMessages = await storage.getMessagesForUser(userId);
+      res.json(userMessages);
+    } catch (error) {
+      res.status(500).json({ error: "메시지 조회에 실패했습니다" });
+    }
+  });
+
+  // Get unread messages (for logged-in user) - for popup notifications
+  app.get("/api/messages/unread", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const unreadMessages = await storage.getUnreadMessagesForUser(userId);
+      res.json(unreadMessages);
+    } catch (error) {
+      res.status(500).json({ error: "메시지 조회에 실패했습니다" });
+    }
+  });
+
+  // Mark message as read
+  app.post("/api/messages/:id/read", requireAuth, async (req, res) => {
+    try {
+      const messageId = parseInt(req.params.id);
+      await storage.markMessageAsRead(messageId);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "메시지 읽음 처리에 실패했습니다" });
+    }
+  });
+
+  // Mark all messages as read
+  app.post("/api/messages/read-all", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      await storage.markAllMessagesAsRead(userId);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "메시지 읽음 처리에 실패했습니다" });
+    }
+  });
+
   // ==================== SETTINGS ROUTES ====================
 
   // Get public setting (telegram link)
