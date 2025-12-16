@@ -1,8 +1,22 @@
+import { useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Shield, Zap, Headphones, TrendingUp, Lock, Award } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Shield, Zap, Headphones, TrendingUp, Lock, Award, X } from "lucide-react";
+import { useLogin } from "@/hooks/use-auth";
 
 export default function Landing() {
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const login = useLogin();
+
+  const handleLoginSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    login.mutate({ username, password });
+  };
+
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white">
       {/* Header */}
@@ -46,11 +60,14 @@ export default function Landing() {
           
           {/* Auth Buttons */}
           <div className="flex items-center gap-3">
-            <Link href="/login">
-              <Button variant="ghost" className="text-gray-300 hover:text-white hover:bg-white/10" data-testid="button-header-login">
-                로그인
-              </Button>
-            </Link>
+            <Button 
+              variant="ghost" 
+              className="text-gray-300 hover:text-white hover:bg-white/10" 
+              data-testid="button-header-login"
+              onClick={() => setShowLoginModal(true)}
+            >
+              로그인
+            </Button>
             <Link href="/register">
               <Button className="bg-orange-500 hover:bg-orange-600 text-white font-semibold" data-testid="button-header-register">
                 회원가입
@@ -257,16 +274,15 @@ export default function Landing() {
             믿을 수 있는 INVEST KOREA에서 시작하세요!
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/login">
-              <Button 
-                size="lg" 
-                variant="outline" 
-                className="border-white/30 text-white hover:bg-white/10 px-10 py-6 text-lg rounded-lg"
-                data-testid="button-login-cta"
-              >
-                로그인
-              </Button>
-            </Link>
+            <Button 
+              size="lg" 
+              variant="outline" 
+              className="border-white/30 text-white hover:bg-white/10 px-10 py-6 text-lg rounded-lg"
+              data-testid="button-login-cta"
+              onClick={() => setShowLoginModal(true)}
+            >
+              로그인
+            </Button>
             <Link href="/register">
               <Button 
                 size="lg" 
@@ -332,6 +348,95 @@ export default function Landing() {
           </div>
         </div>
       </footer>
+
+      {/* Login Modal */}
+      <Dialog open={showLoginModal} onOpenChange={setShowLoginModal}>
+        <DialogContent className="sm:max-w-md p-0 bg-transparent border-none shadow-none">
+          <div className="relative">
+            <div className="absolute -inset-1 bg-gradient-to-r from-orange-500/20 via-amber-500/20 to-orange-500/20 rounded-2xl blur-xl" />
+            <div className="relative backdrop-blur-xl bg-[#1a1a24]/95 border border-white/10 rounded-2xl p-8 shadow-2xl">
+              <button 
+                onClick={() => setShowLoginModal(false)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+                data-testid="button-close-login-modal"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              
+              <div className="text-center mb-6">
+                <div className="flex items-center justify-center gap-2 mb-4">
+                  <img 
+                    src="/attached_assets/telegram-cloud-photo-size-4-5911208720245394572-x_1765869883507.jpg" 
+                    alt="Invest Korea Logo" 
+                    className="w-12 h-12 rounded-lg object-cover"
+                  />
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-1">로그인</h2>
+                <p className="text-gray-400 text-sm">계정에 접속하여 거래를 시작하세요</p>
+              </div>
+              
+              <form onSubmit={handleLoginSubmit} className="space-y-5">
+                <div className="space-y-2">
+                  <label className="text-sm text-gray-300 font-medium">아이디</label>
+                  <Input
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="아이디를 입력하세요"
+                    className="h-12 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-orange-500/50 focus:ring-orange-500/20 transition-all"
+                    data-testid="input-modal-username"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm text-gray-300 font-medium">비밀번호</label>
+                  <Input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="비밀번호를 입력하세요"
+                    className="h-12 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-orange-500/50 focus:ring-orange-500/20 transition-all"
+                    data-testid="input-modal-password"
+                    required
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:from-orange-400 hover:via-amber-400 hover:to-orange-500 text-white shadow-lg shadow-orange-500/25 transition-all duration-300 hover:shadow-orange-500/40"
+                  disabled={login.isPending}
+                  data-testid="button-modal-login"
+                >
+                  {login.isPending ? "로그인 중..." : "로그인"}
+                </Button>
+              </form>
+
+              <div className="mt-6 pt-6 border-t border-white/10 text-center text-sm text-gray-400">
+                계정이 없으신가요?{" "}
+                <Link 
+                  href="/register" 
+                  className="text-orange-500 hover:text-orange-400 font-medium transition-colors"
+                  onClick={() => setShowLoginModal(false)}
+                >
+                  회원가입
+                </Link>
+              </div>
+              
+              <div className="mt-4 flex items-center justify-center gap-4 text-xs text-gray-500">
+                <span className="flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  실시간 거래
+                </span>
+                <span>|</span>
+                <span>24시간 운영</span>
+                <span>|</span>
+                <span>1.90x 배당</span>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
