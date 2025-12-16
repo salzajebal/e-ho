@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Menu, DollarSign, Droplets, Coins, TrendingUp, LogOut, Shield } from "lucide-react";
+import { Menu, TrendingUp, LogOut, Shield, BarChart3 } from "lucide-react";
 import { useAuth, useLogout } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,11 +20,12 @@ export function Navbar({ onSelectSymbol, selectedSymbol }: NavbarProps) {
   const logout = useLogout();
 
   const quickAssets = [
-    { symbol: 'BTC/USDT', label: '비트코인', icon: Coins },
-    { symbol: 'USD/KRW', label: '달러', icon: DollarSign },
-    { symbol: 'WTI', label: '오일', icon: Droplets },
-    { symbol: 'XAU/USD', label: '금', icon: Coins },
-    { symbol: 'HSI', label: '항생', icon: TrendingUp },
+    { symbol: 'NDX', label: 'NASDAQ', icon: BarChart3 },
+    { symbol: 'SP500', label: 'S&P 500', icon: BarChart3 },
+    { symbol: 'AAPL', label: 'Apple', icon: TrendingUp },
+    { symbol: 'MSFT', label: 'Microsoft', icon: TrendingUp },
+    { symbol: 'NVDA', label: 'NVIDIA', icon: TrendingUp },
+    { symbol: 'TSLA', label: 'Tesla', icon: TrendingUp },
   ];
 
   return (

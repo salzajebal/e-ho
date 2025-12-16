@@ -9,16 +9,19 @@ export interface MarketData {
   high: number;
   low: number;
   volume: number;
-  category: '가상자산' | '외환' | '원자재' | '지수';
+  category: '나스닥' | '지수';
 }
 
 export const INITIAL_MARKET_DATA: MarketData[] = [
-  { symbol: 'BTC/USDT', name: '비트코인', price: 98450.00, change: 1250.00, changePercent: 1.28, high: 99000.00, low: 97500.00, volume: 45000, category: '가상자산' },
-  { symbol: 'ETH/USDT', name: '이더리움', price: 2750.50, change: -15.20, changePercent: -0.55, high: 2800.00, low: 2720.00, volume: 120000, category: '가상자산' },
-  { symbol: 'USD/KRW', name: '미국 달러', price: 1432.50, change: 5.50, changePercent: 0.38, high: 1435.00, low: 1425.00, volume: 0, category: '외환' },
-  { symbol: 'XAU/USD', name: '금', price: 2650.00, change: 12.40, changePercent: 0.47, high: 2660.00, low: 2640.00, volume: 15000, category: '원자재' },
-  { symbol: 'WTI', name: '크루드 오일', price: 71.50, change: -0.85, changePercent: -1.18, high: 72.50, low: 70.80, volume: 85000, category: '원자재' },
-  { symbol: 'HSI', name: '항생 지수', price: 19800.00, change: -230.00, changePercent: -1.15, high: 20100.00, low: 19700.00, volume: 200000, category: '지수' },
+  { symbol: 'NDX', name: 'NASDAQ 100', price: 21453.20, change: 125.50, changePercent: 0.59, high: 21500.00, low: 21350.00, volume: 850000, category: '지수' },
+  { symbol: 'SP500', name: 'S&P 500', price: 6051.09, change: 32.80, changePercent: 0.54, high: 6070.00, low: 6020.00, volume: 1200000, category: '지수' },
+  { symbol: 'AAPL', name: 'Apple', price: 248.50, change: 2.35, changePercent: 0.95, high: 250.00, low: 246.00, volume: 45000000, category: '나스닥' },
+  { symbol: 'MSFT', name: 'Microsoft', price: 438.20, change: -1.80, changePercent: -0.41, high: 442.00, low: 436.00, volume: 22000000, category: '나스닥' },
+  { symbol: 'GOOGL', name: 'Alphabet', price: 192.35, change: 1.25, changePercent: 0.65, high: 194.00, low: 190.50, volume: 18000000, category: '나스닥' },
+  { symbol: 'AMZN', name: 'Amazon', price: 227.80, change: 3.40, changePercent: 1.51, high: 229.00, low: 224.50, volume: 35000000, category: '나스닥' },
+  { symbol: 'NVDA', name: 'NVIDIA', price: 138.50, change: -2.10, changePercent: -1.49, high: 142.00, low: 137.00, volume: 52000000, category: '나스닥' },
+  { symbol: 'META', name: 'Meta', price: 612.40, change: 8.20, changePercent: 1.36, high: 615.00, low: 605.00, volume: 15000000, category: '나스닥' },
+  { symbol: 'TSLA', name: 'Tesla', price: 436.20, change: -5.80, changePercent: -1.31, high: 445.00, low: 432.00, volume: 85000000, category: '나스닥' },
 ];
 
 // Hook to manage real-time data
@@ -33,105 +36,40 @@ export function useMarketData() {
       previousPrices.current[item.symbol] = item.price;
     });
 
-    // 1. Binance WebSocket for Crypto (BTC, ETH)
-    const cryptoSymbols = ['btcusdt', 'ethusdt'];
-    const streams = cryptoSymbols.map(s => `${s}@ticker`).join('/');
-    const ws = new WebSocket(`wss://stream.binance.com:9443/ws/${streams}`);
-
-    ws.onmessage = (event) => {
-      const msg = JSON.parse(event.data);
-      
-      setData(prev => prev.map(item => {
-        const symbol = item.symbol.replace('/', '');
-        if (symbol === msg.s) {
-          return {
-            ...item,
-            price: parseFloat(msg.c),
-            change: parseFloat(msg.p),
-            changePercent: parseFloat(msg.P),
-            high: parseFloat(msg.h),
-            low: parseFloat(msg.l),
-            volume: parseFloat(msg.v)
-          };
-        }
-        return item;
-      }));
-    };
-
-    wsRef.current = ws;
-
-    // 2. Fetch USD/KRW from free API (Frankfurter - no API key required)
-    const fetchForex = async () => {
-      try {
-        const res = await fetch('https://api.frankfurter.dev/v1/latest?base=USD&symbols=KRW');
-        if (!res.ok) throw new Error('Forex API failed');
-        const json = await res.json();
-        const krwRate = json.rates.KRW;
-        
-        setData(prev => prev.map(item => {
-          if (item.symbol === 'USD/KRW') {
-            const prevPrice = previousPrices.current[item.symbol] || krwRate;
-            const change = krwRate - prevPrice;
-            previousPrices.current[item.symbol] = krwRate;
-            return {
-              ...item,
-              price: krwRate,
-              change: change,
-              changePercent: (change / prevPrice) * 100,
-              high: Math.max(item.high, krwRate),
-              low: Math.min(item.low, krwRate),
-            };
-          }
-          return item;
-        }));
-      } catch (e) {
-        console.error("Forex API Error", e);
-      }
-    };
-
-    // 3. Realistic simulation for Gold, Oil (WTI), and HSI
+    // Simulate NASDAQ stock price movements
     const simulateMarkets = () => {
       setData(prev => prev.map(item => {
-        if (['XAU/USD', 'WTI', 'HSI'].includes(item.symbol)) {
-          // Use realistic volatility based on market type
-          let volatility = 0.0005;
-          if (item.symbol === 'WTI') volatility = 0.001;
-          if (item.symbol === 'HSI') volatility = 0.0003;
-          
-          const basePrice = previousPrices.current[item.symbol] || item.price;
-          const priceChange = basePrice * volatility * (Math.random() - 0.5) * 2;
-          const newPrice = basePrice + priceChange;
-          
-          // Accumulate daily change
-          const totalChange = item.change + priceChange;
-          const openPrice = item.price - item.change;
-          const changePercent = openPrice !== 0 ? (totalChange / openPrice) * 100 : 0;
-          
-          previousPrices.current[item.symbol] = newPrice;
-          
-          return {
-            ...item,
-            price: newPrice,
-            change: totalChange,
-            changePercent: changePercent,
-            high: Math.max(item.high, newPrice),
-            low: Math.min(item.low, newPrice),
-          };
-        }
-        return item;
+        // Volatility varies by stock type
+        let volatility = 0.0003;
+        if (item.symbol === 'TSLA' || item.symbol === 'NVDA') volatility = 0.0008;
+        if (item.symbol === 'NDX' || item.symbol === 'SP500') volatility = 0.0002;
+        
+        const basePrice = previousPrices.current[item.symbol] || item.price;
+        const priceChange = basePrice * volatility * (Math.random() - 0.5) * 2;
+        const newPrice = basePrice + priceChange;
+        
+        // Accumulate daily change
+        const totalChange = item.change + priceChange;
+        const openPrice = item.price - item.change;
+        const changePercent = openPrice !== 0 ? (totalChange / openPrice) * 100 : 0;
+        
+        previousPrices.current[item.symbol] = newPrice;
+        
+        return {
+          ...item,
+          price: newPrice,
+          change: totalChange,
+          changePercent: changePercent,
+          high: Math.max(item.high, newPrice),
+          low: Math.min(item.low, newPrice),
+        };
       }));
     };
 
-    // Initial fetch
-    fetchForex();
-
-    // Set up intervals
-    const forexInterval = setInterval(fetchForex, 30000); // 30s for forex
-    const simInterval = setInterval(simulateMarkets, 1000); // 1s for simulated markets
+    // Set up interval for simulated markets
+    const simInterval = setInterval(simulateMarkets, 1000);
 
     return () => {
-      if (wsRef.current) wsRef.current.close();
-      clearInterval(forexInterval);
       clearInterval(simInterval);
     };
   }, []);

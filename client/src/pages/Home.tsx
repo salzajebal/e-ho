@@ -13,7 +13,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/componen
 import { toast } from "sonner";
 
 export default function Home() {
-  const [selectedSymbol, setSelectedSymbol] = useState("BTC/USDT");
+  const [selectedSymbol, setSelectedSymbol] = useState("NDX");
   const [, setLocation] = useLocation();
   const marketData = useMarketData();
   

@@ -7,16 +7,16 @@ export interface MarketData {
   high: number;
   low: number;
   volume: number;
-  category: '가상자산' | '외환' | '원자재' | '지수';
+  category: '나스닥' | '지수';
 }
 
 export const INITIAL_MARKET_DATA: MarketData[] = [
-  { symbol: 'BTC/USD', name: '비트코인', price: 98450.00, change: 1250.00, changePercent: 1.28, high: 99000.00, low: 97500.00, volume: 45000, category: '가상자산' },
-  { symbol: 'ETH/USD', name: '이더리움', price: 2750.50, change: -15.20, changePercent: -0.55, high: 2800.00, low: 2720.00, volume: 120000, category: '가상자산' },
-  { symbol: 'USD/KRW', name: '미국 달러', price: 1432.50, change: 5.50, changePercent: 0.38, high: 1435.00, low: 1425.00, volume: 5000000, category: '외환' },
-  { symbol: 'WTI', name: '크루드 오일', price: 72.45, change: -0.85, changePercent: -1.16, high: 73.50, low: 71.80, volume: 85000, category: '원자재' },
-  { symbol: 'XAU/USD', name: '금', price: 2045.80, change: 12.40, changePercent: 0.61, high: 2050.00, low: 2030.00, volume: 15000, category: '원자재' },
-  { symbol: 'HSI', name: '항생 지수', price: 16540.00, change: -230.00, changePercent: -1.37, high: 16800.00, low: 16450.00, volume: 200000, category: '지수' },
+  { symbol: 'NDX', name: 'NASDAQ 100', price: 21453.20, change: 125.50, changePercent: 0.59, high: 21500.00, low: 21350.00, volume: 850000, category: '지수' },
+  { symbol: 'SP500', name: 'S&P 500', price: 6051.09, change: 32.80, changePercent: 0.54, high: 6070.00, low: 6020.00, volume: 1200000, category: '지수' },
+  { symbol: 'AAPL', name: 'Apple', price: 248.50, change: 2.35, changePercent: 0.95, high: 250.00, low: 246.00, volume: 45000000, category: '나스닥' },
+  { symbol: 'MSFT', name: 'Microsoft', price: 438.20, change: -1.80, changePercent: -0.41, high: 442.00, low: 436.00, volume: 22000000, category: '나스닥' },
+  { symbol: 'GOOGL', name: 'Alphabet', price: 192.35, change: 1.25, changePercent: 0.65, high: 194.00, low: 190.50, volume: 18000000, category: '나스닥' },
+  { symbol: 'AMZN', name: 'Amazon', price: 227.80, change: 3.40, changePercent: 1.51, high: 229.00, low: 224.50, volume: 35000000, category: '나스닥' },
 ];
 
 export function generatePriceUpdate(currentPrice: number): number {
