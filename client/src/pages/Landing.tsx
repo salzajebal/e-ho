@@ -135,7 +135,13 @@ export default function Landing() {
 
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    login.mutate({ username, password });
+    login.mutate({ username, password }, {
+      onSuccess: () => {
+        setShowLoginModal(false);
+        setUsername("");
+        setPassword("");
+      }
+    });
   };
 
   const handleRegisterSubmit = (e: React.FormEvent) => {
@@ -182,6 +188,18 @@ export default function Landing() {
       bankName, 
       accountHolder, 
       accountNumber 
+    }, {
+      onSuccess: () => {
+        setShowRegisterModal(false);
+        setRegUsername("");
+        setRegPassword("");
+        setConfirmPassword("");
+        setName("");
+        setPhone("");
+        setBankName("");
+        setAccountHolder("");
+        setAccountNumber("");
+      }
     });
   };
 
