@@ -32,7 +32,6 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Landing} />
-      <Route path="/login">{() => <Redirect to="/" />}</Route>
       <Route path="/register" component={Register} />
       <Route path="/admin" component={Admin} />
       <Route path="/trade">
