@@ -11,12 +11,12 @@ export interface MarketData {
 }
 
 export const INITIAL_MARKET_DATA: MarketData[] = [
-  { symbol: 'NDX', name: 'NASDAQ 100', price: 21453.20, change: 125.50, changePercent: 0.59, high: 21500.00, low: 21350.00, volume: 850000, category: '지수' },
-  { symbol: 'SP500', name: 'S&P 500', price: 6051.09, change: 32.80, changePercent: 0.54, high: 6070.00, low: 6020.00, volume: 1200000, category: '지수' },
-  { symbol: 'AAPL', name: 'Apple', price: 248.50, change: 2.35, changePercent: 0.95, high: 250.00, low: 246.00, volume: 45000000, category: '나스닥' },
-  { symbol: 'MSFT', name: 'Microsoft', price: 438.20, change: -1.80, changePercent: -0.41, high: 442.00, low: 436.00, volume: 22000000, category: '나스닥' },
-  { symbol: 'GOOGL', name: 'Alphabet', price: 192.35, change: 1.25, changePercent: 0.65, high: 194.00, low: 190.50, volume: 18000000, category: '나스닥' },
-  { symbol: 'AMZN', name: 'Amazon', price: 227.80, change: 3.40, changePercent: 1.51, high: 229.00, low: 224.50, volume: 35000000, category: '나스닥' },
+  { symbol: 'NDX', name: 'NASDAQ 100', price: 21774.95, change: 85.32, changePercent: 0.39, high: 21850.00, low: 21680.00, volume: 920000, category: '지수' },
+  { symbol: 'SP500', name: 'S&P 500', price: 6074.53, change: 23.47, changePercent: 0.39, high: 6095.00, low: 6050.00, volume: 1350000, category: '지수' },
+  { symbol: 'AAPL', name: 'Apple', price: 251.04, change: 1.92, changePercent: 0.77, high: 252.50, low: 249.00, volume: 48500000, category: '나스닥' },
+  { symbol: 'MSFT', name: 'Microsoft', price: 454.46, change: 3.21, changePercent: 0.71, high: 456.00, low: 450.50, volume: 18700000, category: '나스닥' },
+  { symbol: 'GOOGL', name: 'Alphabet', price: 196.84, change: 2.15, changePercent: 1.10, high: 198.00, low: 194.50, volume: 21200000, category: '나스닥' },
+  { symbol: 'AMZN', name: 'Amazon', price: 229.15, change: 1.85, changePercent: 0.81, high: 231.00, low: 227.00, volume: 38500000, category: '나스닥' },
 ];
 
 export function generatePriceUpdate(currentPrice: number): number {
