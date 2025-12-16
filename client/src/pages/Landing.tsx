@@ -2,11 +2,25 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Shield, Zap, Headphones, TrendingUp, Lock, Award, X } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Shield, Zap, Headphones, TrendingUp, Lock, Award, X, ChevronDown, Phone, Mail, MessageCircle, History, Wallet } from "lucide-react";
 import { useLogin, useRegister, useAuth, useLogout } from "@/hooks/use-auth";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
+
+const NASDAQ_STOCKS = [
+  { symbol: "NDX", name: "NASDAQ 100" },
+  { symbol: "SP500", name: "S&P 500" },
+  { symbol: "AAPL", name: "Apple Inc." },
+  { symbol: "MSFT", name: "Microsoft" },
+  { symbol: "GOOGL", name: "Alphabet" },
+  { symbol: "AMZN", name: "Amazon" },
+  { symbol: "NVDA", name: "NVIDIA" },
+  { symbol: "META", name: "Meta Platforms" },
+  { symbol: "TSLA", name: "Tesla" },
+];
 
 const KOREAN_BANKS = [
   "KB국민은행", "신한은행", "우리은행", "하나은행", "SC제일은행",
@@ -100,6 +114,8 @@ function generateSparklinePath(prices: number[]): string {
 export default function Landing() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [showCustomerServiceModal, setShowCustomerServiceModal] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   
@@ -119,6 +135,27 @@ export default function Landing() {
   const { data: user } = useAuth();
   const [, setLocation] = useLocation();
   const marketData = useLandingMarketData();
+
+  // Fetch user balance and bet history if logged in
+  const { data: balanceData } = useQuery({
+    queryKey: ["/api/user/balance"],
+    queryFn: async () => {
+      const res = await fetch("/api/user/balance");
+      if (!res.ok) return null;
+      return res.json();
+    },
+    enabled: !!user,
+  });
+
+  const { data: betHistory } = useQuery({
+    queryKey: ["/api/bets/history"],
+    queryFn: async () => {
+      const res = await fetch("/api/bets/history");
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!user,
+  });
 
   const handleTradeClick = () => {
     if (user) {
@@ -229,15 +266,37 @@ export default function Landing() {
             
             {/* Navigation */}
             <nav className="hidden md:flex items-center gap-6">
+              <DropdownMenu>
+                <DropdownMenuTrigger className="text-gray-300 hover:text-orange-500 transition-colors text-sm font-medium flex items-center gap-1" data-testid="nav-options-trading">
+                  옵션거래 <ChevronDown className="w-3 h-3" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-[#1a1a24] border-white/10">
+                  {NASDAQ_STOCKS.map((stock) => (
+                    <DropdownMenuItem 
+                      key={stock.symbol}
+                      className="text-gray-300 hover:text-orange-500 hover:bg-white/5 cursor-pointer"
+                      onClick={() => {
+                        if (user) {
+                          setLocation("/trade");
+                        } else {
+                          setShowLoginModal(true);
+                        }
+                      }}
+                    >
+                      <span className="font-medium text-orange-500 mr-2">{stock.symbol}</span>
+                      {stock.name}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
               <button 
-                onClick={handleTradeClick}
-                className="text-gray-300 hover:text-orange-500 transition-colors text-sm font-medium" 
-                data-testid="nav-options-trading"
-              >
-                옵션거래
-              </button>
-              <button 
-                onClick={handleTradeClick}
+                onClick={() => {
+                  if (user) {
+                    setShowHistoryModal(true);
+                  } else {
+                    setShowLoginModal(true);
+                  }
+                }}
                 className="text-gray-300 hover:text-orange-500 transition-colors text-sm font-medium" 
                 data-testid="nav-trade-history"
               >
@@ -250,9 +309,13 @@ export default function Landing() {
               >
                 입출금
               </button>
-              <a href="#" className="text-gray-300 hover:text-orange-500 transition-colors text-sm font-medium" data-testid="nav-customer-service">
+              <button 
+                onClick={() => setShowCustomerServiceModal(true)}
+                className="text-gray-300 hover:text-orange-500 transition-colors text-sm font-medium" 
+                data-testid="nav-customer-service"
+              >
                 고객센터
-              </a>
+              </button>
             </nav>
           </div>
           
@@ -886,6 +949,168 @@ export default function Landing() {
                 >
                   로그인
                 </button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Trade History Modal */}
+      <Dialog open={showHistoryModal} onOpenChange={setShowHistoryModal}>
+        <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden max-h-[90vh] overflow-y-auto">
+          <DialogTitle className="sr-only">거래내역</DialogTitle>
+          <div className="relative">
+            <div className="absolute -inset-1 bg-gradient-to-r from-orange-500/20 via-amber-500/20 to-orange-500/20 rounded-2xl blur-xl" />
+            <div className="relative backdrop-blur-xl bg-[#1a1a24]/95 border border-white/10 rounded-2xl p-6 shadow-2xl">
+              <button 
+                onClick={() => setShowHistoryModal(false)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              
+              <div className="text-center mb-6">
+                <div className="flex items-center justify-center gap-2 mb-3">
+                  <History className="w-8 h-8 text-orange-500" />
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-1">거래내역</h2>
+                <p className="text-gray-400 text-sm">나의 거래 기록과 잔고를 확인하세요</p>
+              </div>
+
+              {/* Balance Card */}
+              <div className="bg-gradient-to-r from-orange-500/20 to-amber-500/20 border border-orange-500/30 rounded-xl p-4 mb-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Wallet className="w-6 h-6 text-orange-500" />
+                    <span className="text-gray-300">보유 잔고</span>
+                  </div>
+                  <span className="text-2xl font-bold text-white">
+                    {balanceData?.balance ? Number(balanceData.balance).toLocaleString() : '0'}원
+                  </span>
+                </div>
+              </div>
+
+              {/* Bet History */}
+              <div className="space-y-3 max-h-[300px] overflow-y-auto">
+                <h3 className="text-sm font-medium text-gray-400 mb-2">최근 거래 내역</h3>
+                {betHistory && betHistory.length > 0 ? (
+                  betHistory.slice(0, 10).map((bet: any) => (
+                    <div 
+                      key={bet.id} 
+                      className="bg-white/5 border border-white/10 rounded-lg p-3 flex items-center justify-between"
+                    >
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-xs px-2 py-0.5 rounded ${bet.direction === 'long' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                            {bet.direction === 'long' ? 'LONG' : 'SHORT'}
+                          </span>
+                          <span className="text-white font-medium">{bet.symbol}</span>
+                        </div>
+                        <div className="text-xs text-gray-400 mt-1">
+                          {new Date(bet.createdAt).toLocaleDateString('ko-KR')}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-white font-medium">
+                          {Number(bet.amount).toLocaleString()}원
+                        </div>
+                        <div className={`text-xs ${bet.outcome === 'win' ? 'text-green-400' : bet.outcome === 'lose' ? 'text-red-400' : 'text-yellow-400'}`}>
+                          {bet.outcome === 'win' ? '승리' : bet.outcome === 'lose' ? '패배' : '진행중'}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-gray-400">
+                    거래 내역이 없습니다
+                  </div>
+                )}
+              </div>
+
+              <Button
+                className="w-full mt-4 bg-orange-500 hover:bg-orange-600 text-white"
+                onClick={() => {
+                  setShowHistoryModal(false);
+                  setLocation("/trade");
+                }}
+              >
+                거래하러 가기
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Customer Service Modal */}
+      <Dialog open={showCustomerServiceModal} onOpenChange={setShowCustomerServiceModal}>
+        <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+          <DialogTitle className="sr-only">고객센터</DialogTitle>
+          <div className="relative">
+            <div className="absolute -inset-1 bg-gradient-to-r from-orange-500/20 via-amber-500/20 to-orange-500/20 rounded-2xl blur-xl" />
+            <div className="relative backdrop-blur-xl bg-[#1a1a24]/95 border border-white/10 rounded-2xl p-6 shadow-2xl">
+              <button 
+                onClick={() => setShowCustomerServiceModal(false)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              
+              <div className="text-center mb-6">
+                <div className="flex items-center justify-center gap-2 mb-3">
+                  <Headphones className="w-8 h-8 text-orange-500" />
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-1">고객센터</h2>
+                <p className="text-gray-400 text-sm">24시간 전문 상담원이 도와드립니다</p>
+              </div>
+
+              <div className="space-y-4">
+                {/* Phone */}
+                <div className="bg-white/5 border border-white/10 rounded-xl p-4 hover:border-orange-500/50 transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-orange-500/20 rounded-full flex items-center justify-center">
+                      <Phone className="w-6 h-6 text-orange-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-white font-medium">전화 상담</h3>
+                      <p className="text-orange-500 font-bold text-lg">1588-0000</p>
+                      <p className="text-gray-400 text-xs">평일 09:00 - 18:00</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Kakao */}
+                <div className="bg-white/5 border border-white/10 rounded-xl p-4 hover:border-orange-500/50 transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-yellow-500/20 rounded-full flex items-center justify-center">
+                      <MessageCircle className="w-6 h-6 text-yellow-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-white font-medium">카카오톡 상담</h3>
+                      <p className="text-yellow-500 font-bold">@investkorea</p>
+                      <p className="text-gray-400 text-xs">24시간 운영</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Email */}
+                <div className="bg-white/5 border border-white/10 rounded-xl p-4 hover:border-orange-500/50 transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center">
+                      <Mail className="w-6 h-6 text-blue-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-white font-medium">이메일 문의</h3>
+                      <p className="text-blue-500 font-bold">support@investkorea.com</p>
+                      <p className="text-gray-400 text-xs">24시간 이내 답변</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 p-4 bg-orange-500/10 border border-orange-500/30 rounded-xl">
+                <p className="text-center text-sm text-gray-300">
+                  긴급한 문의는 <span className="text-orange-500 font-bold">전화 상담</span>을 이용해주세요
+                </p>
               </div>
             </div>
           </div>
