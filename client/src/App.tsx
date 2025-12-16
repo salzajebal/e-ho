@@ -7,7 +7,6 @@ import { useAuth } from "@/hooks/use-auth";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/Landing";
 import Home from "@/pages/Home";
-import Register from "@/pages/Register";
 import Admin from "@/pages/Admin";
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
@@ -32,7 +31,6 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Landing} />
-      <Route path="/register" component={Register} />
       <Route path="/admin" component={Admin} />
       <Route path="/trade">
         {() => <ProtectedRoute component={Home} />}
