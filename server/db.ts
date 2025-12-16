@@ -134,10 +134,10 @@ export async function initializeDatabase(): Promise<void> {
         username: 'demo',
         password: 'demo123',
         name: '데모 사용자',
-        role: 'admin',
-        balance: '50000000',
+        role: 'user',
+        balance: '10000000',
       });
-      console.log('Demo user created: demo/demo123');
+      console.log('Demo user created: demo/demo123 (일반 사용자)');
     } else {
       console.log('Demo user already exists');
     }
