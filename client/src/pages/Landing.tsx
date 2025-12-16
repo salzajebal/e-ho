@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Shield, Zap, Headphones, TrendingUp, Lock, Award, X } from "lucide-react";
-import { useLogin, useRegister } from "@/hooks/use-auth";
+import { useLogin, useRegister, useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 
 const KOREAN_BANKS = [
@@ -115,7 +115,17 @@ export default function Landing() {
   
   const login = useLogin();
   const register = useRegister();
+  const { data: user } = useAuth();
+  const [, setLocation] = useLocation();
   const marketData = useLandingMarketData();
+
+  const handleTradeClick = () => {
+    if (user) {
+      setLocation("/trade");
+    } else {
+      setShowLoginModal(true);
+    }
+  };
 
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -264,15 +274,14 @@ export default function Landing() {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/trade">
-              <Button 
-                size="lg" 
-                className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-10 py-6 text-lg rounded-lg"
-                data-testid="button-trade"
-              >
-                거래하기
-              </Button>
-            </Link>
+            <Button 
+              size="lg" 
+              className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-10 py-6 text-lg rounded-lg"
+              data-testid="button-trade"
+              onClick={handleTradeClick}
+            >
+              거래하기
+            </Button>
             <Button 
               size="lg" 
               variant="outline" 
