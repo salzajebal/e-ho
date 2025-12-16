@@ -14,15 +14,12 @@ if (!process.env.DATABASE_URL) {
 console.log("Initializing database connection...");
 console.log("Database URL prefix:", process.env.DATABASE_URL?.substring(0, 30) + "...");
 
-const isProduction = process.env.NODE_ENV === "production";
-
 export const pool = new Pool({ 
   connectionString: process.env.DATABASE_URL,
   connectionTimeoutMillis: 15000,
   idleTimeoutMillis: 30000,
   max: 20,
   statement_timeout: 30000,
-  ssl: isProduction ? { rejectUnauthorized: false } : false,
 });
 
 pool.on('error', (err) => {
