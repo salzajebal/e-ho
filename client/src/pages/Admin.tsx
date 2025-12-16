@@ -126,6 +126,7 @@ function AdminLogin() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
+        credentials: "include",
       });
       if (!res.ok) {
         const error = await res.json();
@@ -136,12 +137,12 @@ function AdminLogin() {
     onSuccess: (data) => {
       if (data.role !== 'admin') {
         toast.error("관리자 권한이 없습니다");
-        fetch("/api/auth/logout", { method: "POST" });
+        fetch("/api/auth/logout", { method: "POST", credentials: "include" });
         return;
       }
       queryClient.setQueryData(["/api/auth/me"], data);
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
       toast.success("관리자 로그인 성공");
+      window.location.reload();
     },
     onError: (error: Error) => {
       toast.error(error.message);
