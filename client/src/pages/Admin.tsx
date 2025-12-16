@@ -149,9 +149,41 @@ function AdminLogin() {
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    adminLogin.mutate({ username, password });
+    console.log("Admin login attempt:", username);
+    
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+        credentials: "include",
+      });
+      
+      console.log("Login response status:", res.status);
+      
+      if (!res.ok) {
+        const error = await res.json();
+        toast.error(error.error || "로그인에 실패했습니다");
+        return;
+      }
+      
+      const data = await res.json();
+      console.log("Login data:", data);
+      
+      if (data.role !== 'admin') {
+        toast.error("관리자 권한이 없습니다");
+        await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+        return;
+      }
+      
+      toast.success("관리자 로그인 성공");
+      window.location.reload();
+    } catch (error) {
+      console.error("Login error:", error);
+      toast.error("로그인에 실패했습니다");
+    }
   };
 
   return (
