@@ -108,6 +108,15 @@ export async function initializeDatabase(): Promise<void> {
       )
     `);
     console.log('Bets table ready');
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )
+    `);
+    console.log('Settings table ready');
     
     client.release();
     

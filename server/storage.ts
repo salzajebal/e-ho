@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Bet, type InsertBet, users, bets } from "@shared/schema";
+import { type User, type InsertUser, type Bet, type InsertBet, type Setting, users, bets, settings } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, lt, sql } from "drizzle-orm";
 
@@ -23,6 +23,10 @@ export interface IStorage {
   getExpiredPendingBets(): Promise<Bet[]>;
   getAllBets(): Promise<Bet[]>;
   getUserBetStats(userId: string): Promise<{ totalBet: number; totalWin: number; betCount: number; winCount: number }>;
+
+  // Settings methods
+  getSetting(key: string): Promise<string | undefined>;
+  setSetting(key: string, value: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -192,6 +196,21 @@ export class DatabaseStorage implements IStorage {
       ...bet,
       username: userMap.get(bet.userId) || 'Unknown',
     }));
+  }
+
+  // Settings methods
+  async getSetting(key: string): Promise<string | undefined> {
+    const [setting] = await db.select().from(settings).where(eq(settings.key, key));
+    return setting?.value;
+  }
+
+  async setSetting(key: string, value: string): Promise<void> {
+    await db.insert(settings)
+      .values({ key, value, updatedAt: new Date() })
+      .onConflictDoUpdate({
+        target: settings.key,
+        set: { value, updatedAt: new Date() },
+      });
   }
 }
 

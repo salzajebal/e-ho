@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth, useLogout } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
@@ -232,11 +232,12 @@ export default function Admin() {
   const logout = useLogout();
   const queryClient = useQueryClient();
 
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'bets'>('users');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'bets' | 'settings'>('users');
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
   const [createUserOpen, setCreateUserOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
+  const [telegramLink, setTelegramLink] = useState("");
 
   const [newUser, setNewUser] = useState({
     username: '',
@@ -279,6 +280,43 @@ export default function Admin() {
     },
     enabled: auth?.role === 'admin',
     refetchInterval: 5000,
+  });
+
+  const { data: settingsData } = useQuery({
+    queryKey: ["/api/admin/settings"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/settings");
+      if (!res.ok) throw new Error("Failed to fetch settings");
+      return res.json();
+    },
+    enabled: auth?.role === 'admin',
+  });
+
+  // Update telegram link when settings load
+  useEffect(() => {
+    if (settingsData?.telegram_link !== undefined) {
+      setTelegramLink(settingsData.telegram_link);
+    }
+  }, [settingsData]);
+
+  const updateSetting = useMutation({
+    mutationFn: async ({ key, value }: { key: string; value: string }) => {
+      const res = await fetch("/api/admin/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key, value }),
+      });
+      if (!res.ok) throw new Error("Failed to update setting");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/settings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/settings/telegram"] });
+      toast.success("설정이 저장되었습니다");
+    },
+    onError: () => {
+      toast.error("설정 저장에 실패했습니다");
+    },
   });
 
   const createUser = useMutation({
@@ -463,6 +501,18 @@ export default function Admin() {
           >
             <Target className="w-4 h-4" />
             베팅 관리
+          </button>
+          <button
+            onClick={() => setActiveTab('settings')}
+            className={cn(
+              "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+              activeTab === 'settings'
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+            )}
+          >
+            <Shield className="w-4 h-4" />
+            설정
           </button>
         </nav>
 
@@ -747,6 +797,58 @@ export default function Admin() {
                     )}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'settings' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold">설정</h1>
+            </div>
+
+            <div className="bg-card border border-border rounded-lg p-6">
+              <h2 className="text-lg font-semibold mb-4">고객센터 설정</h2>
+              
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-muted-foreground">텔레그램 링크</label>
+                  <div className="flex gap-3">
+                    <Input
+                      value={telegramLink}
+                      onChange={(e) => setTelegramLink(e.target.value)}
+                      placeholder="https://t.me/your_channel"
+                      className="flex-1"
+                    />
+                    <Button
+                      onClick={() => updateSetting.mutate({ key: 'telegram_link', value: telegramLink })}
+                      disabled={updateSetting.isPending}
+                    >
+                      {updateSetting.isPending ? '저장 중...' : '저장'}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    고객센터에서 텔레그램 문의 클릭 시 이동할 링크입니다.
+                  </p>
+                </div>
+
+                {telegramLink && (
+                  <div className="pt-4 border-t border-border">
+                    <p className="text-sm text-muted-foreground mb-2">현재 설정된 링크:</p>
+                    <a 
+                      href={telegramLink} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline flex items-center gap-2"
+                    >
+                      {telegramLink}
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                    </a>
+                  </div>
+                )}
               </div>
             </div>
           </div>

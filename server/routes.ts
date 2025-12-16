@@ -584,5 +584,41 @@ export async function registerRoutes(
     }
   });
 
+  // ==================== SETTINGS ROUTES ====================
+
+  // Get public setting (telegram link)
+  app.get("/api/settings/telegram", async (req, res) => {
+    try {
+      const telegramLink = await storage.getSetting("telegram_link");
+      res.json({ telegramLink: telegramLink || "" });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch setting" });
+    }
+  });
+
+  // Update setting (admin only)
+  app.post("/api/admin/settings", requireAdmin, async (req, res) => {
+    try {
+      const { key, value } = req.body;
+      if (!key || typeof value !== 'string') {
+        return res.status(400).json({ error: "Key and value are required" });
+      }
+      await storage.setSetting(key, value);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update setting" });
+    }
+  });
+
+  // Get all settings (admin only)
+  app.get("/api/admin/settings", requireAdmin, async (req, res) => {
+    try {
+      const telegramLink = await storage.getSetting("telegram_link");
+      res.json({ telegram_link: telegramLink || "" });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch settings" });
+    }
+  });
+
   return httpServer;
 }

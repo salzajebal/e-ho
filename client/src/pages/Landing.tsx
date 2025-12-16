@@ -116,6 +116,7 @@ export default function Landing() {
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [showCustomerServiceModal, setShowCustomerServiceModal] = useState(false);
+  const [showDepositModal, setShowDepositModal] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   
@@ -155,6 +156,16 @@ export default function Landing() {
       return res.json();
     },
     enabled: !!user,
+  });
+
+  // Fetch telegram link
+  const { data: telegramData } = useQuery({
+    queryKey: ["/api/settings/telegram"],
+    queryFn: async () => {
+      const res = await fetch("/api/settings/telegram");
+      if (!res.ok) return { telegramLink: "" };
+      return res.json();
+    },
   });
 
   const handleTradeClick = () => {
@@ -303,7 +314,13 @@ export default function Landing() {
                 거래내역
               </button>
               <button 
-                onClick={handleTradeClick}
+                onClick={() => {
+                  if (user) {
+                    setShowDepositModal(true);
+                  } else {
+                    setShowLoginModal(true);
+                  }
+                }}
                 className="text-gray-300 hover:text-orange-500 transition-colors text-sm font-medium" 
                 data-testid="nav-deposit-withdraw"
               >
@@ -1041,7 +1058,73 @@ export default function Landing() {
         </DialogContent>
       </Dialog>
 
-      {/* Customer Service Modal */}
+      {/* Deposit/Withdrawal Modal */}
+      <Dialog open={showDepositModal} onOpenChange={setShowDepositModal}>
+        <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+          <DialogTitle className="sr-only">입출금</DialogTitle>
+          <div className="relative">
+            <div className="absolute -inset-1 bg-gradient-to-r from-orange-500/20 via-amber-500/20 to-orange-500/20 rounded-2xl blur-xl" />
+            <div className="relative backdrop-blur-xl bg-[#1a1a24]/95 border border-white/10 rounded-2xl p-6 shadow-2xl">
+              <button 
+                onClick={() => setShowDepositModal(false)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              
+              <div className="text-center mb-6">
+                <div className="flex items-center justify-center gap-2 mb-3">
+                  <Wallet className="w-8 h-8 text-orange-500" />
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-1">입출금</h2>
+                <p className="text-gray-400 text-sm">입금 및 출금 안내</p>
+              </div>
+
+              {/* Current Balance */}
+              <div className="bg-gradient-to-r from-orange-500/20 to-amber-500/20 border border-orange-500/30 rounded-xl p-4 mb-6">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-300">현재 잔고</span>
+                  <span className="text-2xl font-bold text-white">
+                    {balanceData?.balance ? Number(balanceData.balance).toLocaleString() : '0'}원
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {/* Deposit Info */}
+                <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+                  <h3 className="text-orange-500 font-bold mb-3">입금 안내</h3>
+                  <div className="space-y-2 text-sm">
+                    <p className="text-gray-300">입금을 원하시면 고객센터로 문의해주세요.</p>
+                    <p className="text-gray-400">입금 후 잔고 반영까지 약 10분 소요됩니다.</p>
+                  </div>
+                </div>
+
+                {/* Withdrawal Info */}
+                <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+                  <h3 className="text-orange-500 font-bold mb-3">출금 안내</h3>
+                  <div className="space-y-2 text-sm">
+                    <p className="text-gray-300">출금을 원하시면 고객센터로 문의해주세요.</p>
+                    <p className="text-gray-400">출금 처리는 영업일 기준 1-2일 소요됩니다.</p>
+                  </div>
+                </div>
+              </div>
+
+              <Button
+                className="w-full mt-6 bg-orange-500 hover:bg-orange-600 text-white"
+                onClick={() => {
+                  setShowDepositModal(false);
+                  setShowCustomerServiceModal(true);
+                }}
+              >
+                고객센터 문의하기
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Customer Service Modal - Telegram Only */}
       <Dialog open={showCustomerServiceModal} onOpenChange={setShowCustomerServiceModal}>
         <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden">
           <DialogTitle className="sr-only">고객센터</DialogTitle>
@@ -1064,52 +1147,40 @@ export default function Landing() {
               </div>
 
               <div className="space-y-4">
-                {/* Phone */}
-                <div className="bg-white/5 border border-white/10 rounded-xl p-4 hover:border-orange-500/50 transition-colors">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-orange-500/20 rounded-full flex items-center justify-center">
-                      <Phone className="w-6 h-6 text-orange-500" />
-                    </div>
-                    <div>
-                      <h3 className="text-white font-medium">전화 상담</h3>
-                      <p className="text-orange-500 font-bold text-lg">1588-0000</p>
-                      <p className="text-gray-400 text-xs">평일 09:00 - 18:00</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Kakao */}
-                <div className="bg-white/5 border border-white/10 rounded-xl p-4 hover:border-orange-500/50 transition-colors">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-yellow-500/20 rounded-full flex items-center justify-center">
-                      <MessageCircle className="w-6 h-6 text-yellow-500" />
-                    </div>
-                    <div>
-                      <h3 className="text-white font-medium">카카오톡 상담</h3>
-                      <p className="text-yellow-500 font-bold">@investkorea</p>
-                      <p className="text-gray-400 text-xs">24시간 운영</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Email */}
-                <div className="bg-white/5 border border-white/10 rounded-xl p-4 hover:border-orange-500/50 transition-colors">
+                {/* Telegram */}
+                <a 
+                  href={telegramData?.telegramLink || "#"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block bg-white/5 border border-white/10 rounded-xl p-4 hover:border-blue-500/50 transition-colors cursor-pointer"
+                  onClick={(e) => {
+                    if (!telegramData?.telegramLink) {
+                      e.preventDefault();
+                      toast.error("텔레그램 링크가 설정되지 않았습니다");
+                    }
+                  }}
+                >
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center">
-                      <Mail className="w-6 h-6 text-blue-500" />
+                      <MessageCircle className="w-6 h-6 text-blue-500" />
                     </div>
-                    <div>
-                      <h3 className="text-white font-medium">이메일 문의</h3>
-                      <p className="text-blue-500 font-bold">support@investkorea.com</p>
-                      <p className="text-gray-400 text-xs">24시간 이내 답변</p>
+                    <div className="flex-1">
+                      <h3 className="text-white font-medium">텔레그램 문의</h3>
+                      <p className="text-blue-500 font-bold">@investkorea</p>
+                      <p className="text-gray-400 text-xs">24시간 운영</p>
+                    </div>
+                    <div className="text-blue-500">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
                     </div>
                   </div>
-                </div>
+                </a>
               </div>
 
-              <div className="mt-6 p-4 bg-orange-500/10 border border-orange-500/30 rounded-xl">
+              <div className="mt-6 p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl">
                 <p className="text-center text-sm text-gray-300">
-                  긴급한 문의는 <span className="text-orange-500 font-bold">전화 상담</span>을 이용해주세요
+                  <span className="text-blue-500 font-bold">텔레그램</span>으로 빠르게 상담받으세요
                 </p>
               </div>
             </div>
