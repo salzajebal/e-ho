@@ -19,6 +19,7 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
   // Session middleware
+  const isProduction = process.env.NODE_ENV === "production";
   app.use(
     session({
       secret: process.env.SESSION_SECRET || "myinfx-secret-key-2024",
@@ -28,9 +29,10 @@ export async function registerRoutes(
         checkPeriod: 86400000,
       }),
       cookie: {
-        secure: false,
+        secure: isProduction,
         httpOnly: true,
         maxAge: 24 * 60 * 60 * 1000,
+        sameSite: isProduction ? "none" : "lax",
       },
     })
   );
