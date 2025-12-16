@@ -1105,7 +1105,6 @@ export default function Landing() {
                   <h3 className="text-orange-500 font-bold mb-3">출금 안내</h3>
                   <div className="space-y-2 text-sm">
                     <p className="text-gray-300">출금을 원하시면 고객센터로 문의해주세요.</p>
-                    <p className="text-gray-400">출금 처리는 영업일 기준 1-2일 소요됩니다.</p>
                   </div>
                 </div>
               </div>
