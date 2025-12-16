@@ -121,8 +121,10 @@ function AdminLogin() {
   const [isLoading, setIsLoading] = useState(false);
 
   const doLogin = async () => {
+    alert("로그인 버튼이 클릭되었습니다. 아이디: " + username);
+    
     if (!username || !password) {
-      toast.error("아이디와 비밀번호를 입력해주세요");
+      alert("아이디와 비밀번호를 입력해주세요");
       return;
     }
     
@@ -136,26 +138,29 @@ function AdminLogin() {
         credentials: "include",
       });
       
+      alert("API 응답: " + res.status);
+      
       if (!res.ok) {
         const error = await res.json();
-        toast.error(error.error || "로그인에 실패했습니다");
+        alert("로그인 실패: " + (error.error || "알 수 없는 오류"));
         setIsLoading(false);
         return;
       }
       
       const data = await res.json();
+      alert("로그인 성공: " + JSON.stringify(data));
       
       if (data.role !== 'admin') {
-        toast.error("관리자 권한이 없습니다");
+        alert("관리자 권한이 없습니다");
         await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
         setIsLoading(false);
         return;
       }
       
-      toast.success("관리자 로그인 성공");
+      alert("관리자 로그인 완료, 페이지 새로고침합니다");
       window.location.reload();
     } catch (error) {
-      toast.error("로그인에 실패했습니다");
+      alert("로그인 오류: " + String(error));
       setIsLoading(false);
     }
   };
