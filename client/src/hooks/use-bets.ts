@@ -38,6 +38,7 @@ export function useBetHistory() {
       if (!res.ok) throw new Error("Failed to fetch bet history");
       return res.json();
     },
+    refetchInterval: 3000,
   });
 }
 
@@ -64,9 +65,11 @@ export function useCreateBet() {
       }
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/bets"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/bets/history"] });
       queryClient.invalidateQueries({ queryKey: ["/api/user/balance"] });
+      toast.success(`${data.direction === 'long' ? 'LONG' : 'SHORT'} 베팅 ${Math.floor(parseFloat(data.amount)).toLocaleString()}원 완료!`);
     },
     onError: (error: Error) => {
       toast.error(error.message);
@@ -109,5 +112,6 @@ export function useUserBalance() {
       if (!res.ok) throw new Error("Failed to fetch balance");
       return res.json();
     },
+    refetchInterval: 2000,
   });
 }

@@ -146,6 +146,7 @@ export default function Landing() {
       return res.json();
     },
     enabled: !!user,
+    refetchInterval: 3000,
   });
 
   const { data: betHistory } = useQuery({
@@ -156,6 +157,7 @@ export default function Landing() {
       return res.json();
     },
     enabled: !!user,
+    refetchInterval: 3000,
   });
 
   // Fetch telegram link
