@@ -16,21 +16,18 @@ interface LandingMarketData {
 
 function useLandingMarketData() {
   const [markets, setMarkets] = useState<LandingMarketData[]>([
-    { symbol: "ETH/USDT", name: "Ethereum", price: 3892.45, changePercent: 1.87, priceHistory: [] },
     { symbol: "NDX", name: "NASDAQ 100", price: 21453.20, changePercent: 0.51, priceHistory: [] },
     { symbol: "SP500", name: "S&P 500", price: 6051.09, changePercent: 0.57, priceHistory: [] },
   ]);
   
-  const wsRef = useRef<WebSocket | null>(null);
   const historyRef = useRef<Record<string, number[]>>({
-    "ETH/USDT": [],
     "NDX": [],
     "SP500": [],
   });
 
   useEffect(() => {
     // Initialize price history with some variation
-    ["ETH/USDT", "NDX", "SP500"].forEach(symbol => {
+    ["NDX", "SP500"].forEach(symbol => {
       const basePrice = markets.find(m => m.symbol === symbol)?.price || 100;
       const history: number[] = [];
       let price = basePrice * 0.995;
@@ -45,36 +42,6 @@ function useLandingMarketData() {
       ...m,
       priceHistory: [...historyRef.current[m.symbol]]
     })));
-
-    // Connect to Binance WebSocket for ETH only
-    const ws = new WebSocket('wss://stream.binance.com:9443/ws/ethusdt@ticker');
-    
-    ws.onmessage = (event) => {
-      const msg = JSON.parse(event.data);
-      const symbol = msg.s === 'ETHUSDT' ? 'ETH/USDT' : null;
-      
-      if (symbol) {
-        const newPrice = parseFloat(msg.c);
-        const changePercent = parseFloat(msg.P);
-        
-        // Update history
-        historyRef.current[symbol] = [...historyRef.current[symbol].slice(-19), newPrice];
-        
-        setMarkets(prev => prev.map(m => {
-          if (m.symbol === symbol) {
-            return {
-              ...m,
-              price: newPrice,
-              changePercent: changePercent,
-              priceHistory: [...historyRef.current[symbol]]
-            };
-          }
-          return m;
-        }));
-      }
-    };
-    
-    wsRef.current = ws;
 
     // Simulate NASDAQ and S&P 500 updates
     const simInterval = setInterval(() => {
@@ -98,7 +65,6 @@ function useLandingMarketData() {
     }, 1000);
 
     return () => {
-      if (wsRef.current) wsRef.current.close();
       clearInterval(simInterval);
     };
   }, []);
