@@ -11,29 +11,34 @@ export default function Landing() {
           {/* Logo */}
           <div className="flex items-center gap-8">
             <Link href="/" data-testid="link-logo">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-yellow-500 rounded-lg flex items-center justify-center">
-                  <span className="text-black font-bold text-lg">M</span>
+              <div className="flex items-center gap-3">
+                <img 
+                  src="/attached_assets/telegram-cloud-photo-size-4-5911208720245394572-x_1765869883507.jpg" 
+                  alt="Invest Korea Logo" 
+                  className="w-10 h-10 rounded-lg object-cover"
+                />
+                <div className="flex flex-col">
+                  <span className="text-xl font-bold tracking-wide">
+                    <span className="text-white">INVEST</span>
+                    <span className="text-orange-500 ml-1">KOREA</span>
+                  </span>
+                  <span className="text-[10px] text-gray-400 tracking-widest uppercase">Premium Trading</span>
                 </div>
-                <span className="text-xl font-bold">
-                  <span className="text-white">명인</span>
-                  <span className="text-yellow-500">FX</span>
-                </span>
               </div>
             </Link>
             
             {/* Navigation */}
             <nav className="hidden md:flex items-center gap-6">
-              <Link href="/trade" className="text-gray-300 hover:text-yellow-500 transition-colors text-sm font-medium" data-testid="nav-options-trading">
+              <Link href="/trade" className="text-gray-300 hover:text-orange-500 transition-colors text-sm font-medium" data-testid="nav-options-trading">
                 옵션거래
               </Link>
-              <Link href="/trade" className="text-gray-300 hover:text-yellow-500 transition-colors text-sm font-medium" data-testid="nav-trade-history">
+              <Link href="/trade" className="text-gray-300 hover:text-orange-500 transition-colors text-sm font-medium" data-testid="nav-trade-history">
                 거래내역
               </Link>
-              <Link href="/trade" className="text-gray-300 hover:text-yellow-500 transition-colors text-sm font-medium" data-testid="nav-deposit-withdraw">
+              <Link href="/trade" className="text-gray-300 hover:text-orange-500 transition-colors text-sm font-medium" data-testid="nav-deposit-withdraw">
                 입출금
               </Link>
-              <a href="#" className="text-gray-300 hover:text-yellow-500 transition-colors text-sm font-medium" data-testid="nav-customer-service">
+              <a href="#" className="text-gray-300 hover:text-orange-500 transition-colors text-sm font-medium" data-testid="nav-customer-service">
                 고객센터
               </a>
             </nav>
@@ -47,7 +52,7 @@ export default function Landing() {
               </Button>
             </Link>
             <Link href="/register">
-              <Button className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold" data-testid="button-header-register">
+              <Button className="bg-orange-500 hover:bg-orange-600 text-white font-semibold" data-testid="button-header-register">
                 회원가입
               </Button>
             </Link>
@@ -66,10 +71,15 @@ export default function Landing() {
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0a0a0f]/70 to-[#0a0a0f]" />
         
         <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
-          <div className="mb-8">
-            <h1 className="text-5xl md:text-7xl font-bold mb-2">
-              <span className="text-white">명인</span>
-              <span className="text-yellow-500">FX</span>
+          <div className="mb-8 flex flex-col items-center">
+            <img 
+              src="/attached_assets/telegram-cloud-photo-size-4-5911208720245394572-x_1765869883507.jpg" 
+              alt="Invest Korea Logo" 
+              className="w-24 h-24 rounded-2xl object-cover mb-4"
+            />
+            <h1 className="text-5xl md:text-7xl font-bold mb-2 tracking-wide">
+              <span className="text-white">INVEST</span>
+              <span className="text-orange-500 ml-3">KOREA</span>
             </h1>
           </div>
           
@@ -86,7 +96,7 @@ export default function Landing() {
             <Link href="/trade">
               <Button 
                 size="lg" 
-                className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold px-10 py-6 text-lg rounded-lg"
+                className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-10 py-6 text-lg rounded-lg"
                 data-testid="button-trade"
               >
                 거래하기
@@ -240,11 +250,11 @@ export default function Landing() {
       <section className="py-20 px-4">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-4" data-testid="text-cta-title">
-            명인FX에 가입하고<br />지금 바로 시작해보세요
+            INVEST KOREA에 가입하고<br />지금 바로 시작해보세요
           </h2>
           <p className="text-gray-400 text-lg mb-10">
             당신의 첫 옵션 거래,<br />
-            믿을 수 있는 명인FX에서 시작하세요!
+            믿을 수 있는 INVEST KOREA에서 시작하세요!
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/login">
@@ -260,7 +270,7 @@ export default function Landing() {
             <Link href="/register">
               <Button 
                 size="lg" 
-                className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold px-10 py-6 text-lg rounded-lg"
+                className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-10 py-6 text-lg rounded-lg"
                 data-testid="button-register-cta"
               >
                 회원가입
@@ -275,10 +285,17 @@ export default function Landing() {
         <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-4 gap-10 mb-12">
             <div>
-              <h3 className="text-xl font-bold mb-4">
-                <span className="text-white">명인</span>
-                <span className="text-yellow-500">FX</span>
-              </h3>
+              <div className="flex items-center gap-3 mb-4">
+                <img 
+                  src="/attached_assets/telegram-cloud-photo-size-4-5911208720245394572-x_1765869883507.jpg" 
+                  alt="Invest Korea Logo" 
+                  className="w-10 h-10 rounded-lg object-cover"
+                />
+                <h3 className="text-xl font-bold">
+                  <span className="text-white">INVEST</span>
+                  <span className="text-orange-500 ml-1">KOREA</span>
+                </h3>
+              </div>
               <p className="text-gray-500 text-sm">
                 안전하고 투명한 시스템으로<br />
                 빠르고 편리한 옵션 거래를 제공합니다.
@@ -287,31 +304,31 @@ export default function Landing() {
             <div>
               <h4 className="font-semibold mb-4 text-gray-300">옵션거래</h4>
               <ul className="space-y-2 text-gray-500 text-sm">
-                <li><Link href="/trade" className="hover:text-yellow-500 transition-colors" data-testid="link-trade-btc">BTC 거래</Link></li>
-                <li><Link href="/trade" className="hover:text-yellow-500 transition-colors" data-testid="link-trade-eth">ETH 거래</Link></li>
-                <li><Link href="/trade" className="hover:text-yellow-500 transition-colors" data-testid="link-trade-nasdaq">NASDAQ 거래</Link></li>
+                <li><Link href="/trade" className="hover:text-orange-500 transition-colors" data-testid="link-trade-btc">BTC 거래</Link></li>
+                <li><Link href="/trade" className="hover:text-orange-500 transition-colors" data-testid="link-trade-eth">ETH 거래</Link></li>
+                <li><Link href="/trade" className="hover:text-orange-500 transition-colors" data-testid="link-trade-nasdaq">NASDAQ 거래</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="font-semibold mb-4 text-gray-300">입출금</h4>
               <ul className="space-y-2 text-gray-500 text-sm">
-                <li><Link href="/trade" className="hover:text-yellow-500 transition-colors" data-testid="link-deposit">입금신청</Link></li>
-                <li><Link href="/trade" className="hover:text-yellow-500 transition-colors" data-testid="link-withdraw">출금신청</Link></li>
-                <li><Link href="/trade" className="hover:text-yellow-500 transition-colors" data-testid="link-transaction-history">입출금내역</Link></li>
+                <li><Link href="/trade" className="hover:text-orange-500 transition-colors" data-testid="link-deposit">입금신청</Link></li>
+                <li><Link href="/trade" className="hover:text-orange-500 transition-colors" data-testid="link-withdraw">출금신청</Link></li>
+                <li><Link href="/trade" className="hover:text-orange-500 transition-colors" data-testid="link-transaction-history">입출금내역</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="font-semibold mb-4 text-gray-300">고객센터</h4>
               <ul className="space-y-2 text-gray-500 text-sm">
-                <li><a href="#" className="hover:text-yellow-500 transition-colors" data-testid="link-notice">공지사항</a></li>
-                <li><a href="#" className="hover:text-yellow-500 transition-colors" data-testid="link-inquiry">1:1문의</a></li>
-                <li><a href="#" className="hover:text-yellow-500 transition-colors" data-testid="link-terms">이용약관</a></li>
+                <li><a href="#" className="hover:text-orange-500 transition-colors" data-testid="link-notice">공지사항</a></li>
+                <li><a href="#" className="hover:text-orange-500 transition-colors" data-testid="link-inquiry">1:1문의</a></li>
+                <li><a href="#" className="hover:text-orange-500 transition-colors" data-testid="link-terms">이용약관</a></li>
               </ul>
             </div>
           </div>
           
           <div className="border-t border-white/5 pt-8 text-center text-gray-600 text-sm">
-            <p>© 2024 명인FX Trade International, Inc. All rights reserved.</p>
+            <p>© 2024 INVEST KOREA Trade International, Inc. All rights reserved.</p>
           </div>
         </div>
       </footer>
