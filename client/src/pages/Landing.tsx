@@ -5,8 +5,58 @@ import { Shield, Zap, Headphones, TrendingUp, Lock, Award } from "lucide-react";
 export default function Landing() {
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white">
+      {/* Header */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-[#0a0a0f]/95 backdrop-blur-sm border-b border-white/5">
+        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+          {/* Logo */}
+          <div className="flex items-center gap-8">
+            <Link href="/" data-testid="link-logo">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-yellow-500 rounded-lg flex items-center justify-center">
+                  <span className="text-black font-bold text-lg">M</span>
+                </div>
+                <span className="text-xl font-bold">
+                  <span className="text-white">명인</span>
+                  <span className="text-yellow-500">FX</span>
+                </span>
+              </div>
+            </Link>
+            
+            {/* Navigation */}
+            <nav className="hidden md:flex items-center gap-6">
+              <Link href="/trade" className="text-gray-300 hover:text-yellow-500 transition-colors text-sm font-medium" data-testid="nav-options-trading">
+                옵션거래
+              </Link>
+              <Link href="/trade" className="text-gray-300 hover:text-yellow-500 transition-colors text-sm font-medium" data-testid="nav-trade-history">
+                거래내역
+              </Link>
+              <Link href="/trade" className="text-gray-300 hover:text-yellow-500 transition-colors text-sm font-medium" data-testid="nav-deposit-withdraw">
+                입출금
+              </Link>
+              <a href="#" className="text-gray-300 hover:text-yellow-500 transition-colors text-sm font-medium" data-testid="nav-customer-service">
+                고객센터
+              </a>
+            </nav>
+          </div>
+          
+          {/* Auth Buttons */}
+          <div className="flex items-center gap-3">
+            <Link href="/login">
+              <Button variant="ghost" className="text-gray-300 hover:text-white hover:bg-white/10" data-testid="button-header-login">
+                로그인
+              </Button>
+            </Link>
+            <Link href="/register">
+              <Button className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold" data-testid="button-header-register">
+                회원가입
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </header>
+
       {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
         <div 
           className="absolute inset-0 bg-cover bg-center opacity-30"
           style={{
