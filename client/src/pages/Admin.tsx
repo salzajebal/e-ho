@@ -156,11 +156,15 @@ function AdminLogin() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-6">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
-            <Shield className="w-8 h-8 text-primary" />
-          </div>
+          <img 
+            src="/logo.png" 
+            alt="Invest Korea Logo" 
+            className="w-16 h-16 rounded-xl object-cover mx-auto mb-4"
+          />
           <h1 className="text-3xl font-bold text-white mb-2">
-            명인<span className="text-yellow-400">FX</span> 관리자
+            <span className="text-white">INVEST</span>
+            <span className="text-orange-500 ml-1">KOREA</span>
+            <span className="text-white ml-2">관리자</span>
           </h1>
           <p className="text-gray-400 text-sm">관리자 계정으로 로그인하세요</p>
         </div>
@@ -391,8 +395,17 @@ export default function Admin() {
       <div className="w-56 bg-card border-r border-border flex flex-col shrink-0">
         <div className="p-4 border-b border-border">
           <div className="flex items-center gap-2">
-            <TrendingUp className="w-6 h-6 text-primary" />
-            <span className="font-bold text-lg">명인FX</span>
+            <img 
+              src="/logo.png" 
+              alt="Invest Korea Logo" 
+              className="w-8 h-8 rounded-lg object-cover"
+            />
+            <div>
+              <span className="font-bold text-lg">
+                <span className="text-white">INVEST</span>
+                <span className="text-orange-500 ml-1">KOREA</span>
+              </span>
+            </div>
           </div>
           <p className="text-xs text-muted-foreground mt-1">관리자 패널</p>
         </div>
