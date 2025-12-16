@@ -39,10 +39,17 @@ export function useLogin() {
       return res.json();
     },
     onSuccess: (data) => {
+      console.log("Login success - User data:", data);
+      console.log("Login success - Role:", data.role, "Type:", typeof data.role);
       queryClient.setQueryData(["/api/auth/me"], data);
       queryClient.invalidateQueries({ queryKey: ["/api/user/balance"] });
       toast.success(`환영합니다, ${data.username}님!`);
-      if (data.role === 'admin') {
+      
+      // Explicitly check for admin role - only admin role goes to admin page
+      const isAdmin = data.role === 'admin';
+      console.log("Is admin?", isAdmin, "Redirecting to:", isAdmin ? '/admin' : '/trade');
+      
+      if (isAdmin) {
         setLocation("/admin");
       } else {
         setLocation("/trade");
