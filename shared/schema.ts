@@ -20,6 +20,7 @@ export const users = pgTable("users", {
   totalWin: decimal("total_win", { precision: 20, scale: 0 }).notNull().default("0"),
   role: text("role").notNull().default("user"), // 'user' or 'admin'
   isActive: boolean("is_active").notNull().default(true),
+  approvalStatus: text("approval_status").notNull().default("pending"), // 'pending', 'approved', 'rejected'
   lastLoginAt: timestamp("last_login_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
