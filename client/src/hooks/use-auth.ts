@@ -74,8 +74,13 @@ export function useRegister() {
       return res.json();
     },
     onSuccess: (data) => {
-      queryClient.setQueryData(["/api/auth/me"], data);
-      toast.success(`${data.username}님, 회원가입이 완료되었습니다!`);
+      // Check if pending approval (new registration flow)
+      if (data.pendingApproval) {
+        toast.success("회원가입이 완료되었습니다. 관리자 승인 후 로그인이 가능합니다.", { duration: 5000 });
+      } else {
+        queryClient.setQueryData(["/api/auth/me"], data);
+        toast.success(`${data.username}님, 회원가입이 완료되었습니다!`);
+      }
       // Stay on current page - don't redirect
     },
     onError: (error: Error) => {

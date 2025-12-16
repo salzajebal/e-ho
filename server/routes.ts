@@ -457,13 +457,11 @@ export async function registerRoutes(
         accountNumber: accountNumber || null 
       });
 
-      // Update balance and role if provided
-      if (balance || role) {
-        const updateData: any = {};
-        if (balance) updateData.balance = balance.toString();
-        if (role) updateData.role = role;
-        await storage.updateUser(user.id, updateData);
-      }
+      // Update balance, role, and auto-approve admin-created users
+      const updateData: any = { approvalStatus: 'approved' };
+      if (balance) updateData.balance = balance.toString();
+      if (role) updateData.role = role;
+      await storage.updateUser(user.id, updateData);
 
       res.json({ success: true, id: user.id });
     } catch (error) {

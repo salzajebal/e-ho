@@ -23,6 +23,8 @@ import {
   Check,
   X,
   Shield,
+  UserCheck,
+  Bell,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -65,6 +67,7 @@ interface AdminUser {
   profitRate: string;
   role: string;
   isActive: boolean;
+  approvalStatus: string;
   lastLoginAt: string | null;
   createdAt: string;
 }
@@ -232,12 +235,13 @@ export default function Admin() {
   const logout = useLogout();
   const queryClient = useQueryClient();
 
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'bets' | 'settings'>('users');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'bets' | 'settings' | 'approvals'>('users');
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
   const [createUserOpen, setCreateUserOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
   const [telegramLink, setTelegramLink] = useState("");
+  const [prevPendingCount, setPrevPendingCount] = useState(0);
 
   const [newUser, setNewUser] = useState({
     username: '',
@@ -290,6 +294,73 @@ export default function Admin() {
       return res.json();
     },
     enabled: auth?.role === 'admin',
+  });
+
+  // Pending users for approval
+  const { data: pendingUsers = [], refetch: refetchPendingUsers } = useQuery<AdminUser[]>({
+    queryKey: ["/api/admin/pending-users"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/pending-users");
+      if (!res.ok) throw new Error("Failed to fetch pending users");
+      return res.json();
+    },
+    enabled: auth?.role === 'admin',
+    refetchInterval: 3000,
+  });
+
+  // Notification for new pending users
+  useEffect(() => {
+    if (pendingUsers.length > prevPendingCount) {
+      // Show notification for any new pending users (including first one)
+      toast.info(`새로운 가입 신청이 있습니다! (${pendingUsers.length}건)`, {
+        duration: 5000,
+      });
+      // Play notification sound
+      try {
+        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2teleC4bT3+q0sqLRxIHQZC8z6NsGAI4p+ftoHYjCCJ+l7u7fEsACh8JXXmLmYxpPwAKJiM+a4qdi2xGAAoSDzg/T1tdYV1QQAA=');
+        audio.volume = 0.5;
+        audio.play().catch(() => {});
+      } catch (e) {}
+    }
+    setPrevPendingCount(pendingUsers.length);
+  }, [pendingUsers.length, prevPendingCount]);
+
+  const approveUser = useMutation({
+    mutationFn: async (userId: string) => {
+      const res = await fetch(`/api/admin/users/${userId}/approve`, {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error("Failed to approve user");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/pending-users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/stats"] });
+      toast.success("회원 가입이 승인되었습니다");
+    },
+    onError: () => {
+      toast.error("승인에 실패했습니다");
+    },
+  });
+
+  const rejectUser = useMutation({
+    mutationFn: async (userId: string) => {
+      const res = await fetch(`/api/admin/users/${userId}/reject`, {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error("Failed to reject user");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/pending-users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/stats"] });
+      toast.success("회원 가입이 거절되었습니다");
+    },
+    onError: () => {
+      toast.error("거절에 실패했습니다");
+    },
   });
 
   // Update telegram link when settings load
@@ -479,6 +550,23 @@ export default function Admin() {
             대시보드
           </button>
           <button
+            onClick={() => setActiveTab('approvals')}
+            className={cn(
+              "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors relative",
+              activeTab === 'approvals'
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+            )}
+          >
+            <UserCheck className="w-4 h-4" />
+            가입 승인
+            {pendingUsers.length > 0 && (
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center animate-pulse">
+                {pendingUsers.length}
+              </span>
+            )}
+          </button>
+          <button
             onClick={() => setActiveTab('users')}
             className={cn(
               "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
@@ -576,6 +664,83 @@ export default function Admin() {
                 </p>
               </div>
             </div>
+          </div>
+        )}
+
+        {activeTab === 'approvals' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold">가입 승인</h1>
+              <Button variant="outline" size="sm" onClick={() => refetchPendingUsers()}>
+                <RefreshCw className="w-4 h-4 mr-2" />
+                새로고침
+              </Button>
+            </div>
+
+            {pendingUsers.length === 0 ? (
+              <div className="bg-card border border-border rounded-lg p-8 text-center">
+                <UserCheck className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">대기 중인 가입 신청이 없습니다</p>
+              </div>
+            ) : (
+              <div className="bg-card border border-border rounded-lg overflow-hidden">
+                <div className="p-4 bg-yellow-500/10 border-b border-border flex items-center gap-2">
+                  <Bell className="w-5 h-5 text-yellow-500" />
+                  <span className="text-yellow-500 font-medium">{pendingUsers.length}건의 가입 신청이 대기 중입니다</span>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/30">
+                      <tr className="text-left text-muted-foreground">
+                        <th className="px-4 py-3 whitespace-nowrap">아이디</th>
+                        <th className="px-4 py-3 whitespace-nowrap">이름</th>
+                        <th className="px-4 py-3 whitespace-nowrap">전화번호</th>
+                        <th className="px-4 py-3 whitespace-nowrap">은행</th>
+                        <th className="px-4 py-3 whitespace-nowrap">예금주</th>
+                        <th className="px-4 py-3 whitespace-nowrap">계좌번호</th>
+                        <th className="px-4 py-3 whitespace-nowrap">신청일</th>
+                        <th className="px-4 py-3 whitespace-nowrap text-right">승인/거절</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pendingUsers.map((user) => (
+                        <tr key={user.id} className="border-t border-border/50 hover:bg-muted/10">
+                          <td className="px-4 py-3 font-medium">{user.username}</td>
+                          <td className="px-4 py-3">{user.name || '-'}</td>
+                          <td className="px-4 py-3">{user.phone || '-'}</td>
+                          <td className="px-4 py-3">{user.bankName || '-'}</td>
+                          <td className="px-4 py-3">{user.accountHolder || '-'}</td>
+                          <td className="px-4 py-3 font-mono text-xs">{user.accountNumber || '-'}</td>
+                          <td className="px-4 py-3 text-muted-foreground">{formatDate(user.createdAt)}</td>
+                          <td className="px-4 py-3 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <Button
+                                size="sm"
+                                className="bg-green-600 hover:bg-green-700 text-white"
+                                onClick={() => approveUser.mutate(user.id)}
+                                disabled={approveUser.isPending}
+                              >
+                                <Check className="w-4 h-4 mr-1" />
+                                승인
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => rejectUser.mutate(user.id)}
+                                disabled={rejectUser.isPending}
+                              >
+                                <X className="w-4 h-4 mr-1" />
+                                거절
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
