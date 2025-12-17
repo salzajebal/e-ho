@@ -53,15 +53,10 @@ export const INITIAL_MARKET_DATA: MarketData[] = [
 // Hook to manage real-time data with API integration
 export function useMarketData() {
   const [data, setData] = useState<MarketData[]>(INITIAL_MARKET_DATA);
-  const [useApi, setUseApi] = useState(true);
-  const previousPrices = useRef<Record<string, number>>({});
+  const [apiAvailable, setApiAvailable] = useState(true);
+  const lastApiPrices = useRef<Record<string, { price: number; change: number; changePercent: number; high: number; low: number }>>({});
 
   useEffect(() => {
-    // Initialize previous prices
-    INITIAL_MARKET_DATA.forEach(item => {
-      previousPrices.current[item.symbol] = item.price;
-    });
-
     // Fetch real prices from API
     const fetchRealPrices = async () => {
       try {
@@ -69,14 +64,23 @@ export function useMarketData() {
         const result = await response.json();
         
         if (result.fallback || !result.prices) {
-          setUseApi(false);
+          setApiAvailable(false);
           return false;
         }
 
+        setApiAvailable(true);
+        
         setData(prev => prev.map(item => {
           const apiPrice = result.prices.find((p: any) => p.symbol === item.symbol);
           if (apiPrice) {
-            previousPrices.current[item.symbol] = apiPrice.price;
+            // Store API prices as the authoritative source
+            lastApiPrices.current[item.symbol] = {
+              price: apiPrice.price,
+              change: apiPrice.change,
+              changePercent: apiPrice.changePercent,
+              high: apiPrice.high,
+              low: apiPrice.low,
+            };
             return {
               ...item,
               price: apiPrice.price,
@@ -91,51 +95,58 @@ export function useMarketData() {
         return true;
       } catch (error) {
         console.log('Falling back to simulation mode');
-        setUseApi(false);
+        setApiAvailable(false);
         return false;
       }
     };
 
-    // Simulate NASDAQ stock price movements - keep within realistic range (fallback)
-    const simulateMarkets = () => {
+    // Micro-simulation for smooth UI (only tiny variations around API price)
+    const microSimulate = () => {
+      if (!apiAvailable) return;
+      
       setData(prev => prev.map(item => {
-        const basePrice = BASE_PRICES[item.symbol] || item.price;
-        const maxDev = MAX_DEVIATION[item.symbol] || 3;
+        const apiData = lastApiPrices.current[item.symbol];
+        if (!apiData) return item;
         
-        // Small random change (0.01 to 0.15 points)
-        const smallChange = (Math.random() - 0.5) * 0.3;
-        
-        let currentPrice = previousPrices.current[item.symbol] || item.price;
-        let newPrice = currentPrice + smallChange;
-        
-        // Calculate current deviation from base
-        const deviation = newPrice - basePrice;
-        
-        // If too far from base, pull back towards it
-        if (Math.abs(deviation) > maxDev) {
-          const pullBack = deviation * 0.1;
-          newPrice = newPrice - pullBack;
-        } else if (Math.abs(deviation) > maxDev * 0.7) {
-          const pullBack = deviation * 0.03;
-          newPrice = newPrice - pullBack;
-        }
-        
-        // Clamp to absolute maximum range
-        newPrice = Math.max(basePrice - maxDev, Math.min(basePrice + maxDev, newPrice));
-        
-        // Calculate change from open (base price)
-        const change = newPrice - basePrice;
-        const changePercent = (change / basePrice) * 100;
-        
-        previousPrices.current[item.symbol] = newPrice;
+        // Very small random variation (0.01% max) for smooth UI
+        const microChange = apiData.price * 0.0001 * (Math.random() - 0.5);
+        const newPrice = apiData.price + microChange;
         
         return {
           ...item,
-          price: newPrice,
-          change: change,
-          changePercent: changePercent,
-          high: Math.max(basePrice, newPrice),
-          low: Math.min(basePrice, newPrice),
+          price: parseFloat(newPrice.toFixed(2)),
+          change: apiData.change,
+          changePercent: apiData.changePercent,
+          high: apiData.high,
+          low: apiData.low,
+        };
+      }));
+    };
+
+    // Fallback simulation only when API is not available
+    const fallbackSimulate = () => {
+      if (apiAvailable) return;
+      
+      setData(prev => prev.map(item => {
+        const basePrice = BASE_PRICES[item.symbol] || item.price;
+        const maxDev = MAX_DEVIATION[item.symbol] || 3;
+        const smallChange = (Math.random() - 0.5) * 0.3;
+        let newPrice = item.price + smallChange;
+        
+        const deviation = newPrice - basePrice;
+        if (Math.abs(deviation) > maxDev) {
+          newPrice = newPrice - deviation * 0.1;
+        }
+        newPrice = Math.max(basePrice - maxDev, Math.min(basePrice + maxDev, newPrice));
+        
+        const change = newPrice - basePrice;
+        const changePercent = (change / basePrice) * 100;
+        
+        return {
+          ...item,
+          price: parseFloat(newPrice.toFixed(2)),
+          change: parseFloat(change.toFixed(2)),
+          changePercent: parseFloat(changePercent.toFixed(2)),
         };
       }));
     };
@@ -143,25 +154,23 @@ export function useMarketData() {
     // Initial API fetch
     fetchRealPrices();
 
-    // Set up intervals
-    let apiInterval: NodeJS.Timeout | null = null;
-    let simInterval: NodeJS.Timeout | null = null;
-
-    if (useApi) {
-      // Fetch from API every 10 seconds
-      apiInterval = setInterval(fetchRealPrices, 10000);
-      // Small simulation between API calls for smoother UI
-      simInterval = setInterval(simulateMarkets, 1000);
-    } else {
-      // Pure simulation mode
-      simInterval = setInterval(simulateMarkets, 1000);
-    }
+    // Fetch from API every 15 seconds
+    const apiInterval = setInterval(fetchRealPrices, 15000);
+    
+    // Micro-simulation for smooth price display (every second)
+    const simInterval = setInterval(() => {
+      if (apiAvailable) {
+        microSimulate();
+      } else {
+        fallbackSimulate();
+      }
+    }, 1000);
 
     return () => {
-      if (apiInterval) clearInterval(apiInterval);
-      if (simInterval) clearInterval(simInterval);
+      clearInterval(apiInterval);
+      clearInterval(simInterval);
     };
-  }, [useApi]);
+  }, [apiAvailable]);
 
   return data;
 }

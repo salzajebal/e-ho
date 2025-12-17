@@ -39,33 +39,18 @@ interface LandingMarketData {
 
 function useLandingMarketData() {
   const [markets, setMarkets] = useState<LandingMarketData[]>([
-    { symbol: "NDX", name: "NASDAQ 100", price: 21547.80, changePercent: -0.51, priceHistory: [] },
-    { symbol: "SP500", name: "S&P 500", price: 5867.50, changePercent: -0.43, priceHistory: [] },
+    { symbol: "NDX", name: "NASDAQ 100", price: 0, changePercent: 0, priceHistory: [] },
+    { symbol: "SP500", name: "S&P 500", price: 0, changePercent: 0, priceHistory: [] },
   ]);
   
   const historyRef = useRef<Record<string, number[]>>({
     "NDX": [],
     "SP500": [],
   });
+  
+  const lastApiPrices = useRef<Record<string, { price: number; changePercent: number }>>({});
 
   useEffect(() => {
-    // Initialize price history
-    ["NDX", "SP500"].forEach(symbol => {
-      const basePrice = markets.find(m => m.symbol === symbol)?.price || 100;
-      const history: number[] = [];
-      let price = basePrice * 0.995;
-      for (let i = 0; i < 20; i++) {
-        price = price + (Math.random() - 0.45) * price * 0.002;
-        history.push(price);
-      }
-      historyRef.current[symbol] = history;
-    });
-    
-    setMarkets(prev => prev.map(m => ({
-      ...m,
-      priceHistory: [...historyRef.current[m.symbol]]
-    })));
-
     // Fetch real prices from API
     const fetchRealPrices = async () => {
       try {
@@ -76,7 +61,25 @@ function useLandingMarketData() {
           setMarkets(prev => prev.map(m => {
             const apiPrice = result.prices.find((p: any) => p.symbol === m.symbol);
             if (apiPrice) {
+              // Store as authoritative price
+              lastApiPrices.current[m.symbol] = {
+                price: apiPrice.price,
+                changePercent: apiPrice.changePercent,
+              };
+              
+              // Initialize history if empty
+              if (historyRef.current[m.symbol].length === 0) {
+                const history: number[] = [];
+                let price = apiPrice.price * 0.998;
+                for (let i = 0; i < 20; i++) {
+                  price = price + (Math.random() - 0.45) * price * 0.001;
+                  history.push(price);
+                }
+                historyRef.current[m.symbol] = history;
+              }
+              
               historyRef.current[m.symbol] = [...historyRef.current[m.symbol].slice(-19), apiPrice.price];
+              
               return {
                 ...m,
                 price: apiPrice.price,
@@ -95,26 +98,27 @@ function useLandingMarketData() {
     // Initial fetch
     fetchRealPrices();
 
-    // Fetch from API every 10 seconds
-    const apiInterval = setInterval(fetchRealPrices, 10000);
+    // Fetch from API every 15 seconds
+    const apiInterval = setInterval(fetchRealPrices, 15000);
 
-    // Small simulation between API calls for smoother UI
+    // Micro-simulation for smooth UI (stays close to API price)
     const simInterval = setInterval(() => {
       setMarkets(prev => prev.map(m => {
-        if (m.symbol === 'NDX' || m.symbol === 'SP500') {
-          const volatility = 0.0001;
-          const change = m.price * volatility * (Math.random() - 0.5);
-          const newPrice = m.price + change;
-          
-          historyRef.current[m.symbol] = [...historyRef.current[m.symbol].slice(-19), newPrice];
-          
-          return {
-            ...m,
-            price: newPrice,
-            priceHistory: [...historyRef.current[m.symbol]]
-          };
-        }
-        return m;
+        const apiData = lastApiPrices.current[m.symbol];
+        if (!apiData || apiData.price === 0) return m;
+        
+        // Very small variation around API price (0.01% max)
+        const microChange = apiData.price * 0.0001 * (Math.random() - 0.5);
+        const newPrice = apiData.price + microChange;
+        
+        historyRef.current[m.symbol] = [...historyRef.current[m.symbol].slice(-19), newPrice];
+        
+        return {
+          ...m,
+          price: parseFloat(newPrice.toFixed(2)),
+          changePercent: apiData.changePercent,
+          priceHistory: [...historyRef.current[m.symbol]]
+        };
       }));
     }, 1000);
 
