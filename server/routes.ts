@@ -1154,7 +1154,7 @@ export async function registerRoutes(
     }
   });
 
-  // Admin: Settle affiliate commissions
+  // Admin: Settle affiliate commissions (mark pending as settled)
   app.post("/api/admin/affiliates/:id/settle", requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;
@@ -1162,6 +1162,52 @@ export async function registerRoutes(
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "정산 처리에 실패했습니다" });
+    }
+  });
+
+  // Admin: Create settlement record (actual payment to affiliate)
+  app.post("/api/admin/affiliates/:id/settlements", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { amount, memo } = req.body;
+      const adminId = (req as any).session?.userId;
+      
+      if (!amount || parseInt(amount) <= 0) {
+        return res.status(400).json({ error: "유효한 정산 금액을 입력해주세요" });
+      }
+
+      const settlement = await storage.createAffiliateSettlement({
+        affiliateId: id,
+        amount: amount.toString(),
+        memo: memo || null,
+        settledBy: adminId,
+      });
+      
+      res.json(settlement);
+    } catch (error) {
+      res.status(500).json({ error: "정산 등록에 실패했습니다" });
+    }
+  });
+
+  // Admin: Get all settlements
+  app.get("/api/admin/settlements", requireAdmin, async (req, res) => {
+    try {
+      const settlements = await storage.getAllAffiliateSettlements();
+      res.json(settlements);
+    } catch (error) {
+      res.status(500).json({ error: "정산 내역 조회에 실패했습니다" });
+    }
+  });
+
+  // Admin: Get settlements for a specific affiliate
+  app.get("/api/admin/affiliates/:id/settlements", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const settlements = await storage.getAffiliateSettlements(id);
+      const totalSettled = await storage.getAffiliateTotalSettled(id);
+      res.json({ settlements, totalSettled });
+    } catch (error) {
+      res.status(500).json({ error: "정산 내역 조회에 실패했습니다" });
     }
   });
 

@@ -182,6 +182,24 @@ export const affiliateCommissions = pgTable("affiliate_commissions", {
 
 export type AffiliateCommission = typeof affiliateCommissions.$inferSelect;
 
+// Affiliate settlements table (총판 정산 내역)
+export const affiliateSettlements = pgTable("affiliate_settlements", {
+  id: serial("id").primaryKey(),
+  affiliateId: varchar("affiliate_id").notNull(),
+  amount: decimal("amount", { precision: 20, scale: 0 }).notNull(),
+  memo: text("memo"),
+  settledBy: varchar("settled_by").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertAffiliateSettlementSchema = createInsertSchema(affiliateSettlements).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertAffiliateSettlement = z.infer<typeof insertAffiliateSettlementSchema>;
+export type AffiliateSettlement = typeof affiliateSettlements.$inferSelect;
+
 // Blocked IPs table (IP 차단)
 export const blockedIps = pgTable("blocked_ips", {
   id: serial("id").primaryKey(),

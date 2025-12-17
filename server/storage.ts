@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Bet, type InsertBet, type Setting, type Message, type InsertMessage, type Affiliate, type InsertAffiliate, type AffiliateCommission, type Announcement, type InsertAnnouncement, type BlockedIp, type InsertBlockedIp, type MaintenanceSymbol, type InsertMaintenanceSymbol, users, bets, settings, messages, affiliates, affiliateCommissions, announcements, blockedIps, maintenanceSymbols } from "@shared/schema";
+import { type User, type InsertUser, type Bet, type InsertBet, type Setting, type Message, type InsertMessage, type Affiliate, type InsertAffiliate, type AffiliateCommission, type AffiliateSettlement, type InsertAffiliateSettlement, type Announcement, type InsertAnnouncement, type BlockedIp, type InsertBlockedIp, type MaintenanceSymbol, type InsertMaintenanceSymbol, users, bets, settings, messages, affiliates, affiliateCommissions, affiliateSettlements, announcements, blockedIps, maintenanceSymbols } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, lt, sql, gte } from "drizzle-orm";
 
@@ -104,6 +104,12 @@ export interface IStorage {
   removeMaintenanceSymbol(id: number): Promise<void>;
   getAllMaintenanceSymbols(): Promise<MaintenanceSymbol[]>;
   isSymbolUnderMaintenance(symbol: string): Promise<boolean>;
+
+  // Affiliate settlement methods
+  createAffiliateSettlement(settlement: InsertAffiliateSettlement): Promise<AffiliateSettlement>;
+  getAffiliateSettlements(affiliateId: string): Promise<AffiliateSettlement[]>;
+  getAllAffiliateSettlements(): Promise<(AffiliateSettlement & { affiliateName?: string })[]>;
+  getAffiliateTotalSettled(affiliateId: string): Promise<number>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -642,6 +648,43 @@ export class DatabaseStorage implements IStorage {
   async isSymbolUnderMaintenance(symbol: string): Promise<boolean> {
     const [maintenance] = await db.select().from(maintenanceSymbols).where(eq(maintenanceSymbols.symbol, symbol));
     return !!maintenance;
+  }
+
+  // Affiliate settlement methods
+  async createAffiliateSettlement(settlement: InsertAffiliateSettlement): Promise<AffiliateSettlement> {
+    const [created] = await db.insert(affiliateSettlements)
+      .values(settlement)
+      .returning();
+    return created;
+  }
+
+  async getAffiliateSettlements(affiliateId: string): Promise<AffiliateSettlement[]> {
+    return await db.select().from(affiliateSettlements)
+      .where(eq(affiliateSettlements.affiliateId, affiliateId))
+      .orderBy(desc(affiliateSettlements.createdAt));
+  }
+
+  async getAllAffiliateSettlements(): Promise<(AffiliateSettlement & { affiliateName?: string })[]> {
+    const settlements = await db.select().from(affiliateSettlements)
+      .orderBy(desc(affiliateSettlements.createdAt));
+    
+    // Get affiliate names
+    const result = await Promise.all(settlements.map(async (s) => {
+      const affiliate = await this.getAffiliate(s.affiliateId);
+      return {
+        ...s,
+        affiliateName: affiliate?.displayName || affiliate?.username || 'Unknown',
+      };
+    }));
+    
+    return result;
+  }
+
+  async getAffiliateTotalSettled(affiliateId: string): Promise<number> {
+    const result = await db.select({ total: sql<string>`COALESCE(SUM(${affiliateSettlements.amount}), 0)` })
+      .from(affiliateSettlements)
+      .where(eq(affiliateSettlements.affiliateId, affiliateId));
+    return parseInt(result[0]?.total || '0');
   }
 }
 

@@ -29,6 +29,7 @@ import {
   Send,
   Share2,
   Copy,
+  Wallet,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -279,6 +280,9 @@ export default function Admin() {
   const [createAffiliateOpen, setCreateAffiliateOpen] = useState(false);
   const [editingAffiliate, setEditingAffiliate] = useState<AdminAffiliate | null>(null);
   const [deleteAffiliateConfirm, setDeleteAffiliateConfirm] = useState<string | null>(null);
+  const [settlementAffiliate, setSettlementAffiliate] = useState<AdminAffiliate | null>(null);
+  const [settlementAmount, setSettlementAmount] = useState("");
+  const [settlementMemo, setSettlementMemo] = useState("");
   const [newAffiliate, setNewAffiliate] = useState({
     username: '',
     password: '',
@@ -789,6 +793,31 @@ export default function Admin() {
     },
     onError: () => {
       toast.error("재생성에 실패했습니다");
+    },
+  });
+
+  const createSettlement = useMutation({
+    mutationFn: async ({ affiliateId, amount, memo }: { affiliateId: string; amount: string; memo: string }) => {
+      const res = await fetch(`/api/admin/affiliates/${affiliateId}/settlements`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount, memo }),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to create settlement");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/affiliates"] });
+      setSettlementAffiliate(null);
+      setSettlementAmount("");
+      setSettlementMemo("");
+      toast.success("정산이 등록되었습니다");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
     },
   });
 
@@ -1675,6 +1704,15 @@ export default function Admin() {
                             <Button
                               size="sm"
                               variant="ghost"
+                              className="h-7 w-7 p-0 text-green-500"
+                              onClick={() => setSettlementAffiliate(affiliate)}
+                              title="정산하기"
+                            >
+                              <Wallet className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
                               className="h-7 w-7 p-0"
                               onClick={() => setEditingAffiliate(affiliate)}
                             >
@@ -2252,6 +2290,74 @@ export default function Admin() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Settlement Dialog */}
+      <Dialog open={!!settlementAffiliate} onOpenChange={(open) => {
+        if (!open) {
+          setSettlementAffiliate(null);
+          setSettlementAmount("");
+          setSettlementMemo("");
+        }
+      }}>
+        <DialogContent className="bg-card border-border max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Wallet className="w-5 h-5 text-green-500" />
+              총판 정산
+            </DialogTitle>
+          </DialogHeader>
+          {settlementAffiliate && (
+            <div className="space-y-4 mt-4">
+              <div className="bg-muted/50 p-4 rounded-lg">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm text-muted-foreground">총판</span>
+                  <span className="font-medium">{settlementAffiliate.displayName} ({settlementAffiliate.username})</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">정산 예정</span>
+                  <span className="font-medium text-primary">{formatMoney(settlementAffiliate.pendingCommission)}</span>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">정산 금액 *</label>
+                <Input
+                  type="number"
+                  value={settlementAmount}
+                  onChange={(e) => setSettlementAmount(e.target.value)}
+                  placeholder="정산할 금액을 입력하세요"
+                  min="0"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">메모 (선택)</label>
+                <Input
+                  value={settlementMemo}
+                  onChange={(e) => setSettlementMemo(e.target.value)}
+                  placeholder="정산 관련 메모"
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-4">
+                <Button variant="outline" onClick={() => {
+                  setSettlementAffiliate(null);
+                  setSettlementAmount("");
+                  setSettlementMemo("");
+                }}>취소</Button>
+                <Button 
+                  onClick={() => createSettlement.mutate({
+                    affiliateId: settlementAffiliate.id,
+                    amount: settlementAmount,
+                    memo: settlementMemo,
+                  })} 
+                  disabled={createSettlement.isPending || !settlementAmount || parseInt(settlementAmount) <= 0}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  {createSettlement.isPending ? '처리 중...' : '정산 등록'}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Create Announcement Dialog */}
       <Dialog open={createAnnouncementOpen} onOpenChange={setCreateAnnouncementOpen}>

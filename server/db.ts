@@ -131,6 +131,18 @@ export async function initializeDatabase(): Promise<void> {
     `);
     console.log('Messages table ready');
 
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS affiliate_settlements (
+        id SERIAL PRIMARY KEY,
+        affiliate_id VARCHAR NOT NULL,
+        amount DECIMAL(20, 0) NOT NULL,
+        memo TEXT,
+        settled_by VARCHAR NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )
+    `);
+    console.log('Affiliate settlements table ready');
+
     // Ensure all admin users are approved (migration for existing data)
     await client.query(`
       UPDATE users SET approval_status = 'approved' WHERE role = 'admin' AND approval_status != 'approved'
