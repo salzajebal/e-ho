@@ -1102,6 +1102,75 @@ export async function registerRoutes(
     }
   });
 
+  // ==================== ANNOUNCEMENT ROUTES ====================
+
+  // Get all announcements (admin)
+  app.get("/api/admin/announcements", requireAdmin, async (req, res) => {
+    try {
+      const announcements = await storage.getAllAnnouncements();
+      res.json(announcements);
+    } catch (error) {
+      res.status(500).json({ error: "공지사항 목록 조회에 실패했습니다" });
+    }
+  });
+
+  // Create announcement (admin)
+  app.post("/api/admin/announcements", requireAdmin, async (req, res) => {
+    try {
+      const { title, content, isActive, isPinned } = req.body;
+      if (!title || !content) {
+        return res.status(400).json({ error: "제목과 내용을 입력해주세요" });
+      }
+      const announcement = await storage.createAnnouncement({
+        title,
+        content,
+        isActive: isActive ?? true,
+        isPinned: isPinned ?? false,
+      });
+      res.json(announcement);
+    } catch (error) {
+      res.status(500).json({ error: "공지사항 등록에 실패했습니다" });
+    }
+  });
+
+  // Update announcement (admin)
+  app.patch("/api/admin/announcements/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { title, content, isActive, isPinned } = req.body;
+      const updated = await storage.updateAnnouncement(id, {
+        title,
+        content,
+        isActive,
+        isPinned,
+      });
+      res.json(updated);
+    } catch (error) {
+      res.status(500).json({ error: "공지사항 수정에 실패했습니다" });
+    }
+  });
+
+  // Delete announcement (admin)
+  app.delete("/api/admin/announcements/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteAnnouncement(id);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "공지사항 삭제에 실패했습니다" });
+    }
+  });
+
+  // Get active announcements (public)
+  app.get("/api/announcements", async (req, res) => {
+    try {
+      const announcements = await storage.getActiveAnnouncements();
+      res.json(announcements);
+    } catch (error) {
+      res.status(500).json({ error: "공지사항 조회에 실패했습니다" });
+    }
+  });
+
   // Verify referral code (public - for registration)
   app.get("/api/referral/:code", async (req, res) => {
     try {

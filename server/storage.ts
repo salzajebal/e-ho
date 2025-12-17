@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Bet, type InsertBet, type Setting, type Message, type InsertMessage, type Affiliate, type InsertAffiliate, type AffiliateCommission, users, bets, settings, messages, affiliates, affiliateCommissions } from "@shared/schema";
+import { type User, type InsertUser, type Bet, type InsertBet, type Setting, type Message, type InsertMessage, type Affiliate, type InsertAffiliate, type AffiliateCommission, type Announcement, type InsertAnnouncement, users, bets, settings, messages, affiliates, affiliateCommissions, announcements } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, lt, sql, gte } from "drizzle-orm";
 
@@ -84,6 +84,14 @@ export interface IStorage {
   getAffiliateUserVolumes(affiliateId: string, since?: Date): Promise<UserVolume[]>;
   getAffiliateSymbolVolumes(affiliateId: string, since?: Date): Promise<SymbolVolume[]>;
   getAffiliateCommissionsWithDetails(affiliateId: string, since?: Date): Promise<CommissionWithDetails[]>;
+
+  // Announcement methods
+  createAnnouncement(announcement: InsertAnnouncement): Promise<Announcement>;
+  getAnnouncement(id: number): Promise<Announcement | undefined>;
+  getAllAnnouncements(): Promise<Announcement[]>;
+  getActiveAnnouncements(): Promise<Announcement[]>;
+  updateAnnouncement(id: number, data: Partial<Announcement>): Promise<Announcement>;
+  deleteAnnouncement(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -510,6 +518,42 @@ export class DatabaseStorage implements IStorage {
     }
 
     return results;
+  }
+
+  // Announcement methods
+  async createAnnouncement(announcement: InsertAnnouncement): Promise<Announcement> {
+    const [created] = await db.insert(announcements)
+      .values(announcement)
+      .returning();
+    return created;
+  }
+
+  async getAnnouncement(id: number): Promise<Announcement | undefined> {
+    const [announcement] = await db.select().from(announcements).where(eq(announcements.id, id));
+    return announcement || undefined;
+  }
+
+  async getAllAnnouncements(): Promise<Announcement[]> {
+    return await db.select().from(announcements)
+      .orderBy(desc(announcements.isPinned), desc(announcements.createdAt));
+  }
+
+  async getActiveAnnouncements(): Promise<Announcement[]> {
+    return await db.select().from(announcements)
+      .where(eq(announcements.isActive, true))
+      .orderBy(desc(announcements.isPinned), desc(announcements.createdAt));
+  }
+
+  async updateAnnouncement(id: number, data: Partial<Announcement>): Promise<Announcement> {
+    const [updated] = await db.update(announcements)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(announcements.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteAnnouncement(id: number): Promise<void> {
+    await db.delete(announcements).where(eq(announcements.id, id));
   }
 }
 
