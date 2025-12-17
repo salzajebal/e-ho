@@ -237,6 +237,34 @@ export const insertMaintenanceSymbolSchema = createInsertSchema(maintenanceSymbo
 export type InsertMaintenanceSymbol = z.infer<typeof insertMaintenanceSymbolSchema>;
 export type MaintenanceSymbol = typeof maintenanceSymbols.$inferSelect;
 
+// Deposit/Withdrawal requests table (입출금 신청)
+export const transactionRequests = pgTable("transaction_requests", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  type: text("type").notNull(), // 'deposit' or 'withdrawal'
+  amount: decimal("amount", { precision: 20, scale: 0 }).notNull(),
+  status: text("status").notNull().default("pending"), // 'pending', 'approved', 'rejected'
+  bankName: text("bank_name"),
+  accountHolder: text("account_holder"),
+  accountNumber: text("account_number"),
+  adminNote: text("admin_note"),
+  processedBy: varchar("processed_by"),
+  processedAt: timestamp("processed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertTransactionRequestSchema = createInsertSchema(transactionRequests).omit({
+  id: true,
+  status: true,
+  adminNote: true,
+  processedBy: true,
+  processedAt: true,
+  createdAt: true,
+});
+
+export type InsertTransactionRequest = z.infer<typeof insertTransactionRequestSchema>;
+export type TransactionRequest = typeof transactionRequests.$inferSelect;
+
 // Korean banks list
 export const KOREAN_BANKS = [
   "KB국민은행",

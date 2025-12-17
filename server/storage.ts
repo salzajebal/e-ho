@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Bet, type InsertBet, type Setting, type Message, type InsertMessage, type Affiliate, type InsertAffiliate, type AffiliateCommission, type AffiliateSettlement, type InsertAffiliateSettlement, type Announcement, type InsertAnnouncement, type BlockedIp, type InsertBlockedIp, type MaintenanceSymbol, type InsertMaintenanceSymbol, users, bets, settings, messages, affiliates, affiliateCommissions, affiliateSettlements, announcements, blockedIps, maintenanceSymbols } from "@shared/schema";
+import { type User, type InsertUser, type Bet, type InsertBet, type Setting, type Message, type InsertMessage, type Affiliate, type InsertAffiliate, type AffiliateCommission, type AffiliateSettlement, type InsertAffiliateSettlement, type Announcement, type InsertAnnouncement, type BlockedIp, type InsertBlockedIp, type MaintenanceSymbol, type InsertMaintenanceSymbol, type TransactionRequest, type InsertTransactionRequest, users, bets, settings, messages, affiliates, affiliateCommissions, affiliateSettlements, announcements, blockedIps, maintenanceSymbols, transactionRequests } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, lt, sql, gte } from "drizzle-orm";
 
@@ -110,6 +110,14 @@ export interface IStorage {
   getAffiliateSettlements(affiliateId: string): Promise<AffiliateSettlement[]>;
   getAllAffiliateSettlements(): Promise<(AffiliateSettlement & { affiliateName?: string })[]>;
   getAffiliateTotalSettled(affiliateId: string): Promise<number>;
+
+  // Transaction request methods (입출금 신청)
+  createTransactionRequest(request: InsertTransactionRequest): Promise<TransactionRequest>;
+  getTransactionRequest(id: number): Promise<TransactionRequest | undefined>;
+  getTransactionRequestsForUser(userId: string): Promise<TransactionRequest[]>;
+  getPendingTransactionRequests(): Promise<TransactionRequest[]>;
+  getAllTransactionRequests(): Promise<TransactionRequest[]>;
+  processTransactionRequest(id: number, status: 'approved' | 'rejected', processedBy: string, adminNote?: string): Promise<TransactionRequest>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -689,6 +697,49 @@ export class DatabaseStorage implements IStorage {
       .from(affiliateSettlements)
       .where(eq(affiliateSettlements.affiliateId, affiliateId));
     return parseInt(result[0]?.total || '0');
+  }
+
+  // Transaction request methods
+  async createTransactionRequest(request: InsertTransactionRequest): Promise<TransactionRequest> {
+    const [created] = await db.insert(transactionRequests)
+      .values(request)
+      .returning();
+    return created;
+  }
+
+  async getTransactionRequest(id: number): Promise<TransactionRequest | undefined> {
+    const [request] = await db.select().from(transactionRequests).where(eq(transactionRequests.id, id));
+    return request || undefined;
+  }
+
+  async getTransactionRequestsForUser(userId: string): Promise<TransactionRequest[]> {
+    return await db.select().from(transactionRequests)
+      .where(eq(transactionRequests.userId, userId))
+      .orderBy(desc(transactionRequests.createdAt));
+  }
+
+  async getPendingTransactionRequests(): Promise<TransactionRequest[]> {
+    return await db.select().from(transactionRequests)
+      .where(eq(transactionRequests.status, 'pending'))
+      .orderBy(desc(transactionRequests.createdAt));
+  }
+
+  async getAllTransactionRequests(): Promise<TransactionRequest[]> {
+    return await db.select().from(transactionRequests)
+      .orderBy(desc(transactionRequests.createdAt));
+  }
+
+  async processTransactionRequest(id: number, status: 'approved' | 'rejected', processedBy: string, adminNote?: string): Promise<TransactionRequest> {
+    const [updated] = await db.update(transactionRequests)
+      .set({
+        status,
+        processedBy,
+        adminNote: adminNote || null,
+        processedAt: new Date(),
+      })
+      .where(eq(transactionRequests.id, id))
+      .returning();
+    return updated;
   }
 }
 
