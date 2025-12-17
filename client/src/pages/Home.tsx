@@ -108,7 +108,7 @@ export default function Home() {
       amount,
       duration,
       strikePrice: currentMarket.price,
-      multiplier: 1.90,
+      multiplier: 2.00,
     });
   };
 
@@ -172,7 +172,7 @@ export default function Home() {
       <div className="h-6 bg-card border-t border-border flex items-center px-4 text-[10px] text-muted-foreground justify-between">
         <div className="flex gap-4">
           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-up animate-pulse"></span> 실시간 데이터 연결됨</span>
-          <span>배당률: 1.90x</span>
+          <span>배당률: 2.0x</span>
         </div>
         <div className="flex items-center gap-2">
           <span>잔고: {balanceData?.balance ? Math.floor(parseFloat(balanceData.balance)).toLocaleString() : '0'}원</span>

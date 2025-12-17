@@ -797,7 +797,7 @@ export default function Landing() {
                 <span>|</span>
                 <span>24시간 운영</span>
                 <span>|</span>
-                <span>1.90x 배당</span>
+                <span>2.0x 배당</span>
               </div>
             </div>
           </div>

@@ -64,7 +64,7 @@ export const bets = pgTable("bets", {
   strikePrice: decimal("strike_price", { precision: 20, scale: 8 }).notNull(), // price at bet time
   closePrice: decimal("close_price", { precision: 20, scale: 8 }), // price at expiry
   payout: decimal("payout", { precision: 20, scale: 8 }), // payout amount if won
-  multiplier: decimal("multiplier", { precision: 5, scale: 2 }).notNull().default("1.90"), // win multiplier (1.90 = 90% profit)
+  multiplier: decimal("multiplier", { precision: 5, scale: 2 }).notNull().default("2.00"), // win multiplier (2.00 = 100% profit)
   outcome: text("outcome").notNull().default("pending"), // 'pending', 'win', 'lose'
   expiresAt: timestamp("expires_at").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),

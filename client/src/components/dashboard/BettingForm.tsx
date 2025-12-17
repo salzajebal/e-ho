@@ -29,7 +29,7 @@ const DURATIONS = [
   { value: 300, label: '5분' },
 ];
 
-const MULTIPLIER = 1.90;
+const MULTIPLIER = 2.00;
 
 export function BettingForm({ currentPrice, symbol, balance, onBet }: BettingFormProps) {
   const [amount, setAmount] = useState<string>("10000");
