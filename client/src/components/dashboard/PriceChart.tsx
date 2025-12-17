@@ -99,6 +99,18 @@ export function PriceChart({ symbol, data }: PriceChartProps) {
         timeVisible: true,
         secondsVisible: false,
       },
+      localization: {
+        locale: 'ko-KR',
+        timeFormatter: (time: number) => {
+          const date = new Date(time * 1000);
+          const kstDate = new Date(date.getTime() + (9 * 60 * 60 * 1000));
+          return kstDate.toLocaleTimeString('ko-KR', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: false 
+          });
+        },
+      },
       handleScroll: { mouseWheel: true, pressedMouseMove: true },
       handleScale: { axisPressedMouseMove: true, mouseWheel: true, pinch: true },
     });
