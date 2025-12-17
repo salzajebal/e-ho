@@ -1,7 +1,8 @@
 import { Link } from "wouter";
-import { Menu, TrendingUp, LogOut, Shield, BarChart3 } from "lucide-react";
+import { Menu, LogOut, Shield, Clock } from "lucide-react";
 import { useAuth, useLogout } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,20 +10,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { TRADING_GAMES } from "@/lib/tradingGames";
 
 interface NavbarProps {
-  onSelectSymbol?: (symbol: string) => void;
-  selectedSymbol?: string;
+  onSelectGame?: (gameId: string) => void;
+  selectedGameId?: string;
 }
 
-export function Navbar({ onSelectSymbol, selectedSymbol }: NavbarProps) {
+export function Navbar({ onSelectGame, selectedGameId }: NavbarProps) {
   const { data: user } = useAuth();
   const logout = useLogout();
-
-  const quickAssets = [
-    { symbol: 'NDX', label: 'NASDAQ 100', icon: BarChart3 },
-    { symbol: 'SP500', label: 'S&P 500', icon: BarChart3 },
-  ];
 
   return (
     <header className="flex h-16 items-center border-b border-border bg-card px-4 lg:px-6">
@@ -38,20 +35,20 @@ export function Navbar({ onSelectSymbol, selectedSymbol }: NavbarProps) {
             <span className="text-orange-500 ml-1">KOREA</span>
           </div>
         </Link>
-        <nav className="hidden md:flex items-center gap-1 text-sm font-medium">
-          {quickAssets.map(asset => (
+        <nav className="hidden lg:flex items-center gap-1 text-sm font-medium">
+          {TRADING_GAMES.map(game => (
             <button
-              key={asset.symbol}
-              onClick={() => onSelectSymbol?.(asset.symbol)}
-              data-testid={`nav-asset-${asset.symbol}`}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all ${
-                selectedSymbol === asset.symbol 
+              key={game.id}
+              onClick={() => onSelectGame?.(game.id)}
+              data-testid={`nav-game-${game.id}`}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all text-xs",
+                selectedGameId === game.id 
                   ? 'bg-primary/20 text-primary' 
                   : 'text-muted-foreground hover:text-foreground hover:bg-muted/30'
-              }`}
+              )}
             >
-              <asset.icon className="h-4 w-4" />
-              <span>{asset.label}</span>
+              <span className="font-medium">{game.label}</span>
             </button>
           ))}
         </nav>
@@ -111,7 +108,7 @@ export function Navbar({ onSelectSymbol, selectedSymbol }: NavbarProps) {
               </Link>
             </>
           )}
-          <button className="md:hidden p-2 hover:text-foreground">
+          <button className="lg:hidden p-2 hover:text-foreground">
             <Menu className="h-6 w-6" />
           </button>
         </div>

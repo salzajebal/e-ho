@@ -17,11 +17,14 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Mail, X, Check, MessageSquare } from "lucide-react";
 import type { Message } from "@shared/schema";
+import { TRADING_GAMES } from "@/lib/tradingGames";
 
 export default function Home() {
-  const [selectedSymbol, setSelectedSymbol] = useState("NDX");
+  const [selectedGameId, setSelectedGameId] = useState("NDX-60");
   const [, setLocation] = useLocation();
   const marketData = useMarketData();
+  
+  const selectedGame = TRADING_GAMES.find(g => g.id === selectedGameId) || TRADING_GAMES[0];
   
   const { data: user } = useAuth();
   
@@ -90,7 +93,7 @@ export default function Home() {
     return [...uniqueActiveBets, ...historyBets];
   }, [activeBets, historyBets]);
 
-  const currentMarket = marketData.find(m => m.symbol === selectedSymbol) || marketData[0];
+  const currentMarket = marketData.find(m => m.symbol === selectedGame.symbol) || marketData[0];
 
   const currentPrices = useMemo(() => {
     const prices: Record<string, number> = {};
@@ -100,7 +103,7 @@ export default function Home() {
     return prices;
   }, [marketData]);
 
-  const handleBet = (direction: 'long' | 'short', amount: number, duration: number) => {
+  const handleBet = (direction: 'long' | 'short', amount: number) => {
     if (!user) {
       toast.error("로그인이 필요합니다");
       setLocation("/login");
@@ -108,10 +111,10 @@ export default function Home() {
     }
     
     createBet.mutate({
-      symbol: selectedSymbol,
+      symbol: selectedGame.symbol,
       direction,
       amount,
-      duration,
+      duration: selectedGame.duration,
       strikePrice: currentMarket.price,
       multiplier: 2.00,
     });
@@ -126,16 +129,17 @@ export default function Home() {
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground overflow-hidden font-sans">
-      <Navbar onSelectSymbol={setSelectedSymbol} selectedSymbol={selectedSymbol} />
+      <Navbar onSelectGame={setSelectedGameId} selectedGameId={selectedGameId} />
       <Ticker data={marketData} />
       
       <main className="flex-1 flex min-h-0 overflow-hidden">
-        {/* Left: Market List */}
+        {/* Left: Game List */}
         <div className="hidden xl:flex flex-col border-r border-border">
            <MarketOverview 
              data={marketData} 
-             onSelect={setSelectedSymbol} 
-             selectedSymbol={selectedSymbol} 
+             games={TRADING_GAMES}
+             onSelectGame={setSelectedGameId} 
+             selectedGameId={selectedGameId} 
            />
         </div>
 
@@ -144,7 +148,7 @@ export default function Home() {
           <ResizablePanelGroup direction="vertical">
             <ResizablePanel defaultSize={60} minSize={30}>
               <div className="h-full border-b border-border">
-                <PriceChart symbol={selectedSymbol} data={currentMarket} />
+                <PriceChart symbol={selectedGame.symbol} data={currentMarket} />
               </div>
             </ResizablePanel>
             
@@ -166,7 +170,7 @@ export default function Home() {
         <div className="flex flex-col border-l border-border w-[320px] shrink-0">
           <BettingForm 
             currentPrice={currentMarket.price} 
-            symbol={selectedSymbol}
+            game={selectedGame}
             onBet={handleBet}
             balance={balanceData?.balance}
           />
