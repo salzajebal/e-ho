@@ -1615,5 +1615,123 @@ export async function registerRoutes(
     }
   });
 
+  // ==================== IP BLOCKING ROUTES ====================
+
+  // Get all blocked IPs (admin only)
+  app.get("/api/admin/blocked-ips", requireAdmin, async (req, res) => {
+    try {
+      const blockedIps = await storage.getAllBlockedIps();
+      res.json(blockedIps);
+    } catch (error) {
+      console.error("Get blocked IPs error:", error);
+      res.status(500).json({ error: "차단 IP 목록 조회에 실패했습니다" });
+    }
+  });
+
+  // Add blocked IP (admin only)
+  app.post("/api/admin/blocked-ips", requireAdmin, async (req, res) => {
+    try {
+      const { ipAddress, reason } = req.body;
+      if (!ipAddress) {
+        return res.status(400).json({ error: "IP 주소를 입력해주세요" });
+      }
+
+      const blockedIp = await storage.addBlockedIp({
+        ipAddress,
+        reason: reason || "",
+        blockedBy: req.session.userId!,
+      });
+      res.json({ success: true, blockedIp });
+    } catch (error: any) {
+      console.error("Add blocked IP error:", error);
+      if (error.message?.includes("unique") || error.code === "23505") {
+        return res.status(400).json({ error: "이미 차단된 IP 주소입니다" });
+      }
+      res.status(500).json({ error: "IP 차단에 실패했습니다" });
+    }
+  });
+
+  // Remove blocked IP (admin only)
+  app.delete("/api/admin/blocked-ips/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.removeBlockedIp(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Remove blocked IP error:", error);
+      res.status(500).json({ error: "IP 차단 해제에 실패했습니다" });
+    }
+  });
+
+  // Check if IP is blocked
+  app.get("/api/blocked-ip-check", async (req, res) => {
+    try {
+      const clientIp = req.ip || req.socket.remoteAddress || "";
+      const isBlocked = await storage.isIpBlocked(clientIp);
+      res.json({ blocked: isBlocked, ip: clientIp });
+    } catch (error) {
+      res.status(500).json({ error: "IP 확인에 실패했습니다" });
+    }
+  });
+
+  // ==================== MAINTENANCE ROUTES ====================
+
+  // Get all maintenance symbols (admin only)
+  app.get("/api/admin/maintenance", requireAdmin, async (req, res) => {
+    try {
+      const maintenanceSymbols = await storage.getAllMaintenanceSymbols();
+      res.json(maintenanceSymbols);
+    } catch (error) {
+      console.error("Get maintenance symbols error:", error);
+      res.status(500).json({ error: "점검 종목 목록 조회에 실패했습니다" });
+    }
+  });
+
+  // Add maintenance symbol (admin only)
+  app.post("/api/admin/maintenance", requireAdmin, async (req, res) => {
+    try {
+      const { symbol, reason } = req.body;
+      if (!symbol) {
+        return res.status(400).json({ error: "종목 심볼을 입력해주세요" });
+      }
+
+      const maintenanceSymbol = await storage.addMaintenanceSymbol({
+        symbol,
+        reason: reason || "",
+        createdBy: req.session.userId!,
+      });
+      res.json({ success: true, maintenanceSymbol });
+    } catch (error: any) {
+      console.error("Add maintenance symbol error:", error);
+      if (error.message?.includes("unique") || error.code === "23505") {
+        return res.status(400).json({ error: "이미 점검 중인 종목입니다" });
+      }
+      res.status(500).json({ error: "종목 점검 설정에 실패했습니다" });
+    }
+  });
+
+  // Remove maintenance symbol (admin only)
+  app.delete("/api/admin/maintenance/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.removeMaintenanceSymbol(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Remove maintenance symbol error:", error);
+      res.status(500).json({ error: "종목 점검 해제에 실패했습니다" });
+    }
+  });
+
+  // Check if symbol is under maintenance (public)
+  app.get("/api/maintenance/:symbol", async (req, res) => {
+    try {
+      const { symbol } = req.params;
+      const isUnderMaintenance = await storage.isSymbolUnderMaintenance(symbol);
+      res.json({ symbol, underMaintenance: isUnderMaintenance });
+    } catch (error) {
+      res.status(500).json({ error: "점검 상태 확인에 실패했습니다" });
+    }
+  });
+
   return httpServer;
 }

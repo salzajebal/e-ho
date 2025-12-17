@@ -30,6 +30,8 @@ import {
   Share2,
   Copy,
   Wallet,
+  Ban,
+  Wrench,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -266,7 +268,7 @@ export default function Admin() {
   const logout = useLogout();
   const queryClient = useQueryClient();
 
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'bets' | 'settings' | 'approvals' | 'messages' | 'affiliates' | 'announcements'>('users');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'bets' | 'settings' | 'approvals' | 'messages' | 'affiliates' | 'announcements' | 'blocked-ips' | 'maintenance'>('users');
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
   const [messageRecipient, setMessageRecipient] = useState<AdminUser | null>(null);
   const [messageTitle, setMessageTitle] = useState("");
@@ -446,6 +448,113 @@ export default function Admin() {
     },
     enabled: auth?.role === 'admin',
   });
+
+  // Blocked IPs
+  const [newBlockedIp, setNewBlockedIp] = useState({ ipAddress: "", reason: "" });
+  const { data: blockedIpsList = [], refetch: refetchBlockedIps } = useQuery<{ id: number; ipAddress: string; reason: string | null; blockedBy: string; createdAt: string }[]>({
+    queryKey: ["/api/admin/blocked-ips"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/blocked-ips");
+      if (!res.ok) throw new Error("Failed to fetch blocked IPs");
+      return res.json();
+    },
+    enabled: auth?.role === 'admin',
+  });
+
+  const addBlockedIp = useMutation({
+    mutationFn: async (data: { ipAddress: string; reason: string }) => {
+      const res = await fetch("/api/admin/blocked-ips", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to block IP");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/blocked-ips"] });
+      setNewBlockedIp({ ipAddress: "", reason: "" });
+      toast.success("IP가 차단되었습니다");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const removeBlockedIp = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/admin/blocked-ips/${id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to unblock IP");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/blocked-ips"] });
+      toast.success("IP 차단이 해제되었습니다");
+    },
+    onError: () => {
+      toast.error("IP 차단 해제에 실패했습니다");
+    },
+  });
+
+  // Maintenance Symbols
+  const [newMaintenance, setNewMaintenance] = useState({ symbol: "", reason: "" });
+  const { data: maintenanceList = [], refetch: refetchMaintenance } = useQuery<{ id: number; symbol: string; reason: string | null; createdBy: string; startedAt: string }[]>({
+    queryKey: ["/api/admin/maintenance"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/maintenance");
+      if (!res.ok) throw new Error("Failed to fetch maintenance symbols");
+      return res.json();
+    },
+    enabled: auth?.role === 'admin',
+  });
+
+  const addMaintenance = useMutation({
+    mutationFn: async (data: { symbol: string; reason: string }) => {
+      const res = await fetch("/api/admin/maintenance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to add maintenance");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/maintenance"] });
+      setNewMaintenance({ symbol: "", reason: "" });
+      toast.success("종목 점검이 등록되었습니다");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const removeMaintenance = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/admin/maintenance/${id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to remove maintenance");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/maintenance"] });
+      toast.success("종목 점검이 해제되었습니다");
+    },
+    onError: () => {
+      toast.error("종목 점검 해제에 실패했습니다");
+    },
+  });
+
+  // Available symbols for maintenance
+  const availableSymbols = ["NDX", "SP500", "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA"];
 
   // Notification for new pending users
   useEffect(() => {
@@ -1027,6 +1136,30 @@ export default function Admin() {
           >
             <Bell className="w-4 h-4" />
             공지사항
+          </button>
+          <button
+            onClick={() => setActiveTab('blocked-ips')}
+            className={cn(
+              "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+              activeTab === 'blocked-ips'
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+            )}
+          >
+            <Ban className="w-4 h-4" />
+            IP 차단
+          </button>
+          <button
+            onClick={() => setActiveTab('maintenance')}
+            className={cn(
+              "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+              activeTab === 'maintenance'
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+            )}
+          >
+            <Wrench className="w-4 h-4" />
+            서버 점검
           </button>
           <button
             onClick={() => setActiveTab('settings')}
@@ -1834,6 +1967,197 @@ export default function Admin() {
                   </tbody>
                 </table>
               </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'blocked-ips' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold">IP 차단 관리</h1>
+              <Button variant="outline" size="sm" onClick={() => refetchBlockedIps()}>
+                <RefreshCw className="w-4 h-4 mr-2" />
+                새로고침
+              </Button>
+            </div>
+
+            <div className="bg-card border border-border rounded-lg p-4">
+              <h3 className="font-medium mb-3">새 IP 차단</h3>
+              <div className="flex gap-3">
+                <Input
+                  placeholder="IP 주소 (예: 192.168.1.1)"
+                  value={newBlockedIp.ipAddress}
+                  onChange={(e) => setNewBlockedIp(p => ({ ...p, ipAddress: e.target.value }))}
+                  className="max-w-xs"
+                />
+                <Input
+                  placeholder="차단 사유"
+                  value={newBlockedIp.reason}
+                  onChange={(e) => setNewBlockedIp(p => ({ ...p, reason: e.target.value }))}
+                  className="flex-1"
+                />
+                <Button
+                  onClick={() => addBlockedIp.mutate(newBlockedIp)}
+                  disabled={!newBlockedIp.ipAddress || addBlockedIp.isPending}
+                  data-testid="button-add-blocked-ip"
+                >
+                  {addBlockedIp.isPending ? '추가 중...' : 'IP 차단'}
+                </Button>
+              </div>
+            </div>
+
+            <div className="bg-card border border-border rounded-lg overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50 text-left">
+                    <tr>
+                      <th className="px-4 py-3 font-medium w-12 text-center">ID</th>
+                      <th className="px-4 py-3 font-medium">IP 주소</th>
+                      <th className="px-4 py-3 font-medium">차단 사유</th>
+                      <th className="px-4 py-3 font-medium">차단일</th>
+                      <th className="px-4 py-3 font-medium text-center">관리</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {blockedIpsList.map((ip) => (
+                      <tr key={ip.id} className="hover:bg-muted/30">
+                        <td className="px-4 py-3 text-center text-muted-foreground">{ip.id}</td>
+                        <td className="px-4 py-3 font-mono">{ip.ipAddress}</td>
+                        <td className="px-4 py-3 text-muted-foreground">{ip.reason || '-'}</td>
+                        <td className="px-4 py-3 text-muted-foreground text-xs">
+                          {formatDate(ip.createdAt)}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-down hover:text-down"
+                            onClick={() => removeBlockedIp.mutate(ip.id)}
+                            disabled={removeBlockedIp.isPending}
+                            data-testid={`button-unblock-ip-${ip.id}`}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                    {blockedIpsList.length === 0 && (
+                      <tr>
+                        <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
+                          차단된 IP가 없습니다
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'maintenance' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold">서버 점검 관리</h1>
+              <Button variant="outline" size="sm" onClick={() => refetchMaintenance()}>
+                <RefreshCw className="w-4 h-4 mr-2" />
+                새로고침
+              </Button>
+            </div>
+
+            <div className="bg-card border border-border rounded-lg p-4">
+              <h3 className="font-medium mb-3">종목 점검 등록</h3>
+              <div className="flex gap-3">
+                <Select
+                  value={newMaintenance.symbol}
+                  onValueChange={(v) => setNewMaintenance(p => ({ ...p, symbol: v }))}
+                >
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="종목 선택" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-border">
+                    {availableSymbols.map((symbol) => (
+                      <SelectItem key={symbol} value={symbol}>{symbol}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  placeholder="점검 사유 (예: 정기점검)"
+                  value={newMaintenance.reason}
+                  onChange={(e) => setNewMaintenance(p => ({ ...p, reason: e.target.value }))}
+                  className="flex-1"
+                />
+                <Button
+                  onClick={() => addMaintenance.mutate(newMaintenance)}
+                  disabled={!newMaintenance.symbol || addMaintenance.isPending}
+                  data-testid="button-add-maintenance"
+                >
+                  {addMaintenance.isPending ? '등록 중...' : '점검 등록'}
+                </Button>
+              </div>
+            </div>
+
+            <div className="bg-card border border-border rounded-lg overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50 text-left">
+                    <tr>
+                      <th className="px-4 py-3 font-medium w-12 text-center">ID</th>
+                      <th className="px-4 py-3 font-medium">종목</th>
+                      <th className="px-4 py-3 font-medium">점검 사유</th>
+                      <th className="px-4 py-3 font-medium">점검 시작일</th>
+                      <th className="px-4 py-3 font-medium text-center">관리</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {maintenanceList.map((item) => (
+                      <tr key={item.id} className="hover:bg-muted/30">
+                        <td className="px-4 py-3 text-center text-muted-foreground">{item.id}</td>
+                        <td className="px-4 py-3">
+                          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-yellow-500/10 text-yellow-500 font-medium">
+                            <Wrench className="w-3 h-3" />
+                            {item.symbol}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground">{item.reason || '-'}</td>
+                        <td className="px-4 py-3 text-muted-foreground text-xs">
+                          {formatDate(item.startedAt)}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-up hover:text-up"
+                            onClick={() => removeMaintenance.mutate(item.id)}
+                            disabled={removeMaintenance.isPending}
+                            data-testid={`button-remove-maintenance-${item.id}`}
+                          >
+                            <Check className="w-3.5 h-3.5 mr-1" />
+                            점검 해제
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                    {maintenanceList.length === 0 && (
+                      <tr>
+                        <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
+                          점검 중인 종목이 없습니다
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
+              <h3 className="font-medium text-yellow-500 mb-2 flex items-center gap-2">
+                <Wrench className="w-4 h-4" />
+                점검 중 종목 안내
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                점검 중인 종목은 거래가 일시 중단됩니다. 점검이 완료되면 "점검 해제" 버튼을 클릭하여 거래를 재개하세요.
+              </p>
             </div>
           </div>
         )}
