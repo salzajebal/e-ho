@@ -61,6 +61,7 @@ export function useRegister() {
       bankName: string;
       accountHolder: string;
       accountNumber: string;
+      referralCode?: string;
     }) => {
       const res = await fetch("/api/auth/register", {
         method: "POST",

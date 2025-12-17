@@ -129,6 +129,9 @@ export default function Landing() {
   const [bankName, setBankName] = useState("");
   const [accountHolder, setAccountHolder] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
+  const [referralCode, setReferralCode] = useState("");
+  const [referralValid, setReferralValid] = useState<boolean | null>(null);
+  const [referralName, setReferralName] = useState("");
   
   const login = useLogin();
   const register = useRegister();
@@ -229,6 +232,11 @@ export default function Landing() {
       toast.error("계좌번호를 입력해주세요");
       return;
     }
+
+    if (referralCode && referralValid === false) {
+      toast.error("올바른 가입코드를 입력해주세요");
+      return;
+    }
     
     register.mutate({ 
       username: regUsername, 
@@ -237,7 +245,8 @@ export default function Landing() {
       phone, 
       bankName, 
       accountHolder, 
-      accountNumber 
+      accountNumber,
+      referralCode: referralCode || undefined
     }, {
       onSuccess: () => {
         setShowRegisterModal(false);
@@ -249,8 +258,33 @@ export default function Landing() {
         setBankName("");
         setAccountHolder("");
         setAccountNumber("");
+        setReferralCode("");
+        setReferralValid(null);
+        setReferralName("");
       }
     });
+  };
+
+  const validateReferralCode = async (code: string) => {
+    if (!code) {
+      setReferralValid(null);
+      setReferralName("");
+      return;
+    }
+    try {
+      const res = await fetch(`/api/referral/${encodeURIComponent(code)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setReferralValid(true);
+        setReferralName(data.displayName);
+      } else {
+        setReferralValid(false);
+        setReferralName("");
+      }
+    } catch {
+      setReferralValid(false);
+      setReferralName("");
+    }
   };
 
   return (
@@ -943,6 +977,44 @@ export default function Landing() {
                           required
                         />
                       </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-white/10">
+                  <p className="text-xs text-gray-400 mb-2">가입코드 (선택)</p>
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-300 font-medium">추천인 코드</label>
+                    <div className="relative">
+                      <Input
+                        type="text"
+                        value={referralCode}
+                        onChange={(e) => {
+                          const code = e.target.value.toUpperCase();
+                          setReferralCode(code);
+                          if (code.length >= 6) {
+                            validateReferralCode(code);
+                          } else {
+                            setReferralValid(null);
+                            setReferralName("");
+                          }
+                        }}
+                        placeholder="가입코드를 입력하세요 (선택)"
+                        className={`h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-orange-500/50 text-sm uppercase ${
+                          referralValid === true ? 'border-green-500' : referralValid === false ? 'border-red-500' : ''
+                        }`}
+                        data-testid="input-reg-referral-code"
+                      />
+                      {referralValid === true && (
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-green-500 text-xs">
+                          {referralName}
+                        </span>
+                      )}
+                      {referralValid === false && (
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-red-500 text-xs">
+                          잘못된 코드
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
