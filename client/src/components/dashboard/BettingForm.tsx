@@ -76,7 +76,7 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
     if (confirmDialog.direction) {
       const numAmount = parseFloat(amount);
       onBet(confirmDialog.direction, numAmount);
-      toast.success(`${confirmDialog.direction === 'long' ? '📈 LONG' : '📉 SHORT'} 베팅 완료!`, {
+      toast.success(`${confirmDialog.direction === 'long' ? '📈 LONG (매수)' : '📉 SHORT (매도)'} 베팅 완료!`, {
         description: `${game.label} | ${numAmount.toLocaleString()}원`,
       });
     }
@@ -166,19 +166,19 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
         <div className="grid grid-cols-2 gap-3 pt-2">
           <Button 
             onClick={() => handleBetClick('long')}
-            className="h-14 text-lg font-bold bg-up hover:bg-up/90 text-white"
+            className="h-14 text-base font-bold bg-up hover:bg-up/90 text-white"
             data-testid="button-long"
           >
             <TrendingUp className="w-5 h-5 mr-2" />
-            LONG
+            LONG (매수)
           </Button>
           <Button 
             onClick={() => handleBetClick('short')}
-            className="h-14 text-lg font-bold bg-down hover:bg-down/90 text-white"
+            className="h-14 text-base font-bold bg-down hover:bg-down/90 text-white"
             data-testid="button-short"
           >
             <TrendingDown className="w-5 h-5 mr-2" />
-            SHORT
+            SHORT (매도)
           </Button>
         </div>
       </div>
@@ -188,9 +188,9 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               {confirmDialog.direction === 'long' ? (
-                <><TrendingUp className="w-5 h-5 text-up" /> LONG 베팅 확인</>
+                <><TrendingUp className="w-5 h-5 text-up" /> LONG (매수) 베팅 확인</>
               ) : (
-                <><TrendingDown className="w-5 h-5 text-down" /> SHORT 베팅 확인</>
+                <><TrendingDown className="w-5 h-5 text-down" /> SHORT (매도) 베팅 확인</>
               )}
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
@@ -206,7 +206,7 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
                       "font-bold",
                       confirmDialog.direction === 'long' ? "text-up" : "text-down"
                     )}>
-                      {confirmDialog.direction === 'long' ? 'LONG (상승)' : 'SHORT (하락)'}
+                      {confirmDialog.direction === 'long' ? 'LONG (매수)' : 'SHORT (매도)'}
                     </span>
                   </div>
                   <div className="flex justify-between">
