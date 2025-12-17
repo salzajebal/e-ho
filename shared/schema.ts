@@ -182,6 +182,40 @@ export const affiliateCommissions = pgTable("affiliate_commissions", {
 
 export type AffiliateCommission = typeof affiliateCommissions.$inferSelect;
 
+// Blocked IPs table (IP 차단)
+export const blockedIps = pgTable("blocked_ips", {
+  id: serial("id").primaryKey(),
+  ipAddress: text("ip_address").notNull().unique(),
+  reason: text("reason"),
+  blockedBy: varchar("blocked_by").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertBlockedIpSchema = createInsertSchema(blockedIps).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertBlockedIp = z.infer<typeof insertBlockedIpSchema>;
+export type BlockedIp = typeof blockedIps.$inferSelect;
+
+// Maintenance symbols table (서버 점검 - 거래 비활성화)
+export const maintenanceSymbols = pgTable("maintenance_symbols", {
+  id: serial("id").primaryKey(),
+  symbol: text("symbol").notNull().unique(),
+  reason: text("reason"),
+  startedAt: timestamp("started_at").defaultNow().notNull(),
+  createdBy: varchar("created_by").notNull(),
+});
+
+export const insertMaintenanceSymbolSchema = createInsertSchema(maintenanceSymbols).omit({
+  id: true,
+  startedAt: true,
+});
+
+export type InsertMaintenanceSymbol = z.infer<typeof insertMaintenanceSymbolSchema>;
+export type MaintenanceSymbol = typeof maintenanceSymbols.$inferSelect;
+
 // Korean banks list
 export const KOREAN_BANKS = [
   "KB국민은행",

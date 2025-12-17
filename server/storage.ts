@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Bet, type InsertBet, type Setting, type Message, type InsertMessage, type Affiliate, type InsertAffiliate, type AffiliateCommission, type Announcement, type InsertAnnouncement, users, bets, settings, messages, affiliates, affiliateCommissions, announcements } from "@shared/schema";
+import { type User, type InsertUser, type Bet, type InsertBet, type Setting, type Message, type InsertMessage, type Affiliate, type InsertAffiliate, type AffiliateCommission, type Announcement, type InsertAnnouncement, type BlockedIp, type InsertBlockedIp, type MaintenanceSymbol, type InsertMaintenanceSymbol, users, bets, settings, messages, affiliates, affiliateCommissions, announcements, blockedIps, maintenanceSymbols } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, lt, sql, gte } from "drizzle-orm";
 
@@ -92,6 +92,18 @@ export interface IStorage {
   getActiveAnnouncements(): Promise<Announcement[]>;
   updateAnnouncement(id: number, data: Partial<Announcement>): Promise<Announcement>;
   deleteAnnouncement(id: number): Promise<void>;
+
+  // Blocked IP methods
+  addBlockedIp(ip: InsertBlockedIp): Promise<BlockedIp>;
+  removeBlockedIp(id: number): Promise<void>;
+  getAllBlockedIps(): Promise<BlockedIp[]>;
+  isIpBlocked(ipAddress: string): Promise<boolean>;
+
+  // Maintenance symbol methods
+  addMaintenanceSymbol(symbol: InsertMaintenanceSymbol): Promise<MaintenanceSymbol>;
+  removeMaintenanceSymbol(id: number): Promise<void>;
+  getAllMaintenanceSymbols(): Promise<MaintenanceSymbol[]>;
+  isSymbolUnderMaintenance(symbol: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -554,6 +566,48 @@ export class DatabaseStorage implements IStorage {
 
   async deleteAnnouncement(id: number): Promise<void> {
     await db.delete(announcements).where(eq(announcements.id, id));
+  }
+
+  // Blocked IP methods
+  async addBlockedIp(ip: InsertBlockedIp): Promise<BlockedIp> {
+    const [created] = await db.insert(blockedIps)
+      .values(ip)
+      .returning();
+    return created;
+  }
+
+  async removeBlockedIp(id: number): Promise<void> {
+    await db.delete(blockedIps).where(eq(blockedIps.id, id));
+  }
+
+  async getAllBlockedIps(): Promise<BlockedIp[]> {
+    return await db.select().from(blockedIps).orderBy(desc(blockedIps.createdAt));
+  }
+
+  async isIpBlocked(ipAddress: string): Promise<boolean> {
+    const [blocked] = await db.select().from(blockedIps).where(eq(blockedIps.ipAddress, ipAddress));
+    return !!blocked;
+  }
+
+  // Maintenance symbol methods
+  async addMaintenanceSymbol(symbol: InsertMaintenanceSymbol): Promise<MaintenanceSymbol> {
+    const [created] = await db.insert(maintenanceSymbols)
+      .values(symbol)
+      .returning();
+    return created;
+  }
+
+  async removeMaintenanceSymbol(id: number): Promise<void> {
+    await db.delete(maintenanceSymbols).where(eq(maintenanceSymbols.id, id));
+  }
+
+  async getAllMaintenanceSymbols(): Promise<MaintenanceSymbol[]> {
+    return await db.select().from(maintenanceSymbols).orderBy(desc(maintenanceSymbols.startedAt));
+  }
+
+  async isSymbolUnderMaintenance(symbol: string): Promise<boolean> {
+    const [maintenance] = await db.select().from(maintenanceSymbols).where(eq(maintenanceSymbols.symbol, symbol));
+    return !!maintenance;
   }
 }
 
