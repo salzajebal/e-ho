@@ -199,8 +199,10 @@ app.use((req, res, next) => {
     const userWss = new WebSocketServer({ server: httpServer, path: '/ws/user' });
     
     userWss.on('connection', async (ws, req) => {
+      console.log('User WebSocket connection attempt received');
       try {
         const sessionData = await validateWebSocketSession(req.headers.cookie);
+        console.log('User WebSocket session validation result:', sessionData ? `userId=${sessionData.userId}` : 'null');
         
         if (!sessionData) {
           console.log('User WebSocket rejected: No valid session');
