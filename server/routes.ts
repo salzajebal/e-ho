@@ -5,6 +5,7 @@ import { insertBetSchema, loginSchema } from "@shared/schema";
 import { z } from "zod";
 import session from "express-session";
 import MemoryStore from "memorystore";
+import { broadcastToAdmins } from "./index";
 
 const SessionStore = MemoryStore(session);
 
@@ -315,6 +316,12 @@ export async function registerRoutes(
 
       const newBalance = (currentBalance - betAmount).toString();
       await storage.updateUserBalance(userId, newBalance);
+
+      // Broadcast new bet to admin clients
+      broadcastToAdmins('bet_placed', {
+        bet,
+        user: { id: user.id, username: user.username, name: user.name },
+      });
 
       res.json(bet);
     } catch (error) {
@@ -1182,6 +1189,137 @@ export async function registerRoutes(
       res.json({ valid: true, displayName: affiliate.displayName });
     } catch (error) {
       res.status(500).json({ valid: false, error: "가입코드 확인에 실패했습니다" });
+    }
+  });
+
+  // ==================== BETTING CONTROL (ADMIN) ====================
+
+  // Get all live/pending bets with user info
+  app.get("/api/admin/bets/live", requireAdmin, async (req, res) => {
+    try {
+      const allBets = await storage.getAllBetsWithUsers();
+      res.json(allBets);
+    } catch (error) {
+      console.error("Failed to fetch live bets:", error);
+      res.status(500).json({ error: "Failed to fetch live bets" });
+    }
+  });
+
+  // Get all bets (with filter)
+  app.get("/api/admin/bets", requireAdmin, async (req, res) => {
+    try {
+      const { status, symbol, userId } = req.query;
+      const allBets = await storage.getAllBetsWithUsers(
+        status as string | undefined,
+        symbol as string | undefined,
+        userId as string | undefined
+      );
+      res.json(allBets);
+    } catch (error) {
+      console.error("Failed to fetch bets:", error);
+      res.status(500).json({ error: "Failed to fetch bets" });
+    }
+  });
+
+  // Update bet amount (admin)
+  app.patch("/api/admin/bets/:id/amount", requireAdmin, async (req, res) => {
+    try {
+      const betId = parseInt(req.params.id);
+      const { amount } = req.body;
+
+      if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
+        return res.status(400).json({ error: "유효한 금액을 입력해주세요" });
+      }
+
+      const bet = await storage.getBet(betId);
+      if (!bet) {
+        return res.status(404).json({ error: "배팅을 찾을 수 없습니다" });
+      }
+
+      if (bet.outcome !== 'pending') {
+        return res.status(400).json({ error: "이미 정산된 배팅은 수정할 수 없습니다" });
+      }
+
+      const oldAmount = parseFloat(bet.amount);
+      const newAmount = parseFloat(amount);
+      const difference = newAmount - oldAmount;
+
+      // Update bet amount
+      const updatedBet = await storage.updateBetAmount(betId, amount.toString());
+
+      // Adjust user balance (if amount increased, deduct more; if decreased, refund)
+      const user = await storage.getUser(bet.userId);
+      if (user) {
+        const currentBalance = parseFloat(user.balance);
+        const newBalance = (currentBalance - difference).toString();
+        await storage.updateUserBalance(bet.userId, newBalance);
+      }
+
+      // Broadcast update to admin clients
+      broadcastToAdmins('bet_updated', {
+        bet: updatedBet,
+        oldAmount,
+        newAmount,
+        user: user ? { id: user.id, username: user.username, name: user.name } : null,
+      });
+
+      res.json(updatedBet);
+    } catch (error) {
+      console.error("Failed to update bet amount:", error);
+      res.status(500).json({ error: "배팅 금액 수정에 실패했습니다" });
+    }
+  });
+
+  // Force settle bet (admin)
+  app.post("/api/admin/bets/:id/settle", requireAdmin, async (req, res) => {
+    try {
+      const betId = parseInt(req.params.id);
+      const { outcome, closePrice } = req.body;
+
+      if (!['win', 'lose'].includes(outcome)) {
+        return res.status(400).json({ error: "결과는 win 또는 lose여야 합니다" });
+      }
+
+      const bet = await storage.getBet(betId);
+      if (!bet) {
+        return res.status(404).json({ error: "배팅을 찾을 수 없습니다" });
+      }
+
+      if (bet.outcome !== 'pending') {
+        return res.status(400).json({ error: "이미 정산된 배팅입니다" });
+      }
+
+      const betAmount = parseFloat(bet.amount);
+      const multiplier = parseFloat(bet.multiplier);
+      const payout = outcome === 'win' ? (betAmount * multiplier).toString() : '0';
+
+      const settledBet = await storage.settleBet(
+        betId,
+        closePrice || bet.strikePrice,
+        outcome,
+        payout
+      );
+
+      // Update user balance if win
+      if (outcome === 'win') {
+        const user = await storage.getUser(bet.userId);
+        if (user) {
+          const currentBalance = parseFloat(user.balance);
+          const newBalance = (currentBalance + parseFloat(payout)).toString();
+          await storage.updateUserBalance(bet.userId, newBalance);
+        }
+      }
+
+      // Broadcast settlement to admin clients
+      broadcastToAdmins('bet_settled', {
+        bet: settledBet,
+        forcedByAdmin: true,
+      });
+
+      res.json(settledBet);
+    } catch (error) {
+      console.error("Failed to settle bet:", error);
+      res.status(500).json({ error: "배팅 정산에 실패했습니다" });
     }
   });
 

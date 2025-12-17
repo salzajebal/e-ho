@@ -286,15 +286,49 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
-  async getAllBetsWithUsers(): Promise<(Bet & { username: string })[]> {
-    const allBets = await db.select().from(bets).orderBy(desc(bets.createdAt));
+  async getAllBetsWithUsers(
+    status?: string,
+    symbol?: string,
+    userId?: string
+  ): Promise<(Bet & { username: string; name: string })[]> {
+    let query = db.select().from(bets);
+    
+    const conditions = [];
+    if (status) {
+      conditions.push(eq(bets.outcome, status));
+    }
+    if (symbol) {
+      conditions.push(eq(bets.symbol, symbol));
+    }
+    if (userId) {
+      conditions.push(eq(bets.userId, userId));
+    }
+    
+    let allBets;
+    if (conditions.length > 0) {
+      allBets = await db.select().from(bets)
+        .where(and(...conditions))
+        .orderBy(desc(bets.createdAt));
+    } else {
+      allBets = await db.select().from(bets).orderBy(desc(bets.createdAt));
+    }
+    
     const allUsers = await this.getAllUsers();
-    const userMap = new Map(allUsers.map(u => [u.id, u.username]));
+    const userMap = new Map(allUsers.map(u => [u.id, { username: u.username, name: u.name }]));
 
     return allBets.map(bet => ({
       ...bet,
-      username: userMap.get(bet.userId) || 'Unknown',
+      username: userMap.get(bet.userId)?.username || 'Unknown',
+      name: userMap.get(bet.userId)?.name || 'Unknown',
     }));
+  }
+
+  async updateBetAmount(betId: number, newAmount: string): Promise<Bet> {
+    const [updated] = await db.update(bets)
+      .set({ amount: newAmount })
+      .where(eq(bets.id, betId))
+      .returning();
+    return updated;
   }
 
   // Settings methods

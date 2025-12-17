@@ -3,6 +3,21 @@ import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 import { testConnection, initializeDatabase } from "./db";
+import { WebSocketServer, WebSocket } from "ws";
+
+// WebSocket clients storage
+export const wsClients = new Set<WebSocket>();
+export const adminWsClients = new Set<WebSocket>();
+
+// Broadcast to all admin clients
+export function broadcastToAdmins(event: string, data: any) {
+  const message = JSON.stringify({ event, data, timestamp: Date.now() });
+  adminWsClients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(message);
+    }
+  });
+}
 
 console.log("Starting server initialization...");
 console.log("NODE_ENV:", process.env.NODE_ENV);
@@ -111,6 +126,28 @@ app.use((req, res, next) => {
     // It is the only port that is not firewalled.
     const port = parseInt(process.env.PORT || "5000", 10);
     console.log(`Starting HTTP server on port ${port}...`);
+    
+    // Setup WebSocket server for real-time admin betting control
+    const wss = new WebSocketServer({ server: httpServer, path: '/ws/admin' });
+    
+    wss.on('connection', (ws, req) => {
+      console.log('Admin WebSocket client connected');
+      adminWsClients.add(ws);
+      
+      // Send initial connection success message
+      ws.send(JSON.stringify({ event: 'connected', data: { message: 'Admin WebSocket connected' } }));
+      
+      ws.on('close', () => {
+        console.log('Admin WebSocket client disconnected');
+        adminWsClients.delete(ws);
+      });
+      
+      ws.on('error', (error) => {
+        console.error('WebSocket error:', error);
+        adminWsClients.delete(ws);
+      });
+    });
+    
     httpServer.listen(
       {
         port,
@@ -120,6 +157,7 @@ app.use((req, res, next) => {
       () => {
         log(`serving on port ${port}`);
         console.log(`Server ready and listening on port ${port}`);
+        console.log(`WebSocket server ready at /ws/admin`);
       },
     );
   } catch (error) {
