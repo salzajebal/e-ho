@@ -39,7 +39,12 @@ Preferred communication style: Simple, everyday language.
 ### Database
 - **PostgreSQL** via `DATABASE_URL` environment variable
 - **ORM**: Drizzle ORM with drizzle-kit for migrations
-- **Schema**: Users table (id, username, balance) and Bets table (symbol, direction, amount, duration, outcome, etc.)
+- **Schema**: Users, Bets, Messages, Affiliates, AffiliateCommissions, Settings, Announcements tables
+
+### Key Features
+- **Announcements**: Admin-managed public announcements with pinned/active status, displayed on landing page
+- **Messages**: Private admin-to-user messaging system displayed on landing page for logged-in users
+- **Affiliates**: Complete affiliate/distributor system with referral codes, commission tracking, and analytics
 
 ### Third-Party APIs
 - **Binance WebSocket**: Live BTC/USDT and ETH/USDT ticker data
