@@ -177,7 +177,8 @@ function AffiliateLogin({ onLogin }: { onLogin: () => void }) {
             <img
               src="/logo.png"
               alt="Invest Korea Logo"
-              className="w-16 h-16 mx-auto rounded-lg mb-4 object-cover"
+              className="w-20 h-20 mx-auto rounded-xl mb-4 object-contain bg-black"
+              onError={(e) => { e.currentTarget.style.display = 'none'; }}
             />
             <CardTitle className="text-2xl">총판 로그인</CardTitle>
             <p className="text-muted-foreground text-sm">
@@ -457,7 +458,7 @@ export default function AffiliateDashboard() {
             <img
               src="/logo.png"
               alt="Invest Korea Logo"
-              className="w-8 h-8 rounded-lg object-cover"
+              className="w-10 h-10 rounded-lg object-contain bg-black"
             />
             <div>
               <p className="font-bold text-sm">INVEST KOREA</p>
