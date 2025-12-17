@@ -1469,6 +1469,87 @@ export async function registerRoutes(
     }
   });
 
+  // Force place bet on behalf of user (admin)
+  app.post("/api/admin/bets/force", requireAdmin, async (req, res) => {
+    try {
+      const { userId, symbol, direction, amount, duration, strikePrice, multiplier } = req.body;
+
+      if (!userId || !symbol || !direction || !amount || !duration || !strikePrice) {
+        return res.status(400).json({ error: "필수 필드가 누락되었습니다" });
+      }
+
+      if (!['long', 'short'].includes(direction)) {
+        return res.status(400).json({ error: "방향은 long 또는 short이어야 합니다" });
+      }
+
+      const validDurations = [60, 120, 180, 300];
+      const parsedDuration = parseInt(duration);
+      if (!validDurations.includes(parsedDuration)) {
+        return res.status(400).json({ error: "유효하지 않은 배팅 시간입니다 (1분, 2분, 3분, 5분만 가능)" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "사용자를 찾을 수 없습니다" });
+      }
+
+      const betAmount = parseFloat(amount);
+      const currentBalance = parseFloat(user.balance);
+
+      if (isNaN(betAmount) || betAmount <= 0) {
+        return res.status(400).json({ error: "배팅 금액은 0보다 커야 합니다" });
+      }
+
+      if (betAmount > currentBalance) {
+        const formattedBalance = Math.floor(currentBalance).toLocaleString('ko-KR');
+        return res.status(400).json({ error: `잔고 부족: 현재 잔고 ₩${formattedBalance}` });
+      }
+
+      const expiresAt = new Date(Date.now() + parsedDuration * 1000);
+      const newBalance = (currentBalance - betAmount).toString();
+
+      await storage.updateUserBalance(userId, newBalance);
+
+      let bet;
+      try {
+        bet = await storage.createBet({
+          userId,
+          symbol,
+          direction,
+          amount: betAmount.toString(),
+          duration: parsedDuration,
+          strikePrice: strikePrice.toString(),
+          multiplier: (multiplier || 1.90).toString(),
+          expiresAt,
+        });
+        
+        if (!bet || !bet.id) {
+          await storage.updateUserBalance(userId, currentBalance.toString());
+          throw new Error("배팅 생성에 실패했습니다");
+        }
+      } catch (betError) {
+        await storage.updateUserBalance(userId, currentBalance.toString());
+        throw betError;
+      }
+
+      broadcastToAdmins('bet_placed', {
+        bet,
+        user: { id: user.id, username: user.username, name: user.name },
+        forcedByAdmin: true,
+      });
+
+      broadcastToUser(Number(userId), 'bet_placed', {
+        bet,
+        forcedByAdmin: true,
+      });
+
+      res.json({ bet, newBalance });
+    } catch (error) {
+      console.error("Failed to force place bet:", error);
+      res.status(500).json({ error: "강제 배팅에 실패했습니다" });
+    }
+  });
+
   // ==================== SETTINGS ROUTES ====================
 
   // Get public setting (telegram link)

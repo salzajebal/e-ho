@@ -35,6 +35,7 @@ import {
   Wifi,
   WifiOff,
   Globe,
+  Zap,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -271,7 +272,7 @@ export default function Admin() {
   const logout = useLogout();
   const queryClient = useQueryClient();
 
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'bets' | 'settings' | 'approvals' | 'messages' | 'affiliates' | 'announcements' | 'blocked-ips' | 'maintenance'>('users');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'bets' | 'settings' | 'approvals' | 'messages' | 'affiliates' | 'announcements' | 'blocked-ips' | 'maintenance' | 'forced-bet'>('users');
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
   const [messageRecipient, setMessageRecipient] = useState<AdminUser | null>(null);
   const [messageTitle, setMessageTitle] = useState("");
@@ -323,6 +324,14 @@ export default function Admin() {
   const [editingBetAmount, setEditingBetAmount] = useState("");
   const [wsConnected, setWsConnected] = useState(false);
   const [currentTime, setCurrentTime] = useState(Date.now());
+
+  // Forced betting states
+  const [forcedBetUserId, setForcedBetUserId] = useState("");
+  const [forcedBetSymbol, setForcedBetSymbol] = useState("NDX");
+  const [forcedBetDirection, setForcedBetDirection] = useState<"long" | "short">("long");
+  const [forcedBetAmount, setForcedBetAmount] = useState("");
+  const [forcedBetDuration, setForcedBetDuration] = useState(60);
+  const [isPlacingForcedBet, setIsPlacingForcedBet] = useState(false);
 
   // Update current time every second for countdown display
   useEffect(() => {
@@ -1186,6 +1195,19 @@ export default function Admin() {
           >
             <Wrench className="w-4 h-4" />
             서버 점검
+          </button>
+          <button
+            onClick={() => setActiveTab('forced-bet')}
+            className={cn(
+              "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+              activeTab === 'forced-bet'
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+            )}
+            data-testid="tab-forced-bet"
+          >
+            <Zap className="w-4 h-4" />
+            강제 배팅
           </button>
           <button
             onClick={() => setActiveTab('settings')}
@@ -2252,6 +2274,199 @@ export default function Admin() {
               </h3>
               <p className="text-sm text-muted-foreground">
                 점검 중인 종목은 거래가 일시 중단됩니다. 점검이 완료되면 "점검 해제" 버튼을 클릭하여 거래를 재개하세요.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'forced-bet' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold">강제 배팅</h1>
+            </div>
+
+            <div className="bg-card border border-border rounded-lg p-6">
+              <h3 className="font-medium mb-4 flex items-center gap-2">
+                <Zap className="w-4 h-4 text-yellow-500" />
+                회원 대신 배팅하기
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm text-muted-foreground">회원 선택 *</label>
+                  <Select
+                    value={forcedBetUserId}
+                    onValueChange={setForcedBetUserId}
+                  >
+                    <SelectTrigger className="w-full" data-testid="select-forced-bet-user">
+                      <SelectValue placeholder="회원을 선택하세요" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-card border-border max-h-60">
+                      {users.filter(u => u.role !== 'admin').map((user) => (
+                        <SelectItem key={user.id} value={user.id}>
+                          {user.username} ({user.name || '이름없음'}) - ₩{parseFloat(user.balance).toLocaleString()}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm text-muted-foreground">종목 *</label>
+                  <Select
+                    value={forcedBetSymbol}
+                    onValueChange={setForcedBetSymbol}
+                  >
+                    <SelectTrigger className="w-full" data-testid="select-forced-bet-symbol">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-card border-border">
+                      <SelectItem value="NDX">NDX (NASDAQ 100)</SelectItem>
+                      <SelectItem value="SP500">SP500 (S&P 500)</SelectItem>
+                      <SelectItem value="AAPL">AAPL (Apple)</SelectItem>
+                      <SelectItem value="MSFT">MSFT (Microsoft)</SelectItem>
+                      <SelectItem value="GOOGL">GOOGL (Google)</SelectItem>
+                      <SelectItem value="AMZN">AMZN (Amazon)</SelectItem>
+                      <SelectItem value="NVDA">NVDA (Nvidia)</SelectItem>
+                      <SelectItem value="META">META (Meta)</SelectItem>
+                      <SelectItem value="TSLA">TSLA (Tesla)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm text-muted-foreground">방향 *</label>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant={forcedBetDirection === 'long' ? 'default' : 'outline'}
+                      className={cn(
+                        "flex-1",
+                        forcedBetDirection === 'long' && "bg-up hover:bg-up/90"
+                      )}
+                      onClick={() => setForcedBetDirection('long')}
+                      data-testid="button-forced-bet-long"
+                    >
+                      <TrendingUp className="w-4 h-4 mr-1" />
+                      롱 (상승)
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={forcedBetDirection === 'short' ? 'default' : 'outline'}
+                      className={cn(
+                        "flex-1",
+                        forcedBetDirection === 'short' && "bg-down hover:bg-down/90"
+                      )}
+                      onClick={() => setForcedBetDirection('short')}
+                      data-testid="button-forced-bet-short"
+                    >
+                      <TrendingUp className="w-4 h-4 mr-1 rotate-180" />
+                      숏 (하락)
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm text-muted-foreground">배팅 금액 (₩) *</label>
+                  <Input
+                    type="number"
+                    value={forcedBetAmount}
+                    onChange={(e) => setForcedBetAmount(e.target.value)}
+                    placeholder="배팅 금액 입력"
+                    data-testid="input-forced-bet-amount"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm text-muted-foreground">배팅 시간 *</label>
+                  <Select
+                    value={forcedBetDuration.toString()}
+                    onValueChange={(v) => setForcedBetDuration(parseInt(v))}
+                  >
+                    <SelectTrigger className="w-full" data-testid="select-forced-bet-duration">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-card border-border">
+                      <SelectItem value="60">1분</SelectItem>
+                      <SelectItem value="120">2분</SelectItem>
+                      <SelectItem value="180">3분</SelectItem>
+                      <SelectItem value="300">5분</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end">
+                <Button
+                  size="lg"
+                  className={cn(
+                    "min-w-[200px]",
+                    forcedBetDirection === 'long' ? "bg-up hover:bg-up/90" : "bg-down hover:bg-down/90"
+                  )}
+                  disabled={!forcedBetUserId || !forcedBetAmount || isPlacingForcedBet}
+                  onClick={async () => {
+                    try {
+                      setIsPlacingForcedBet(true);
+                      const marketRes = await fetch('/api/market/prices');
+                      const marketData = await marketRes.json();
+                      const symbolPrice = marketData.prices?.find((p: any) => p.symbol === forcedBetSymbol);
+                      if (!symbolPrice) {
+                        toast.error('현재 가격을 가져올 수 없습니다');
+                        return;
+                      }
+
+                      const res = await fetch('/api/admin/bets/force', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          userId: forcedBetUserId,
+                          symbol: forcedBetSymbol,
+                          direction: forcedBetDirection,
+                          amount: parseFloat(forcedBetAmount),
+                          duration: forcedBetDuration,
+                          strikePrice: symbolPrice.price,
+                          multiplier: 1.90,
+                        }),
+                      });
+
+                      if (!res.ok) {
+                        const err = await res.json();
+                        throw new Error(err.error || '강제 배팅 실패');
+                      }
+
+                      toast.success('강제 배팅이 성공적으로 등록되었습니다');
+                      setForcedBetUserId('');
+                      setForcedBetSymbol('NDX');
+                      setForcedBetDirection('long');
+                      setForcedBetAmount('');
+                      setForcedBetDuration(60);
+                      refetchBets();
+                      refetchUsers();
+                    } catch (error: any) {
+                      toast.error(error.message || '강제 배팅 실패');
+                    } finally {
+                      setIsPlacingForcedBet(false);
+                    }
+                  }}
+                  data-testid="button-place-forced-bet"
+                >
+                  {isPlacingForcedBet ? '배팅 중...' : (
+                    <>
+                      <Zap className="w-4 h-4 mr-2" />
+                      강제 배팅 실행
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-4">
+              <h3 className="font-medium text-orange-500 mb-2 flex items-center gap-2">
+                <Zap className="w-4 h-4" />
+                강제 배팅 안내
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                선택한 회원의 잔고에서 배팅 금액이 차감됩니다. 회원이 충분한 잔고를 보유하고 있는지 확인하세요.
+                강제 배팅은 일반 배팅과 동일하게 정산됩니다.
               </p>
             </div>
           </div>
