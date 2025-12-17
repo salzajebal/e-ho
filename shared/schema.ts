@@ -3,6 +3,33 @@ import { pgTable, text, varchar, serial, integer, decimal, timestamp, boolean } 
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Affiliates (총판) table
+export const affiliates = pgTable("affiliates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
+  displayName: text("display_name").notNull(),
+  phone: text("phone"),
+  referralCode: text("referral_code").notNull().unique(),
+  commissionRate: decimal("commission_rate", { precision: 5, scale: 2 }).notNull().default("5.00"), // 5% commission
+  totalCommission: decimal("total_commission", { precision: 20, scale: 0 }).notNull().default("0"),
+  pendingCommission: decimal("pending_commission", { precision: 20, scale: 0 }).notNull().default("0"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertAffiliateSchema = createInsertSchema(affiliates).pick({
+  username: true,
+  password: true,
+  displayName: true,
+  phone: true,
+  referralCode: true,
+  commissionRate: true,
+});
+
+export type InsertAffiliate = z.infer<typeof insertAffiliateSchema>;
+export type Affiliate = typeof affiliates.$inferSelect;
+
 // User accounts table
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -18,7 +45,8 @@ export const users = pgTable("users", {
   totalWithdrawal: decimal("total_withdrawal", { precision: 20, scale: 0 }).notNull().default("0"),
   totalBet: decimal("total_bet", { precision: 20, scale: 0 }).notNull().default("0"),
   totalWin: decimal("total_win", { precision: 20, scale: 0 }).notNull().default("0"),
-  role: text("role").notNull().default("user"), // 'user' or 'admin'
+  role: text("role").notNull().default("user"), // 'user', 'admin', or 'affiliate'
+  affiliateId: varchar("affiliate_id"), // Reference to affiliate who referred this user
   isActive: boolean("is_active").notNull().default(true),
   approvalStatus: text("approval_status").notNull().default("pending"), // 'pending', 'approved', 'rejected'
   lastLoginAt: timestamp("last_login_at"),
@@ -48,6 +76,7 @@ export const registerSchema = z.object({
   bankName: z.string().min(1, "은행을 선택해주세요"),
   accountHolder: z.string().min(1, "예금주를 입력해주세요"),
   accountNumber: z.string().min(1, "계좌번호를 입력해주세요"),
+  referralCode: z.string().optional(), // 총판 가입코드 (선택)
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -117,6 +146,21 @@ export const insertMessageSchema = createInsertSchema(messages).omit({
 
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type Message = typeof messages.$inferSelect;
+
+// Affiliate commissions table
+export const affiliateCommissions = pgTable("affiliate_commissions", {
+  id: serial("id").primaryKey(),
+  affiliateId: varchar("affiliate_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  betId: integer("bet_id").notNull(),
+  betAmount: decimal("bet_amount", { precision: 20, scale: 0 }).notNull(),
+  commissionAmount: decimal("commission_amount", { precision: 20, scale: 0 }).notNull(),
+  status: text("status").notNull().default("pending"), // 'pending', 'settled'
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  settledAt: timestamp("settled_at"),
+});
+
+export type AffiliateCommission = typeof affiliateCommissions.$inferSelect;
 
 // Korean banks list
 export const KOREAN_BANKS = [
