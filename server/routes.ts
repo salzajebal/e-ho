@@ -1221,16 +1221,16 @@ export async function registerRoutes(
     }
   });
 
-  // ==================== REAL-TIME MARKET DATA ====================
+  // ==================== REAL-TIME MARKET DATA (Yahoo Finance) ====================
   
-  // Cache for market data (refresh every 10 seconds)
+  // Cache for market data (refresh every 15 seconds)
   let marketDataCache: { data: any; timestamp: number } | null = null;
-  const CACHE_DURATION = 10000; // 10 seconds
+  const CACHE_DURATION = 15000; // 15 seconds
 
-  // Symbol mapping for Finnhub
-  const SYMBOL_MAP: Record<string, string> = {
-    'NDX': 'QQQ',      // Use QQQ ETF as proxy for NASDAQ 100
-    'SP500': 'SPY',    // Use SPY ETF as proxy for S&P 500
+  // Yahoo Finance symbol mapping
+  const YAHOO_SYMBOLS: Record<string, string> = {
+    'NDX': '^NDX',      // NASDAQ 100 Index
+    'SP500': '^GSPC',   // S&P 500 Index
     'AAPL': 'AAPL',
     'MSFT': 'MSFT',
     'GOOGL': 'GOOGL',
@@ -1240,56 +1240,72 @@ export async function registerRoutes(
     'TSLA': 'TSLA',
   };
 
-  // NDX/SP500 price multipliers (ETF to Index conversion)
-  const INDEX_MULTIPLIERS: Record<string, number> = {
-    'NDX': 42.5,   // QQQ ~$520 * 42.5 ≈ NDX 22,100
-    'SP500': 10.2, // SPY ~$585 * 10.2 ≈ SP500 5,967
-  };
+  // Fetch quote from Yahoo Finance
+  async function fetchYahooQuote(yahooSymbol: string): Promise<any> {
+    try {
+      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSymbol)}?interval=1m&range=1d`;
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Yahoo API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      const result = data.chart?.result?.[0];
+      
+      if (!result) {
+        throw new Error('No data returned');
+      }
+      
+      const meta = result.meta;
+      const regularMarketPrice = meta.regularMarketPrice || 0;
+      const previousClose = meta.previousClose || meta.chartPreviousClose || regularMarketPrice;
+      const regularMarketDayHigh = meta.regularMarketDayHigh || regularMarketPrice;
+      const regularMarketDayLow = meta.regularMarketDayLow || regularMarketPrice;
+      
+      return {
+        price: regularMarketPrice,
+        previousClose,
+        high: regularMarketDayHigh,
+        low: regularMarketDayLow,
+      };
+    } catch (error) {
+      console.error(`Yahoo fetch error for ${yahooSymbol}:`, error);
+      return null;
+    }
+  }
 
   app.get("/api/market/prices", async (req, res) => {
     try {
-      const apiKey = process.env.FINNHUB_API_KEY;
-      
-      if (!apiKey) {
-        return res.status(503).json({ 
-          error: "Market data API not configured",
-          fallback: true 
-        });
-      }
-
       // Return cached data if fresh
       if (marketDataCache && (Date.now() - marketDataCache.timestamp) < CACHE_DURATION) {
         return res.json(marketDataCache.data);
       }
 
-      const symbols = Object.keys(SYMBOL_MAP);
+      const symbols = Object.keys(YAHOO_SYMBOLS);
       const pricePromises = symbols.map(async (symbol) => {
-        const finnhubSymbol = SYMBOL_MAP[symbol];
+        const yahooSymbol = YAHOO_SYMBOLS[symbol];
         try {
-          const response = await fetch(
-            `https://finnhub.io/api/v1/quote?symbol=${finnhubSymbol}&token=${apiKey}`
-          );
-          const data = await response.json();
+          const quote = await fetchYahooQuote(yahooSymbol);
           
-          let price = data.c || 0; // Current price
-          let prevClose = data.pc || price; // Previous close
-          
-          // Apply multiplier for index ETFs
-          if (INDEX_MULTIPLIERS[symbol]) {
-            price = price * INDEX_MULTIPLIERS[symbol];
-            prevClose = prevClose * INDEX_MULTIPLIERS[symbol];
+          if (!quote || quote.price === 0) {
+            return null;
           }
           
-          const change = price - prevClose;
-          const changePercent = prevClose > 0 ? (change / prevClose) * 100 : 0;
+          const change = quote.price - quote.previousClose;
+          const changePercent = quote.previousClose > 0 ? (change / quote.previousClose) * 100 : 0;
           
           return {
             symbol,
-            price: parseFloat(price.toFixed(2)),
+            price: parseFloat(quote.price.toFixed(2)),
             change: parseFloat(change.toFixed(2)),
             changePercent: parseFloat(changePercent.toFixed(2)),
-            high: parseFloat((data.h * (INDEX_MULTIPLIERS[symbol] || 1)).toFixed(2)),
-            low: parseFloat((data.l * (INDEX_MULTIPLIERS[symbol] || 1)).toFixed(2)),
+            high: parseFloat(quote.high.toFixed(2)),
+            low: parseFloat(quote.low.toFixed(2)),
             timestamp: Date.now(),
           };
         } catch (err) {
@@ -1322,38 +1338,28 @@ export async function registerRoutes(
   app.get("/api/market/price/:symbol", async (req, res) => {
     try {
       const { symbol } = req.params;
-      const apiKey = process.env.FINNHUB_API_KEY;
+      const yahooSymbol = YAHOO_SYMBOLS[symbol];
       
-      if (!apiKey) {
-        return res.status(503).json({ error: "API not configured", fallback: true });
-      }
-
-      const finnhubSymbol = SYMBOL_MAP[symbol];
-      if (!finnhubSymbol) {
+      if (!yahooSymbol) {
         return res.status(400).json({ error: "Unknown symbol" });
       }
 
-      const response = await fetch(
-        `https://finnhub.io/api/v1/quote?symbol=${finnhubSymbol}&token=${apiKey}`
-      );
-      const data = await response.json();
+      const quote = await fetchYahooQuote(yahooSymbol);
       
-      let price = data.c || 0;
-      let prevClose = data.pc || price;
-      
-      if (INDEX_MULTIPLIERS[symbol]) {
-        price = price * INDEX_MULTIPLIERS[symbol];
-        prevClose = prevClose * INDEX_MULTIPLIERS[symbol];
+      if (!quote || quote.price === 0) {
+        return res.status(503).json({ error: "Failed to fetch price", fallback: true });
       }
       
-      const change = price - prevClose;
-      const changePercent = prevClose > 0 ? (change / prevClose) * 100 : 0;
+      const change = quote.price - quote.previousClose;
+      const changePercent = quote.previousClose > 0 ? (change / quote.previousClose) * 100 : 0;
 
       res.json({
         symbol,
-        price: parseFloat(price.toFixed(2)),
+        price: parseFloat(quote.price.toFixed(2)),
         change: parseFloat(change.toFixed(2)),
         changePercent: parseFloat(changePercent.toFixed(2)),
+        high: parseFloat(quote.high.toFixed(2)),
+        low: parseFloat(quote.low.toFixed(2)),
         timestamp: Date.now(),
       });
     } catch (error) {
