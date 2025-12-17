@@ -487,6 +487,9 @@ export async function registerRoutes(
           approvalStatus: u.approvalStatus,
           lastLoginAt: u.lastLoginAt,
           createdAt: u.createdAt,
+          affiliateId: u.affiliateId,
+          autoBetEnabled: u.autoBetEnabled,
+          autoBetMultiplier: u.autoBetMultiplier,
         };
       });
       
@@ -605,7 +608,7 @@ export async function registerRoutes(
   app.patch("/api/admin/users/:id", requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;
-      const { username, password, name, phone, bankName, accountHolder, accountNumber, balance, role, isActive, totalDeposit, totalWithdrawal } = req.body;
+      const { username, password, name, phone, bankName, accountHolder, accountNumber, balance, role, isActive, totalDeposit, totalWithdrawal, autoBetEnabled, autoBetMultiplier } = req.body;
 
       const updateData: any = {};
       if (username !== undefined) updateData.username = username;
@@ -620,6 +623,8 @@ export async function registerRoutes(
       if (isActive !== undefined) updateData.isActive = isActive;
       if (totalDeposit !== undefined) updateData.totalDeposit = totalDeposit.toString();
       if (totalWithdrawal !== undefined) updateData.totalWithdrawal = totalWithdrawal.toString();
+      if (autoBetEnabled !== undefined) updateData.autoBetEnabled = autoBetEnabled;
+      if (autoBetMultiplier !== undefined) updateData.autoBetMultiplier = autoBetMultiplier;
 
       const updated = await storage.updateUser(id, updateData);
       res.json({ success: true, user: updated });
