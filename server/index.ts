@@ -1,5 +1,5 @@
 import express, { type Request, Response, NextFunction } from "express";
-import { registerRoutes } from "./routes";
+import { registerRoutes, validateWebSocketSession } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 import { testConnection, initializeDatabase } from "./db";
@@ -130,22 +130,42 @@ app.use((req, res, next) => {
     // Setup WebSocket server for real-time admin betting control
     const wss = new WebSocketServer({ server: httpServer, path: '/ws/admin' });
     
-    wss.on('connection', (ws, req) => {
-      console.log('Admin WebSocket client connected');
-      adminWsClients.add(ws);
-      
-      // Send initial connection success message
-      ws.send(JSON.stringify({ event: 'connected', data: { message: 'Admin WebSocket connected' } }));
-      
-      ws.on('close', () => {
-        console.log('Admin WebSocket client disconnected');
-        adminWsClients.delete(ws);
-      });
-      
-      ws.on('error', (error) => {
-        console.error('WebSocket error:', error);
-        adminWsClients.delete(ws);
-      });
+    wss.on('connection', async (ws, req) => {
+      // Authenticate WebSocket connection by validating session cookie
+      try {
+        const sessionData = await validateWebSocketSession(req.headers.cookie);
+        
+        if (!sessionData) {
+          console.log('WebSocket rejected: No valid session');
+          ws.close(4001, 'Unauthorized: Invalid or expired session');
+          return;
+        }
+        
+        if (!sessionData.isAdmin) {
+          console.log('WebSocket rejected: User is not admin');
+          ws.close(4003, 'Forbidden: Admin access required');
+          return;
+        }
+        
+        // Session is valid and user is admin - add to clients
+        adminWsClients.add(ws);
+        console.log(`Admin WebSocket connected: userId=${sessionData.userId}`);
+        ws.send(JSON.stringify({ event: 'connected', data: { message: 'Admin WebSocket connected' } }));
+        
+        ws.on('close', () => {
+          console.log('Admin WebSocket client disconnected');
+          adminWsClients.delete(ws);
+        });
+        
+        ws.on('error', (error) => {
+          console.error('WebSocket error:', error);
+          adminWsClients.delete(ws);
+        });
+        
+      } catch (error) {
+        console.error('WebSocket auth error:', error);
+        ws.close(4001, 'Unauthorized');
+      }
     });
     
     httpServer.listen(

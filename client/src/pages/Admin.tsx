@@ -308,6 +308,19 @@ export default function Admin() {
     role: 'user',
   });
 
+  // Betting control states
+  const [betFilter, setBetFilter] = useState<'all' | 'pending' | 'win' | 'lose'>('pending');
+  const [editingBetId, setEditingBetId] = useState<number | null>(null);
+  const [editingBetAmount, setEditingBetAmount] = useState("");
+  const [wsConnected, setWsConnected] = useState(false);
+  const [currentTime, setCurrentTime] = useState(Date.now());
+
+  // Update current time every second for countdown display
+  useEffect(() => {
+    const interval = setInterval(() => setCurrentTime(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   const { data: stats, refetch: refetchStats } = useQuery<AdminStats>({
     queryKey: ["/api/admin/stats"],
     queryFn: async () => {
@@ -338,6 +351,53 @@ export default function Admin() {
     enabled: auth?.role === 'admin',
     refetchInterval: 5000,
   });
+
+  // WebSocket for real-time bet updates
+  useEffect(() => {
+    if (auth?.role !== 'admin') return;
+
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const ws = new WebSocket(`${protocol}//${window.location.host}/ws/admin`);
+
+    ws.onopen = () => {
+      console.log('Admin WebSocket connection opened');
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+        if (msg.event === 'connected') {
+          setWsConnected(true);
+          console.log('Admin WebSocket authenticated via session');
+        } else if (msg.event === 'bet_placed' || msg.event === 'bet_updated' || msg.event === 'bet_settled') {
+          refetchBets();
+          if (msg.event === 'bet_placed') {
+            toast.info(`새 베팅: ${msg.data.user?.username || 'Unknown'} - ${formatMoney(msg.data.bet.amount)}`);
+          }
+        }
+      } catch (e) {
+        console.error('WebSocket parse error:', e);
+      }
+    };
+
+    ws.onclose = (event) => {
+      setWsConnected(false);
+      if (event.code === 4001) {
+        console.log('Admin WebSocket: Session invalid or expired');
+      } else if (event.code === 4003) {
+        console.log('Admin WebSocket: Admin access required');
+      } else {
+        console.log('Admin WebSocket disconnected');
+      }
+    };
+
+    ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+      setWsConnected(false);
+    };
+
+    return () => ws.close();
+  }, [auth?.role, refetchBets]);
 
   const { data: settingsData } = useQuery({
     queryKey: ["/api/admin/settings"],
@@ -586,6 +646,72 @@ export default function Admin() {
     onError: () => {
       toast.error("변경에 실패했습니다");
     },
+  });
+
+  const updateBetAmount = useMutation({
+    mutationFn: async ({ betId, amount }: { betId: number; amount: string }) => {
+      const res = await fetch(`/api/admin/bets/${betId}/amount`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount }),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to update bet amount");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/bets"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      setEditingBetId(null);
+      setEditingBetAmount("");
+      toast.success("베팅 금액이 수정되었습니다");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const forceSettleBet = useMutation({
+    mutationFn: async ({ betId, outcome }: { betId: number; outcome: 'win' | 'lose' }) => {
+      const res = await fetch(`/api/admin/bets/${betId}/settle`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ outcome }),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to settle bet");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/bets"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      toast.success("베팅이 강제 정산되었습니다");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  // Helper function to calculate remaining time
+  const getTimeRemaining = (expiresAt: string) => {
+    const remaining = new Date(expiresAt).getTime() - currentTime;
+    if (remaining <= 0) return '정산중';
+    const seconds = Math.floor(remaining / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Filter bets based on selected filter
+  const filteredBets = bets.filter(bet => {
+    if (betFilter === 'all') return true;
+    return bet.outcome === betFilter;
   });
 
   // Affiliate mutations
@@ -1151,12 +1277,44 @@ export default function Admin() {
 
         {activeTab === 'bets' && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold">베팅 관리</h1>
-              <Button variant="outline" size="sm" onClick={() => refetchBets()}>
-                <RefreshCw className="w-4 h-4 mr-2" />
-                새로고침
-              </Button>
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-4">
+                <h1 className="text-2xl font-bold">실시간 베팅 관리</h1>
+                <div className={cn(
+                  "flex items-center gap-1.5 px-2 py-1 rounded-full text-xs",
+                  wsConnected ? "bg-up/20 text-up" : "bg-down/20 text-down"
+                )}>
+                  <div className={cn(
+                    "w-2 h-2 rounded-full",
+                    wsConnected ? "bg-up animate-pulse" : "bg-down"
+                  )} />
+                  {wsConnected ? '실시간 연결됨' : '연결 끊김'}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center bg-muted/50 rounded-md p-0.5">
+                  {(['pending', 'all', 'win', 'lose'] as const).map((filter) => (
+                    <button
+                      key={filter}
+                      onClick={() => setBetFilter(filter)}
+                      className={cn(
+                        "px-3 py-1.5 text-xs font-medium rounded-md transition-colors",
+                        betFilter === filter 
+                          ? "bg-primary text-primary-foreground" 
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      {filter === 'pending' ? `진행중 (${bets.filter(b => b.outcome === 'pending').length})` :
+                       filter === 'all' ? '전체' :
+                       filter === 'win' ? '적중' : '미적중'}
+                    </button>
+                  ))}
+                </div>
+                <Button variant="outline" size="sm" onClick={() => refetchBets()}>
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  새로고침
+                </Button>
+              </div>
             </div>
 
             <div className="bg-card border border-border rounded-lg overflow-hidden">
@@ -1165,18 +1323,21 @@ export default function Admin() {
                   <thead className="bg-muted/30">
                     <tr className="text-left text-muted-foreground">
                       <th className="px-3 py-2 whitespace-nowrap">종목</th>
-                      <th className="px-3 py-2 whitespace-nowrap">회원아이디</th>
+                      <th className="px-3 py-2 whitespace-nowrap">회원</th>
                       <th className="px-3 py-2 whitespace-nowrap">방향</th>
                       <th className="px-3 py-2 whitespace-nowrap">배팅금액</th>
                       <th className="px-3 py-2 whitespace-nowrap">배당</th>
-                      <th className="px-3 py-2 whitespace-nowrap">배팅시간</th>
-                      <th className="px-3 py-2 whitespace-nowrap">결과</th>
+                      <th className="px-3 py-2 whitespace-nowrap">남은시간</th>
+                      <th className="px-3 py-2 whitespace-nowrap">상태</th>
                       <th className="px-3 py-2 whitespace-nowrap text-right">관리</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {bets.map((bet) => (
-                      <tr key={bet.id} className="border-t border-border/50 hover:bg-muted/10">
+                    {filteredBets.map((bet) => (
+                      <tr key={bet.id} className={cn(
+                        "border-t border-border/50 hover:bg-muted/10",
+                        bet.outcome === 'pending' && "bg-yellow-500/5"
+                      )}>
                         <td className="px-3 py-2 font-medium">
                           {SYMBOL_NAMES[bet.symbol] || bet.symbol}
                         </td>
@@ -1189,10 +1350,62 @@ export default function Admin() {
                             {bet.direction === 'long' ? 'LONG' : 'SHORT'}
                           </span>
                         </td>
-                        <td className="px-3 py-2 font-mono">{formatMoney(bet.amount)}</td>
+                        <td className="px-3 py-2">
+                          {editingBetId === bet.id ? (
+                            <div className="flex items-center gap-1">
+                              <Input
+                                type="number"
+                                value={editingBetAmount}
+                                onChange={(e) => setEditingBetAmount(e.target.value)}
+                                className="w-24 h-7 text-xs"
+                                autoFocus
+                              />
+                              <button
+                                onClick={() => updateBetAmount.mutate({ betId: bet.id, amount: editingBetAmount })}
+                                disabled={updateBetAmount.isPending}
+                                className="p-1 rounded bg-up/20 hover:bg-up/30 text-up"
+                              >
+                                <Check className="w-3 h-3" />
+                              </button>
+                              <button
+                                onClick={() => { setEditingBetId(null); setEditingBetAmount(""); }}
+                                className="p-1 rounded bg-down/20 hover:bg-down/30 text-down"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1">
+                              <span className="font-mono">{formatMoney(bet.amount)}</span>
+                              {bet.outcome === 'pending' && (
+                                <button
+                                  onClick={() => {
+                                    setEditingBetId(bet.id);
+                                    setEditingBetAmount(bet.amount);
+                                  }}
+                                  className="p-0.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+                                  title="금액 수정"
+                                >
+                                  <Edit2 className="w-3 h-3" />
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </td>
                         <td className="px-3 py-2 font-mono">x{bet.multiplier}</td>
-                        <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">
-                          {formatDate(bet.createdAt)}
+                        <td className="px-3 py-2">
+                          {bet.outcome === 'pending' ? (
+                            <span className={cn(
+                              "font-mono text-xs px-2 py-0.5 rounded",
+                              new Date(bet.expiresAt).getTime() - currentTime <= 10000 
+                                ? "bg-down/20 text-down animate-pulse" 
+                                : "bg-yellow-500/20 text-yellow-500"
+                            )}>
+                              {getTimeRemaining(bet.expiresAt)}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">-</span>
+                          )}
                         </td>
                         <td className="px-3 py-2">
                           <span className={cn(
@@ -1206,40 +1419,63 @@ export default function Admin() {
                         </td>
                         <td className="px-3 py-2">
                           <div className="flex items-center justify-end gap-1">
-                            <button
-                              onClick={() => updateBetOutcome.mutate({ betId: bet.id, outcome: 'win' })}
-                              disabled={updateBetOutcome.isPending}
-                              className={cn(
-                                "p-1.5 rounded transition-colors",
-                                bet.outcome === 'win' 
-                                  ? "bg-up text-white" 
-                                  : "hover:bg-up/20 text-up"
-                              )}
-                              title="적중 처리"
-                            >
-                              <Check className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => updateBetOutcome.mutate({ betId: bet.id, outcome: 'lose' })}
-                              disabled={updateBetOutcome.isPending}
-                              className={cn(
-                                "p-1.5 rounded transition-colors",
-                                bet.outcome === 'lose' 
-                                  ? "bg-down text-white" 
-                                  : "hover:bg-down/20 text-down"
-                              )}
-                              title="미적중 처리"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
+                            {bet.outcome === 'pending' ? (
+                              <>
+                                <button
+                                  onClick={() => forceSettleBet.mutate({ betId: bet.id, outcome: 'win' })}
+                                  disabled={forceSettleBet.isPending}
+                                  className="p-1.5 rounded transition-colors hover:bg-up/20 text-up"
+                                  title="강제 적중 처리"
+                                >
+                                  <Check className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => forceSettleBet.mutate({ betId: bet.id, outcome: 'lose' })}
+                                  disabled={forceSettleBet.isPending}
+                                  className="p-1.5 rounded transition-colors hover:bg-down/20 text-down"
+                                  title="강제 미적중 처리"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <button
+                                  onClick={() => updateBetOutcome.mutate({ betId: bet.id, outcome: 'win' })}
+                                  disabled={updateBetOutcome.isPending}
+                                  className={cn(
+                                    "p-1.5 rounded transition-colors",
+                                    bet.outcome === 'win' 
+                                      ? "bg-up text-white" 
+                                      : "hover:bg-up/20 text-up"
+                                  )}
+                                  title="적중으로 변경"
+                                >
+                                  <Check className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => updateBetOutcome.mutate({ betId: bet.id, outcome: 'lose' })}
+                                  disabled={updateBetOutcome.isPending}
+                                  className={cn(
+                                    "p-1.5 rounded transition-colors",
+                                    bet.outcome === 'lose' 
+                                      ? "bg-down text-white" 
+                                      : "hover:bg-down/20 text-down"
+                                  )}
+                                  title="미적중으로 변경"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                              </>
+                            )}
                           </div>
                         </td>
                       </tr>
                     ))}
-                    {bets.length === 0 && (
+                    {filteredBets.length === 0 && (
                       <tr>
                         <td colSpan={8} className="px-3 py-8 text-center text-muted-foreground">
-                          베팅 기록이 없습니다
+                          {betFilter === 'pending' ? '진행중인 베팅이 없습니다' : '베팅 기록이 없습니다'}
                         </td>
                       </tr>
                     )}

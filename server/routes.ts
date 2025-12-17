@@ -6,12 +6,70 @@ import { z } from "zod";
 import session from "express-session";
 import MemoryStore from "memorystore";
 import { broadcastToAdmins } from "./index";
+import { parse as parseCookie } from "cookie";
+import { unsign } from "cookie-signature";
 
 const SessionStore = MemoryStore(session);
 
 declare module "express-session" {
   interface SessionData {
     userId?: string;
+  }
+}
+
+// Export session secret and store for WebSocket auth
+export const SESSION_SECRET = process.env.SESSION_SECRET || "myinfx-secret-key-2024";
+
+// Create shared session store instance
+const sessionStore = new SessionStore({
+  checkPeriod: 86400000,
+});
+
+// Helper to validate session from WebSocket request
+export async function validateWebSocketSession(cookieHeader: string | undefined): Promise<{ userId: string; isAdmin: boolean } | null> {
+  if (!cookieHeader) return null;
+  
+  try {
+    const cookies = parseCookie(cookieHeader);
+    const signedSessionId = cookies['connect.sid'];
+    
+    if (!signedSessionId) return null;
+    
+    // The session ID is URL encoded and signed: s%3A<sessionId>.<signature>
+    const decoded = decodeURIComponent(signedSessionId);
+    
+    // Remove 's:' prefix if present
+    const withoutPrefix = decoded.startsWith('s:') ? decoded.slice(2) : decoded;
+    
+    // Unsign the cookie to get the session ID
+    const sessionId = unsign(withoutPrefix, SESSION_SECRET);
+    
+    if (!sessionId) return null;
+    
+    // Get session from store
+    return new Promise((resolve) => {
+      sessionStore.get(sessionId, async (err, session) => {
+        if (err || !session || !session.userId) {
+          resolve(null);
+          return;
+        }
+        
+        // Verify user is admin
+        const user = await storage.getUser(session.userId);
+        if (!user) {
+          resolve(null);
+          return;
+        }
+        
+        resolve({
+          userId: session.userId,
+          isAdmin: user.role === 'admin',
+        });
+      });
+    });
+  } catch (e) {
+    console.error('Session validation error:', e);
+    return null;
   }
 }
 
@@ -29,12 +87,10 @@ export async function registerRoutes(
   // Session middleware
   app.use(
     session({
-      secret: process.env.SESSION_SECRET || "myinfx-secret-key-2024",
+      secret: SESSION_SECRET,
       resave: false,
       saveUninitialized: false,
-      store: new SessionStore({
-        checkPeriod: 86400000,
-      }),
+      store: sessionStore,
       cookie: {
         secure: isProduction,
         httpOnly: true,
