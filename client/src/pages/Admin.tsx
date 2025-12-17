@@ -27,6 +27,8 @@ import {
   Bell,
   MessageSquare,
   Send,
+  Share2,
+  Copy,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -102,6 +104,22 @@ interface AdminStats {
   totalBetAmount: number;
   totalPayout: number;
   profit: number;
+}
+
+interface AdminAffiliate {
+  id: string;
+  username: string;
+  password: string;
+  displayName: string;
+  phone: string | null;
+  referralCode: string;
+  commissionRate: string;
+  totalCommission: string;
+  pendingCommission: string;
+  isActive: boolean;
+  createdAt: string;
+  userCount: number;
+  totalVolume: number;
 }
 
 const KOREAN_BANKS = [
@@ -237,7 +255,7 @@ export default function Admin() {
   const logout = useLogout();
   const queryClient = useQueryClient();
 
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'bets' | 'settings' | 'approvals' | 'messages'>('users');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'bets' | 'settings' | 'approvals' | 'messages' | 'affiliates'>('users');
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
   const [messageRecipient, setMessageRecipient] = useState<AdminUser | null>(null);
   const [messageTitle, setMessageTitle] = useState("");
@@ -248,6 +266,16 @@ export default function Admin() {
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
   const [telegramLink, setTelegramLink] = useState("");
   const [prevPendingCount, setPrevPendingCount] = useState(0);
+  const [createAffiliateOpen, setCreateAffiliateOpen] = useState(false);
+  const [editingAffiliate, setEditingAffiliate] = useState<AdminAffiliate | null>(null);
+  const [deleteAffiliateConfirm, setDeleteAffiliateConfirm] = useState<string | null>(null);
+  const [newAffiliate, setNewAffiliate] = useState({
+    username: '',
+    password: '',
+    displayName: '',
+    phone: '',
+    commissionRate: '5',
+  });
 
   const [newUser, setNewUser] = useState({
     username: '',
@@ -312,6 +340,17 @@ export default function Admin() {
     },
     enabled: auth?.role === 'admin',
     refetchInterval: 3000,
+  });
+
+  // Affiliates
+  const { data: affiliatesList = [], refetch: refetchAffiliates } = useQuery<AdminAffiliate[]>({
+    queryKey: ["/api/admin/affiliates"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/affiliates");
+      if (!res.ok) throw new Error("Failed to fetch affiliates");
+      return res.json();
+    },
+    enabled: auth?.role === 'admin',
   });
 
   // Notification for new pending users
@@ -519,6 +558,89 @@ export default function Admin() {
     },
   });
 
+  // Affiliate mutations
+  const createAffiliate = useMutation({
+    mutationFn: async (data: typeof newAffiliate) => {
+      const res = await fetch("/api/admin/affiliates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to create affiliate");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/affiliates"] });
+      setCreateAffiliateOpen(false);
+      setNewAffiliate({ username: '', password: '', displayName: '', phone: '', commissionRate: '5' });
+      toast.success("총판이 생성되었습니다");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const updateAffiliate = useMutation({
+    mutationFn: async ({ id, ...data }: { id: string } & Partial<AdminAffiliate>) => {
+      const res = await fetch(`/api/admin/affiliates/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to update affiliate");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/affiliates"] });
+      setEditingAffiliate(null);
+      toast.success("총판 정보가 수정되었습니다");
+    },
+    onError: () => {
+      toast.error("수정에 실패했습니다");
+    },
+  });
+
+  const deleteAffiliate = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/admin/affiliates/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete affiliate");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/affiliates"] });
+      setDeleteAffiliateConfirm(null);
+      toast.success("총판이 삭제되었습니다");
+    },
+    onError: () => {
+      toast.error("삭제에 실패했습니다");
+    },
+  });
+
+  const regenerateReferralCode = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/admin/affiliates/${id}/regenerate-code`, {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error("Failed to regenerate code");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/affiliates"] });
+      toast.success("가입코드가 재생성되었습니다");
+    },
+    onError: () => {
+      toast.error("재생성에 실패했습니다");
+    },
+  });
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success("클립보드에 복사되었습니다");
+  };
+
   // Show loading while checking auth
   if (authLoading) {
     return (
@@ -639,6 +761,18 @@ export default function Admin() {
           >
             <MessageSquare className="w-4 h-4" />
             쪽지 보내기
+          </button>
+          <button
+            onClick={() => setActiveTab('affiliates')}
+            className={cn(
+              "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+              activeTab === 'affiliates'
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+            )}
+          >
+            <Share2 className="w-4 h-4" />
+            총판 관리
           </button>
           <button
             onClick={() => setActiveTab('settings')}
@@ -1129,6 +1263,121 @@ export default function Admin() {
             </div>
           </div>
         )}
+
+        {activeTab === 'affiliates' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold">총판 관리</h1>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => refetchAffiliates()}>
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  새로고침
+                </Button>
+                <Button size="sm" onClick={() => setCreateAffiliateOpen(true)}>
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  총판 추가
+                </Button>
+              </div>
+            </div>
+
+            <div className="bg-card border border-border rounded-lg overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50 text-left">
+                    <tr>
+                      <th className="px-4 py-3 font-medium">아이디</th>
+                      <th className="px-4 py-3 font-medium">표시명</th>
+                      <th className="px-4 py-3 font-medium">가입코드</th>
+                      <th className="px-4 py-3 font-medium text-center">회원수</th>
+                      <th className="px-4 py-3 font-medium text-right">거래량</th>
+                      <th className="px-4 py-3 font-medium text-center">수수료율</th>
+                      <th className="px-4 py-3 font-medium text-right">정산 예정</th>
+                      <th className="px-4 py-3 font-medium text-center">상태</th>
+                      <th className="px-4 py-3 font-medium text-center">관리</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {affiliatesList.map((affiliate) => (
+                      <tr key={affiliate.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="px-4 py-3 font-medium">{affiliate.username}</td>
+                        <td className="px-4 py-3">{affiliate.displayName}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <code className="bg-muted px-2 py-1 rounded text-xs font-mono">
+                              {affiliate.referralCode}
+                            </code>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 w-6 p-0"
+                              onClick={() => copyToClipboard(affiliate.referralCode)}
+                            >
+                              <Copy className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 w-6 p-0"
+                              onClick={() => regenerateReferralCode.mutate(affiliate.id)}
+                            >
+                              <RefreshCw className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-center">{affiliate.userCount}명</td>
+                        <td className="px-4 py-3 text-right">{formatMoney(affiliate.totalVolume)}</td>
+                        <td className="px-4 py-3 text-center">{affiliate.commissionRate}%</td>
+                        <td className="px-4 py-3 text-right">{formatMoney(affiliate.pendingCommission)}</td>
+                        <td className="px-4 py-3 text-center">
+                          {affiliate.isActive ? (
+                            <span className="text-up text-xs bg-up/10 px-2 py-1 rounded">활성</span>
+                          ) : (
+                            <span className="text-down text-xs bg-down/10 px-2 py-1 rounded">비활성</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 w-7 p-0"
+                              onClick={() => setEditingAffiliate(affiliate)}
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 w-7 p-0"
+                              onClick={() => updateAffiliate.mutate({ id: affiliate.id, isActive: !affiliate.isActive })}
+                            >
+                              {affiliate.isActive ? <Snowflake className="w-3.5 h-3.5 text-blue-400" /> : <Play className="w-3.5 h-3.5 text-green-400" />}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 w-7 p-0 text-destructive"
+                              onClick={() => setDeleteAffiliateConfirm(affiliate.id)}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {affiliatesList.length === 0 && (
+                      <tr>
+                        <td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">
+                          등록된 총판이 없습니다
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Create User Dialog */}
@@ -1417,6 +1666,171 @@ export default function Admin() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Create Affiliate Dialog */}
+      <Dialog open={createAffiliateOpen} onOpenChange={setCreateAffiliateOpen}>
+        <DialogContent className="bg-card border-border max-w-lg">
+          <DialogHeader>
+            <DialogTitle>총판 추가</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">아이디 *</label>
+                <Input
+                  value={newAffiliate.username}
+                  onChange={(e) => setNewAffiliate(p => ({ ...p, username: e.target.value }))}
+                  placeholder="로그인 아이디"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">비밀번호 *</label>
+                <Input
+                  type="text"
+                  value={newAffiliate.password}
+                  onChange={(e) => setNewAffiliate(p => ({ ...p, password: e.target.value }))}
+                  placeholder="비밀번호"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">표시 이름 *</label>
+                <Input
+                  value={newAffiliate.displayName}
+                  onChange={(e) => setNewAffiliate(p => ({ ...p, displayName: e.target.value }))}
+                  placeholder="총판 표시 이름"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">연락처</label>
+                <Input
+                  value={newAffiliate.phone}
+                  onChange={(e) => setNewAffiliate(p => ({ ...p, phone: e.target.value }))}
+                  placeholder="01012345678"
+                />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">수수료율 (%)</label>
+              <Input
+                type="number"
+                value={newAffiliate.commissionRate}
+                onChange={(e) => setNewAffiliate(p => ({ ...p, commissionRate: e.target.value }))}
+                placeholder="5"
+                min="0"
+                max="100"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              가입코드는 총판 생성 시 자동으로 생성됩니다.
+            </p>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={() => setCreateAffiliateOpen(false)}>취소</Button>
+              <Button 
+                onClick={() => createAffiliate.mutate(newAffiliate)} 
+                disabled={createAffiliate.isPending || !newAffiliate.username || !newAffiliate.password || !newAffiliate.displayName}
+              >
+                {createAffiliate.isPending ? '생성 중...' : '생성'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Affiliate Dialog */}
+      <Dialog open={!!editingAffiliate} onOpenChange={() => setEditingAffiliate(null)}>
+        <DialogContent className="bg-card border-border max-w-lg">
+          <DialogHeader>
+            <DialogTitle>총판 정보 수정 - {editingAffiliate?.displayName}</DialogTitle>
+          </DialogHeader>
+          {editingAffiliate && (
+            <div className="space-y-4 mt-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground">아이디</label>
+                  <Input
+                    value={editingAffiliate.username}
+                    onChange={(e) => setEditingAffiliate(p => p ? { ...p, username: e.target.value } : null)}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground">비밀번호</label>
+                  <Input
+                    type="text"
+                    value={editingAffiliate.password}
+                    onChange={(e) => setEditingAffiliate(p => p ? { ...p, password: e.target.value } : null)}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground">표시 이름</label>
+                  <Input
+                    value={editingAffiliate.displayName}
+                    onChange={(e) => setEditingAffiliate(p => p ? { ...p, displayName: e.target.value } : null)}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground">연락처</label>
+                  <Input
+                    value={editingAffiliate.phone || ''}
+                    onChange={(e) => setEditingAffiliate(p => p ? { ...p, phone: e.target.value } : null)}
+                  />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">수수료율 (%)</label>
+                <Input
+                  type="number"
+                  value={editingAffiliate.commissionRate}
+                  onChange={(e) => setEditingAffiliate(p => p ? { ...p, commissionRate: e.target.value } : null)}
+                  min="0"
+                  max="100"
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-4">
+                <Button variant="outline" onClick={() => setEditingAffiliate(null)}>취소</Button>
+                <Button 
+                  onClick={() => updateAffiliate.mutate({
+                    id: editingAffiliate.id,
+                    username: editingAffiliate.username,
+                    password: editingAffiliate.password,
+                    displayName: editingAffiliate.displayName,
+                    phone: editingAffiliate.phone,
+                    commissionRate: editingAffiliate.commissionRate,
+                  })} 
+                  disabled={updateAffiliate.isPending}
+                >
+                  {updateAffiliate.isPending ? '저장 중...' : '저장'}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Affiliate Confirmation Dialog */}
+      <AlertDialog open={!!deleteAffiliateConfirm} onOpenChange={() => setDeleteAffiliateConfirm(null)}>
+        <AlertDialogContent className="bg-card border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle>총판 삭제</AlertDialogTitle>
+            <AlertDialogDescription>
+              정말로 이 총판을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+              해당 총판과 연결된 회원들의 총판 정보가 해제됩니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteAffiliateConfirm && deleteAffiliate.mutate(deleteAffiliateConfirm)}
+              className="bg-down hover:bg-down/90"
+            >
+              삭제
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
