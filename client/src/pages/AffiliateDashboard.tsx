@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,10 @@ import {
   LogOut,
   RefreshCw,
   BarChart3,
+  Calendar,
+  CheckCircle,
+  XCircle,
+  DollarSign,
 } from 'lucide-react';
 
 interface AffiliateAuth {
@@ -44,6 +48,18 @@ interface AffiliateUser {
   createdAt: string;
   totalBets: number;
   totalVolume: number;
+}
+
+interface AffiliateCommission {
+  id: number;
+  affiliateId: string;
+  userId: string;
+  betId: number;
+  betAmount: string;
+  commissionAmount: string;
+  status: 'pending' | 'settled';
+  createdAt: string;
+  settledAt: string | null;
 }
 
 function AffiliateLogin({ onLogin }: { onLogin: () => void }) {
@@ -130,10 +146,16 @@ function AffiliateLogin({ onLogin }: { onLogin: () => void }) {
   );
 }
 
+type TabType = 'dashboard' | 'users' | 'revenue' | 'settlement';
+type DateFilter = 'daily' | 'weekly' | 'monthly' | 'all';
+type StatusFilter = 'all' | 'pending' | 'settled';
+
 export default function AffiliateDashboard() {
   const [, navigate] = useLocation();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'users'>('dashboard');
+  const [activeTab, setActiveTab] = useState<TabType>('dashboard');
+  const [dateFilter, setDateFilter] = useState<DateFilter>('all');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 
   const { data: auth, isLoading: authLoading, refetch: refetchAuth } = useQuery<AffiliateAuth | null>({
     queryKey: ['/api/affiliate/me'],
@@ -165,6 +187,16 @@ export default function AffiliateDashboard() {
     enabled: !!auth,
   });
 
+  const { data: commissions = [], refetch: refetchCommissions } = useQuery<AffiliateCommission[]>({
+    queryKey: ['/api/affiliate/commissions'],
+    queryFn: async () => {
+      const res = await fetch('/api/affiliate/commissions');
+      if (!res.ok) throw new Error('Failed to fetch commissions');
+      return res.json();
+    },
+    enabled: !!auth,
+  });
+
   const logout = useMutation({
     mutationFn: async () => {
       await fetch('/api/affiliate/logout', { method: 'POST' });
@@ -180,8 +212,9 @@ export default function AffiliateDashboard() {
     toast.success('클립보드에 복사되었습니다');
   };
 
-  const formatMoney = (amount: number) => {
-    return Math.floor(amount).toLocaleString() + '원';
+  const formatMoney = (amount: number | string) => {
+    const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+    return Math.floor(num).toLocaleString() + '원';
   };
 
   const formatDate = (dateStr: string) => {
@@ -191,6 +224,86 @@ export default function AffiliateDashboard() {
       day: '2-digit',
     });
   };
+
+  const formatDateTime = (dateStr: string) => {
+    return new Date(dateStr).toLocaleString('ko-KR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const getDateRange = (filter: DateFilter) => {
+    const now = new Date();
+    switch (filter) {
+      case 'daily':
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        return today;
+      case 'weekly':
+        const weekAgo = new Date(now);
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        return weekAgo;
+      case 'monthly':
+        const monthAgo = new Date(now);
+        monthAgo.setMonth(monthAgo.getMonth() - 1);
+        return monthAgo;
+      default:
+        return null;
+    }
+  };
+
+  const revenueFilteredCommissions = useMemo(() => {
+    let filtered = [...commissions];
+
+    const dateRange = getDateRange(dateFilter);
+    if (dateRange) {
+      filtered = filtered.filter(c => new Date(c.createdAt) >= dateRange);
+    }
+
+    return filtered;
+  }, [commissions, dateFilter]);
+
+  const settlementFilteredCommissions = useMemo(() => {
+    if (statusFilter === 'all') {
+      return commissions;
+    }
+    return commissions.filter(c => c.status === statusFilter);
+  }, [commissions, statusFilter]);
+
+  const revenueByDate = useMemo(() => {
+    const grouped: Record<string, { date: string; amount: number; count: number }> = {};
+    
+    revenueFilteredCommissions.forEach(c => {
+      const date = formatDate(c.createdAt);
+      if (!grouped[date]) {
+        grouped[date] = { date, amount: 0, count: 0 };
+      }
+      grouped[date].amount += parseFloat(c.commissionAmount);
+      grouped[date].count += 1;
+    });
+
+    return Object.values(grouped).sort((a, b) => 
+      new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+  }, [revenueFilteredCommissions]);
+
+  const totalFiltered = useMemo(() => {
+    return revenueFilteredCommissions.reduce((sum, c) => sum + parseFloat(c.commissionAmount), 0);
+  }, [revenueFilteredCommissions]);
+
+  const pendingTotal = useMemo(() => {
+    return commissions
+      .filter(c => c.status === 'pending')
+      .reduce((sum, c) => sum + parseFloat(c.commissionAmount), 0);
+  }, [commissions]);
+
+  const settledTotal = useMemo(() => {
+    return commissions
+      .filter(c => c.status === 'settled')
+      .reduce((sum, c) => sum + parseFloat(c.commissionAmount), 0);
+  }, [commissions]);
 
   if (authLoading) {
     return (
@@ -245,6 +358,30 @@ export default function AffiliateDashboard() {
           >
             <Users className="w-4 h-4" />
             추천 회원
+          </button>
+          <button
+            onClick={() => setActiveTab('revenue')}
+            className={cn(
+              'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+              activeTab === 'revenue'
+                ? 'bg-primary/10 text-primary'
+                : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+            )}
+          >
+            <DollarSign className="w-4 h-4" />
+            수익 내역
+          </button>
+          <button
+            onClick={() => setActiveTab('settlement')}
+            className={cn(
+              'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+              activeTab === 'settlement'
+                ? 'bg-primary/10 text-primary'
+                : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+            )}
+          >
+            <CheckCircle className="w-4 h-4" />
+            정산 내역
           </button>
         </nav>
 
@@ -439,6 +576,287 @@ export default function AffiliateDashboard() {
                         <tr>
                           <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
                             아직 가입한 회원이 없습니다
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {activeTab === 'revenue' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold">수익 내역</h1>
+              <div className="flex items-center gap-2">
+                <div className="flex bg-muted/50 rounded-lg p-1">
+                  {(['daily', 'weekly', 'monthly', 'all'] as DateFilter[]).map((filter) => (
+                    <button
+                      key={filter}
+                      onClick={() => setDateFilter(filter)}
+                      className={cn(
+                        'px-3 py-1.5 text-sm rounded-md transition-colors',
+                        dateFilter === filter
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      {filter === 'daily' ? '일별' : filter === 'weekly' ? '주별' : filter === 'monthly' ? '월별' : '전체'}
+                    </button>
+                  ))}
+                </div>
+                <Button variant="outline" size="sm" onClick={() => refetchCommissions()}>
+                  <RefreshCw className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card className="bg-card border-border">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">조회 기간 수익</p>
+                      <p className="text-2xl font-bold text-primary">{formatMoney(totalFiltered)}</p>
+                    </div>
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <DollarSign className="w-5 h-5 text-primary" />
+                    </div>
+                  </div>
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    총 {revenueFilteredCommissions.length}건
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-card border-border">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">미정산</p>
+                      <p className="text-2xl font-bold text-yellow-500">{formatMoney(pendingTotal)}</p>
+                    </div>
+                    <div className="w-10 h-10 rounded-lg bg-yellow-500/10 flex items-center justify-center">
+                      <Clock className="w-5 h-5 text-yellow-500" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-card border-border">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">정산 완료</p>
+                      <p className="text-2xl font-bold text-green-500">{formatMoney(settledTotal)}</p>
+                    </div>
+                    <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card className="bg-card border-border">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Calendar className="w-5 h-5" />
+                  일별 수익 요약
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50 text-left">
+                      <tr>
+                        <th className="px-4 py-3 font-medium">날짜</th>
+                        <th className="px-4 py-3 font-medium text-center">건수</th>
+                        <th className="px-4 py-3 font-medium text-right">수익금</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {revenueByDate.map((item) => (
+                        <tr key={item.date} className="hover:bg-muted/30">
+                          <td className="px-4 py-3 font-medium">{item.date}</td>
+                          <td className="px-4 py-3 text-center">{item.count}건</td>
+                          <td className="px-4 py-3 text-right text-primary font-medium">{formatMoney(item.amount)}</td>
+                        </tr>
+                      ))}
+                      {revenueByDate.length === 0 && (
+                        <tr>
+                          <td colSpan={3} className="px-4 py-8 text-center text-muted-foreground">
+                            해당 기간에 수익 내역이 없습니다
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-card border-border">
+              <CardHeader>
+                <CardTitle className="text-lg">상세 내역</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50 text-left">
+                      <tr>
+                        <th className="px-4 py-3 font-medium">일시</th>
+                        <th className="px-4 py-3 font-medium text-right">베팅금액</th>
+                        <th className="px-4 py-3 font-medium text-right">수수료</th>
+                        <th className="px-4 py-3 font-medium text-center">상태</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {revenueFilteredCommissions.slice(0, 20).map((commission) => (
+                        <tr key={commission.id} className="hover:bg-muted/30">
+                          <td className="px-4 py-3">{formatDateTime(commission.createdAt)}</td>
+                          <td className="px-4 py-3 text-right">{formatMoney(commission.betAmount)}</td>
+                          <td className="px-4 py-3 text-right text-primary font-medium">{formatMoney(commission.commissionAmount)}</td>
+                          <td className="px-4 py-3 text-center">
+                            {commission.status === 'settled' ? (
+                              <span className="inline-flex items-center gap-1 text-green-500 text-xs bg-green-500/10 px-2 py-1 rounded">
+                                <CheckCircle className="w-3 h-3" />
+                                지급완료
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-yellow-500 text-xs bg-yellow-500/10 px-2 py-1 rounded">
+                                <Clock className="w-3 h-3" />
+                                미지급
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                      {revenueFilteredCommissions.length === 0 && (
+                        <tr>
+                          <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">
+                            해당 기간에 수익 내역이 없습니다
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {activeTab === 'settlement' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold">정산 내역</h1>
+              <div className="flex items-center gap-2">
+                <div className="flex bg-muted/50 rounded-lg p-1">
+                  {(['all', 'pending', 'settled'] as StatusFilter[]).map((filter) => (
+                    <button
+                      key={filter}
+                      onClick={() => setStatusFilter(filter)}
+                      className={cn(
+                        'px-3 py-1.5 text-sm rounded-md transition-colors',
+                        statusFilter === filter
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      {filter === 'all' ? '전체' : filter === 'pending' ? '미지급' : '지급완료'}
+                    </button>
+                  ))}
+                </div>
+                <Button variant="outline" size="sm" onClick={() => refetchCommissions()}>
+                  <RefreshCw className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card className="bg-card border-border border-l-4 border-l-yellow-500">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">미지급 금액</p>
+                      <p className="text-2xl font-bold text-yellow-500">{formatMoney(pendingTotal)}</p>
+                    </div>
+                    <div className="w-12 h-12 rounded-full bg-yellow-500/10 flex items-center justify-center">
+                      <XCircle className="w-6 h-6 text-yellow-500" />
+                    </div>
+                  </div>
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    {commissions.filter(c => c.status === 'pending').length}건 대기 중
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-card border-border border-l-4 border-l-green-500">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">지급 완료 금액</p>
+                      <p className="text-2xl font-bold text-green-500">{formatMoney(settledTotal)}</p>
+                    </div>
+                    <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center">
+                      <CheckCircle className="w-6 h-6 text-green-500" />
+                    </div>
+                  </div>
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    {commissions.filter(c => c.status === 'settled').length}건 완료
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card className="bg-card border-border">
+              <CardHeader>
+                <CardTitle className="text-lg">정산 상세 내역</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50 text-left">
+                      <tr>
+                        <th className="px-4 py-3 font-medium">발생일</th>
+                        <th className="px-4 py-3 font-medium text-right">베팅금액</th>
+                        <th className="px-4 py-3 font-medium text-right">수수료</th>
+                        <th className="px-4 py-3 font-medium text-center">상태</th>
+                        <th className="px-4 py-3 font-medium">정산일</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {settlementFilteredCommissions.map((commission) => (
+                        <tr key={commission.id} className="hover:bg-muted/30">
+                          <td className="px-4 py-3">{formatDateTime(commission.createdAt)}</td>
+                          <td className="px-4 py-3 text-right">{formatMoney(commission.betAmount)}</td>
+                          <td className="px-4 py-3 text-right font-medium">{formatMoney(commission.commissionAmount)}</td>
+                          <td className="px-4 py-3 text-center">
+                            {commission.status === 'settled' ? (
+                              <span className="inline-flex items-center gap-1 text-green-500 text-xs bg-green-500/10 px-2 py-1 rounded">
+                                <CheckCircle className="w-3 h-3" />
+                                지급완료
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-yellow-500 text-xs bg-yellow-500/10 px-2 py-1 rounded">
+                                <Clock className="w-3 h-3" />
+                                미지급
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-muted-foreground">
+                            {commission.settledAt ? formatDateTime(commission.settledAt) : '-'}
+                          </td>
+                        </tr>
+                      ))}
+                      {settlementFilteredCommissions.length === 0 && (
+                        <tr>
+                          <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
+                            정산 내역이 없습니다
                           </td>
                         </tr>
                       )}
