@@ -8,11 +8,25 @@ import { WebSocketServer, WebSocket } from "ws";
 // WebSocket clients storage
 export const wsClients = new Set<WebSocket>();
 export const adminWsClients = new Set<WebSocket>();
+export const userWsClients = new Map<number, Set<WebSocket>>();
 
 // Broadcast to all admin clients
 export function broadcastToAdmins(event: string, data: any) {
   const message = JSON.stringify({ event, data, timestamp: Date.now() });
   adminWsClients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(message);
+    }
+  });
+}
+
+// Broadcast to a specific user
+export function broadcastToUser(userId: number, event: string, data: any) {
+  const clients = userWsClients.get(userId);
+  if (!clients) return;
+  
+  const message = JSON.stringify({ event, data, timestamp: Date.now() });
+  clients.forEach(client => {
     if (client.readyState === WebSocket.OPEN) {
       client.send(message);
     }
@@ -164,6 +178,58 @@ app.use((req, res, next) => {
         
       } catch (error) {
         console.error('WebSocket auth error:', error);
+        ws.close(4001, 'Unauthorized');
+      }
+    });
+
+    // Setup WebSocket server for real-time user notifications (messages, etc)
+    const userWss = new WebSocketServer({ server: httpServer, path: '/ws/user' });
+    
+    userWss.on('connection', async (ws, req) => {
+      try {
+        const sessionData = await validateWebSocketSession(req.headers.cookie);
+        
+        if (!sessionData) {
+          console.log('User WebSocket rejected: No valid session');
+          ws.close(4001, 'Unauthorized: Invalid or expired session');
+          return;
+        }
+        
+        const userId = Number(sessionData.userId);
+        
+        // Add to user clients map
+        if (!userWsClients.has(userId)) {
+          userWsClients.set(userId, new Set());
+        }
+        userWsClients.get(userId)!.add(ws);
+        
+        console.log(`User WebSocket connected: userId=${userId}`);
+        ws.send(JSON.stringify({ event: 'connected', data: { message: 'User WebSocket connected' } }));
+        
+        ws.on('close', () => {
+          console.log(`User WebSocket disconnected: userId=${userId}`);
+          const clients = userWsClients.get(userId);
+          if (clients) {
+            clients.delete(ws);
+            if (clients.size === 0) {
+              userWsClients.delete(userId);
+            }
+          }
+        });
+        
+        ws.on('error', (error) => {
+          console.error('User WebSocket error:', error);
+          const clients = userWsClients.get(userId);
+          if (clients) {
+            clients.delete(ws);
+            if (clients.size === 0) {
+              userWsClients.delete(userId);
+            }
+          }
+        });
+        
+      } catch (error) {
+        console.error('User WebSocket auth error:', error);
         ws.close(4001, 'Unauthorized');
       }
     });

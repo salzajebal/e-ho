@@ -10,6 +10,7 @@ import { useMarketData } from "@/lib/marketData";
 import { useBets, useBetHistory, useCreateBet, useSettleBet, useUserBalance } from "@/hooks/use-bets";
 import { useAuth } from "@/hooks/use-auth";
 import { useUnreadMessages, useMessages, useMarkMessageRead, useMarkAllMessagesRead } from "@/hooks/use-messages";
+import { useUserWebSocket } from "@/hooks/use-user-websocket";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,10 @@ export default function Home() {
   const marketData = useMarketData();
   
   const { data: user } = useAuth();
+  
+  // Real-time WebSocket for message notifications
+  useUserWebSocket(!!user);
+  
   const { data: activeBets = [] } = useBets();
   const { data: historyBets = [] } = useBetHistory();
   const createBet = useCreateBet();

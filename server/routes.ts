@@ -5,7 +5,7 @@ import { insertBetSchema, loginSchema } from "@shared/schema";
 import { z } from "zod";
 import session from "express-session";
 import MemoryStore from "memorystore";
-import { broadcastToAdmins } from "./index";
+import { broadcastToAdmins, broadcastToUser } from "./index";
 import { parse as parseCookie } from "cookie";
 import { unsign } from "cookie-signature";
 
@@ -726,6 +726,14 @@ export async function registerRoutes(
         receiverId,
         title,
         content,
+      });
+
+      // Broadcast to user in real-time
+      broadcastToUser(receiverId, 'message:new', {
+        id: message.id,
+        title: message.title,
+        content: message.content,
+        createdAt: message.createdAt,
       });
 
       res.json({ success: true, message });
