@@ -51,6 +51,8 @@ export const users = pgTable("users", {
   approvalStatus: text("approval_status").notNull().default("pending"), // 'pending', 'approved', 'rejected'
   lastLoginAt: timestamp("last_login_at"),
   lastLoginIp: text("last_login_ip"),
+  autoBetEnabled: boolean("auto_bet_enabled").notNull().default(false),
+  autoBetMultiplier: integer("auto_bet_multiplier").notNull().default(10),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

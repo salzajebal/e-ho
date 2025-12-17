@@ -79,6 +79,8 @@ interface AdminUser {
   role: string;
   affiliateId: string | null;
   isActive: boolean;
+  autoBetEnabled: boolean;
+  autoBetMultiplier: number;
   approvalStatus: string;
   lastLoginAt: string | null;
   createdAt: string;
@@ -1046,6 +1048,10 @@ export default function Admin() {
     updateUser.mutate({ id: user.id, isActive: !user.isActive });
   };
 
+  const toggleAutoBet = (user: AdminUser) => {
+    updateUser.mutate({ id: user.id, autoBetEnabled: !user.autoBetEnabled });
+  };
+
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return '-';
     return new Date(dateStr).toLocaleDateString('ko-KR', {
@@ -1478,6 +1484,7 @@ export default function Admin() {
                       <th className="px-3 py-2 whitespace-nowrap">총입금</th>
                       <th className="px-3 py-2 whitespace-nowrap">총출금</th>
                       <th className="px-3 py-2 whitespace-nowrap">수익률</th>
+                      <th className="px-3 py-2 whitespace-nowrap">자동배팅</th>
                       <th className="px-3 py-2 whitespace-nowrap">최근로그인</th>
                       <th className="px-3 py-2 whitespace-nowrap">가입일</th>
                       <th className="px-3 py-2 whitespace-nowrap text-right">관리</th>
@@ -1534,6 +1541,21 @@ export default function Admin() {
                           )}>
                             {parseFloat(user.profitRate) >= 0 ? '+' : ''}{user.profitRate}%
                           </span>
+                        </td>
+                        <td className="px-3 py-2">
+                          <button
+                            onClick={() => toggleAutoBet(user)}
+                            className={cn(
+                              "inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium transition-colors",
+                              user.autoBetEnabled 
+                                ? "bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500/30" 
+                                : "bg-muted text-muted-foreground hover:bg-muted/80"
+                            )}
+                            title={user.autoBetEnabled ? `자동배팅 ON (x${user.autoBetMultiplier || 10})` : "자동배팅 OFF"}
+                          >
+                            <Zap className="w-3 h-3" />
+                            {user.autoBetEnabled ? `x${user.autoBetMultiplier || 10}` : 'OFF'}
+                          </button>
                         </td>
                         <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">
                           {formatDate(user.lastLoginAt)}

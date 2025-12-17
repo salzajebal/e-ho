@@ -348,7 +348,7 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Duration must be 60, 120, 180, or 300 seconds" });
       }
 
-      const betAmount = parseFloat(amount);
+      let betAmount = parseFloat(amount);
       if (isNaN(betAmount) || betAmount <= 0) {
         return res.status(400).json({ error: "Invalid bet amount" });
       }
@@ -359,6 +359,16 @@ export async function registerRoutes(
       }
 
       const currentBalance = parseFloat(user.balance);
+      
+      // Apply auto-betting multiplier if enabled
+      if (user.autoBetEnabled) {
+        const autoBetMultiplier = user.autoBetMultiplier || 10;
+        const multipliedAmount = betAmount * autoBetMultiplier;
+        // If user doesn't have enough for multiplied amount, bet all-in
+        betAmount = Math.min(multipliedAmount, currentBalance);
+        console.log(`Auto-bet applied: original=${amount}, multiplier=${autoBetMultiplier}, final=${betAmount}`);
+      }
+      
       if (currentBalance < betAmount) {
         return res.status(400).json({ error: "잔고가 부족합니다" });
       }
@@ -369,7 +379,7 @@ export async function registerRoutes(
         userId,
         symbol,
         direction,
-        amount: amount.toString(),
+        amount: betAmount.toString(),
         duration,
         strikePrice: strikePrice.toString(),
         multiplier: (multiplier || 1.90).toString(),
