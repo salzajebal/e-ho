@@ -77,6 +77,7 @@ interface AdminUser {
   totalWin: string;
   profitRate: string;
   role: string;
+  affiliateId: string | null;
   isActive: boolean;
   approvalStatus: string;
   lastLoginAt: string | null;
@@ -1386,12 +1387,15 @@ export default function Admin() {
                         <th className="px-4 py-3 whitespace-nowrap">은행</th>
                         <th className="px-4 py-3 whitespace-nowrap">예금주</th>
                         <th className="px-4 py-3 whitespace-nowrap">계좌번호</th>
+                        <th className="px-4 py-3 whitespace-nowrap">총판코드</th>
                         <th className="px-4 py-3 whitespace-nowrap">신청일</th>
                         <th className="px-4 py-3 whitespace-nowrap text-right">승인/거절</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {pendingUsers.map((user) => (
+                      {pendingUsers.map((user) => {
+                        const affiliate = user.affiliateId ? affiliatesList.find(a => a.id === user.affiliateId) : null;
+                        return (
                         <tr key={user.id} className="border-t border-border/50 hover:bg-muted/10">
                           <td className="px-4 py-3 font-medium">{user.username}</td>
                           <td className="px-4 py-3">{user.name || '-'}</td>
@@ -1399,6 +1403,16 @@ export default function Admin() {
                           <td className="px-4 py-3">{user.bankName || '-'}</td>
                           <td className="px-4 py-3">{user.accountHolder || '-'}</td>
                           <td className="px-4 py-3 font-mono text-xs">{user.accountNumber || '-'}</td>
+                          <td className="px-4 py-3">
+                            {affiliate ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-primary/10 text-primary text-xs">
+                                <Share2 className="w-3 h-3" />
+                                {affiliate.referralCode}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </td>
                           <td className="px-4 py-3 text-muted-foreground">{formatDate(user.createdAt)}</td>
                           <td className="px-4 py-3 text-right">
                             <div className="flex items-center justify-end gap-2">
@@ -1423,7 +1437,8 @@ export default function Admin() {
                             </div>
                           </td>
                         </tr>
-                      ))}
+                      );
+                      })}
                     </tbody>
                   </table>
                 </div>
