@@ -122,6 +122,16 @@ interface AdminAffiliate {
   totalVolume: number;
 }
 
+interface Announcement {
+  id: number;
+  title: string;
+  content: string;
+  isActive: boolean;
+  isPinned: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 const KOREAN_BANKS = [
   "KB국민은행", "신한은행", "우리은행", "하나은행", "SC제일은행",
   "한국씨티은행", "케이뱅크", "카카오뱅크", "토스뱅크", "NH농협은행",
@@ -255,7 +265,7 @@ export default function Admin() {
   const logout = useLogout();
   const queryClient = useQueryClient();
 
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'bets' | 'settings' | 'approvals' | 'messages' | 'affiliates'>('users');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'bets' | 'settings' | 'approvals' | 'messages' | 'affiliates' | 'announcements'>('users');
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
   const [messageRecipient, setMessageRecipient] = useState<AdminUser | null>(null);
   const [messageTitle, setMessageTitle] = useState("");
@@ -275,6 +285,15 @@ export default function Admin() {
     displayName: '',
     phone: '',
     commissionRate: '5',
+  });
+  const [createAnnouncementOpen, setCreateAnnouncementOpen] = useState(false);
+  const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
+  const [deleteAnnouncementConfirm, setDeleteAnnouncementConfirm] = useState<number | null>(null);
+  const [newAnnouncement, setNewAnnouncement] = useState({
+    title: '',
+    content: '',
+    isActive: true,
+    isPinned: false,
   });
 
   const [newUser, setNewUser] = useState({
@@ -348,6 +367,17 @@ export default function Admin() {
     queryFn: async () => {
       const res = await fetch("/api/admin/affiliates");
       if (!res.ok) throw new Error("Failed to fetch affiliates");
+      return res.json();
+    },
+    enabled: auth?.role === 'admin',
+  });
+
+  // Announcements
+  const { data: announcementsList = [], refetch: refetchAnnouncements } = useQuery<Announcement[]>({
+    queryKey: ["/api/admin/announcements"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/announcements");
+      if (!res.ok) throw new Error("Failed to fetch announcements");
       return res.json();
     },
     enabled: auth?.role === 'admin',
@@ -636,6 +666,63 @@ export default function Admin() {
     },
   });
 
+  const createAnnouncementMutation = useMutation({
+    mutationFn: async (data: { title: string; content: string; isActive: boolean; isPinned: boolean }) => {
+      const res = await fetch("/api/admin/announcements", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to create announcement");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/announcements"] });
+      setCreateAnnouncementOpen(false);
+      setNewAnnouncement({ title: '', content: '', isActive: true, isPinned: false });
+      toast.success("공지사항이 등록되었습니다");
+    },
+    onError: () => {
+      toast.error("등록에 실패했습니다");
+    },
+  });
+
+  const updateAnnouncementMutation = useMutation({
+    mutationFn: async ({ id, ...data }: { id: number; title?: string; content?: string; isActive?: boolean; isPinned?: boolean }) => {
+      const res = await fetch(`/api/admin/announcements/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to update announcement");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/announcements"] });
+      setEditingAnnouncement(null);
+      toast.success("공지사항이 수정되었습니다");
+    },
+    onError: () => {
+      toast.error("수정에 실패했습니다");
+    },
+  });
+
+  const deleteAnnouncementMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/admin/announcements/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete announcement");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/announcements"] });
+      setDeleteAnnouncementConfirm(null);
+      toast.success("공지사항이 삭제되었습니다");
+    },
+    onError: () => {
+      toast.error("삭제에 실패했습니다");
+    },
+  });
+
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast.success("클립보드에 복사되었습니다");
@@ -773,6 +860,18 @@ export default function Admin() {
           >
             <Share2 className="w-4 h-4" />
             총판 관리
+          </button>
+          <button
+            onClick={() => setActiveTab('announcements')}
+            className={cn(
+              "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+              activeTab === 'announcements'
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+            )}
+          >
+            <Bell className="w-4 h-4" />
+            공지사항
           </button>
           <button
             onClick={() => setActiveTab('settings')}
@@ -1378,6 +1477,92 @@ export default function Admin() {
             </div>
           </div>
         )}
+
+        {activeTab === 'announcements' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold">공지사항 관리</h1>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => refetchAnnouncements()}>
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  새로고침
+                </Button>
+                <Button size="sm" onClick={() => setCreateAnnouncementOpen(true)}>
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  공지 등록
+                </Button>
+              </div>
+            </div>
+
+            <div className="bg-card border border-border rounded-lg overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50 text-left">
+                    <tr>
+                      <th className="px-4 py-3 font-medium w-12 text-center">ID</th>
+                      <th className="px-4 py-3 font-medium">제목</th>
+                      <th className="px-4 py-3 font-medium text-center">상단고정</th>
+                      <th className="px-4 py-3 font-medium text-center">상태</th>
+                      <th className="px-4 py-3 font-medium text-center">등록일</th>
+                      <th className="px-4 py-3 font-medium text-center">관리</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {announcementsList.map((announcement) => (
+                      <tr key={announcement.id} className="hover:bg-muted/30">
+                        <td className="px-4 py-3 text-center text-muted-foreground">{announcement.id}</td>
+                        <td className="px-4 py-3">
+                          <div className="font-medium">{announcement.title}</div>
+                          <div className="text-xs text-muted-foreground line-clamp-1">{announcement.content}</div>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          {announcement.isPinned ? (
+                            <span className="text-orange-500 font-medium">고정</span>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <button
+                            onClick={() => updateAnnouncementMutation.mutate({ id: announcement.id, isActive: !announcement.isActive })}
+                            className={cn(
+                              "px-2 py-0.5 text-xs rounded",
+                              announcement.isActive
+                                ? "bg-up/20 text-up"
+                                : "bg-down/20 text-down"
+                            )}
+                          >
+                            {announcement.isActive ? '게시중' : '비공개'}
+                          </button>
+                        </td>
+                        <td className="px-4 py-3 text-center text-muted-foreground text-xs">
+                          {formatDate(announcement.createdAt)}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <Button size="sm" variant="ghost" onClick={() => setEditingAnnouncement(announcement)}>
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button size="sm" variant="ghost" className="text-down hover:text-down" onClick={() => setDeleteAnnouncementConfirm(announcement.id)}>
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {announcementsList.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                          등록된 공지사항이 없습니다
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Create User Dialog */}
@@ -1824,6 +2009,147 @@ export default function Admin() {
             <AlertDialogCancel>취소</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteAffiliateConfirm && deleteAffiliate.mutate(deleteAffiliateConfirm)}
+              className="bg-down hover:bg-down/90"
+            >
+              삭제
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Create Announcement Dialog */}
+      <Dialog open={createAnnouncementOpen} onOpenChange={setCreateAnnouncementOpen}>
+        <DialogContent className="bg-card border-border max-w-lg">
+          <DialogHeader>
+            <DialogTitle>공지사항 등록</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">제목 *</label>
+              <Input
+                value={newAnnouncement.title}
+                onChange={(e) => setNewAnnouncement(p => ({ ...p, title: e.target.value }))}
+                placeholder="공지사항 제목"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">내용 *</label>
+              <textarea
+                value={newAnnouncement.content}
+                onChange={(e) => setNewAnnouncement(p => ({ ...p, content: e.target.value }))}
+                placeholder="공지사항 내용"
+                className="w-full min-h-[150px] px-3 py-2 bg-background border border-border rounded-md text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={newAnnouncement.isPinned}
+                  onChange={(e) => setNewAnnouncement(p => ({ ...p, isPinned: e.target.checked }))}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm">상단 고정</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={newAnnouncement.isActive}
+                  onChange={(e) => setNewAnnouncement(p => ({ ...p, isActive: e.target.checked }))}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm">바로 게시</span>
+              </label>
+            </div>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={() => setCreateAnnouncementOpen(false)}>취소</Button>
+              <Button 
+                onClick={() => createAnnouncementMutation.mutate(newAnnouncement)} 
+                disabled={createAnnouncementMutation.isPending || !newAnnouncement.title || !newAnnouncement.content}
+              >
+                {createAnnouncementMutation.isPending ? '등록 중...' : '등록'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Announcement Dialog */}
+      <Dialog open={!!editingAnnouncement} onOpenChange={() => setEditingAnnouncement(null)}>
+        <DialogContent className="bg-card border-border max-w-lg">
+          <DialogHeader>
+            <DialogTitle>공지사항 수정</DialogTitle>
+          </DialogHeader>
+          {editingAnnouncement && (
+            <div className="space-y-4 mt-4">
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">제목</label>
+                <Input
+                  value={editingAnnouncement.title}
+                  onChange={(e) => setEditingAnnouncement(p => p ? { ...p, title: e.target.value } : null)}
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">내용</label>
+                <textarea
+                  value={editingAnnouncement.content}
+                  onChange={(e) => setEditingAnnouncement(p => p ? { ...p, content: e.target.value } : null)}
+                  className="w-full min-h-[150px] px-3 py-2 bg-background border border-border rounded-md text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={editingAnnouncement.isPinned}
+                    onChange={(e) => setEditingAnnouncement(p => p ? { ...p, isPinned: e.target.checked } : null)}
+                    className="w-4 h-4"
+                  />
+                  <span className="text-sm">상단 고정</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={editingAnnouncement.isActive}
+                    onChange={(e) => setEditingAnnouncement(p => p ? { ...p, isActive: e.target.checked } : null)}
+                    className="w-4 h-4"
+                  />
+                  <span className="text-sm">게시</span>
+                </label>
+              </div>
+              <div className="flex justify-end gap-2 pt-4">
+                <Button variant="outline" onClick={() => setEditingAnnouncement(null)}>취소</Button>
+                <Button 
+                  onClick={() => updateAnnouncementMutation.mutate({
+                    id: editingAnnouncement.id,
+                    title: editingAnnouncement.title,
+                    content: editingAnnouncement.content,
+                    isPinned: editingAnnouncement.isPinned,
+                    isActive: editingAnnouncement.isActive,
+                  })} 
+                  disabled={updateAnnouncementMutation.isPending}
+                >
+                  {updateAnnouncementMutation.isPending ? '저장 중...' : '저장'}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Announcement Confirmation Dialog */}
+      <AlertDialog open={!!deleteAnnouncementConfirm} onOpenChange={() => setDeleteAnnouncementConfirm(null)}>
+        <AlertDialogContent className="bg-card border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle>공지사항 삭제</AlertDialogTitle>
+            <AlertDialogDescription>
+              정말로 이 공지사항을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteAnnouncementConfirm && deleteAnnouncementMutation.mutate(deleteAnnouncementConfirm)}
               className="bg-down hover:bg-down/90"
             >
               삭제

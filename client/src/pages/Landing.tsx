@@ -173,6 +173,27 @@ export default function Landing() {
     },
   });
 
+  // Fetch public announcements
+  const { data: announcements = [] } = useQuery<{id: number; title: string; content: string; isPinned: boolean; createdAt: string}[]>({
+    queryKey: ["/api/announcements"],
+    queryFn: async () => {
+      const res = await fetch("/api/announcements");
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
+
+  // Fetch user messages
+  const { data: messages = [] } = useQuery<{id: number; title: string; content: string; isRead: boolean; createdAt: string}[]>({
+    queryKey: ["/api/messages"],
+    queryFn: async () => {
+      const res = await fetch("/api/messages");
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!user,
+  });
+
   const handleTradeClick = () => {
     if (user) {
       // Redirect based on role
@@ -567,6 +588,85 @@ export default function Landing() {
                 </div>
               );
             })}
+          </div>
+        </div>
+      </section>
+
+      {/* Announcements & Messages Section */}
+      <section className="py-16 px-4 bg-[#0a0a0f]">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Announcements */}
+            <div className="bg-gradient-to-br from-[#1a1a24] to-[#12121a] border border-white/10 rounded-xl p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-orange-500/20 rounded-full flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-orange-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                  </svg>
+                </div>
+                <h3 className="text-lg font-bold text-white">공지사항</h3>
+              </div>
+              <div className="space-y-3 max-h-[300px] overflow-y-auto">
+                {announcements.length === 0 ? (
+                  <p className="text-gray-500 text-sm py-4 text-center">등록된 공지사항이 없습니다</p>
+                ) : (
+                  announcements.slice(0, 5).map((ann) => (
+                    <div key={ann.id} className="p-3 bg-black/30 rounded-lg border border-white/5 hover:border-orange-500/30 transition-colors">
+                      <div className="flex items-center gap-2 mb-1">
+                        {ann.isPinned && <span className="text-[10px] px-1.5 py-0.5 bg-orange-500/20 text-orange-400 rounded">고정</span>}
+                        <span className="text-white font-medium text-sm line-clamp-1">{ann.title}</span>
+                      </div>
+                      <p className="text-gray-400 text-xs line-clamp-2">{ann.content}</p>
+                      <p className="text-gray-600 text-[10px] mt-1">{new Date(ann.createdAt).toLocaleDateString('ko-KR')}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Messages (for logged-in users) or Login Prompt */}
+            <div className="bg-gradient-to-br from-[#1a1a24] to-[#12121a] border border-white/10 rounded-xl p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center">
+                  <Mail className="w-5 h-5 text-blue-500" />
+                </div>
+                <h3 className="text-lg font-bold text-white">쪽지함</h3>
+                {user && messages.filter(m => !m.isRead).length > 0 && (
+                  <span className="px-2 py-0.5 bg-red-500 text-white text-xs rounded-full">
+                    {messages.filter(m => !m.isRead).length}
+                  </span>
+                )}
+              </div>
+              <div className="space-y-3 max-h-[300px] overflow-y-auto">
+                {!user ? (
+                  <div className="text-center py-8">
+                    <Mail className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+                    <p className="text-gray-400 text-sm mb-3">로그인 후 쪽지를 확인하세요</p>
+                    <Button 
+                      size="sm" 
+                      className="bg-blue-500 hover:bg-blue-600 text-white"
+                      onClick={() => setShowLoginModal(true)}
+                    >
+                      로그인
+                    </Button>
+                  </div>
+                ) : messages.length === 0 ? (
+                  <p className="text-gray-500 text-sm py-4 text-center">받은 쪽지가 없습니다</p>
+                ) : (
+                  messages.slice(0, 5).map((msg) => (
+                    <div key={msg.id} className={`p-3 rounded-lg border transition-colors ${msg.isRead ? 'bg-black/20 border-white/5' : 'bg-blue-500/10 border-blue-500/30'}`}>
+                      <div className="flex items-center gap-2 mb-1">
+                        {!msg.isRead && <span className="w-2 h-2 bg-blue-500 rounded-full" />}
+                        <span className={`font-medium text-sm line-clamp-1 ${msg.isRead ? 'text-gray-400' : 'text-white'}`}>{msg.title}</span>
+                      </div>
+                      <p className="text-gray-400 text-xs line-clamp-2">{msg.content}</p>
+                      <p className="text-gray-600 text-[10px] mt-1">{new Date(msg.createdAt).toLocaleDateString('ko-KR')}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </section>
