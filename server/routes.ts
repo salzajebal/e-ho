@@ -18,6 +18,13 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  const isProduction = process.env.NODE_ENV === "production";
+  
+  // Trust proxy for production (Replit uses reverse proxy)
+  if (isProduction) {
+    app.set("trust proxy", 1);
+  }
+
   // Session middleware
   app.use(
     session({
@@ -28,7 +35,7 @@ export async function registerRoutes(
         checkPeriod: 86400000,
       }),
       cookie: {
-        secure: false,
+        secure: isProduction,
         httpOnly: true,
         maxAge: 24 * 60 * 60 * 1000,
         sameSite: "lax",
