@@ -21,11 +21,12 @@ const timeFrameLabels: Record<TimeFrame, string> = {
 function generateCandleData(basePrice: number, count: number, intervalMinutes: number): CandlestickData<Time>[] {
   const data: CandlestickData<Time>[] = [];
   let currentPrice = basePrice * 0.995;
-  const now = Math.floor(Date.now() / 1000);
-  const intervalSeconds = intervalMinutes * 60;
+  const intervalMs = intervalMinutes * 60 * 1000;
+  const now = Date.now();
+  const currentIntervalStart = Math.floor(now / intervalMs) * intervalMs / 1000;
 
   for (let i = count - 1; i >= 0; i--) {
-    const time = (now - i * intervalSeconds) as Time;
+    const time = (currentIntervalStart - i * intervalMinutes * 60) as Time;
     const volatility = 0.003;
     
     const open = currentPrice;
@@ -49,6 +50,8 @@ export function PriceChart({ symbol, data }: PriceChartProps) {
   const lastSymbolRef = useRef<string>(symbol);
   const lastTimeFrameRef = useRef<TimeFrame>(timeFrame);
   const lastPriceRef = useRef<number>(data.price);
+  const currentCandleRef = useRef<CandlestickData<Time> | null>(null);
+  const intervalStartRef = useRef<number>(0);
 
   const isPositive = data.change >= 0;
 
@@ -133,6 +136,18 @@ export function PriceChart({ symbol, data }: PriceChartProps) {
     chartRef.current = chart;
     seriesRef.current = candlestickSeries;
 
+    // Initialize interval tracking from the last candle
+    if (initialData.length > 0) {
+      const lastCandle = initialData[initialData.length - 1];
+      intervalStartRef.current = lastCandle.time as number;
+      currentCandleRef.current = {
+        ...lastCandle,
+        close: data.price,
+        high: Math.max(lastCandle.high, data.price),
+        low: Math.min(lastCandle.low, data.price),
+      };
+    }
+
     // Handle resize
     const handleResize = () => {
       if (chartContainerRef.current && chartRef.current) {
@@ -165,12 +180,20 @@ export function PriceChart({ symbol, data }: PriceChartProps) {
       chartRef.current.timeScale().fitContent();
       lastSymbolRef.current = symbol;
       lastTimeFrameRef.current = timeFrame;
+      
+      // Reinitialize interval tracking from the last candle
+      if (newData.length > 0) {
+        const lastCandle = newData[newData.length - 1];
+        intervalStartRef.current = lastCandle.time as number;
+        currentCandleRef.current = {
+          ...lastCandle,
+          close: data.price,
+          high: Math.max(lastCandle.high, data.price),
+          low: Math.min(lastCandle.low, data.price),
+        };
+      }
     }
   }, [symbol, timeFrame, data.price]);
-
-  // Track current candle state
-  const currentCandleRef = useRef<CandlestickData<Time> | null>(null);
-  const intervalStartRef = useRef<number>(0);
 
   // Update chart immediately when price changes
   useEffect(() => {
