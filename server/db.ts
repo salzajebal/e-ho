@@ -76,7 +76,7 @@ export async function initializeDatabase(): Promise<void> {
         bank_name TEXT,
         account_holder TEXT,
         account_number TEXT,
-        balance DECIMAL(20, 0) NOT NULL DEFAULT '10000000',
+        balance DECIMAL(20, 0) NOT NULL DEFAULT '0',
         total_deposit DECIMAL(20, 0) NOT NULL DEFAULT '0',
         total_withdrawal DECIMAL(20, 0) NOT NULL DEFAULT '0',
         total_bet DECIMAL(20, 0) NOT NULL DEFAULT '0',
