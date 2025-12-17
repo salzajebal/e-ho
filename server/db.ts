@@ -130,9 +130,15 @@ export async function initializeDatabase(): Promise<void> {
       )
     `);
     console.log('Messages table ready');
+
+    // Ensure all admin users are approved (migration for existing data)
+    await client.query(`
+      UPDATE users SET approval_status = 'approved' WHERE role = 'admin' AND approval_status != 'approved'
+    `);
+    console.log('Admin users approval status verified');
     
     client.release();
-    
+
     console.log('Seeding admin user if not exists...');
     const [existingAdmin] = await db.select().from(schema.users).where(eq(schema.users.username, 'admin'));
     
@@ -143,9 +149,17 @@ export async function initializeDatabase(): Promise<void> {
         name: '관리자',
         role: 'admin',
         balance: '100000000',
+        approvalStatus: 'approved',
       });
       console.log('Admin user created: admin/admin123');
     } else {
+      // Ensure existing admin is approved
+      if (existingAdmin.approvalStatus !== 'approved') {
+        await db.update(schema.users)
+          .set({ approvalStatus: 'approved' })
+          .where(eq(schema.users.username, 'admin'));
+        console.log('Admin user approval status updated');
+      }
       console.log('Admin user already exists');
     }
 
@@ -158,9 +172,17 @@ export async function initializeDatabase(): Promise<void> {
         name: '데모 사용자',
         role: 'user',
         balance: '10000000',
+        approvalStatus: 'approved',
       });
       console.log('Demo user created: demo/demo123 (일반 사용자)');
     } else {
+      // Ensure existing demo is approved
+      if (existingDemo.approvalStatus !== 'approved') {
+        await db.update(schema.users)
+          .set({ approvalStatus: 'approved' })
+          .where(eq(schema.users.username, 'demo'));
+        console.log('Demo user approval status updated');
+      }
       console.log('Demo user already exists');
     }
 
