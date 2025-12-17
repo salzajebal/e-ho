@@ -72,7 +72,7 @@ export async function registerRoutes(
   // Register
   app.post("/api/auth/register", async (req, res) => {
     try {
-      const { username, password, name, phone, bankName, accountHolder, accountNumber } = req.body;
+      const { username, password, name, phone, bankName, accountHolder, accountNumber, referralCode } = req.body;
 
       if (!username || username.length < 3) {
         return res.status(400).json({ error: "아이디는 3자 이상이어야 합니다" });
@@ -107,6 +107,16 @@ export async function registerRoutes(
         return res.status(400).json({ error: "이미 사용 중인 아이디입니다" });
       }
 
+      // Check if referral code is valid (if provided)
+      let affiliateId: string | null = null;
+      if (referralCode) {
+        const affiliate = await storage.getAffiliateByReferralCode(referralCode);
+        if (!affiliate || !affiliate.isActive) {
+          return res.status(400).json({ error: "유효하지 않은 가입코드입니다" });
+        }
+        affiliateId = affiliate.id;
+      }
+
       const user = await storage.createUser({ 
         username, 
         password, 
@@ -116,6 +126,11 @@ export async function registerRoutes(
         accountHolder, 
         accountNumber 
       });
+
+      // Link user to affiliate if referral code was provided
+      if (affiliateId) {
+        await storage.updateUser(user.id, { affiliateId });
+      }
 
       // Don't auto-login - user needs admin approval first
       res.json({
@@ -698,6 +713,334 @@ export async function registerRoutes(
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "메시지 읽음 처리에 실패했습니다" });
+    }
+  });
+
+  // ==================== AFFILIATE ROUTES ====================
+
+  // Helper function to generate referral code
+  const generateReferralCode = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    for (let i = 0; i < 8; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
+  };
+
+  // Affiliate login (separate from regular user login)
+  app.post("/api/affiliate/login", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      if (!username || !password) {
+        return res.status(400).json({ error: "아이디와 비밀번호를 입력해주세요" });
+      }
+
+      const affiliate = await storage.getAffiliateByUsername(username);
+      if (!affiliate || affiliate.password !== password) {
+        return res.status(401).json({ error: "아이디 또는 비밀번호가 올바르지 않습니다" });
+      }
+
+      if (!affiliate.isActive) {
+        return res.status(403).json({ error: "비활성화된 계정입니다. 관리자에게 문의하세요." });
+      }
+
+      // Store affiliate ID in session (with prefix to distinguish from user)
+      (req.session as any).affiliateId = affiliate.id;
+
+      res.json({
+        id: affiliate.id,
+        username: affiliate.username,
+        displayName: affiliate.displayName,
+        referralCode: affiliate.referralCode,
+      });
+    } catch (error) {
+      console.error("Affiliate login error:", error);
+      res.status(500).json({ error: "로그인에 실패했습니다" });
+    }
+  });
+
+  // Get current affiliate
+  app.get("/api/affiliate/me", async (req, res) => {
+    try {
+      const affiliateId = (req.session as any).affiliateId;
+      if (!affiliateId) {
+        return res.json(null);
+      }
+
+      const affiliate = await storage.getAffiliate(affiliateId);
+      if (!affiliate) {
+        return res.json(null);
+      }
+
+      res.json({
+        id: affiliate.id,
+        username: affiliate.username,
+        displayName: affiliate.displayName,
+        referralCode: affiliate.referralCode,
+        commissionRate: affiliate.commissionRate,
+        totalCommission: affiliate.totalCommission,
+        pendingCommission: affiliate.pendingCommission,
+      });
+    } catch (error) {
+      res.json(null);
+    }
+  });
+
+  // Affiliate logout
+  app.post("/api/affiliate/logout", (req, res) => {
+    delete (req.session as any).affiliateId;
+    res.json({ success: true });
+  });
+
+  // Middleware to require affiliate auth
+  const requireAffiliate = async (req: Request, res: Response, next: NextFunction) => {
+    const affiliateId = (req.session as any).affiliateId;
+    if (!affiliateId) {
+      return res.status(401).json({ error: "총판 로그인이 필요합니다" });
+    }
+    const affiliate = await storage.getAffiliate(affiliateId);
+    if (!affiliate || !affiliate.isActive) {
+      return res.status(403).json({ error: "총판 권한이 없습니다" });
+    }
+    next();
+  };
+
+  // Get affiliate dashboard summary
+  app.get("/api/affiliate/summary", requireAffiliate, async (req, res) => {
+    try {
+      const affiliateId = (req.session as any).affiliateId;
+      const affiliate = await storage.getAffiliate(affiliateId);
+      if (!affiliate) {
+        return res.status(404).json({ error: "총판 정보를 찾을 수 없습니다" });
+      }
+
+      const users = await storage.getUsersByAffiliateId(affiliateId);
+      
+      // Calculate today and this month volume
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const thisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+      const todayVolume = await storage.getAffiliateTradingVolume(affiliateId, today);
+      const monthVolume = await storage.getAffiliateTradingVolume(affiliateId, thisMonth);
+      const totalVolume = await storage.getAffiliateTradingVolume(affiliateId);
+
+      // Recent signups (last 5)
+      const recentUsers = users.slice(0, 5).map(u => ({
+        id: u.id,
+        username: u.username,
+        name: u.name,
+        createdAt: u.createdAt,
+      }));
+
+      res.json({
+        totalUsers: users.length,
+        todayVolume,
+        monthVolume,
+        totalVolume,
+        totalCommission: parseFloat(affiliate.totalCommission || '0'),
+        pendingCommission: parseFloat(affiliate.pendingCommission || '0'),
+        commissionRate: parseFloat(affiliate.commissionRate || '5'),
+        recentUsers,
+      });
+    } catch (error) {
+      console.error("Get affiliate summary error:", error);
+      res.status(500).json({ error: "대시보드 정보 조회에 실패했습니다" });
+    }
+  });
+
+  // Get affiliate's referred users
+  app.get("/api/affiliate/users", requireAffiliate, async (req, res) => {
+    try {
+      const affiliateId = (req.session as any).affiliateId;
+      const users = await storage.getUsersByAffiliateId(affiliateId);
+      
+      // Get bet stats for each user
+      const usersWithStats = await Promise.all(users.map(async (u) => {
+        const stats = await storage.getUserBetStats(u.id);
+        return {
+          id: u.id,
+          username: u.username,
+          name: u.name,
+          phone: u.phone,
+          balance: u.balance,
+          totalBet: stats.totalBet,
+          totalWin: stats.totalWin,
+          betCount: stats.betCount,
+          winCount: stats.winCount,
+          isActive: u.isActive,
+          createdAt: u.createdAt,
+          lastLoginAt: u.lastLoginAt,
+        };
+      }));
+
+      res.json(usersWithStats);
+    } catch (error) {
+      console.error("Get affiliate users error:", error);
+      res.status(500).json({ error: "회원 목록 조회에 실패했습니다" });
+    }
+  });
+
+  // Get affiliate's commission history
+  app.get("/api/affiliate/commissions", requireAffiliate, async (req, res) => {
+    try {
+      const affiliateId = (req.session as any).affiliateId;
+      const commissions = await storage.getAffiliateCommissions(affiliateId);
+      res.json(commissions);
+    } catch (error) {
+      res.status(500).json({ error: "수수료 내역 조회에 실패했습니다" });
+    }
+  });
+
+  // Admin: Get all affiliates
+  app.get("/api/admin/affiliates", requireAdmin, async (req, res) => {
+    try {
+      const allAffiliates = await storage.getAllAffiliates();
+      
+      // Get user counts for each affiliate
+      const affiliatesWithStats = await Promise.all(allAffiliates.map(async (a) => {
+        const users = await storage.getUsersByAffiliateId(a.id);
+        const totalVolume = await storage.getAffiliateTradingVolume(a.id);
+        return {
+          ...a,
+          userCount: users.length,
+          totalVolume,
+        };
+      }));
+
+      res.json(affiliatesWithStats);
+    } catch (error) {
+      res.status(500).json({ error: "총판 목록 조회에 실패했습니다" });
+    }
+  });
+
+  // Admin: Create affiliate
+  app.post("/api/admin/affiliates", requireAdmin, async (req, res) => {
+    try {
+      const { username, password, displayName, phone, commissionRate } = req.body;
+
+      if (!username || username.length < 3) {
+        return res.status(400).json({ error: "아이디는 3자 이상이어야 합니다" });
+      }
+
+      if (!password || password.length < 4) {
+        return res.status(400).json({ error: "비밀번호는 4자 이상이어야 합니다" });
+      }
+
+      if (!displayName) {
+        return res.status(400).json({ error: "표시 이름을 입력해주세요" });
+      }
+
+      // Check if username already exists
+      const existingAffiliate = await storage.getAffiliateByUsername(username);
+      if (existingAffiliate) {
+        return res.status(400).json({ error: "이미 사용 중인 아이디입니다" });
+      }
+
+      // Also check against user usernames
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(400).json({ error: "이미 사용 중인 아이디입니다" });
+      }
+
+      // Generate unique referral code
+      let referralCode = generateReferralCode();
+      let existing = await storage.getAffiliateByReferralCode(referralCode);
+      while (existing) {
+        referralCode = generateReferralCode();
+        existing = await storage.getAffiliateByReferralCode(referralCode);
+      }
+
+      const affiliate = await storage.createAffiliate({
+        username,
+        password,
+        displayName,
+        phone: phone || null,
+        referralCode,
+        commissionRate: commissionRate || "5.00",
+      });
+
+      res.json({ success: true, affiliate });
+    } catch (error) {
+      console.error("Create affiliate error:", error);
+      res.status(500).json({ error: "총판 생성에 실패했습니다" });
+    }
+  });
+
+  // Admin: Update affiliate
+  app.patch("/api/admin/affiliates/:id", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { username, password, displayName, phone, commissionRate, isActive } = req.body;
+
+      const updateData: any = {};
+      if (username !== undefined) updateData.username = username;
+      if (password !== undefined) updateData.password = password;
+      if (displayName !== undefined) updateData.displayName = displayName;
+      if (phone !== undefined) updateData.phone = phone;
+      if (commissionRate !== undefined) updateData.commissionRate = commissionRate.toString();
+      if (isActive !== undefined) updateData.isActive = isActive;
+
+      const updated = await storage.updateAffiliate(id, updateData);
+      res.json({ success: true, affiliate: updated });
+    } catch (error) {
+      res.status(500).json({ error: "총판 수정에 실패했습니다" });
+    }
+  });
+
+  // Admin: Delete affiliate
+  app.delete("/api/admin/affiliates/:id", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteAffiliate(id);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "총판 삭제에 실패했습니다" });
+    }
+  });
+
+  // Admin: Regenerate affiliate referral code
+  app.post("/api/admin/affiliates/:id/regenerate-code", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      let referralCode = generateReferralCode();
+      let existing = await storage.getAffiliateByReferralCode(referralCode);
+      while (existing) {
+        referralCode = generateReferralCode();
+        existing = await storage.getAffiliateByReferralCode(referralCode);
+      }
+
+      const updated = await storage.updateAffiliate(id, { referralCode });
+      res.json({ success: true, referralCode: updated.referralCode });
+    } catch (error) {
+      res.status(500).json({ error: "가입코드 재생성에 실패했습니다" });
+    }
+  });
+
+  // Admin: Settle affiliate commissions
+  app.post("/api/admin/affiliates/:id/settle", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.settleAffiliateCommissions(id);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "정산 처리에 실패했습니다" });
+    }
+  });
+
+  // Verify referral code (public - for registration)
+  app.get("/api/referral/:code", async (req, res) => {
+    try {
+      const { code } = req.params;
+      const affiliate = await storage.getAffiliateByReferralCode(code);
+      if (!affiliate || !affiliate.isActive) {
+        return res.status(404).json({ valid: false, error: "유효하지 않은 가입코드입니다" });
+      }
+      res.json({ valid: true, displayName: affiliate.displayName });
+    } catch (error) {
+      res.status(500).json({ valid: false, error: "가입코드 확인에 실패했습니다" });
     }
   });
 
