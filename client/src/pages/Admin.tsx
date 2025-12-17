@@ -283,7 +283,7 @@ export default function Admin() {
   const logout = useLogout();
   const queryClient = useQueryClient();
 
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'bets' | 'settings' | 'approvals' | 'messages' | 'affiliates' | 'announcements' | 'blocked-ips' | 'maintenance' | 'forced-bet'>('users');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'bets' | 'settings' | 'approvals' | 'messages' | 'affiliates' | 'announcements' | 'blocked-ips' | 'maintenance' | 'forced-bet' | 'transactions'>('users');
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
   const [messageRecipient, setMessageRecipient] = useState<AdminUser | null>(null);
   const [messageTitle, setMessageTitle] = useState("");
@@ -381,7 +381,61 @@ export default function Admin() {
     refetchInterval: 5000,
   });
 
-  // WebSocket for real-time bet updates
+  const { data: settingsData } = useQuery({
+    queryKey: ["/api/admin/settings"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/settings");
+      if (!res.ok) throw new Error("Failed to fetch settings");
+      return res.json();
+    },
+    enabled: auth?.role === 'admin',
+  });
+
+  // Pending users for approval
+  const { data: pendingUsers = [], refetch: refetchPendingUsers } = useQuery<AdminUser[]>({
+    queryKey: ["/api/admin/pending-users"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/pending-users");
+      if (!res.ok) throw new Error("Failed to fetch pending users");
+      return res.json();
+    },
+    enabled: auth?.role === 'admin',
+    refetchInterval: 3000,
+  });
+
+  // Transaction requests
+  interface TransactionRequest {
+    id: number;
+    userId: string;
+    type: 'deposit' | 'withdrawal';
+    amount: string;
+    status: 'pending' | 'approved' | 'rejected';
+    bankName: string | null;
+    accountHolder: string | null;
+    accountNumber: string | null;
+    adminNote: string | null;
+    processedBy: string | null;
+    processedAt: string | null;
+    createdAt: string;
+    username?: string;
+    name?: string;
+    userBankName?: string;
+    userAccountHolder?: string;
+    userAccountNumber?: string;
+  }
+  const { data: transactionRequests = [], refetch: refetchTransactions } = useQuery<TransactionRequest[]>({
+    queryKey: ["/api/admin/transactions"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/transactions");
+      if (!res.ok) throw new Error("Failed to fetch transactions");
+      return res.json();
+    },
+    enabled: auth?.role === 'admin',
+    refetchInterval: 5000,
+  });
+  const pendingTransactions = transactionRequests.filter(t => t.status === 'pending');
+
+  // WebSocket for real-time bet and transaction updates
   useEffect(() => {
     if (auth?.role !== 'admin') return;
 
@@ -403,6 +457,13 @@ export default function Admin() {
           if (msg.event === 'bet_placed') {
             toast.info(`새 베팅: ${msg.data.user?.username || 'Unknown'} - ${formatMoney(msg.data.bet.amount)}`);
           }
+        } else if (msg.event === 'transaction_request') {
+          refetchTransactions();
+          const type = msg.data.type === 'deposit' ? '입금' : '출금';
+          const amount = Number(msg.data.amount).toLocaleString();
+          toast.info(`새 ${type} 신청: ${msg.data.username || 'Unknown'} - ${amount}원`, {
+            duration: 5000,
+          });
         }
       } catch (e) {
         console.error('WebSocket parse error:', e);
@@ -426,29 +487,7 @@ export default function Admin() {
     };
 
     return () => ws.close();
-  }, [auth?.role, refetchBets]);
-
-  const { data: settingsData } = useQuery({
-    queryKey: ["/api/admin/settings"],
-    queryFn: async () => {
-      const res = await fetch("/api/admin/settings");
-      if (!res.ok) throw new Error("Failed to fetch settings");
-      return res.json();
-    },
-    enabled: auth?.role === 'admin',
-  });
-
-  // Pending users for approval
-  const { data: pendingUsers = [], refetch: refetchPendingUsers } = useQuery<AdminUser[]>({
-    queryKey: ["/api/admin/pending-users"],
-    queryFn: async () => {
-      const res = await fetch("/api/admin/pending-users");
-      if (!res.ok) throw new Error("Failed to fetch pending users");
-      return res.json();
-    },
-    enabled: auth?.role === 'admin',
-    refetchInterval: 3000,
-  });
+  }, [auth?.role, refetchBets, refetchTransactions]);
 
   // Online users with real-time connection info
   interface OnlineUser {
@@ -1124,6 +1163,23 @@ export default function Admin() {
             {pendingUsers.length > 0 && (
               <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center animate-pulse">
                 {pendingUsers.length}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab('transactions')}
+            className={cn(
+              "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors relative",
+              activeTab === 'transactions'
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+            )}
+          >
+            <Wallet className="w-4 h-4" />
+            입출금 관리
+            {pendingTransactions.length > 0 && (
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-orange-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center animate-pulse">
+                {pendingTransactions.length}
               </span>
             )}
           </button>
@@ -2543,6 +2599,190 @@ export default function Admin() {
                 선택한 회원의 잔고에서 배팅 금액이 차감됩니다. 회원이 충분한 잔고를 보유하고 있는지 확인하세요.
                 강제 배팅은 일반 배팅과 동일하게 정산됩니다.
               </p>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'transactions' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold">입출금 관리</h1>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">
+                  대기 중: <span className="text-orange-500 font-bold">{pendingTransactions.length}건</span>
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => refetchTransactions()}
+                >
+                  <RefreshCw className="w-4 h-4 mr-1" />
+                  새로고침
+                </Button>
+              </div>
+            </div>
+
+            {/* Pending Transactions */}
+            {pendingTransactions.length > 0 && (
+              <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-4">
+                <h3 className="font-medium text-orange-500 mb-3 flex items-center gap-2">
+                  <Wallet className="w-4 h-4" />
+                  대기 중인 신청 ({pendingTransactions.length}건)
+                </h3>
+                <div className="space-y-3">
+                  {pendingTransactions.map((request) => (
+                    <div key={request.id} className="bg-card border border-border rounded-lg p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className={cn(
+                              "px-2 py-0.5 rounded text-xs font-bold",
+                              request.type === 'deposit'
+                                ? "bg-green-500/20 text-green-500"
+                                : "bg-red-500/20 text-red-500"
+                            )}>
+                              {request.type === 'deposit' ? '입금' : '출금'}
+                            </span>
+                            <span className="font-medium">{request.username}</span>
+                            <span className="text-muted-foreground">({request.name || '이름없음'})</span>
+                          </div>
+                          <div className="text-xl font-bold">
+                            {Number(request.amount).toLocaleString()}원
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {request.type === 'withdrawal' && request.userBankName && (
+                              <span>계좌: {request.userBankName} {request.userAccountNumber} ({request.userAccountHolder})</span>
+                            )}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            신청일: {new Date(request.createdAt).toLocaleString('ko-KR')}
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-red-500/50 text-red-500 hover:bg-red-500/10"
+                            onClick={async () => {
+                              try {
+                                const res = await fetch(`/api/admin/transactions/${request.id}/process`, {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ status: 'rejected' }),
+                                });
+                                if (!res.ok) throw new Error('거절 실패');
+                                toast.success('신청이 거절되었습니다');
+                                refetchTransactions();
+                              } catch (error) {
+                                toast.error('처리에 실패했습니다');
+                              }
+                            }}
+                          >
+                            <X className="w-4 h-4 mr-1" />
+                            거절
+                          </Button>
+                          <Button
+                            size="sm"
+                            className="bg-up hover:bg-up/90"
+                            onClick={async () => {
+                              try {
+                                const res = await fetch(`/api/admin/transactions/${request.id}/process`, {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ status: 'approved' }),
+                                });
+                                if (!res.ok) throw new Error('승인 실패');
+                                toast.success(request.type === 'deposit' ? '입금이 승인되었습니다' : '출금이 승인되었습니다');
+                                refetchTransactions();
+                                refetchUsers();
+                              } catch (error) {
+                                toast.error('처리에 실패했습니다');
+                              }
+                            }}
+                          >
+                            <Check className="w-4 h-4 mr-1" />
+                            승인
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* All Transactions */}
+            <div className="bg-card border border-border rounded-lg overflow-hidden">
+              <div className="p-4 border-b border-border">
+                <h3 className="font-medium">전체 입출금 내역</h3>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50 border-b border-border">
+                    <tr>
+                      <th className="px-4 py-3 text-left font-medium">유형</th>
+                      <th className="px-4 py-3 text-left font-medium">회원</th>
+                      <th className="px-4 py-3 text-right font-medium">금액</th>
+                      <th className="px-4 py-3 text-center font-medium">상태</th>
+                      <th className="px-4 py-3 text-left font-medium">신청일</th>
+                      <th className="px-4 py-3 text-left font-medium">처리일</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {transactionRequests.map((request) => (
+                      <tr key={request.id} className="hover:bg-muted/30">
+                        <td className="px-4 py-3">
+                          <span className={cn(
+                            "px-2 py-0.5 rounded text-xs font-bold",
+                            request.type === 'deposit'
+                              ? "bg-green-500/20 text-green-500"
+                              : "bg-red-500/20 text-red-500"
+                          )}>
+                            {request.type === 'deposit' ? '입금' : '출금'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="font-medium">{request.username}</div>
+                          <div className="text-xs text-muted-foreground">{request.name}</div>
+                        </td>
+                        <td className="px-4 py-3 text-right font-medium">
+                          {Number(request.amount).toLocaleString()}원
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={cn(
+                            "px-2 py-0.5 rounded text-xs font-bold",
+                            request.status === 'pending' && "bg-yellow-500/20 text-yellow-500",
+                            request.status === 'approved' && "bg-green-500/20 text-green-500",
+                            request.status === 'rejected' && "bg-red-500/20 text-red-500"
+                          )}>
+                            {request.status === 'pending' ? '대기' : request.status === 'approved' ? '승인' : '거절'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground">
+                          {new Date(request.createdAt).toLocaleString('ko-KR', { 
+                            month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' 
+                          })}
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground">
+                          {request.processedAt 
+                            ? new Date(request.processedAt).toLocaleString('ko-KR', { 
+                                month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' 
+                              })
+                            : '-'
+                          }
+                        </td>
+                      </tr>
+                    ))}
+                    {transactionRequests.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                          입출금 내역이 없습니다
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
