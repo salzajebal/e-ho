@@ -1937,5 +1937,197 @@ export async function registerRoutes(
     }
   });
 
+  // ===== Transaction Request Routes (입출금 신청) =====
+
+  // Create transaction request (user)
+  app.post("/api/transactions", requireAuth, async (req, res) => {
+    try {
+      const { type, amount, bankName, accountHolder, accountNumber } = req.body;
+      
+      if (!type || !['deposit', 'withdrawal'].includes(type)) {
+        return res.status(400).json({ error: "유효하지 않은 요청 유형입니다" });
+      }
+      
+      if (!amount || parseFloat(amount) <= 0) {
+        return res.status(400).json({ error: "유효한 금액을 입력해주세요" });
+      }
+
+      // For withdrawal, check if user has enough balance
+      if (type === 'withdrawal') {
+        const user = await storage.getUser(req.session.userId!);
+        if (!user || parseFloat(user.balance) < parseFloat(amount)) {
+          return res.status(400).json({ error: "잔액이 부족합니다" });
+        }
+      }
+
+      const request = await storage.createTransactionRequest({
+        userId: req.session.userId!,
+        type,
+        amount: amount.toString(),
+        bankName: bankName || null,
+        accountHolder: accountHolder || null,
+        accountNumber: accountNumber || null,
+      });
+
+      // Send notification to admins via WebSocket
+      const user = await storage.getUser(req.session.userId!);
+      broadcastToAdmins({
+        type: 'transaction_request',
+        data: {
+          ...request,
+          username: user?.username,
+          name: user?.name,
+        },
+      });
+
+      res.json({ success: true, request });
+    } catch (error) {
+      console.error("Create transaction request error:", error);
+      res.status(500).json({ error: "요청 처리에 실패했습니다" });
+    }
+  });
+
+  // Get user's transaction requests
+  app.get("/api/transactions", requireAuth, async (req, res) => {
+    try {
+      const requests = await storage.getTransactionRequestsForUser(req.session.userId!);
+      res.json(requests);
+    } catch (error) {
+      console.error("Get transaction requests error:", error);
+      res.status(500).json({ error: "요청 목록을 불러오는데 실패했습니다" });
+    }
+  });
+
+  // Admin: Get all transaction requests
+  app.get("/api/admin/transactions", requireAdmin, async (req, res) => {
+    try {
+      const requests = await storage.getAllTransactionRequests();
+      
+      // Add user info to each request
+      const requestsWithUser = await Promise.all(
+        requests.map(async (req) => {
+          const user = await storage.getUser(req.userId);
+          return {
+            ...req,
+            username: user?.username,
+            name: user?.name,
+            userBankName: user?.bankName,
+            userAccountHolder: user?.accountHolder,
+            userAccountNumber: user?.accountNumber,
+          };
+        })
+      );
+      
+      res.json(requestsWithUser);
+    } catch (error) {
+      console.error("Get all transaction requests error:", error);
+      res.status(500).json({ error: "요청 목록을 불러오는데 실패했습니다" });
+    }
+  });
+
+  // Admin: Get pending transaction requests
+  app.get("/api/admin/transactions/pending", requireAdmin, async (req, res) => {
+    try {
+      const requests = await storage.getPendingTransactionRequests();
+      
+      // Add user info to each request
+      const requestsWithUser = await Promise.all(
+        requests.map(async (req) => {
+          const user = await storage.getUser(req.userId);
+          return {
+            ...req,
+            username: user?.username,
+            name: user?.name,
+            userBankName: user?.bankName,
+            userAccountHolder: user?.accountHolder,
+            userAccountNumber: user?.accountNumber,
+          };
+        })
+      );
+      
+      res.json(requestsWithUser);
+    } catch (error) {
+      console.error("Get pending transaction requests error:", error);
+      res.status(500).json({ error: "요청 목록을 불러오는데 실패했습니다" });
+    }
+  });
+
+  // Admin: Process transaction request (approve/reject)
+  app.post("/api/admin/transactions/:id/process", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { status, adminNote, sendMessage } = req.body;
+      
+      if (!status || !['approved', 'rejected'].includes(status)) {
+        return res.status(400).json({ error: "유효하지 않은 상태입니다" });
+      }
+
+      const request = await storage.getTransactionRequest(id);
+      if (!request) {
+        return res.status(404).json({ error: "요청을 찾을 수 없습니다" });
+      }
+
+      if (request.status !== 'pending') {
+        return res.status(400).json({ error: "이미 처리된 요청입니다" });
+      }
+
+      // Process the transaction
+      const updated = await storage.processTransactionRequest(id, status, req.session.userId!, adminNote);
+
+      // If approved, update user balance
+      if (status === 'approved') {
+        const user = await storage.getUser(request.userId);
+        if (user) {
+          const currentBalance = parseFloat(user.balance);
+          const amount = parseFloat(request.amount);
+          
+          if (request.type === 'deposit') {
+            const newBalance = currentBalance + amount;
+            await storage.updateUserBalance(user.id, newBalance.toString());
+            await storage.updateUser(user.id, {
+              totalDeposit: (parseFloat(user.totalDeposit) + amount).toString(),
+            });
+          } else if (request.type === 'withdrawal') {
+            const newBalance = currentBalance - amount;
+            if (newBalance >= 0) {
+              await storage.updateUserBalance(user.id, newBalance.toString());
+              await storage.updateUser(user.id, {
+                totalWithdrawal: (parseFloat(user.totalWithdrawal) + amount).toString(),
+              });
+            }
+          }
+
+          // Notify user via WebSocket
+          broadcastToUser(user.id, {
+            type: 'transaction_processed',
+            data: {
+              ...updated,
+              newBalance: (await storage.getUser(user.id))?.balance,
+            },
+          });
+        }
+      }
+
+      // Send message to user if requested
+      if (sendMessage && adminNote) {
+        const admin = await storage.getUser(req.session.userId!);
+        if (admin) {
+          const messageTitle = request.type === 'deposit' ? '입금 신청 안내' : '출금 신청 안내';
+          await storage.createMessage({
+            senderId: admin.id,
+            receiverId: request.userId,
+            title: messageTitle,
+            content: adminNote,
+          });
+        }
+      }
+
+      res.json({ success: true, request: updated });
+    } catch (error) {
+      console.error("Process transaction request error:", error);
+      res.status(500).json({ error: "요청 처리에 실패했습니다" });
+    }
+  });
+
   return httpServer;
 }
