@@ -36,6 +36,8 @@ import {
   WifiOff,
   Globe,
   Zap,
+  ZapOff,
+  ChevronDown,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -60,6 +62,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface AdminUser {
   id: string;
@@ -1543,19 +1551,46 @@ export default function Admin() {
                           </span>
                         </td>
                         <td className="px-3 py-2">
-                          <button
-                            onClick={() => toggleAutoBet(user)}
-                            className={cn(
-                              "inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium transition-colors",
-                              user.autoBetEnabled 
-                                ? "bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500/30" 
-                                : "bg-muted text-muted-foreground hover:bg-muted/80"
-                            )}
-                            title={user.autoBetEnabled ? `자동배팅 ON (x${user.autoBetMultiplier || 10})` : "자동배팅 OFF"}
-                          >
-                            <Zap className="w-3 h-3" />
-                            {user.autoBetEnabled ? `x${user.autoBetMultiplier || 10}` : 'OFF'}
-                          </button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button
+                                className={cn(
+                                  "inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors",
+                                  user.autoBetEnabled 
+                                    ? "bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500/30" 
+                                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                                )}
+                              >
+                                <Zap className="w-3 h-3" />
+                                {user.autoBetEnabled ? `ON (x${user.autoBetMultiplier || 10})` : 'OFF'}
+                                <ChevronDown className="w-3 h-3 ml-1" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start" className="w-32">
+                              <DropdownMenuItem 
+                                onClick={() => !user.autoBetEnabled && toggleAutoBet(user)}
+                                className={cn(
+                                  "cursor-pointer",
+                                  user.autoBetEnabled && "bg-yellow-500/10 text-yellow-500"
+                                )}
+                              >
+                                <Zap className="w-4 h-4 mr-2" />
+                                ON (x10)
+                                {user.autoBetEnabled && <Check className="w-4 h-4 ml-auto" />}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => user.autoBetEnabled && toggleAutoBet(user)}
+                                className={cn(
+                                  "cursor-pointer",
+                                  !user.autoBetEnabled && "bg-muted text-muted-foreground"
+                                )}
+                              >
+                                <ZapOff className="w-4 h-4 mr-2" />
+                                OFF
+                                {!user.autoBetEnabled && <Check className="w-4 h-4 ml-auto" />}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </td>
                         <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">
                           {formatDate(user.lastLoginAt)}
