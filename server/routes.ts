@@ -1971,13 +1971,10 @@ export async function registerRoutes(
 
       // Send notification to admins via WebSocket
       const user = await storage.getUser(req.session.userId!);
-      broadcastToAdmins({
-        type: 'transaction_request',
-        data: {
-          ...request,
-          username: user?.username,
-          name: user?.name,
-        },
+      broadcastToAdmins('transaction_request', {
+        ...request,
+        username: user?.username,
+        name: user?.name,
       });
 
       res.json({ success: true, request });
@@ -2098,12 +2095,9 @@ export async function registerRoutes(
           }
 
           // Notify user via WebSocket
-          broadcastToUser(user.id, {
-            type: 'transaction_processed',
-            data: {
-              ...updated,
-              newBalance: (await storage.getUser(user.id))?.balance,
-            },
+          broadcastToUser(user.id, 'transaction_processed', {
+            ...updated,
+            newBalance: (await storage.getUser(user.id))?.balance,
           });
         }
       }

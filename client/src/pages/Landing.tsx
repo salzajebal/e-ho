@@ -146,6 +146,9 @@ export default function Landing() {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [showCustomerServiceModal, setShowCustomerServiceModal] = useState(false);
   const [showDepositModal, setShowDepositModal] = useState(false);
+  const [transactionType, setTransactionType] = useState<'deposit' | 'withdrawal'>('deposit');
+  const [transactionAmount, setTransactionAmount] = useState('');
+  const [transactionSubmitting, setTransactionSubmitting] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   
@@ -1294,7 +1297,7 @@ export default function Landing() {
       {/* Deposit/Withdrawal Modal */}
       <Dialog open={showDepositModal} onOpenChange={setShowDepositModal}>
         <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden">
-          <DialogTitle className="sr-only">입출금</DialogTitle>
+          <DialogTitle className="sr-only">입출금 신청</DialogTitle>
           <div className="relative">
             <div className="absolute -inset-1 bg-gradient-to-r from-orange-500/20 via-amber-500/20 to-orange-500/20 rounded-2xl blur-xl" />
             <div className="relative backdrop-blur-xl bg-[#1a1a24]/95 border border-white/10 rounded-2xl p-6 shadow-2xl">
@@ -1309,8 +1312,8 @@ export default function Landing() {
                 <div className="flex items-center justify-center gap-2 mb-3">
                   <Wallet className="w-8 h-8 text-orange-500" />
                 </div>
-                <h2 className="text-2xl font-bold text-white mb-1">입출금</h2>
-                <p className="text-gray-400 text-sm">입금 및 출금 안내</p>
+                <h2 className="text-2xl font-bold text-white mb-1">입출금 신청</h2>
+                <p className="text-gray-400 text-sm">입금 또는 출금을 신청하세요</p>
               </div>
 
               {/* Current Balance */}
@@ -1323,33 +1326,157 @@ export default function Landing() {
                 </div>
               </div>
 
+              {/* Transaction Type Tabs */}
+              <div className="flex mb-6">
+                <button
+                  onClick={() => setTransactionType('deposit')}
+                  className={`flex-1 py-3 text-center font-bold rounded-l-lg transition-colors ${
+                    transactionType === 'deposit'
+                      ? 'bg-green-500 text-white'
+                      : 'bg-white/10 text-gray-400 hover:bg-white/20'
+                  }`}
+                  data-testid="tab-deposit"
+                >
+                  입금 신청
+                </button>
+                <button
+                  onClick={() => setTransactionType('withdrawal')}
+                  className={`flex-1 py-3 text-center font-bold rounded-r-lg transition-colors ${
+                    transactionType === 'withdrawal'
+                      ? 'bg-red-500 text-white'
+                      : 'bg-white/10 text-gray-400 hover:bg-white/20'
+                  }`}
+                  data-testid="tab-withdrawal"
+                >
+                  출금 신청
+                </button>
+              </div>
+
+              {/* Amount Input */}
               <div className="space-y-4">
-                {/* Deposit Info */}
-                <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                  <h3 className="text-orange-500 font-bold mb-3">입금 안내</h3>
-                  <div className="space-y-2 text-sm">
-                    <p className="text-gray-300">입금을 원하시면 고객센터로 문의해주세요.</p>
-                    <p className="text-gray-400">입금 후 잔고 반영까지 약 10분 소요됩니다.</p>
+                <div>
+                  <label className="block text-gray-300 text-sm mb-2">
+                    {transactionType === 'deposit' ? '입금 금액' : '출금 금액'}
+                  </label>
+                  <div className="relative">
+                    <Input
+                      type="text"
+                      value={transactionAmount}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^0-9]/g, '');
+                        setTransactionAmount(value);
+                      }}
+                      placeholder="금액을 입력하세요"
+                      className="bg-white/10 border-white/20 text-white pr-12"
+                      data-testid="input-transaction-amount"
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">원</span>
                   </div>
+                  {transactionAmount && (
+                    <p className="text-gray-400 text-sm mt-1">
+                      {Number(transactionAmount).toLocaleString()}원
+                    </p>
+                  )}
                 </div>
 
-                {/* Withdrawal Info */}
-                <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                  <h3 className="text-orange-500 font-bold mb-3">출금 안내</h3>
-                  <div className="space-y-2 text-sm">
-                    <p className="text-gray-300">출금을 원하시면 고객센터로 문의해주세요.</p>
-                  </div>
+                {/* Quick amount buttons */}
+                <div className="grid grid-cols-4 gap-2">
+                  {[10000, 50000, 100000, 500000].map((amount) => (
+                    <button
+                      key={amount}
+                      onClick={() => setTransactionAmount(String(Number(transactionAmount || 0) + amount))}
+                      className="py-2 bg-white/10 hover:bg-white/20 text-gray-300 text-sm rounded transition-colors"
+                    >
+                      +{(amount / 10000)}만
+                    </button>
+                  ))}
                 </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setTransactionAmount('1000000')}
+                    className="py-2 bg-white/10 hover:bg-white/20 text-gray-300 text-sm rounded transition-colors"
+                  >
+                    100만원
+                  </button>
+                  <button
+                    onClick={() => setTransactionAmount('')}
+                    className="py-2 bg-white/10 hover:bg-white/20 text-gray-300 text-sm rounded transition-colors"
+                  >
+                    초기화
+                  </button>
+                </div>
+
+                {transactionType === 'withdrawal' && Number(transactionAmount) > Number(balanceData?.balance || 0) && (
+                  <p className="text-red-400 text-sm">잔액을 초과할 수 없습니다</p>
+                )}
+
+                {transactionType === 'deposit' && (
+                  <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
+                    <p className="text-blue-400 text-sm">
+                      입금 신청 후 고객센터에서 입금 계좌 정보를 안내해드립니다.
+                    </p>
+                  </div>
+                )}
+
+                {transactionType === 'withdrawal' && (
+                  <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
+                    <p className="text-yellow-400 text-sm">
+                      출금은 가입 시 등록한 계좌로 처리됩니다. 처리까지 약 30분 소요됩니다.
+                    </p>
+                  </div>
+                )}
               </div>
 
               <Button
-                className="w-full mt-6 bg-orange-500 hover:bg-orange-600 text-white"
-                onClick={() => {
-                  setShowDepositModal(false);
-                  setShowCustomerServiceModal(true);
+                className={`w-full mt-6 text-white ${
+                  transactionType === 'deposit'
+                    ? 'bg-green-500 hover:bg-green-600'
+                    : 'bg-red-500 hover:bg-red-600'
+                }`}
+                disabled={
+                  transactionSubmitting ||
+                  !transactionAmount ||
+                  Number(transactionAmount) <= 0 ||
+                  (transactionType === 'withdrawal' && Number(transactionAmount) > Number(balanceData?.balance || 0))
+                }
+                onClick={async () => {
+                  if (!transactionAmount || Number(transactionAmount) <= 0) {
+                    toast.error('금액을 입력해주세요');
+                    return;
+                  }
+                  
+                  setTransactionSubmitting(true);
+                  try {
+                    const response = await fetch('/api/transactions', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        type: transactionType,
+                        amount: transactionAmount,
+                      }),
+                    });
+                    
+                    const data = await response.json();
+                    if (!response.ok) {
+                      throw new Error(data.error || '요청에 실패했습니다');
+                    }
+                    
+                    toast.success(
+                      transactionType === 'deposit'
+                        ? '입금 신청이 완료되었습니다. 고객센터에서 연락드리겠습니다.'
+                        : '출금 신청이 완료되었습니다. 처리까지 약 30분 소요됩니다.'
+                    );
+                    setShowDepositModal(false);
+                    setTransactionAmount('');
+                  } catch (error: any) {
+                    toast.error(error.message || '요청에 실패했습니다');
+                  } finally {
+                    setTransactionSubmitting(false);
+                  }
                 }}
+                data-testid="button-submit-transaction"
               >
-                고객센터 문의하기
+                {transactionSubmitting ? '처리중...' : (transactionType === 'deposit' ? '입금 신청하기' : '출금 신청하기')}
               </Button>
             </div>
           </div>

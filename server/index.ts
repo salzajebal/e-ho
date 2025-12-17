@@ -8,7 +8,7 @@ import { WebSocketServer, WebSocket } from "ws";
 // WebSocket clients storage
 export const wsClients = new Set<WebSocket>();
 export const adminWsClients = new Set<WebSocket>();
-export const userWsClients = new Map<number, Set<WebSocket>>();
+export const userWsClients = new Map<string, Set<WebSocket>>();
 
 // Online user tracking with metadata
 export interface OnlineUserInfo {
@@ -34,8 +34,9 @@ export function broadcastToAdmins(event: string, data: any) {
 }
 
 // Broadcast to a specific user
-export function broadcastToUser(userId: number, event: string, data: any) {
-  const clients = userWsClients.get(userId);
+export function broadcastToUser(userId: string | number, event: string, data: any) {
+  const userIdKey = String(userId);
+  const clients = userWsClients.get(userIdKey);
   if (!clients) return;
   
   const message = JSON.stringify({ event, data, timestamp: Date.now() });
@@ -211,7 +212,6 @@ app.use((req, res, next) => {
         }
         
         const userId = sessionData.userId;
-        const numericUserId = Number(userId);
         
         // Get client IP address
         const clientIp = req.headers['x-forwarded-for']?.toString().split(',')[0].trim() || 
@@ -220,10 +220,10 @@ app.use((req, res, next) => {
                          'unknown';
         
         // Add to user clients map
-        if (!userWsClients.has(numericUserId)) {
-          userWsClients.set(numericUserId, new Set());
+        if (!userWsClients.has(userId)) {
+          userWsClients.set(userId, new Set());
         }
-        userWsClients.get(numericUserId)!.add(ws);
+        userWsClients.get(userId)!.add(ws);
         
         // Track online user with metadata
         onlineUsers.set(userId, {
@@ -237,11 +237,11 @@ app.use((req, res, next) => {
         
         ws.on('close', () => {
           console.log(`User WebSocket disconnected: userId=${userId}`);
-          const clients = userWsClients.get(numericUserId);
+          const clients = userWsClients.get(userId);
           if (clients) {
             clients.delete(ws);
             if (clients.size === 0) {
-              userWsClients.delete(numericUserId);
+              userWsClients.delete(userId);
               // Remove from online users when all connections closed
               onlineUsers.delete(userId);
             }
@@ -250,11 +250,11 @@ app.use((req, res, next) => {
         
         ws.on('error', (error) => {
           console.error('User WebSocket error:', error);
-          const clients = userWsClients.get(numericUserId);
+          const clients = userWsClients.get(userId);
           if (clients) {
             clients.delete(ws);
             if (clients.size === 0) {
-              userWsClients.delete(numericUserId);
+              userWsClients.delete(userId);
               onlineUsers.delete(userId);
             }
           }
