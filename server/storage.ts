@@ -1,6 +1,6 @@
-import { type User, type InsertUser, type Bet, type InsertBet, type Setting, type Message, type InsertMessage, users, bets, settings, messages } from "@shared/schema";
+import { type User, type InsertUser, type Bet, type InsertBet, type Setting, type Message, type InsertMessage, type Affiliate, type InsertAffiliate, type AffiliateCommission, users, bets, settings, messages, affiliates, affiliateCommissions } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, lt, sql } from "drizzle-orm";
+import { eq, and, desc, lt, sql, gte } from "drizzle-orm";
 
 export interface IStorage {
   // User methods
@@ -37,6 +37,20 @@ export interface IStorage {
   getUnreadMessagesForUser(userId: string): Promise<Message[]>;
   markMessageAsRead(messageId: number): Promise<void>;
   markAllMessagesAsRead(userId: string): Promise<void>;
+
+  // Affiliate methods
+  createAffiliate(affiliate: InsertAffiliate): Promise<Affiliate>;
+  getAffiliate(id: string): Promise<Affiliate | undefined>;
+  getAffiliateByUsername(username: string): Promise<Affiliate | undefined>;
+  getAffiliateByReferralCode(code: string): Promise<Affiliate | undefined>;
+  getAllAffiliates(): Promise<Affiliate[]>;
+  updateAffiliate(id: string, data: Partial<Affiliate>): Promise<Affiliate>;
+  deleteAffiliate(id: string): Promise<void>;
+  getUsersByAffiliateId(affiliateId: string): Promise<User[]>;
+  getAffiliateTradingVolume(affiliateId: string, since?: Date): Promise<number>;
+  getAffiliateCommissions(affiliateId: string): Promise<AffiliateCommission[]>;
+  createAffiliateCommission(affiliateId: string, userId: string, betId: number, betAmount: string, commissionAmount: string): Promise<AffiliateCommission>;
+  settleAffiliateCommissions(affiliateId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -276,6 +290,114 @@ export class DatabaseStorage implements IStorage {
     await db.update(messages)
       .set({ isRead: true })
       .where(eq(messages.receiverId, userId));
+  }
+
+  // Affiliate methods
+  async createAffiliate(affiliate: InsertAffiliate): Promise<Affiliate> {
+    const [newAffiliate] = await db.insert(affiliates).values(affiliate).returning();
+    return newAffiliate;
+  }
+
+  async getAffiliate(id: string): Promise<Affiliate | undefined> {
+    const [affiliate] = await db.select().from(affiliates).where(eq(affiliates.id, id));
+    return affiliate || undefined;
+  }
+
+  async getAffiliateByUsername(username: string): Promise<Affiliate | undefined> {
+    const [affiliate] = await db.select().from(affiliates).where(eq(affiliates.username, username));
+    return affiliate || undefined;
+  }
+
+  async getAffiliateByReferralCode(code: string): Promise<Affiliate | undefined> {
+    const [affiliate] = await db.select().from(affiliates).where(eq(affiliates.referralCode, code));
+    return affiliate || undefined;
+  }
+
+  async getAllAffiliates(): Promise<Affiliate[]> {
+    return await db.select().from(affiliates).orderBy(desc(affiliates.createdAt));
+  }
+
+  async updateAffiliate(id: string, data: Partial<Affiliate>): Promise<Affiliate> {
+    const [updated] = await db.update(affiliates)
+      .set(data)
+      .where(eq(affiliates.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteAffiliate(id: string): Promise<void> {
+    // Also remove affiliate reference from users
+    await db.update(users)
+      .set({ affiliateId: null })
+      .where(eq(users.affiliateId, id));
+    await db.delete(affiliateCommissions).where(eq(affiliateCommissions.affiliateId, id));
+    await db.delete(affiliates).where(eq(affiliates.id, id));
+  }
+
+  async getUsersByAffiliateId(affiliateId: string): Promise<User[]> {
+    return await db.select().from(users)
+      .where(eq(users.affiliateId, affiliateId))
+      .orderBy(desc(users.createdAt));
+  }
+
+  async getAffiliateTradingVolume(affiliateId: string, since?: Date): Promise<number> {
+    const affiliateUsers = await this.getUsersByAffiliateId(affiliateId);
+    if (affiliateUsers.length === 0) return 0;
+
+    const userIds = affiliateUsers.map(u => u.id);
+    let allBets: Bet[] = [];
+    
+    for (const userId of userIds) {
+      const userBets = await this.getBets(userId);
+      allBets = allBets.concat(userBets);
+    }
+
+    if (since) {
+      allBets = allBets.filter(bet => bet.createdAt >= since);
+    }
+
+    return allBets.reduce((sum, bet) => sum + parseFloat(bet.amount), 0);
+  }
+
+  async getAffiliateCommissions(affiliateId: string): Promise<AffiliateCommission[]> {
+    return await db.select().from(affiliateCommissions)
+      .where(eq(affiliateCommissions.affiliateId, affiliateId))
+      .orderBy(desc(affiliateCommissions.createdAt));
+  }
+
+  async createAffiliateCommission(affiliateId: string, userId: string, betId: number, betAmount: string, commissionAmount: string): Promise<AffiliateCommission> {
+    const [commission] = await db.insert(affiliateCommissions)
+      .values({ affiliateId, userId, betId, betAmount, commissionAmount })
+      .returning();
+    
+    // Update affiliate pending commission
+    const affiliate = await this.getAffiliate(affiliateId);
+    if (affiliate) {
+      const newPending = (parseFloat(affiliate.pendingCommission || '0') + parseFloat(commissionAmount)).toString();
+      await this.updateAffiliate(affiliateId, { pendingCommission: newPending });
+    }
+
+    return commission;
+  }
+
+  async settleAffiliateCommissions(affiliateId: string): Promise<void> {
+    const affiliate = await this.getAffiliate(affiliateId);
+    if (!affiliate) return;
+
+    // Mark all pending commissions as settled
+    await db.update(affiliateCommissions)
+      .set({ status: 'settled', settledAt: new Date() })
+      .where(and(
+        eq(affiliateCommissions.affiliateId, affiliateId),
+        eq(affiliateCommissions.status, 'pending')
+      ));
+
+    // Move pending to total and reset pending
+    const newTotal = (parseFloat(affiliate.totalCommission || '0') + parseFloat(affiliate.pendingCommission || '0')).toString();
+    await this.updateAffiliate(affiliateId, {
+      totalCommission: newTotal,
+      pendingCommission: '0',
+    });
   }
 }
 
