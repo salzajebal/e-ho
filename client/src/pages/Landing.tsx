@@ -426,7 +426,38 @@ export default function Landing() {
           <div className="flex items-center gap-3">
             {user ? (
               <>
-                <span className="text-gray-300 text-sm">
+                {/* Balance Display */}
+                <div className="hidden sm:flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5">
+                  <Wallet className="w-4 h-4 text-orange-500" />
+                  <span className="text-gray-400 text-xs">잔고</span>
+                  <span className="text-white font-bold text-sm" data-testid="text-header-balance">
+                    {balanceData?.balance ? Math.floor(parseFloat(balanceData.balance)).toLocaleString() : '0'}원
+                  </span>
+                </div>
+                
+                {/* Deposit/Withdraw Buttons */}
+                <div className="hidden md:flex items-center gap-1">
+                  <Button 
+                    variant="ghost"
+                    size="sm"
+                    className="text-green-400 hover:text-green-300 hover:bg-green-500/10 text-xs px-2"
+                    data-testid="button-header-deposit"
+                    onClick={() => setShowDepositModal(true)}
+                  >
+                    입금
+                  </Button>
+                  <Button 
+                    variant="ghost"
+                    size="sm"
+                    className="text-red-400 hover:text-red-300 hover:bg-red-500/10 text-xs px-2"
+                    data-testid="button-header-withdraw"
+                    onClick={() => setShowDepositModal(true)}
+                  >
+                    출금
+                  </Button>
+                </div>
+
+                <span className="text-gray-300 text-sm hidden lg:block">
                   {user.username}님
                 </span>
                 {user.role === 'admin' ? (
