@@ -1072,6 +1072,78 @@ export async function registerRoutes(
     }
   });
 
+  // Get bets for a specific affiliate user
+  app.get("/api/affiliate/users/:userId/bets", requireAffiliate, async (req, res) => {
+    try {
+      const affiliateId = (req.session as any).affiliateId;
+      const { userId } = req.params;
+      
+      // Verify this user belongs to this affiliate
+      const user = await storage.getUser(userId);
+      if (!user || user.affiliateId !== affiliateId) {
+        return res.status(403).json({ error: "권한이 없습니다" });
+      }
+      
+      const bets = await storage.getBets(userId);
+      res.json(bets.slice(0, 50)); // Last 50 bets
+    } catch (error) {
+      console.error("Get user bets error:", error);
+      res.status(500).json({ error: "배팅 내역 조회에 실패했습니다" });
+    }
+  });
+
+  // Get online status for affiliate users
+  app.get("/api/affiliate/users/online", requireAffiliate, async (req, res) => {
+    try {
+      const affiliateId = (req.session as any).affiliateId;
+      const affiliateUsers = await storage.getUsersByAffiliateId(affiliateId);
+      const userIds = affiliateUsers.map(u => u.id);
+      
+      // Check which users are online
+      const onlineUserIds: string[] = [];
+      onlineUsers.forEach((meta, odUserId) => {
+        if (userIds.includes(odUserId)) {
+          onlineUserIds.push(odUserId);
+        }
+      });
+      
+      res.json({ onlineUserIds });
+    } catch (error) {
+      console.error("Get online users error:", error);
+      res.status(500).json({ error: "접속 상태 조회에 실패했습니다" });
+    }
+  });
+
+  // Get all bets for affiliate users (for real-time view)
+  app.get("/api/affiliate/bets", requireAffiliate, async (req, res) => {
+    try {
+      const affiliateId = (req.session as any).affiliateId;
+      const affiliateUsers = await storage.getUsersByAffiliateId(affiliateId);
+      const userIds = affiliateUsers.map(u => u.id);
+      
+      // Get recent bets for all affiliate users
+      const allBets = await storage.getAllBets();
+      const affiliateBets = allBets
+        .filter(b => userIds.includes(b.userId))
+        .slice(0, 100); // Last 100 bets
+      
+      // Add username to each bet
+      const betsWithUser = affiliateBets.map(bet => {
+        const user = affiliateUsers.find(u => u.id === bet.userId);
+        return {
+          ...bet,
+          username: user?.username || 'Unknown',
+          userName: user?.name || '-',
+        };
+      });
+      
+      res.json(betsWithUser);
+    } catch (error) {
+      console.error("Get affiliate bets error:", error);
+      res.status(500).json({ error: "배팅 내역 조회에 실패했습니다" });
+    }
+  });
+
   // Admin: Get all affiliates
   app.get("/api/admin/affiliates", requireAdmin, async (req, res) => {
     try {

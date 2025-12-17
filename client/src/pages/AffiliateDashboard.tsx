@@ -21,6 +21,11 @@ import {
   DollarSign,
   PieChart,
   Activity,
+  Wifi,
+  WifiOff,
+  Target,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
 import {
   BarChart,
@@ -62,9 +67,33 @@ interface AffiliateUser {
   id: string;
   username: string;
   name: string | null;
+  phone: string | null;
+  balance: string;
+  totalBet: number;
+  totalWin: number;
+  betCount: number;
+  winCount: number;
+  isActive: boolean;
   createdAt: string;
-  totalBets: number;
-  totalVolume: number;
+  lastLoginAt: string | null;
+}
+
+interface AffiliateBet {
+  id: number;
+  userId: string;
+  username: string;
+  userName: string;
+  symbol: string;
+  direction: string;
+  amount: string;
+  strikePrice: string;
+  closePrice: string | null;
+  outcome: string;
+  payout: string | null;
+  duration: number;
+  expiresAt: string;
+  createdAt: string;
+  settledAt: string | null;
 }
 
 interface AffiliateCommission {
@@ -275,6 +304,30 @@ export default function AffiliateDashboard() {
     },
     enabled: !!auth && activeTab === 'analytics',
   });
+
+  const { data: onlineData, refetch: refetchOnlineUsers } = useQuery<{ onlineUserIds: string[] }>({
+    queryKey: ['/api/affiliate/users/online'],
+    queryFn: async () => {
+      const res = await fetch('/api/affiliate/users/online');
+      if (!res.ok) throw new Error('Failed to fetch online users');
+      return res.json();
+    },
+    enabled: !!auth && activeTab === 'users',
+    refetchInterval: 5000,
+  });
+
+  const { data: affiliateBets = [], refetch: refetchAffiliateBets } = useQuery<AffiliateBet[]>({
+    queryKey: ['/api/affiliate/bets'],
+    queryFn: async () => {
+      const res = await fetch('/api/affiliate/bets');
+      if (!res.ok) throw new Error('Failed to fetch bets');
+      return res.json();
+    },
+    enabled: !!auth && activeTab === 'users',
+    refetchInterval: 5000,
+  });
+
+  const onlineUserIds = onlineData?.onlineUserIds || [];
 
   const logout = useMutation({
     mutationFn: async () => {
@@ -602,9 +655,10 @@ export default function AffiliateDashboard() {
                       <tr>
                         <th className="px-4 py-3 font-medium">아이디</th>
                         <th className="px-4 py-3 font-medium">이름</th>
-                        <th className="px-4 py-3 font-medium">가입일</th>
+                        <th className="px-4 py-3 font-medium text-right">보유잔고</th>
                         <th className="px-4 py-3 font-medium text-center">베팅수</th>
-                        <th className="px-4 py-3 font-medium text-right">거래량</th>
+                        <th className="px-4 py-3 font-medium text-right">총배팅액</th>
+                        <th className="px-4 py-3 font-medium">가입일</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
@@ -612,14 +666,15 @@ export default function AffiliateDashboard() {
                         <tr key={user.id} className="hover:bg-muted/30">
                           <td className="px-4 py-3 font-medium">{user.username}</td>
                           <td className="px-4 py-3">{user.name || '-'}</td>
+                          <td className="px-4 py-3 text-right font-medium text-primary">{formatMoney(user.balance)}</td>
+                          <td className="px-4 py-3 text-center">{user.betCount}회</td>
+                          <td className="px-4 py-3 text-right">{formatMoney(user.totalBet)}</td>
                           <td className="px-4 py-3">{formatDate(user.createdAt)}</td>
-                          <td className="px-4 py-3 text-center">{user.totalBets}회</td>
-                          <td className="px-4 py-3 text-right">{formatMoney(user.totalVolume)}</td>
                         </tr>
                       ))}
                       {users.length === 0 && (
                         <tr>
-                          <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
+                          <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
                             아직 가입한 회원이 없습니다
                           </td>
                         </tr>
@@ -636,38 +691,177 @@ export default function AffiliateDashboard() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h1 className="text-2xl font-bold">추천 회원</h1>
-              <div className="flex items-center gap-2 bg-muted/50 px-3 py-2 rounded-lg">
-                <span className="text-sm">총 {users.length}명</span>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 bg-green-500/10 text-green-500 px-3 py-2 rounded-lg">
+                  <Wifi className="w-4 h-4" />
+                  <span className="text-sm font-medium">{onlineUserIds.length}명 접속중</span>
+                </div>
+                <div className="flex items-center gap-2 bg-muted/50 px-3 py-2 rounded-lg">
+                  <Users className="w-4 h-4" />
+                  <span className="text-sm">총 {users.length}명</span>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => { refetchOnlineUsers(); refetchAffiliateBets(); }}>
+                  <RefreshCw className="w-4 h-4" />
+                </Button>
               </div>
             </div>
 
             <Card className="bg-card border-border">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Users className="w-5 h-5" />
+                  회원 목록
+                </CardTitle>
+              </CardHeader>
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead className="bg-muted/50 text-left">
                       <tr>
+                        <th className="px-4 py-3 font-medium">접속</th>
                         <th className="px-4 py-3 font-medium">아이디</th>
                         <th className="px-4 py-3 font-medium">이름</th>
-                        <th className="px-4 py-3 font-medium">가입일</th>
+                        <th className="px-4 py-3 font-medium text-right">보유잔고</th>
                         <th className="px-4 py-3 font-medium text-center">베팅수</th>
-                        <th className="px-4 py-3 font-medium text-right">거래량</th>
+                        <th className="px-4 py-3 font-medium text-right">총배팅액</th>
+                        <th className="px-4 py-3 font-medium text-right">총수익</th>
+                        <th className="px-4 py-3 font-medium">최근로그인</th>
+                        <th className="px-4 py-3 font-medium">가입일</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
-                      {users.map((user) => (
-                        <tr key={user.id} className="hover:bg-muted/30">
+                      {users.map((user) => {
+                        const isOnline = onlineUserIds.includes(user.id);
+                        return (
+                        <tr key={user.id} className={cn("hover:bg-muted/30", isOnline && "bg-green-500/5")}>
+                          <td className="px-4 py-3">
+                            {isOnline ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-green-500/20 text-green-500 text-xs font-medium">
+                                <Wifi className="w-3 h-3" />
+                                접속중
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-muted text-muted-foreground text-xs">
+                                <WifiOff className="w-3 h-3" />
+                                오프라인
+                              </span>
+                            )}
+                          </td>
                           <td className="px-4 py-3 font-medium">{user.username}</td>
                           <td className="px-4 py-3">{user.name || '-'}</td>
-                          <td className="px-4 py-3">{formatDate(user.createdAt)}</td>
-                          <td className="px-4 py-3 text-center">{user.totalBets}회</td>
-                          <td className="px-4 py-3 text-right">{formatMoney(user.totalVolume)}</td>
+                          <td className="px-4 py-3 text-right font-medium text-primary">{formatMoney(user.balance)}</td>
+                          <td className="px-4 py-3 text-center">{user.betCount}회</td>
+                          <td className="px-4 py-3 text-right">{formatMoney(user.totalBet)}</td>
+                          <td className="px-4 py-3 text-right">
+                            <span className={user.totalWin > 0 ? "text-green-500" : "text-muted-foreground"}>
+                              {formatMoney(user.totalWin)}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-muted-foreground text-xs">
+                            {user.lastLoginAt ? formatDateTime(user.lastLoginAt) : '-'}
+                          </td>
+                          <td className="px-4 py-3 text-muted-foreground text-xs">{formatDate(user.createdAt)}</td>
                         </tr>
-                      ))}
+                        );
+                      })}
                       {users.length === 0 && (
                         <tr>
-                          <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
+                          <td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">
                             아직 가입한 회원이 없습니다
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-card border-border">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Target className="w-5 h-5" />
+                  실시간 배팅 내역
+                  <span className="text-sm font-normal text-muted-foreground">(최근 100건)</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto max-h-96 overflow-y-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50 text-left sticky top-0">
+                      <tr>
+                        <th className="px-4 py-3 font-medium">상태</th>
+                        <th className="px-4 py-3 font-medium">회원</th>
+                        <th className="px-4 py-3 font-medium">종목</th>
+                        <th className="px-4 py-3 font-medium">방향</th>
+                        <th className="px-4 py-3 font-medium text-right">금액</th>
+                        <th className="px-4 py-3 font-medium">시간</th>
+                        <th className="px-4 py-3 font-medium">결과</th>
+                        <th className="px-4 py-3 font-medium text-right">수익금</th>
+                        <th className="px-4 py-3 font-medium">배팅시간</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {affiliateBets.map((bet) => {
+                        const isActive = bet.outcome === 'pending';
+                        const isWin = bet.outcome === 'win';
+                        return (
+                        <tr key={bet.id} className={cn("hover:bg-muted/30", isActive && "bg-yellow-500/5")}>
+                          <td className="px-4 py-3">
+                            {isActive ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-500 text-xs font-medium animate-pulse">
+                                <Activity className="w-3 h-3" />
+                                진행중
+                              </span>
+                            ) : isWin ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-green-500/20 text-green-500 text-xs font-medium">
+                                <CheckCircle className="w-3 h-3" />
+                                적중
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-red-500/20 text-red-500 text-xs font-medium">
+                                <XCircle className="w-3 h-3" />
+                                실패
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 font-medium">{bet.username}</td>
+                          <td className="px-4 py-3">{bet.symbol}</td>
+                          <td className="px-4 py-3">
+                            {bet.direction === 'long' ? (
+                              <span className="inline-flex items-center gap-1 text-green-500">
+                                <ArrowUp className="w-3 h-3" />
+                                롱
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-red-500">
+                                <ArrowDown className="w-3 h-3" />
+                                숏
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-right font-medium">{formatMoney(bet.amount)}</td>
+                          <td className="px-4 py-3">{Math.floor(bet.duration / 60)}분</td>
+                          <td className="px-4 py-3">
+                            {isActive ? '-' : isWin ? (
+                              <span className="text-green-500 font-medium">승리</span>
+                            ) : (
+                              <span className="text-red-500">패배</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            {bet.payout ? (
+                              <span className="text-green-500 font-medium">{formatMoney(bet.payout)}</span>
+                            ) : '-'}
+                          </td>
+                          <td className="px-4 py-3 text-muted-foreground text-xs">{formatDateTime(bet.createdAt)}</td>
+                        </tr>
+                        );
+                      })}
+                      {affiliateBets.length === 0 && (
+                        <tr>
+                          <td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">
+                            배팅 내역이 없습니다
                           </td>
                         </tr>
                       )}
