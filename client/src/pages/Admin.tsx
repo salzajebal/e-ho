@@ -1472,6 +1472,7 @@ export default function Admin() {
                       <th className="px-3 py-2 whitespace-nowrap">아이디</th>
                       <th className="px-3 py-2 whitespace-nowrap">비밀번호</th>
                       <th className="px-3 py-2 whitespace-nowrap">이름</th>
+                      <th className="px-3 py-2 whitespace-nowrap">총판</th>
                       <th className="px-3 py-2 whitespace-nowrap">보유머니</th>
                       <th className="px-3 py-2 whitespace-nowrap">총베팅</th>
                       <th className="px-3 py-2 whitespace-nowrap">총입금</th>
@@ -1513,6 +1514,15 @@ export default function Admin() {
                           </div>
                         </td>
                         <td className="px-3 py-2">{user.name || '-'}</td>
+                        <td className="px-3 py-2">
+                          {user.affiliateId ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-500/20 text-purple-400">
+                              {affiliatesList.find(a => a.id === user.affiliateId)?.displayName || '알 수 없음'}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </td>
                         <td className="px-3 py-2 font-mono">{formatMoney(user.balance)}</td>
                         <td className="px-3 py-2 font-mono">{formatMoney(user.totalBet)}</td>
                         <td className="px-3 py-2 font-mono">{formatMoney(user.totalDeposit)}</td>
