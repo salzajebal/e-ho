@@ -761,6 +761,18 @@ export async function registerRoutes(
     }
   });
 
+  // Get daily stats (한국시간 기준 날짜별 수익)
+  app.get("/api/admin/daily-stats", requireAdmin, async (req, res) => {
+    try {
+      const days = parseInt(req.query.days as string) || 30;
+      const dailyStats = await storage.getDailyStats(days);
+      res.json(dailyStats);
+    } catch (error) {
+      console.error("Failed to fetch daily stats:", error);
+      res.status(500).json({ error: "Failed to fetch daily stats" });
+    }
+  });
+
   // ==================== MESSAGE ROUTES ====================
 
   // Send message to user (admin only)

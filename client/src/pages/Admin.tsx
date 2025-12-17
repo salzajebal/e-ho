@@ -38,6 +38,7 @@ import {
   Zap,
   ZapOff,
   ChevronDown,
+  Calendar,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -355,6 +356,25 @@ export default function Admin() {
     queryFn: async () => {
       const res = await fetch("/api/admin/stats");
       if (!res.ok) throw new Error("Failed to fetch stats");
+      return res.json();
+    },
+    enabled: auth?.role === 'admin',
+  });
+
+  interface DailyStats {
+    date: string;
+    totalBetAmount: number;
+    totalPayoutAmount: number;
+    houseProfitLoss: number;
+    betCount: number;
+    winCount: number;
+    loseCount: number;
+  }
+  const { data: dailyStats = [], refetch: refetchDailyStats } = useQuery<DailyStats[]>({
+    queryKey: ["/api/admin/daily-stats"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/daily-stats?days=30");
+      if (!res.ok) throw new Error("Failed to fetch daily stats");
       return res.json();
     },
     enabled: auth?.role === 'admin',
@@ -1371,6 +1391,82 @@ export default function Admin() {
                 <p className={cn("text-2xl font-bold mt-1", (stats?.profit || 0) >= 0 ? "text-up" : "text-down")}>
                   {formatMoney(stats?.profit || 0)}
                 </p>
+              </div>
+            </div>
+
+            {/* Daily Stats - 날짜별 수익 (한국시간 기준) */}
+            <div className="bg-card border border-border rounded-lg overflow-hidden">
+              <div className="p-4 border-b border-border flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-primary" />
+                  <h2 className="font-semibold">날짜별 수익 현황</h2>
+                  <span className="text-xs text-muted-foreground">(한국시간 기준, 최근 30일)</span>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => refetchDailyStats()} data-testid="button-refresh-daily-stats">
+                  <RefreshCw className="w-4 h-4" />
+                </Button>
+              </div>
+              <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50 text-left sticky top-0">
+                    <tr>
+                      <th className="px-4 py-3 font-medium">날짜</th>
+                      <th className="px-4 py-3 font-medium text-right">베팅 건수</th>
+                      <th className="px-4 py-3 font-medium text-right">승/패</th>
+                      <th className="px-4 py-3 font-medium text-right">총 베팅금액</th>
+                      <th className="px-4 py-3 font-medium text-right">총 지급금액</th>
+                      <th className="px-4 py-3 font-medium text-right">수익</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {dailyStats.map((day) => (
+                      <tr key={day.date} className="hover:bg-muted/30" data-testid={`row-daily-stats-${day.date}`}>
+                        <td className="px-4 py-3 font-medium">
+                          {new Date(day.date + 'T00:00:00').toLocaleDateString('ko-KR', { 
+                            year: 'numeric', 
+                            month: '2-digit', 
+                            day: '2-digit',
+                            weekday: 'short'
+                          })}
+                        </td>
+                        <td className="px-4 py-3 text-right">{day.betCount}건</td>
+                        <td className="px-4 py-3 text-right">
+                          <span className="text-up">{day.winCount}</span>
+                          <span className="text-muted-foreground mx-1">/</span>
+                          <span className="text-down">{day.loseCount}</span>
+                        </td>
+                        <td className="px-4 py-3 text-right">{formatMoney(day.totalBetAmount)}</td>
+                        <td className="px-4 py-3 text-right text-down">{formatMoney(day.totalPayoutAmount)}</td>
+                        <td className={cn("px-4 py-3 text-right font-bold", day.houseProfitLoss >= 0 ? "text-up" : "text-down")}>
+                          {day.houseProfitLoss >= 0 ? '+' : ''}{formatMoney(day.houseProfitLoss)}
+                        </td>
+                      </tr>
+                    ))}
+                    {dailyStats.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                          아직 정산된 베팅 기록이 없습니다
+                        </td>
+                      </tr>
+                    )}
+                    {dailyStats.length > 0 && (
+                      <tr className="bg-muted/30 font-bold">
+                        <td className="px-4 py-3">합계</td>
+                        <td className="px-4 py-3 text-right">{dailyStats.reduce((sum, d) => sum + d.betCount, 0)}건</td>
+                        <td className="px-4 py-3 text-right">
+                          <span className="text-up">{dailyStats.reduce((sum, d) => sum + d.winCount, 0)}</span>
+                          <span className="text-muted-foreground mx-1">/</span>
+                          <span className="text-down">{dailyStats.reduce((sum, d) => sum + d.loseCount, 0)}</span>
+                        </td>
+                        <td className="px-4 py-3 text-right">{formatMoney(dailyStats.reduce((sum, d) => sum + d.totalBetAmount, 0))}</td>
+                        <td className="px-4 py-3 text-right text-down">{formatMoney(dailyStats.reduce((sum, d) => sum + d.totalPayoutAmount, 0))}</td>
+                        <td className={cn("px-4 py-3 text-right", dailyStats.reduce((sum, d) => sum + d.houseProfitLoss, 0) >= 0 ? "text-up" : "text-down")}>
+                          {dailyStats.reduce((sum, d) => sum + d.houseProfitLoss, 0) >= 0 ? '+' : ''}{formatMoney(dailyStats.reduce((sum, d) => sum + d.houseProfitLoss, 0))}
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
 

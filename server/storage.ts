@@ -30,6 +30,16 @@ export interface CommissionWithDetails {
   settledAt: Date | null;
 }
 
+export interface DailyStats {
+  date: string;
+  totalBetAmount: number;
+  totalPayoutAmount: number;
+  houseProfitLoss: number;
+  betCount: number;
+  winCount: number;
+  loseCount: number;
+}
+
 export interface IStorage {
   // User methods
   getUser(id: string): Promise<User | undefined>;
@@ -118,6 +128,9 @@ export interface IStorage {
   getPendingTransactionRequests(): Promise<TransactionRequest[]>;
   getAllTransactionRequests(): Promise<TransactionRequest[]>;
   processTransactionRequest(id: number, status: 'approved' | 'rejected', processedBy: string, adminNote?: string): Promise<TransactionRequest>;
+
+  // Daily stats methods (날짜별 수익)
+  getDailyStats(days?: number): Promise<DailyStats[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -740,6 +753,60 @@ export class DatabaseStorage implements IStorage {
       .where(eq(transactionRequests.id, id))
       .returning();
     return updated;
+  }
+
+  // Daily stats methods (날짜별 수익 - 한국시간 기준)
+  async getDailyStats(days: number = 30): Promise<DailyStats[]> {
+    const allBets = await db.select().from(bets)
+      .where(eq(bets.outcome, 'win'))
+      .orderBy(desc(bets.settledAt));
+    
+    const allSettledBets = await db.select().from(bets)
+      .where(sql`${bets.outcome} IN ('win', 'lose')`)
+      .orderBy(desc(bets.settledAt));
+
+    const dailyMap = new Map<string, DailyStats>();
+    
+    for (const bet of allSettledBets) {
+      if (!bet.settledAt) continue;
+      
+      const kstDate = new Date(bet.settledAt.getTime() + (9 * 60 * 60 * 1000));
+      const dateKey = kstDate.toISOString().split('T')[0];
+      
+      if (!dailyMap.has(dateKey)) {
+        dailyMap.set(dateKey, {
+          date: dateKey,
+          totalBetAmount: 0,
+          totalPayoutAmount: 0,
+          houseProfitLoss: 0,
+          betCount: 0,
+          winCount: 0,
+          loseCount: 0,
+        });
+      }
+      
+      const stats = dailyMap.get(dateKey)!;
+      const betAmount = parseFloat(bet.amount);
+      const payoutAmount = bet.outcome === 'win' && bet.payout ? parseFloat(bet.payout) : 0;
+      
+      stats.totalBetAmount += betAmount;
+      stats.betCount += 1;
+      
+      if (bet.outcome === 'win') {
+        stats.winCount += 1;
+        stats.totalPayoutAmount += payoutAmount;
+        stats.houseProfitLoss -= (payoutAmount - betAmount);
+      } else {
+        stats.loseCount += 1;
+        stats.houseProfitLoss += betAmount;
+      }
+    }
+    
+    const result = Array.from(dailyMap.values())
+      .sort((a, b) => b.date.localeCompare(a.date))
+      .slice(0, days);
+    
+    return result;
   }
 }
 
