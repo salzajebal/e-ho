@@ -156,75 +156,93 @@ export function PriceChart({ symbol, data }: PriceChartProps) {
     }
   }, [symbol, timeFrame, data.price]);
 
-  // Update price ref for interval
-  useEffect(() => {
-    lastPriceRef.current = data.price;
-  }, [data.price]);
+  // Track current candle state
+  const currentCandleRef = useRef<CandlestickData<Time> | null>(null);
+  const intervalStartRef = useRef<number>(0);
 
-  // Real-time updates - update the last candle with current price
+  // Update chart immediately when price changes
+  useEffect(() => {
+    if (!seriesRef.current || data.price === 0) return;
+    
+    lastPriceRef.current = data.price;
+    
+    const intervalMs = getIntervalMinutes(timeFrame) * 60 * 1000;
+    const now = Date.now();
+    const currentIntervalStart = Math.floor(now / intervalMs) * intervalMs / 1000;
+    
+    // Check if we need to start a new candle
+    if (currentIntervalStart > intervalStartRef.current) {
+      // New candle period
+      intervalStartRef.current = currentIntervalStart;
+      currentCandleRef.current = {
+        time: currentIntervalStart as Time,
+        open: data.price,
+        high: data.price,
+        low: data.price,
+        close: data.price,
+      };
+    } else if (currentCandleRef.current) {
+      // Update existing candle with new price
+      currentCandleRef.current = {
+        time: currentCandleRef.current.time,
+        open: currentCandleRef.current.open,
+        high: Math.max(currentCandleRef.current.high, data.price),
+        low: Math.min(currentCandleRef.current.low, data.price),
+        close: data.price,
+      };
+    } else {
+      // Initialize first candle
+      intervalStartRef.current = currentIntervalStart;
+      currentCandleRef.current = {
+        time: currentIntervalStart as Time,
+        open: data.price,
+        high: data.price,
+        low: data.price,
+        close: data.price,
+      };
+    }
+
+    // Update the chart
+    try {
+      if (currentCandleRef.current) {
+        seriesRef.current.update(currentCandleRef.current);
+      }
+    } catch {
+      // Silently ignore update errors
+    }
+  }, [data.price, timeFrame]);
+
+  // Periodic check for new candle periods (in case price doesn't change)
   useEffect(() => {
     if (!seriesRef.current) return;
 
     const intervalMs = getIntervalMinutes(timeFrame) * 60 * 1000;
-    const intervalSec = intervalMs / 1000;
     
-    // Initialize with the current interval's start time
-    let currentIntervalStart = Math.floor(Date.now() / intervalMs) * intervalMs / 1000;
-    let currentCandle: CandlestickData<Time> = {
-      time: currentIntervalStart as Time,
-      open: lastPriceRef.current,
-      high: lastPriceRef.current,
-      low: lastPriceRef.current,
-      close: lastPriceRef.current,
-    };
-
-    // Delay first update to ensure chart is ready
-    const startDelay = setTimeout(() => {
-      if (seriesRef.current) {
-        try {
-          seriesRef.current.update(currentCandle);
-        } catch {}
-      }
-    }, 100);
-
-    const updateInterval = setInterval(() => {
-      if (!seriesRef.current) return;
-
+    const checkInterval = setInterval(() => {
+      if (!seriesRef.current || !currentCandleRef.current) return;
+      
       const now = Date.now();
-      const newIntervalStart = Math.floor(now / intervalMs) * intervalMs / 1000;
-      const price = lastPriceRef.current;
-
-      if (newIntervalStart > currentIntervalStart) {
-        // New candle period - create new candle
-        currentIntervalStart = newIntervalStart;
-        currentCandle = {
-          time: newIntervalStart as Time,
-          open: price,
-          high: price,
-          low: price,
-          close: price,
-        };
-      } else {
-        // Same period - update existing candle
-        currentCandle = {
+      const currentIntervalStart = Math.floor(now / intervalMs) * intervalMs / 1000;
+      
+      if (currentIntervalStart > intervalStartRef.current) {
+        // New candle period - create new candle with last known price
+        intervalStartRef.current = currentIntervalStart;
+        currentCandleRef.current = {
           time: currentIntervalStart as Time,
-          open: currentCandle.open,
-          high: Math.max(currentCandle.high, price),
-          low: Math.min(currentCandle.low, price),
-          close: price,
+          open: lastPriceRef.current,
+          high: lastPriceRef.current,
+          low: lastPriceRef.current,
+          close: lastPriceRef.current,
         };
-      }
-
-      try {
-        seriesRef.current.update(currentCandle);
-      } catch {
-        // Silently ignore update errors
+        
+        try {
+          seriesRef.current.update(currentCandleRef.current);
+        } catch {}
       }
     }, 1000);
 
     return () => {
-      clearTimeout(startDelay);
-      clearInterval(updateInterval);
+      clearInterval(checkInterval);
     };
   }, [timeFrame, symbol]);
 
