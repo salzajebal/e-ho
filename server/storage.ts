@@ -42,7 +42,7 @@ export interface IStorage {
   rejectUser(userId: string): Promise<User>;
   updateUser(id: string, data: Partial<User>): Promise<User>;
   deleteUser(id: string): Promise<void>;
-  updateLastLogin(userId: string): Promise<void>;
+  updateLastLogin(userId: string, ip?: string): Promise<void>;
   updateUserStats(userId: string, betAmount: number, winAmount: number): Promise<void>;
 
   // Bet methods
@@ -177,9 +177,13 @@ export class DatabaseStorage implements IStorage {
     await db.delete(users).where(eq(users.id, id));
   }
 
-  async updateLastLogin(userId: string): Promise<void> {
+  async updateLastLogin(userId: string, ip?: string): Promise<void> {
+    const updateData: { lastLoginAt: Date; lastLoginIp?: string } = { lastLoginAt: new Date() };
+    if (ip) {
+      updateData.lastLoginIp = ip;
+    }
     await db.update(users)
-      .set({ lastLoginAt: new Date() })
+      .set(updateData)
       .where(eq(users.id, userId));
   }
 

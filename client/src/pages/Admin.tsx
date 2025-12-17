@@ -32,6 +32,9 @@ import {
   Wallet,
   Ban,
   Wrench,
+  Wifi,
+  WifiOff,
+  Globe,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -425,6 +428,29 @@ export default function Admin() {
     },
     enabled: auth?.role === 'admin',
     refetchInterval: 3000,
+  });
+
+  // Online users with real-time connection info
+  interface OnlineUser {
+    id: string;
+    username: string;
+    name: string | null;
+    balance: string;
+    lastLoginAt: string | null;
+    lastLoginIp: string | null;
+    connectedAt: string;
+    currentIp: string;
+    isOnline: boolean;
+  }
+  const { data: onlineUsers = [], refetch: refetchOnlineUsers } = useQuery<OnlineUser[]>({
+    queryKey: ["/api/admin/online-users"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/online-users");
+      if (!res.ok) throw new Error("Failed to fetch online users");
+      return res.json();
+    },
+    enabled: auth?.role === 'admin',
+    refetchInterval: 5000, // Refresh every 5 seconds for real-time data
   });
 
   // Affiliates
@@ -1203,17 +1229,25 @@ export default function Admin() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h1 className="text-2xl font-bold">대시보드</h1>
-              <Button variant="outline" size="sm" onClick={() => { refetchStats(); refetchUsers(); refetchBets(); }}>
+              <Button variant="outline" size="sm" onClick={() => { refetchStats(); refetchUsers(); refetchBets(); refetchOnlineUsers(); }}>
                 <RefreshCw className="w-4 h-4 mr-2" />
                 새로고침
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
               <div className="bg-card border border-border rounded-lg p-4">
                 <p className="text-sm text-muted-foreground">총 회원수</p>
                 <p className="text-2xl font-bold mt-1">{stats?.totalUsers || 0}명</p>
                 <p className="text-xs text-muted-foreground mt-1">활성: {stats?.activeUsers || 0}명</p>
+              </div>
+              <div className="bg-card border border-border rounded-lg p-4">
+                <div className="flex items-center gap-2">
+                  <Wifi className="w-4 h-4 text-up" />
+                  <p className="text-sm text-muted-foreground">현재 접속자</p>
+                </div>
+                <p className="text-2xl font-bold mt-1 text-up">{onlineUsers.length}명</p>
+                <p className="text-xs text-muted-foreground mt-1">실시간</p>
               </div>
               <div className="bg-card border border-border rounded-lg p-4">
                 <p className="text-sm text-muted-foreground">총 베팅수</p>
@@ -1233,6 +1267,67 @@ export default function Admin() {
                 <p className={cn("text-2xl font-bold mt-1", (stats?.profit || 0) >= 0 ? "text-up" : "text-down")}>
                   {formatMoney(stats?.profit || 0)}
                 </p>
+              </div>
+            </div>
+
+            {/* Real-time Online Users List */}
+            <div className="bg-card border border-border rounded-lg overflow-hidden">
+              <div className="p-4 border-b border-border flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Wifi className="w-5 h-5 text-up" />
+                  <h2 className="font-semibold">실시간 접속 현황</h2>
+                  <span className="text-xs bg-up/20 text-up px-2 py-0.5 rounded-full" data-testid="text-online-count">{onlineUsers.length}명 접속 중</span>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => refetchOnlineUsers()} data-testid="button-refresh-online-users">
+                  <RefreshCw className="w-4 h-4" />
+                </Button>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50 text-left">
+                    <tr>
+                      <th className="px-4 py-3 font-medium text-center">상태</th>
+                      <th className="px-4 py-3 font-medium">아이디</th>
+                      <th className="px-4 py-3 font-medium">회원명</th>
+                      <th className="px-4 py-3 font-medium">접속 IP</th>
+                      <th className="px-4 py-3 font-medium">접속 시간</th>
+                      <th className="px-4 py-3 font-medium text-right">현재 잔고</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {onlineUsers.map((user) => (
+                      <tr key={user.id} className="hover:bg-muted/30" data-testid={`row-online-user-${user.id}`}>
+                        <td className="px-4 py-3 text-center">
+                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-up/20">
+                            <span className="w-2 h-2 rounded-full bg-up animate-pulse"></span>
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 font-medium">{user.username}</td>
+                        <td className="px-4 py-3">{user.name || '-'}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1.5">
+                            <Globe className="w-3.5 h-3.5 text-muted-foreground" />
+                            <span className="font-mono text-xs">{user.currentIp || user.lastLoginIp || '-'}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground text-xs">
+                          {user.connectedAt ? formatDate(user.connectedAt) : (user.lastLoginAt ? formatDate(user.lastLoginAt) : '-')}
+                        </td>
+                        <td className="px-4 py-3 text-right font-medium text-up">
+                          {formatMoney(parseFloat(user.balance || '0'))}
+                        </td>
+                      </tr>
+                    ))}
+                    {onlineUsers.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                          <WifiOff className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                          현재 접속 중인 회원이 없습니다
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>

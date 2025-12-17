@@ -10,6 +10,19 @@ export const wsClients = new Set<WebSocket>();
 export const adminWsClients = new Set<WebSocket>();
 export const userWsClients = new Map<number, Set<WebSocket>>();
 
+// Online user tracking with metadata
+export interface OnlineUserInfo {
+  odUserId: string;
+  odConnectedAt: Date;
+  odIp: string;
+}
+export const onlineUsers = new Map<string, OnlineUserInfo>();
+
+// Get list of online user IDs
+export function getOnlineUserIds(): string[] {
+  return Array.from(onlineUsers.keys());
+}
+
 // Broadcast to all admin clients
 export function broadcastToAdmins(event: string, data: any) {
   const message = JSON.stringify({ event, data, timestamp: Date.now() });
@@ -195,35 +208,52 @@ app.use((req, res, next) => {
           return;
         }
         
-        const userId = Number(sessionData.userId);
+        const userId = sessionData.userId;
+        const numericUserId = Number(userId);
+        
+        // Get client IP address
+        const clientIp = req.headers['x-forwarded-for']?.toString().split(',')[0].trim() || 
+                         req.headers['x-real-ip']?.toString() || 
+                         req.socket.remoteAddress || 
+                         'unknown';
         
         // Add to user clients map
-        if (!userWsClients.has(userId)) {
-          userWsClients.set(userId, new Set());
+        if (!userWsClients.has(numericUserId)) {
+          userWsClients.set(numericUserId, new Set());
         }
-        userWsClients.get(userId)!.add(ws);
+        userWsClients.get(numericUserId)!.add(ws);
         
-        console.log(`User WebSocket connected: userId=${userId}`);
+        // Track online user with metadata
+        onlineUsers.set(userId, {
+          odUserId: userId,
+          odConnectedAt: new Date(),
+          odIp: clientIp,
+        });
+        
+        console.log(`User WebSocket connected: userId=${userId}, IP=${clientIp}`);
         ws.send(JSON.stringify({ event: 'connected', data: { message: 'User WebSocket connected' } }));
         
         ws.on('close', () => {
           console.log(`User WebSocket disconnected: userId=${userId}`);
-          const clients = userWsClients.get(userId);
+          const clients = userWsClients.get(numericUserId);
           if (clients) {
             clients.delete(ws);
             if (clients.size === 0) {
-              userWsClients.delete(userId);
+              userWsClients.delete(numericUserId);
+              // Remove from online users when all connections closed
+              onlineUsers.delete(userId);
             }
           }
         });
         
         ws.on('error', (error) => {
           console.error('User WebSocket error:', error);
-          const clients = userWsClients.get(userId);
+          const clients = userWsClients.get(numericUserId);
           if (clients) {
             clients.delete(ws);
             if (clients.size === 0) {
-              userWsClients.delete(userId);
+              userWsClients.delete(numericUserId);
+              onlineUsers.delete(userId);
             }
           }
         });

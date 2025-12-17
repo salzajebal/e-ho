@@ -50,6 +50,7 @@ export const users = pgTable("users", {
   isActive: boolean("is_active").notNull().default(true),
   approvalStatus: text("approval_status").notNull().default("pending"), // 'pending', 'approved', 'rejected'
   lastLoginAt: timestamp("last_login_at"),
+  lastLoginIp: text("last_login_ip"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

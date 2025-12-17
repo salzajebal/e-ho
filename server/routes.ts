@@ -5,7 +5,7 @@ import { insertBetSchema, loginSchema } from "@shared/schema";
 import { z } from "zod";
 import session from "express-session";
 import MemoryStore from "memorystore";
-import { broadcastToAdmins, broadcastToUser } from "./index";
+import { broadcastToAdmins, broadcastToUser, onlineUsers } from "./index";
 import { parse as parseCookie } from "cookie";
 import { unsign } from "cookie-signature";
 
@@ -234,9 +234,15 @@ export async function registerRoutes(
 
       req.session.userId = user.id;
       
-      // Update last login time - wrapped in try-catch to not fail login
+      // Get client IP address
+      const clientIp = req.headers['x-forwarded-for']?.toString().split(',')[0].trim() || 
+                       req.headers['x-real-ip']?.toString() || 
+                       req.socket.remoteAddress || 
+                       'unknown';
+      
+      // Update last login time and IP - wrapped in try-catch to not fail login
       try {
-        await storage.updateLastLogin(user.id);
+        await storage.updateLastLogin(user.id, clientIp);
       } catch (updateError) {
         console.error("Failed to update last login time:", updateError);
       }
@@ -487,6 +493,36 @@ export async function registerRoutes(
       res.json(pendingUsers);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch pending users" });
+    }
+  });
+
+  // Get online users with real-time connection info
+  app.get("/api/admin/online-users", requireAdmin, async (req, res) => {
+    try {
+      const allUsers = await storage.getAllUsers();
+      const onlineUserIds = Array.from(onlineUsers.keys());
+      
+      const onlineUsersList = allUsers
+        .filter(u => onlineUserIds.includes(u.id) && u.approvalStatus === 'approved')
+        .map(u => {
+          const onlineInfo = onlineUsers.get(u.id);
+          return {
+            id: u.id,
+            username: u.username,
+            name: u.name,
+            balance: u.balance,
+            lastLoginAt: u.lastLoginAt,
+            lastLoginIp: u.lastLoginIp,
+            connectedAt: onlineInfo?.odConnectedAt,
+            currentIp: onlineInfo?.odIp,
+            isOnline: true,
+          };
+        });
+      
+      res.json(onlineUsersList);
+    } catch (error) {
+      console.error("Failed to fetch online users:", error);
+      res.status(500).json({ error: "Failed to fetch online users" });
     }
   });
 
