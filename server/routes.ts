@@ -1221,5 +1221,145 @@ export async function registerRoutes(
     }
   });
 
+  // ==================== REAL-TIME MARKET DATA ====================
+  
+  // Cache for market data (refresh every 10 seconds)
+  let marketDataCache: { data: any; timestamp: number } | null = null;
+  const CACHE_DURATION = 10000; // 10 seconds
+
+  // Symbol mapping for Finnhub
+  const SYMBOL_MAP: Record<string, string> = {
+    'NDX': 'QQQ',      // Use QQQ ETF as proxy for NASDAQ 100
+    'SP500': 'SPY',    // Use SPY ETF as proxy for S&P 500
+    'AAPL': 'AAPL',
+    'MSFT': 'MSFT',
+    'GOOGL': 'GOOGL',
+    'AMZN': 'AMZN',
+    'NVDA': 'NVDA',
+    'META': 'META',
+    'TSLA': 'TSLA',
+  };
+
+  // NDX/SP500 price multipliers (ETF to Index conversion)
+  const INDEX_MULTIPLIERS: Record<string, number> = {
+    'NDX': 42.5,   // QQQ ~$520 * 42.5 ≈ NDX 22,100
+    'SP500': 10.2, // SPY ~$585 * 10.2 ≈ SP500 5,967
+  };
+
+  app.get("/api/market/prices", async (req, res) => {
+    try {
+      const apiKey = process.env.FINNHUB_API_KEY;
+      
+      if (!apiKey) {
+        return res.status(503).json({ 
+          error: "Market data API not configured",
+          fallback: true 
+        });
+      }
+
+      // Return cached data if fresh
+      if (marketDataCache && (Date.now() - marketDataCache.timestamp) < CACHE_DURATION) {
+        return res.json(marketDataCache.data);
+      }
+
+      const symbols = Object.keys(SYMBOL_MAP);
+      const pricePromises = symbols.map(async (symbol) => {
+        const finnhubSymbol = SYMBOL_MAP[symbol];
+        try {
+          const response = await fetch(
+            `https://finnhub.io/api/v1/quote?symbol=${finnhubSymbol}&token=${apiKey}`
+          );
+          const data = await response.json();
+          
+          let price = data.c || 0; // Current price
+          let prevClose = data.pc || price; // Previous close
+          
+          // Apply multiplier for index ETFs
+          if (INDEX_MULTIPLIERS[symbol]) {
+            price = price * INDEX_MULTIPLIERS[symbol];
+            prevClose = prevClose * INDEX_MULTIPLIERS[symbol];
+          }
+          
+          const change = price - prevClose;
+          const changePercent = prevClose > 0 ? (change / prevClose) * 100 : 0;
+          
+          return {
+            symbol,
+            price: parseFloat(price.toFixed(2)),
+            change: parseFloat(change.toFixed(2)),
+            changePercent: parseFloat(changePercent.toFixed(2)),
+            high: parseFloat((data.h * (INDEX_MULTIPLIERS[symbol] || 1)).toFixed(2)),
+            low: parseFloat((data.l * (INDEX_MULTIPLIERS[symbol] || 1)).toFixed(2)),
+            timestamp: Date.now(),
+          };
+        } catch (err) {
+          console.error(`Failed to fetch ${symbol}:`, err);
+          return null;
+        }
+      });
+
+      const results = await Promise.all(pricePromises);
+      const validResults = results.filter(r => r !== null);
+
+      if (validResults.length === 0) {
+        return res.status(503).json({ error: "Failed to fetch market data", fallback: true });
+      }
+
+      // Update cache
+      marketDataCache = {
+        data: { prices: validResults, timestamp: Date.now() },
+        timestamp: Date.now(),
+      };
+
+      res.json(marketDataCache.data);
+    } catch (error) {
+      console.error("Market data error:", error);
+      res.status(500).json({ error: "Failed to fetch market data", fallback: true });
+    }
+  });
+
+  // Single symbol price endpoint
+  app.get("/api/market/price/:symbol", async (req, res) => {
+    try {
+      const { symbol } = req.params;
+      const apiKey = process.env.FINNHUB_API_KEY;
+      
+      if (!apiKey) {
+        return res.status(503).json({ error: "API not configured", fallback: true });
+      }
+
+      const finnhubSymbol = SYMBOL_MAP[symbol];
+      if (!finnhubSymbol) {
+        return res.status(400).json({ error: "Unknown symbol" });
+      }
+
+      const response = await fetch(
+        `https://finnhub.io/api/v1/quote?symbol=${finnhubSymbol}&token=${apiKey}`
+      );
+      const data = await response.json();
+      
+      let price = data.c || 0;
+      let prevClose = data.pc || price;
+      
+      if (INDEX_MULTIPLIERS[symbol]) {
+        price = price * INDEX_MULTIPLIERS[symbol];
+        prevClose = prevClose * INDEX_MULTIPLIERS[symbol];
+      }
+      
+      const change = price - prevClose;
+      const changePercent = prevClose > 0 ? (change / prevClose) * 100 : 0;
+
+      res.json({
+        symbol,
+        price: parseFloat(price.toFixed(2)),
+        change: parseFloat(change.toFixed(2)),
+        changePercent: parseFloat(changePercent.toFixed(2)),
+        timestamp: Date.now(),
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch price", fallback: true });
+    }
+  });
+
   return httpServer;
 }

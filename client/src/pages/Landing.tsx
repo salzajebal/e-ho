@@ -49,7 +49,7 @@ function useLandingMarketData() {
   });
 
   useEffect(() => {
-    // Initialize price history with some variation
+    // Initialize price history
     ["NDX", "SP500"].forEach(symbol => {
       const basePrice = markets.find(m => m.symbol === symbol)?.price || 100;
       const history: number[] = [];
@@ -66,12 +66,44 @@ function useLandingMarketData() {
       priceHistory: [...historyRef.current[m.symbol]]
     })));
 
-    // Simulate NASDAQ and S&P 500 updates
+    // Fetch real prices from API
+    const fetchRealPrices = async () => {
+      try {
+        const response = await fetch('/api/market/prices');
+        const result = await response.json();
+        
+        if (!result.fallback && result.prices) {
+          setMarkets(prev => prev.map(m => {
+            const apiPrice = result.prices.find((p: any) => p.symbol === m.symbol);
+            if (apiPrice) {
+              historyRef.current[m.symbol] = [...historyRef.current[m.symbol].slice(-19), apiPrice.price];
+              return {
+                ...m,
+                price: apiPrice.price,
+                changePercent: apiPrice.changePercent,
+                priceHistory: [...historyRef.current[m.symbol]]
+              };
+            }
+            return m;
+          }));
+        }
+      } catch (error) {
+        console.log('Using fallback prices');
+      }
+    };
+
+    // Initial fetch
+    fetchRealPrices();
+
+    // Fetch from API every 10 seconds
+    const apiInterval = setInterval(fetchRealPrices, 10000);
+
+    // Small simulation between API calls for smoother UI
     const simInterval = setInterval(() => {
       setMarkets(prev => prev.map(m => {
         if (m.symbol === 'NDX' || m.symbol === 'SP500') {
-          const volatility = 0.0003;
-          const change = m.price * volatility * (Math.random() - 0.48);
+          const volatility = 0.0001;
+          const change = m.price * volatility * (Math.random() - 0.5);
           const newPrice = m.price + change;
           
           historyRef.current[m.symbol] = [...historyRef.current[m.symbol].slice(-19), newPrice];
@@ -79,7 +111,6 @@ function useLandingMarketData() {
           return {
             ...m,
             price: newPrice,
-            changePercent: m.changePercent + (Math.random() - 0.5) * 0.01,
             priceHistory: [...historyRef.current[m.symbol]]
           };
         }
@@ -88,6 +119,7 @@ function useLandingMarketData() {
     }, 1000);
 
     return () => {
+      clearInterval(apiInterval);
       clearInterval(simInterval);
     };
   }, []);

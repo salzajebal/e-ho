@@ -50,10 +50,10 @@ export const INITIAL_MARKET_DATA: MarketData[] = [
   { symbol: 'TSLA', name: 'Tesla', price: 477.25, change: 2.75, changePercent: 0.58, high: 482.00, low: 472.00, volume: 98500000, category: '나스닥' },
 ];
 
-// Hook to manage real-time data
+// Hook to manage real-time data with API integration
 export function useMarketData() {
   const [data, setData] = useState<MarketData[]>(INITIAL_MARKET_DATA);
-  const wsRef = useRef<WebSocket | null>(null);
+  const [useApi, setUseApi] = useState(true);
   const previousPrices = useRef<Record<string, number>>({});
 
   useEffect(() => {
@@ -62,7 +62,41 @@ export function useMarketData() {
       previousPrices.current[item.symbol] = item.price;
     });
 
-    // Simulate NASDAQ stock price movements - keep within realistic range
+    // Fetch real prices from API
+    const fetchRealPrices = async () => {
+      try {
+        const response = await fetch('/api/market/prices');
+        const result = await response.json();
+        
+        if (result.fallback || !result.prices) {
+          setUseApi(false);
+          return false;
+        }
+
+        setData(prev => prev.map(item => {
+          const apiPrice = result.prices.find((p: any) => p.symbol === item.symbol);
+          if (apiPrice) {
+            previousPrices.current[item.symbol] = apiPrice.price;
+            return {
+              ...item,
+              price: apiPrice.price,
+              change: apiPrice.change,
+              changePercent: apiPrice.changePercent,
+              high: apiPrice.high || item.high,
+              low: apiPrice.low || item.low,
+            };
+          }
+          return item;
+        }));
+        return true;
+      } catch (error) {
+        console.log('Falling back to simulation mode');
+        setUseApi(false);
+        return false;
+      }
+    };
+
+    // Simulate NASDAQ stock price movements - keep within realistic range (fallback)
     const simulateMarkets = () => {
       setData(prev => prev.map(item => {
         const basePrice = BASE_PRICES[item.symbol] || item.price;
@@ -79,11 +113,9 @@ export function useMarketData() {
         
         // If too far from base, pull back towards it
         if (Math.abs(deviation) > maxDev) {
-          // Strong pull back to base
           const pullBack = deviation * 0.1;
           newPrice = newPrice - pullBack;
         } else if (Math.abs(deviation) > maxDev * 0.7) {
-          // Gentle pull back when approaching limit
           const pullBack = deviation * 0.03;
           newPrice = newPrice - pullBack;
         }
@@ -108,13 +140,28 @@ export function useMarketData() {
       }));
     };
 
-    // Set up interval for simulated markets
-    const simInterval = setInterval(simulateMarkets, 1000);
+    // Initial API fetch
+    fetchRealPrices();
+
+    // Set up intervals
+    let apiInterval: NodeJS.Timeout | null = null;
+    let simInterval: NodeJS.Timeout | null = null;
+
+    if (useApi) {
+      // Fetch from API every 10 seconds
+      apiInterval = setInterval(fetchRealPrices, 10000);
+      // Small simulation between API calls for smoother UI
+      simInterval = setInterval(simulateMarkets, 1000);
+    } else {
+      // Pure simulation mode
+      simInterval = setInterval(simulateMarkets, 1000);
+    }
 
     return () => {
-      clearInterval(simInterval);
+      if (apiInterval) clearInterval(apiInterval);
+      if (simInterval) clearInterval(simInterval);
     };
-  }, []);
+  }, [useApi]);
 
   return data;
 }
