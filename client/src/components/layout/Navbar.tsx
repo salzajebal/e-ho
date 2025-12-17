@@ -20,12 +20,8 @@ export function Navbar({ onSelectSymbol, selectedSymbol }: NavbarProps) {
   const logout = useLogout();
 
   const quickAssets = [
-    { symbol: 'NDX', label: 'NASDAQ', icon: BarChart3 },
+    { symbol: 'NDX', label: 'NASDAQ 100', icon: BarChart3 },
     { symbol: 'SP500', label: 'S&P 500', icon: BarChart3 },
-    { symbol: 'AAPL', label: 'Apple', icon: TrendingUp },
-    { symbol: 'MSFT', label: 'Microsoft', icon: TrendingUp },
-    { symbol: 'NVDA', label: 'NVIDIA', icon: TrendingUp },
-    { symbol: 'TSLA', label: 'Tesla', icon: TrendingUp },
   ];
 
   return (

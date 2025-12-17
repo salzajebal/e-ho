@@ -16,38 +16,17 @@ export interface MarketData {
 const BASE_PRICES: Record<string, number> = {
   'NDX': 21547,
   'SP500': 5867,
-  'AAPL': 250,
-  'MSFT': 442,
-  'GOOGL': 191,
-  'AMZN': 224,
-  'NVDA': 129,
-  'META': 605,
-  'TSLA': 477,
 };
 
 // Maximum deviation from base price (in points)
 const MAX_DEVIATION: Record<string, number> = {
   'NDX': 5,      // Index: ±5 points
   'SP500': 3,    // Index: ±3 points
-  'AAPL': 2,     // Stocks: ±2 points
-  'MSFT': 3,
-  'GOOGL': 2,
-  'AMZN': 2,
-  'NVDA': 2,
-  'META': 3,
-  'TSLA': 4,     // Tesla more volatile: ±4 points
 };
 
 export const INITIAL_MARKET_DATA: MarketData[] = [
   { symbol: 'NDX', name: 'NASDAQ 100', price: 21547.80, change: -110.50, changePercent: -0.51, high: 21660.00, low: 21520.00, volume: 920000, category: '지수' },
   { symbol: 'SP500', name: 'S&P 500', price: 5867.50, change: -25.40, changePercent: -0.43, high: 5895.00, low: 5855.00, volume: 1350000, category: '지수' },
-  { symbol: 'AAPL', name: 'Apple', price: 250.25, change: -0.85, changePercent: -0.34, high: 252.00, low: 249.00, volume: 48500000, category: '나스닥' },
-  { symbol: 'MSFT', name: 'Microsoft', price: 442.30, change: -3.20, changePercent: -0.72, high: 446.00, low: 440.00, volume: 18700000, category: '나스닥' },
-  { symbol: 'GOOGL', name: 'Alphabet', price: 191.45, change: -1.35, changePercent: -0.70, high: 193.00, low: 190.00, volume: 21200000, category: '나스닥' },
-  { symbol: 'AMZN', name: 'Amazon', price: 224.80, change: -1.50, changePercent: -0.66, high: 227.00, low: 223.00, volume: 38500000, category: '나스닥' },
-  { symbol: 'NVDA', name: 'NVIDIA', price: 129.75, change: -2.25, changePercent: -1.71, high: 132.50, low: 128.50, volume: 245000000, category: '나스닥' },
-  { symbol: 'META', name: 'Meta', price: 605.50, change: -4.50, changePercent: -0.74, high: 612.00, low: 602.00, volume: 12800000, category: '나스닥' },
-  { symbol: 'TSLA', name: 'Tesla', price: 477.25, change: 2.75, changePercent: 0.58, high: 482.00, low: 472.00, volume: 98500000, category: '나스닥' },
 ];
 
 // Hook to manage real-time data with API integration

@@ -13,13 +13,6 @@ import { toast } from "sonner";
 const NASDAQ_STOCKS = [
   { symbol: "NDX", name: "NASDAQ 100" },
   { symbol: "SP500", name: "S&P 500" },
-  { symbol: "AAPL", name: "Apple Inc." },
-  { symbol: "MSFT", name: "Microsoft" },
-  { symbol: "GOOGL", name: "Alphabet" },
-  { symbol: "AMZN", name: "Amazon" },
-  { symbol: "NVDA", name: "NVIDIA" },
-  { symbol: "META", name: "Meta Platforms" },
-  { symbol: "TSLA", name: "Tesla" },
 ];
 
 const KOREAN_BANKS = [
@@ -856,7 +849,6 @@ export default function Landing() {
               <ul className="space-y-2 text-gray-500 text-sm">
                 <li><Link href="/trade" className="hover:text-orange-500 transition-colors" data-testid="link-trade-nasdaq">NASDAQ 100</Link></li>
                 <li><Link href="/trade" className="hover:text-orange-500 transition-colors" data-testid="link-trade-sp500">S&P 500</Link></li>
-                <li><Link href="/trade" className="hover:text-orange-500 transition-colors" data-testid="link-trade-aapl">Apple (AAPL)</Link></li>
               </ul>
             </div>
             <div>

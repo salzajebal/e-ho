@@ -590,7 +590,7 @@ export default function Admin() {
   });
 
   // Available symbols for maintenance
-  const availableSymbols = ["NDX", "SP500", "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA"];
+  const availableSymbols = ["NDX", "SP500"];
 
   // Notification for new pending users
   useEffect(() => {
@@ -2347,13 +2347,6 @@ export default function Admin() {
                     <SelectContent className="bg-card border-border">
                       <SelectItem value="NDX">NDX (NASDAQ 100)</SelectItem>
                       <SelectItem value="SP500">SP500 (S&P 500)</SelectItem>
-                      <SelectItem value="AAPL">AAPL (Apple)</SelectItem>
-                      <SelectItem value="MSFT">MSFT (Microsoft)</SelectItem>
-                      <SelectItem value="GOOGL">GOOGL (Google)</SelectItem>
-                      <SelectItem value="AMZN">AMZN (Amazon)</SelectItem>
-                      <SelectItem value="NVDA">NVDA (Nvidia)</SelectItem>
-                      <SelectItem value="META">META (Meta)</SelectItem>
-                      <SelectItem value="TSLA">TSLA (Tesla)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
