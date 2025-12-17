@@ -19,7 +19,24 @@ import {
   CheckCircle,
   XCircle,
   DollarSign,
+  PieChart,
+  Activity,
 } from 'lucide-react';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  PieChart as RechartsPieChart,
+  Pie,
+  Cell,
+  Legend,
+} from 'recharts';
 
 interface AffiliateAuth {
   id: string;
@@ -58,6 +75,34 @@ interface AffiliateCommission {
   betAmount: string;
   commissionAmount: string;
   status: 'pending' | 'settled';
+  createdAt: string;
+  settledAt: string | null;
+}
+
+interface UserVolume {
+  userId: string;
+  username: string;
+  name: string;
+  volume: number;
+  betCount: number;
+}
+
+interface SymbolVolume {
+  symbol: string;
+  volume: number;
+  betCount: number;
+}
+
+interface CommissionWithDetails {
+  id: number;
+  affiliateId: string;
+  userId: string;
+  username: string;
+  betId: number;
+  symbol: string;
+  betAmount: string;
+  commissionAmount: string;
+  status: string;
   createdAt: string;
   settledAt: string | null;
 }
@@ -146,7 +191,7 @@ function AffiliateLogin({ onLogin }: { onLogin: () => void }) {
   );
 }
 
-type TabType = 'dashboard' | 'users' | 'revenue' | 'settlement';
+type TabType = 'dashboard' | 'users' | 'revenue' | 'settlement' | 'analytics';
 type DateFilter = 'daily' | 'weekly' | 'monthly' | 'all';
 type StatusFilter = 'all' | 'pending' | 'settled';
 
@@ -156,6 +201,7 @@ export default function AffiliateDashboard() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [dateFilter, setDateFilter] = useState<DateFilter>('all');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [analyticsDateFilter, setAnalyticsDateFilter] = useState<DateFilter>('monthly');
 
   const { data: auth, isLoading: authLoading, refetch: refetchAuth } = useQuery<AffiliateAuth | null>({
     queryKey: ['/api/affiliate/me'],
@@ -195,6 +241,39 @@ export default function AffiliateDashboard() {
       return res.json();
     },
     enabled: !!auth,
+  });
+
+  const { data: userVolumes = [], refetch: refetchUserVolumes } = useQuery<UserVolume[]>({
+    queryKey: ['/api/affiliate/analytics/users', analyticsDateFilter],
+    queryFn: async () => {
+      const range = analyticsDateFilter === 'all' ? '' : analyticsDateFilter;
+      const res = await fetch(`/api/affiliate/analytics/users?range=${range}`);
+      if (!res.ok) throw new Error('Failed to fetch user volumes');
+      return res.json();
+    },
+    enabled: !!auth && activeTab === 'analytics',
+  });
+
+  const { data: symbolVolumes = [], refetch: refetchSymbolVolumes } = useQuery<SymbolVolume[]>({
+    queryKey: ['/api/affiliate/analytics/symbols', analyticsDateFilter],
+    queryFn: async () => {
+      const range = analyticsDateFilter === 'all' ? '' : analyticsDateFilter;
+      const res = await fetch(`/api/affiliate/analytics/symbols?range=${range}`);
+      if (!res.ok) throw new Error('Failed to fetch symbol volumes');
+      return res.json();
+    },
+    enabled: !!auth && activeTab === 'analytics',
+  });
+
+  const { data: commissionsWithDetails = [], refetch: refetchCommissionsDetails } = useQuery<CommissionWithDetails[]>({
+    queryKey: ['/api/affiliate/analytics/commissions', analyticsDateFilter],
+    queryFn: async () => {
+      const range = analyticsDateFilter === 'all' ? '' : analyticsDateFilter;
+      const res = await fetch(`/api/affiliate/analytics/commissions?range=${range}`);
+      if (!res.ok) throw new Error('Failed to fetch commission details');
+      return res.json();
+    },
+    enabled: !!auth && activeTab === 'analytics',
   });
 
   const logout = useMutation({
@@ -382,6 +461,19 @@ export default function AffiliateDashboard() {
           >
             <CheckCircle className="w-4 h-4" />
             정산 내역
+          </button>
+          <button
+            onClick={() => setActiveTab('analytics')}
+            className={cn(
+              'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+              activeTab === 'analytics'
+                ? 'bg-primary/10 text-primary'
+                : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+            )}
+            data-testid="button-analytics-tab"
+          >
+            <Activity className="w-4 h-4" />
+            통계 분석
           </button>
         </nav>
 
@@ -863,6 +955,247 @@ export default function AffiliateDashboard() {
                     </tbody>
                   </table>
                 </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {activeTab === 'analytics' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold">통계 분석</h1>
+              <div className="flex items-center gap-2">
+                <div className="flex bg-muted/50 rounded-lg p-1">
+                  {(['daily', 'weekly', 'monthly', 'all'] as DateFilter[]).map((filter) => (
+                    <button
+                      key={filter}
+                      onClick={() => setAnalyticsDateFilter(filter)}
+                      className={cn(
+                        'px-3 py-1.5 text-sm rounded-md transition-colors',
+                        analyticsDateFilter === filter
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground hover:text-foreground'
+                      )}
+                      data-testid={`button-analytics-filter-${filter}`}
+                    >
+                      {filter === 'daily' ? '오늘' : filter === 'weekly' ? '이번주' : filter === 'monthly' ? '이번달' : '전체'}
+                    </button>
+                  ))}
+                </div>
+                <Button variant="outline" size="sm" onClick={() => {
+                  refetchUserVolumes();
+                  refetchSymbolVolumes();
+                  refetchCommissionsDetails();
+                }}>
+                  <RefreshCw className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card className="bg-card border-border">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Users className="w-5 h-5 text-blue-500" />
+                    회원별 거래량
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {userVolumes.length > 0 ? (
+                    <>
+                      <div className="h-64 mb-4">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={userVolumes.slice(0, 10)} layout="vertical">
+                            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                            <XAxis type="number" tickFormatter={(v) => `${(v / 10000).toFixed(0)}만`} stroke="#9CA3AF" />
+                            <YAxis type="category" dataKey="username" width={80} stroke="#9CA3AF" fontSize={12} />
+                            <Tooltip 
+                              formatter={(value: number) => [formatMoney(value), '거래량']}
+                              contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }}
+                              labelStyle={{ color: '#fff' }}
+                            />
+                            <Bar dataKey="volume" fill="#3b82f6" radius={[0, 4, 4, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <div className="overflow-x-auto max-h-48">
+                        <table className="w-full text-sm">
+                          <thead className="bg-muted/50 sticky top-0">
+                            <tr>
+                              <th className="px-3 py-2 text-left font-medium">회원</th>
+                              <th className="px-3 py-2 text-right font-medium">거래량</th>
+                              <th className="px-3 py-2 text-right font-medium">건수</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-border">
+                            {userVolumes.map((user) => (
+                              <tr key={user.userId} className="hover:bg-muted/30">
+                                <td className="px-3 py-2">
+                                  <div>
+                                    <p className="font-medium">{user.username}</p>
+                                    <p className="text-xs text-muted-foreground">{user.name}</p>
+                                  </div>
+                                </td>
+                                <td className="px-3 py-2 text-right font-medium text-blue-500">{formatMoney(user.volume)}</td>
+                                <td className="px-3 py-2 text-right text-muted-foreground">{user.betCount}건</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      해당 기간에 거래 내역이 없습니다
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="bg-card border-border">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-green-500" />
+                    종목별 거래량
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {symbolVolumes.length > 0 ? (
+                    <>
+                      <div className="h-64 mb-4">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <RechartsPieChart>
+                            <Pie
+                              data={symbolVolumes}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={60}
+                              outerRadius={100}
+                              paddingAngle={2}
+                              dataKey="volume"
+                              nameKey="symbol"
+                              label={({ symbol, percent }) => `${symbol} ${(percent * 100).toFixed(0)}%`}
+                              labelLine={false}
+                            >
+                              {symbolVolumes.map((_, index) => (
+                                <Cell key={`cell-${index}`} fill={['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'][index % 6]} />
+                              ))}
+                            </Pie>
+                            <Tooltip 
+                              formatter={(value: number) => [formatMoney(value), '거래량']}
+                              contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }}
+                            />
+                          </RechartsPieChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <div className="overflow-x-auto max-h-48">
+                        <table className="w-full text-sm">
+                          <thead className="bg-muted/50 sticky top-0">
+                            <tr>
+                              <th className="px-3 py-2 text-left font-medium">종목</th>
+                              <th className="px-3 py-2 text-right font-medium">거래량</th>
+                              <th className="px-3 py-2 text-right font-medium">건수</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-border">
+                            {symbolVolumes.map((symbol, idx) => (
+                              <tr key={symbol.symbol} className="hover:bg-muted/30">
+                                <td className="px-3 py-2">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'][idx % 6] }} />
+                                    <span className="font-medium">{symbol.symbol}</span>
+                                  </div>
+                                </td>
+                                <td className="px-3 py-2 text-right font-medium text-green-500">{formatMoney(symbol.volume)}</td>
+                                <td className="px-3 py-2 text-right text-muted-foreground">{symbol.betCount}건</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      해당 기간에 거래 내역이 없습니다
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card className="bg-card border-border">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <DollarSign className="w-5 h-5 text-primary" />
+                  수수료 발생 내역
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {commissionsWithDetails.length > 0 ? (
+                  <>
+                    <div className="h-64 mb-4">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={(() => {
+                          const grouped: Record<string, { date: string; amount: number; count: number }> = {};
+                          commissionsWithDetails.forEach(c => {
+                            const date = new Date(c.createdAt).toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' });
+                            if (!grouped[date]) {
+                              grouped[date] = { date, amount: 0, count: 0 };
+                            }
+                            grouped[date].amount += parseFloat(c.commissionAmount);
+                            grouped[date].count += 1;
+                          });
+                          return Object.values(grouped).reverse().slice(-14);
+                        })()}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                          <XAxis dataKey="date" stroke="#9CA3AF" fontSize={12} />
+                          <YAxis tickFormatter={(v) => `${(v / 10000).toFixed(0)}만`} stroke="#9CA3AF" fontSize={12} />
+                          <Tooltip 
+                            formatter={(value: number, name: string) => [formatMoney(value), name === 'amount' ? '수수료' : '건수']}
+                            contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }}
+                          />
+                          <Line type="monotone" dataKey="amount" stroke="#f59e0b" strokeWidth={2} dot={{ fill: '#f59e0b', strokeWidth: 2 }} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className="overflow-x-auto max-h-64">
+                      <table className="w-full text-sm">
+                        <thead className="bg-muted/50 sticky top-0">
+                          <tr>
+                            <th className="px-3 py-2 text-left font-medium">발생일</th>
+                            <th className="px-3 py-2 text-left font-medium">회원</th>
+                            <th className="px-3 py-2 text-left font-medium">종목</th>
+                            <th className="px-3 py-2 text-right font-medium">베팅금액</th>
+                            <th className="px-3 py-2 text-right font-medium">수수료</th>
+                            <th className="px-3 py-2 text-center font-medium">상태</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border">
+                          {commissionsWithDetails.slice(0, 50).map((c) => (
+                            <tr key={c.id} className="hover:bg-muted/30">
+                              <td className="px-3 py-2 text-muted-foreground">{formatDateTime(c.createdAt)}</td>
+                              <td className="px-3 py-2 font-medium">{c.username}</td>
+                              <td className="px-3 py-2">{c.symbol}</td>
+                              <td className="px-3 py-2 text-right">{formatMoney(c.betAmount)}</td>
+                              <td className="px-3 py-2 text-right font-medium text-primary">{formatMoney(c.commissionAmount)}</td>
+                              <td className="px-3 py-2 text-center">
+                                {c.status === 'settled' ? (
+                                  <span className="text-xs text-green-500 bg-green-500/10 px-2 py-0.5 rounded">지급</span>
+                                ) : (
+                                  <span className="text-xs text-yellow-500 bg-yellow-500/10 px-2 py-0.5 rounded">대기</span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    해당 기간에 수수료 발생 내역이 없습니다
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>

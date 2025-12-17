@@ -2,6 +2,34 @@ import { type User, type InsertUser, type Bet, type InsertBet, type Setting, typ
 import { db } from "./db";
 import { eq, and, desc, lt, sql, gte } from "drizzle-orm";
 
+export interface UserVolume {
+  userId: string;
+  username: string;
+  name: string;
+  volume: number;
+  betCount: number;
+}
+
+export interface SymbolVolume {
+  symbol: string;
+  volume: number;
+  betCount: number;
+}
+
+export interface CommissionWithDetails {
+  id: number;
+  affiliateId: string;
+  userId: string;
+  username: string;
+  betId: number;
+  symbol: string;
+  betAmount: string;
+  commissionAmount: string;
+  status: string;
+  createdAt: Date;
+  settledAt: Date | null;
+}
+
 export interface IStorage {
   // User methods
   getUser(id: string): Promise<User | undefined>;
@@ -51,6 +79,11 @@ export interface IStorage {
   getAffiliateCommissions(affiliateId: string): Promise<AffiliateCommission[]>;
   createAffiliateCommission(affiliateId: string, userId: string, betId: number, betAmount: string, commissionAmount: string): Promise<AffiliateCommission>;
   settleAffiliateCommissions(affiliateId: string): Promise<void>;
+  
+  // Affiliate analytics methods
+  getAffiliateUserVolumes(affiliateId: string, since?: Date): Promise<UserVolume[]>;
+  getAffiliateSymbolVolumes(affiliateId: string, since?: Date): Promise<SymbolVolume[]>;
+  getAffiliateCommissionsWithDetails(affiliateId: string, since?: Date): Promise<CommissionWithDetails[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -398,6 +431,85 @@ export class DatabaseStorage implements IStorage {
       totalCommission: newTotal,
       pendingCommission: '0',
     });
+  }
+
+  async getAffiliateUserVolumes(affiliateId: string, since?: Date): Promise<UserVolume[]> {
+    const affiliateUsers = await this.getUsersByAffiliateId(affiliateId);
+    if (affiliateUsers.length === 0) return [];
+
+    const results: UserVolume[] = [];
+    for (const user of affiliateUsers) {
+      let userBets = await this.getBets(user.id);
+      if (since) {
+        userBets = userBets.filter(bet => bet.createdAt >= since);
+      }
+      const volume = userBets.reduce((sum, bet) => sum + parseFloat(bet.amount), 0);
+      results.push({
+        userId: user.id,
+        username: user.username,
+        name: user.name || user.username,
+        volume,
+        betCount: userBets.length,
+      });
+    }
+    return results.sort((a, b) => b.volume - a.volume);
+  }
+
+  async getAffiliateSymbolVolumes(affiliateId: string, since?: Date): Promise<SymbolVolume[]> {
+    const affiliateUsers = await this.getUsersByAffiliateId(affiliateId);
+    if (affiliateUsers.length === 0) return [];
+
+    const userIds = affiliateUsers.map(u => u.id);
+    let allBets: Bet[] = [];
+    for (const userId of userIds) {
+      const userBets = await this.getBets(userId);
+      allBets = allBets.concat(userBets);
+    }
+
+    if (since) {
+      allBets = allBets.filter(bet => bet.createdAt >= since);
+    }
+
+    const symbolMap: Record<string, { volume: number; betCount: number }> = {};
+    for (const bet of allBets) {
+      if (!symbolMap[bet.symbol]) {
+        symbolMap[bet.symbol] = { volume: 0, betCount: 0 };
+      }
+      symbolMap[bet.symbol].volume += parseFloat(bet.amount);
+      symbolMap[bet.symbol].betCount += 1;
+    }
+
+    return Object.entries(symbolMap)
+      .map(([symbol, data]) => ({ symbol, ...data }))
+      .sort((a, b) => b.volume - a.volume);
+  }
+
+  async getAffiliateCommissionsWithDetails(affiliateId: string, since?: Date): Promise<CommissionWithDetails[]> {
+    const commissions = await this.getAffiliateCommissions(affiliateId);
+    const results: CommissionWithDetails[] = [];
+
+    for (const commission of commissions) {
+      if (since && commission.createdAt < since) continue;
+      
+      const user = await this.getUser(commission.userId);
+      const bet = await this.getBet(commission.betId);
+      
+      results.push({
+        id: commission.id,
+        affiliateId: commission.affiliateId,
+        userId: commission.userId,
+        username: user?.username || 'Unknown',
+        betId: commission.betId,
+        symbol: bet?.symbol || 'Unknown',
+        betAmount: commission.betAmount,
+        commissionAmount: commission.commissionAmount,
+        status: commission.status,
+        createdAt: commission.createdAt,
+        settledAt: commission.settledAt,
+      });
+    }
+
+    return results;
   }
 }
 

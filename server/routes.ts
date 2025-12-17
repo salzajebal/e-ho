@@ -893,6 +893,78 @@ export async function registerRoutes(
     }
   });
 
+  // Get affiliate analytics - user volumes
+  app.get("/api/affiliate/analytics/users", requireAffiliate, async (req, res) => {
+    try {
+      const affiliateId = (req.session as any).affiliateId;
+      const range = req.query.range as string;
+      
+      let since: Date | undefined;
+      const now = new Date();
+      if (range === 'daily') {
+        since = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      } else if (range === 'weekly') {
+        since = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      } else if (range === 'monthly') {
+        since = new Date(now.getFullYear(), now.getMonth(), 1);
+      }
+
+      const userVolumes = await storage.getAffiliateUserVolumes(affiliateId, since);
+      res.json(userVolumes);
+    } catch (error) {
+      console.error("Get user volumes error:", error);
+      res.status(500).json({ error: "회원별 거래량 조회에 실패했습니다" });
+    }
+  });
+
+  // Get affiliate analytics - symbol volumes
+  app.get("/api/affiliate/analytics/symbols", requireAffiliate, async (req, res) => {
+    try {
+      const affiliateId = (req.session as any).affiliateId;
+      const range = req.query.range as string;
+      
+      let since: Date | undefined;
+      const now = new Date();
+      if (range === 'daily') {
+        since = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      } else if (range === 'weekly') {
+        since = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      } else if (range === 'monthly') {
+        since = new Date(now.getFullYear(), now.getMonth(), 1);
+      }
+
+      const symbolVolumes = await storage.getAffiliateSymbolVolumes(affiliateId, since);
+      res.json(symbolVolumes);
+    } catch (error) {
+      console.error("Get symbol volumes error:", error);
+      res.status(500).json({ error: "종목별 거래량 조회에 실패했습니다" });
+    }
+  });
+
+  // Get affiliate analytics - commission history with details
+  app.get("/api/affiliate/analytics/commissions", requireAffiliate, async (req, res) => {
+    try {
+      const affiliateId = (req.session as any).affiliateId;
+      const range = req.query.range as string;
+      
+      let since: Date | undefined;
+      const now = new Date();
+      if (range === 'daily') {
+        since = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      } else if (range === 'weekly') {
+        since = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      } else if (range === 'monthly') {
+        since = new Date(now.getFullYear(), now.getMonth(), 1);
+      }
+
+      const commissions = await storage.getAffiliateCommissionsWithDetails(affiliateId, since);
+      res.json(commissions);
+    } catch (error) {
+      console.error("Get commission details error:", error);
+      res.status(500).json({ error: "수수료 발생 내역 조회에 실패했습니다" });
+    }
+  });
+
   // Admin: Get all affiliates
   app.get("/api/admin/affiliates", requireAdmin, async (req, res) => {
     try {
