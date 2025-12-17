@@ -14,15 +14,15 @@ export interface MarketData {
 
 // Realistic base prices (anchor points) - prices will fluctuate within small range of these
 const BASE_PRICES: Record<string, number> = {
-  'NDX': 21775,
-  'SP500': 6075,
-  'AAPL': 251,
-  'MSFT': 454,
-  'GOOGL': 197,
-  'AMZN': 229,
-  'NVDA': 134,
-  'META': 623,
-  'TSLA': 463,
+  'NDX': 21547,
+  'SP500': 5867,
+  'AAPL': 250,
+  'MSFT': 442,
+  'GOOGL': 191,
+  'AMZN': 224,
+  'NVDA': 129,
+  'META': 605,
+  'TSLA': 477,
 };
 
 // Maximum deviation from base price (in points)
@@ -39,15 +39,15 @@ const MAX_DEVIATION: Record<string, number> = {
 };
 
 export const INITIAL_MARKET_DATA: MarketData[] = [
-  { symbol: 'NDX', name: 'NASDAQ 100', price: 21774.95, change: 0.32, changePercent: 0.001, high: 21778.00, low: 21772.00, volume: 920000, category: '지수' },
-  { symbol: 'SP500', name: 'S&P 500', price: 6074.53, change: 0.47, changePercent: 0.008, high: 6076.00, low: 6073.00, volume: 1350000, category: '지수' },
-  { symbol: 'AAPL', name: 'Apple', price: 251.04, change: 0.12, changePercent: 0.05, high: 252.00, low: 250.00, volume: 48500000, category: '나스닥' },
-  { symbol: 'MSFT', name: 'Microsoft', price: 454.46, change: 0.21, changePercent: 0.05, high: 455.50, low: 453.00, volume: 18700000, category: '나스닥' },
-  { symbol: 'GOOGL', name: 'Alphabet', price: 196.84, change: 0.15, changePercent: 0.08, high: 198.00, low: 196.00, volume: 21200000, category: '나스닥' },
-  { symbol: 'AMZN', name: 'Amazon', price: 229.15, change: 0.18, changePercent: 0.08, high: 230.00, low: 228.00, volume: 38500000, category: '나스닥' },
-  { symbol: 'NVDA', name: 'NVIDIA', price: 134.25, change: -0.15, changePercent: -0.11, high: 135.50, low: 133.00, volume: 245000000, category: '나스닥' },
-  { symbol: 'META', name: 'Meta', price: 622.77, change: 0.43, changePercent: 0.07, high: 624.00, low: 621.00, volume: 12800000, category: '나스닥' },
-  { symbol: 'TSLA', name: 'Tesla', price: 463.02, change: 0.25, changePercent: 0.05, high: 465.00, low: 461.00, volume: 98500000, category: '나스닥' },
+  { symbol: 'NDX', name: 'NASDAQ 100', price: 21547.80, change: -110.50, changePercent: -0.51, high: 21660.00, low: 21520.00, volume: 920000, category: '지수' },
+  { symbol: 'SP500', name: 'S&P 500', price: 5867.50, change: -25.40, changePercent: -0.43, high: 5895.00, low: 5855.00, volume: 1350000, category: '지수' },
+  { symbol: 'AAPL', name: 'Apple', price: 250.25, change: -0.85, changePercent: -0.34, high: 252.00, low: 249.00, volume: 48500000, category: '나스닥' },
+  { symbol: 'MSFT', name: 'Microsoft', price: 442.30, change: -3.20, changePercent: -0.72, high: 446.00, low: 440.00, volume: 18700000, category: '나스닥' },
+  { symbol: 'GOOGL', name: 'Alphabet', price: 191.45, change: -1.35, changePercent: -0.70, high: 193.00, low: 190.00, volume: 21200000, category: '나스닥' },
+  { symbol: 'AMZN', name: 'Amazon', price: 224.80, change: -1.50, changePercent: -0.66, high: 227.00, low: 223.00, volume: 38500000, category: '나스닥' },
+  { symbol: 'NVDA', name: 'NVIDIA', price: 129.75, change: -2.25, changePercent: -1.71, high: 132.50, low: 128.50, volume: 245000000, category: '나스닥' },
+  { symbol: 'META', name: 'Meta', price: 605.50, change: -4.50, changePercent: -0.74, high: 612.00, low: 602.00, volume: 12800000, category: '나스닥' },
+  { symbol: 'TSLA', name: 'Tesla', price: 477.25, change: 2.75, changePercent: 0.58, high: 482.00, low: 472.00, volume: 98500000, category: '나스닥' },
 ];
 
 // Hook to manage real-time data

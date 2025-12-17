@@ -39,8 +39,8 @@ interface LandingMarketData {
 
 function useLandingMarketData() {
   const [markets, setMarkets] = useState<LandingMarketData[]>([
-    { symbol: "NDX", name: "NASDAQ 100", price: 21453.20, changePercent: 0.51, priceHistory: [] },
-    { symbol: "SP500", name: "S&P 500", price: 6051.09, changePercent: 0.57, priceHistory: [] },
+    { symbol: "NDX", name: "NASDAQ 100", price: 21547.80, changePercent: -0.51, priceHistory: [] },
+    { symbol: "SP500", name: "S&P 500", price: 5867.50, changePercent: -0.43, priceHistory: [] },
   ]);
   
   const historyRef = useRef<Record<string, number[]>>({
