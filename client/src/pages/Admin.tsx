@@ -459,11 +459,22 @@ export default function Admin() {
           }
         } else if (msg.event === 'transaction_request') {
           refetchTransactions();
+          refetchUsers();
           const type = msg.data.type === 'deposit' ? '입금' : '출금';
           const amount = Number(msg.data.amount).toLocaleString();
-          toast.info(`새 ${type} 신청: ${msg.data.username || 'Unknown'} - ${amount}원`, {
-            duration: 5000,
-          });
+          const userName = msg.data.name || msg.data.username || 'Unknown';
+          
+          if (msg.data.type === 'deposit') {
+            toast.success(`💰 새 입금 신청!\n${userName} - ${amount}원`, {
+              duration: 10000,
+              style: { background: '#10b981', color: 'white', fontWeight: 'bold' },
+            });
+          } else {
+            toast.warning(`💸 새 출금 신청!\n${userName} - ${amount}원`, {
+              duration: 10000,
+              style: { background: '#f59e0b', color: 'white', fontWeight: 'bold' },
+            });
+          }
         }
       } catch (e) {
         console.error('WebSocket parse error:', e);
@@ -487,7 +498,7 @@ export default function Admin() {
     };
 
     return () => ws.close();
-  }, [auth?.role, refetchBets, refetchTransactions]);
+  }, [auth?.role, refetchBets, refetchTransactions, refetchUsers]);
 
   // Online users with real-time connection info
   interface OnlineUser {
