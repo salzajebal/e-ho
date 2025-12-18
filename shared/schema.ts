@@ -265,6 +265,31 @@ export const insertTransactionRequestSchema = createInsertSchema(transactionRequ
 export type InsertTransactionRequest = z.infer<typeof insertTransactionRequestSchema>;
 export type TransactionRequest = typeof transactionRequests.$inferSelect;
 
+// 1:1 Inquiries table (1:1 문의)
+export const inquiries = pgTable("inquiries", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  reply: text("reply"),
+  status: text("status").notNull().default("pending"), // 'pending', 'answered'
+  repliedBy: varchar("replied_by"),
+  repliedAt: timestamp("replied_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertInquirySchema = createInsertSchema(inquiries).omit({
+  id: true,
+  reply: true,
+  status: true,
+  repliedBy: true,
+  repliedAt: true,
+  createdAt: true,
+});
+
+export type InsertInquiry = z.infer<typeof insertInquirySchema>;
+export type Inquiry = typeof inquiries.$inferSelect;
+
 // Korean banks list
 export const KOREAN_BANKS = [
   "KB국민은행",
