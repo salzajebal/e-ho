@@ -2095,6 +2095,7 @@ export default function Admin() {
                   <thead className="bg-muted/30">
                     <tr className="text-left text-muted-foreground">
                       <th className="px-3 py-2 whitespace-nowrap">종목</th>
+                      <th className="px-3 py-2 whitespace-nowrap">회차</th>
                       <th className="px-3 py-2 whitespace-nowrap">회원</th>
                       <th className="px-3 py-2 whitespace-nowrap">방향</th>
                       <th className="px-3 py-2 whitespace-nowrap">배팅금액</th>
@@ -2112,6 +2113,11 @@ export default function Admin() {
                       )}>
                         <td className="px-3 py-2 font-medium">
                           {SYMBOL_NAMES[bet.symbol] || bet.symbol}
+                        </td>
+                        <td className="px-3 py-2">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-500/20 text-yellow-500">
+                            {bet.roundNumber || '-'}회차
+                          </span>
                         </td>
                         <td className="px-3 py-2">{bet.username}</td>
                         <td className="px-3 py-2">
