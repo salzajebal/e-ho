@@ -18,12 +18,18 @@ const timeFrameLabels: Record<TimeFrame, string> = {
   '1d': '1일'
 };
 
+function getKSTTimestamp(): number {
+  const now = new Date();
+  const kstOffset = 9 * 60 * 60 * 1000;
+  return now.getTime() + kstOffset;
+}
+
 function generateCandleData(basePrice: number, count: number, intervalMinutes: number): CandlestickData<Time>[] {
   const data: CandlestickData<Time>[] = [];
   let currentPrice = basePrice * 0.98;
   const intervalMs = intervalMinutes * 60 * 1000;
-  const now = Date.now();
-  const currentIntervalStart = Math.floor(now / intervalMs) * intervalMs / 1000;
+  const kstNow = getKSTTimestamp();
+  const currentIntervalStart = Math.floor(kstNow / intervalMs) * intervalMs / 1000;
 
   for (let i = count - 1; i >= 0; i--) {
     const time = (currentIntervalStart - i * intervalMinutes * 60) as Time;
@@ -108,8 +114,7 @@ export function PriceChart({ symbol, data }: PriceChartProps) {
         locale: 'ko-KR',
         timeFormatter: (time: number) => {
           const date = new Date(time * 1000);
-          const kstDate = new Date(date.getTime() + (9 * 60 * 60 * 1000));
-          return kstDate.toLocaleTimeString('ko-KR', { 
+          return date.toLocaleTimeString('ko-KR', { 
             hour: '2-digit', 
             minute: '2-digit',
             hour12: false 
@@ -204,8 +209,8 @@ export function PriceChart({ symbol, data }: PriceChartProps) {
     lastPriceRef.current = data.price;
     
     const intervalMs = getIntervalMinutes(timeFrame) * 60 * 1000;
-    const now = Date.now();
-    const currentIntervalStart = Math.floor(now / intervalMs) * intervalMs / 1000;
+    const kstNow = getKSTTimestamp();
+    const currentIntervalStart = Math.floor(kstNow / intervalMs) * intervalMs / 1000;
     
     // Check if we need to start a new candle
     if (currentIntervalStart > intervalStartRef.current) {
@@ -260,8 +265,8 @@ export function PriceChart({ symbol, data }: PriceChartProps) {
     const checkInterval = setInterval(() => {
       if (!seriesRef.current || !currentCandleRef.current) return;
       
-      const now = Date.now();
-      const currentIntervalStart = Math.floor(now / intervalMs) * intervalMs / 1000;
+      const kstNow = getKSTTimestamp();
+      const currentIntervalStart = Math.floor(kstNow / intervalMs) * intervalMs / 1000;
       
       if (currentIntervalStart > intervalStartRef.current) {
         // New candle period - create new candle with last known price
