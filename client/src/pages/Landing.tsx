@@ -455,7 +455,7 @@ export default function Landing() {
                     size="sm"
                     className="text-green-400 hover:text-green-300 hover:bg-green-500/10 text-xs px-2"
                     data-testid="button-header-deposit"
-                    onClick={() => setShowDepositModal(true)}
+                    onClick={() => { setTransactionType('deposit'); setShowDepositModal(true); }}
                   >
                     입금
                   </Button>
@@ -464,7 +464,7 @@ export default function Landing() {
                     size="sm"
                     className="text-red-400 hover:text-red-300 hover:bg-red-500/10 text-xs px-2"
                     data-testid="button-header-withdraw"
-                    onClick={() => setShowDepositModal(true)}
+                    onClick={() => { setTransactionType('withdrawal'); setShowDepositModal(true); }}
                   >
                     출금
                   </Button>
