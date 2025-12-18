@@ -4,16 +4,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { TrendingUp, TrendingDown, Clock } from "lucide-react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 interface Game {
   id: string;
@@ -33,11 +23,6 @@ const MULTIPLIER = 2.00;
 
 export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormProps) {
   const [amount, setAmount] = useState<string>("10000");
-  const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; direction: 'long' | 'short' | null }>({
-    open: false,
-    direction: null,
-  });
-
   const availableBalance = balance ? parseFloat(balance) : 0;
   const betAmount = parseFloat(amount) || 0;
   const potentialWin = betAmount * MULTIPLIER;
@@ -68,19 +53,12 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
 
   const handleBetClick = (direction: 'long' | 'short') => {
     if (validateBet(direction)) {
-      setConfirmDialog({ open: true, direction });
-    }
-  };
-
-  const handleConfirmBet = () => {
-    if (confirmDialog.direction) {
       const numAmount = parseFloat(amount);
-      onBet(confirmDialog.direction, numAmount);
-      toast.success(`${confirmDialog.direction === 'long' ? '📈 LONG (매수)' : '📉 SHORT (매도)'} 베팅 완료!`, {
+      onBet(direction, numAmount);
+      toast.success(`${direction === 'long' ? '📈 LONG (매수)' : '📉 SHORT (매도)'} 베팅 완료!`, {
         description: `${game.label} | ${numAmount.toLocaleString()}원`,
       });
     }
-    setConfirmDialog({ open: false, direction: null });
   };
 
   const handleQuickAmount = (percent: number) => {
@@ -182,66 +160,6 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
           </Button>
         </div>
       </div>
-
-      <AlertDialog open={confirmDialog.open} onOpenChange={(open) => !open && setConfirmDialog({ open: false, direction: null })}>
-        <AlertDialogContent className="bg-card border-border">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              {confirmDialog.direction === 'long' ? (
-                <><TrendingUp className="w-5 h-5 text-up" /> LONG (매수) 베팅 확인</>
-              ) : (
-                <><TrendingDown className="w-5 h-5 text-down" /> SHORT (매도) 베팅 확인</>
-              )}
-            </AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div className="space-y-3 text-sm">
-                <div className="bg-muted/30 rounded-lg p-3 space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">종목</span>
-                    <span className="font-medium text-foreground">{game.label}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">방향</span>
-                    <span className={cn(
-                      "font-bold",
-                      confirmDialog.direction === 'long' ? "text-up" : "text-down"
-                    )}>
-                      {confirmDialog.direction === 'long' ? 'LONG (매수)' : 'SHORT (매도)'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">베팅 금액</span>
-                    <span className="font-mono font-semibold text-foreground">{betAmount.toLocaleString()}원</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">예상 수익</span>
-                    <span className="font-mono font-bold text-up">+{Math.floor(potentialWin).toLocaleString()}원</span>
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground text-center">
-                  위 내용으로 베팅하시겠습니까?
-                </p>
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="bg-muted/30 border-border hover:bg-muted/50">
-              취소
-            </AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleConfirmBet}
-              className={cn(
-                "font-bold",
-                confirmDialog.direction === 'long' 
-                  ? "bg-up hover:bg-up/90" 
-                  : "bg-down hover:bg-down/90"
-              )}
-            >
-              확인
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
