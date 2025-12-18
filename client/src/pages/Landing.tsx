@@ -419,11 +419,18 @@ export default function Landing() {
                 입출금
               </button>
               <button 
+                onClick={() => setShowAnnouncementsModal(true)}
+                className="text-gray-300 hover:text-orange-500 transition-colors text-sm font-medium" 
+                data-testid="nav-announcements"
+              >
+                공지사항
+              </button>
+              <button 
                 onClick={() => setShowCustomerServiceModal(true)}
                 className="text-gray-300 hover:text-orange-500 transition-colors text-sm font-medium" 
                 data-testid="nav-customer-service"
               >
-                고객센터
+                1:1문의
               </button>
             </nav>
           </div>
@@ -576,12 +583,21 @@ export default function Landing() {
                 </button>
                 <button 
                   onClick={() => {
+                    setShowAnnouncementsModal(true);
+                    setMobileMenuOpen(false);
+                  }}
+                  className="text-left text-gray-300 hover:text-orange-500 py-3 border-b border-white/10"
+                >
+                  공지사항
+                </button>
+                <button 
+                  onClick={() => {
                     setShowCustomerServiceModal(true);
                     setMobileMenuOpen(false);
                   }}
                   className="text-left text-gray-300 hover:text-orange-500 py-3 border-b border-white/10"
                 >
-                  고객센터
+                  1:1문의
                 </button>
                 
                 <div className="mt-4 flex flex-col gap-2">
