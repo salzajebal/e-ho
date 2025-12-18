@@ -1638,15 +1638,15 @@ export default function Landing() {
 
               <div className="space-y-3">
                 {/* 1:1 입금 문의 */}
-                <a 
-                  href={telegramData?.telegramLink || "#"}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30 rounded-xl p-4 hover:border-green-500/50 transition-colors cursor-pointer"
-                  onClick={(e) => {
-                    if (!telegramData?.telegramLink) {
-                      e.preventDefault();
-                      toast.error("텔레그램 링크가 설정되지 않았습니다");
+                <button 
+                  className="w-full block bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30 rounded-xl p-4 hover:border-green-500/50 transition-colors cursor-pointer text-left"
+                  onClick={() => {
+                    setShowCustomerServiceModal(false);
+                    if (user) {
+                      setTransactionType('deposit');
+                      setShowDepositModal(true);
+                    } else {
+                      setShowLoginModal(true);
                     }
                   }}
                 >
@@ -1665,7 +1665,7 @@ export default function Landing() {
                       </svg>
                     </div>
                   </div>
-                </a>
+                </button>
 
                 {/* 일반 텔레그램 문의 */}
                 <a 
