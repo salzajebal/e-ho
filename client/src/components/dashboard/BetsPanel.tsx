@@ -1,7 +1,25 @@
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Bet } from "@/hooks/use-bets";
-import { TrendingUp, TrendingDown, Clock, Trophy, XCircle } from "lucide-react";
+import { TrendingUp, TrendingDown, Clock, Trophy, XCircle, Calendar } from "lucide-react";
+
+function getKSTDate(): Date {
+  const now = new Date();
+  const kstOffset = 9 * 60;
+  const utcOffset = now.getTimezoneOffset();
+  return new Date(now.getTime() + (utcOffset + kstOffset) * 60 * 1000);
+}
+
+function isToday(dateString: string): boolean {
+  const kstNow = getKSTDate();
+  const kstToday = new Date(kstNow.getFullYear(), kstNow.getMonth(), kstNow.getDate());
+  
+  const betDate = new Date(dateString);
+  const kstBetDate = new Date(betDate.getTime() + (9 * 60 * 60 * 1000));
+  const kstBetDay = new Date(kstBetDate.getFullYear(), kstBetDate.getMonth(), kstBetDate.getDate());
+  
+  return kstToday.getTime() === kstBetDay.getTime();
+}
 
 interface BetsPanelProps {
   bets: Bet[];
@@ -139,41 +157,70 @@ function BetRow({ bet, currentPrice, onExpire }: { bet: Bet; currentPrice: numbe
 }
 
 export function BetsPanel({ bets, currentPrices, onBetExpire }: BetsPanelProps) {
-  const [activeTab, setActiveTab] = useState<'active' | 'history'>('active');
+  const [activeTab, setActiveTab] = useState<'active' | 'today' | 'history'>('active');
   
   const activeBets = bets.filter(b => b.outcome === 'pending');
   const settledBets = bets.filter(b => b.outcome !== 'pending');
+  const todayBets = settledBets.filter(b => isToday(b.createdAt));
 
   const totalWins = settledBets.filter(b => b.outcome === 'win').length;
   const totalLosses = settledBets.filter(b => b.outcome === 'lose').length;
+  
+  const todayWins = todayBets.filter(b => b.outcome === 'win').length;
+  const todayLosses = todayBets.filter(b => b.outcome === 'lose').length;
+  const todayProfit = todayBets.reduce((sum, b) => {
+    if (b.outcome === 'win') {
+      return sum + parseFloat(b.payout || '0') - parseFloat(b.amount);
+    } else {
+      return sum - parseFloat(b.amount);
+    }
+  }, 0);
 
   return (
     <div className="flex flex-col h-full bg-card">
-      <div className="flex items-center px-4 h-10 border-b border-border gap-6 shrink-0">
+      <div className="flex items-center px-4 h-10 border-b border-border gap-4 shrink-0">
         <button 
           onClick={() => setActiveTab('active')}
           className={cn(
-            "text-sm font-medium h-full px-2 transition-colors",
+            "text-xs font-medium h-full px-1 transition-colors",
             activeTab === 'active' 
               ? "text-primary border-b-2 border-primary" 
               : "text-muted-foreground hover:text-foreground"
           )}
         >
-          진행 중 ({activeBets.length})
+          진행중 ({activeBets.length})
+        </button>
+        <button 
+          onClick={() => setActiveTab('today')}
+          className={cn(
+            "text-xs font-medium h-full px-1 transition-colors",
+            activeTab === 'today' 
+              ? "text-primary border-b-2 border-primary" 
+              : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          오늘 ({todayBets.length})
         </button>
         <button 
           onClick={() => setActiveTab('history')}
           className={cn(
-            "text-sm font-medium h-full px-2 transition-colors",
+            "text-xs font-medium h-full px-1 transition-colors",
             activeTab === 'history' 
               ? "text-primary border-b-2 border-primary" 
               : "text-muted-foreground hover:text-foreground"
           )}
         >
-          베팅 내역 ({settledBets.length})
+          전체 ({settledBets.length})
         </button>
         
-        {settledBets.length > 0 && (
+        {activeTab === 'today' && todayBets.length > 0 && (
+          <div className="ml-auto flex items-center gap-2 text-xs">
+            <span className={cn("font-bold", todayProfit >= 0 ? "text-up" : "text-down")}>
+              {todayProfit >= 0 ? '+' : ''}{Math.floor(todayProfit).toLocaleString()}원
+            </span>
+          </div>
+        )}
+        {activeTab !== 'today' && settledBets.length > 0 && (
           <div className="ml-auto flex items-center gap-2 text-xs">
             <span className="text-up font-medium">{totalWins}승</span>
             <span className="text-muted-foreground">/</span>
@@ -183,7 +230,7 @@ export function BetsPanel({ bets, currentPrices, onBetExpire }: BetsPanelProps) 
       </div>
 
       <div className="flex-1 overflow-auto">
-        {activeTab === 'active' ? (
+        {activeTab === 'active' && (
           activeBets.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-32 text-muted-foreground text-sm">
               <Clock className="w-8 h-8 mb-2 opacity-50" />
@@ -201,7 +248,49 @@ export function BetsPanel({ bets, currentPrices, onBetExpire }: BetsPanelProps) 
               ))}
             </div>
           )
-        ) : (
+        )}
+        {activeTab === 'today' && (
+          todayBets.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-32 text-muted-foreground text-sm">
+              <Calendar className="w-8 h-8 mb-2 opacity-50" />
+              <span>오늘 완료된 베팅이 없습니다.</span>
+            </div>
+          ) : (
+            <div>
+              <div className="p-3 border-b border-border bg-muted/20">
+                <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                  <div>
+                    <div className="text-muted-foreground">총 베팅</div>
+                    <div className="font-bold text-foreground">{todayBets.length}건</div>
+                  </div>
+                  <div>
+                    <div className="text-muted-foreground">승/패</div>
+                    <div className="font-bold">
+                      <span className="text-up">{todayWins}</span>
+                      <span className="text-muted-foreground"> / </span>
+                      <span className="text-down">{todayLosses}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-muted-foreground">손익</div>
+                    <div className={cn("font-bold", todayProfit >= 0 ? "text-up" : "text-down")}>
+                      {todayProfit >= 0 ? '+' : ''}{Math.floor(todayProfit).toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {todayBets.map((bet) => (
+                <BetRow 
+                  key={bet.id} 
+                  bet={bet} 
+                  currentPrice={parseFloat(bet.closePrice || bet.strikePrice)}
+                  onExpire={() => {}}
+                />
+              ))}
+            </div>
+          )
+        )}
+        {activeTab === 'history' && (
           settledBets.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-32 text-muted-foreground text-sm">
               <Trophy className="w-8 h-8 mb-2 opacity-50" />
@@ -209,7 +298,7 @@ export function BetsPanel({ bets, currentPrices, onBetExpire }: BetsPanelProps) 
             </div>
           ) : (
             <div>
-              {settledBets.slice(0, 20).map((bet) => (
+              {settledBets.slice(0, 50).map((bet) => (
                 <BetRow 
                   key={bet.id} 
                   bet={bet} 
