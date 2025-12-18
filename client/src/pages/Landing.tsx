@@ -1511,8 +1511,38 @@ export default function Landing() {
                 <p className="text-gray-400 text-sm">24시간 전문 상담원이 도와드립니다</p>
               </div>
 
-              <div className="space-y-4">
-                {/* Telegram */}
+              <div className="space-y-3">
+                {/* 1:1 입금 문의 */}
+                <a 
+                  href={telegramData?.telegramLink || "#"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30 rounded-xl p-4 hover:border-green-500/50 transition-colors cursor-pointer"
+                  onClick={(e) => {
+                    if (!telegramData?.telegramLink) {
+                      e.preventDefault();
+                      toast.error("텔레그램 링크가 설정되지 않았습니다");
+                    }
+                  }}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center">
+                      <Wallet className="w-6 h-6 text-green-500" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-white font-medium">1:1 입금 문의</h3>
+                      <p className="text-green-400 text-sm">입금 계좌 안내 및 입금 확인</p>
+                      <p className="text-gray-400 text-xs">빠른 처리 보장</p>
+                    </div>
+                    <div className="text-green-500">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                  </div>
+                </a>
+
+                {/* 일반 텔레그램 문의 */}
                 <a 
                   href={telegramData?.telegramLink || "#"}
                   target="_blank"
@@ -1530,7 +1560,7 @@ export default function Landing() {
                       <MessageCircle className="w-6 h-6 text-blue-500" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-white font-medium">텔레그램 문의</h3>
+                      <h3 className="text-white font-medium">일반 문의</h3>
                       <p className="text-blue-500 font-bold">@investkorea</p>
                       <p className="text-gray-400 text-xs">24시간 운영</p>
                     </div>
@@ -1543,9 +1573,9 @@ export default function Landing() {
                 </a>
               </div>
 
-              <div className="mt-6 p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl">
+              <div className="mt-4 p-3 bg-green-500/10 border border-green-500/30 rounded-xl">
                 <p className="text-center text-sm text-gray-300">
-                  <span className="text-blue-500 font-bold">텔레그램</span>으로 빠르게 상담받으세요
+                  <span className="text-green-500 font-bold">입금 문의</span>를 클릭하여 계좌 안내를 받으세요
                 </p>
               </div>
             </div>
