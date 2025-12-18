@@ -93,14 +93,6 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
   const isBettingLocked = timeRemaining <= 3;
 
   const validateBet = (direction: 'long' | 'short') => {
-    // Check if round is about to end
-    if (isBettingLocked) {
-      toast.error("이 회차는 마감되었습니다", {
-        description: "다음 회차에 베팅해주세요",
-      });
-      return false;
-    }
-
     // Check operating hours
     if (!isWithinOperatingHours()) {
       toast.error("영업시간이 아닙니다", {
@@ -239,19 +231,15 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
         </div>
 
         {isBettingLocked && (
-          <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-center">
-            <span className="text-red-500 font-medium text-sm">회차 마감 - 다음 회차 대기중</span>
+          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-2 text-center">
+            <span className="text-yellow-500 font-medium text-xs">회차 마감 임박</span>
           </div>
         )}
 
         <div className="grid grid-cols-2 gap-2 lg:gap-3 pt-1 lg:pt-2">
           <Button 
             onClick={() => handleBetClick('long')}
-            disabled={isBettingLocked}
-            className={cn(
-              "h-11 lg:h-14 text-xs lg:text-sm font-bold text-white flex items-center justify-center gap-1",
-              isBettingLocked ? "bg-gray-500 cursor-not-allowed" : "bg-up hover:bg-up/90"
-            )}
+            className="h-11 lg:h-14 text-xs lg:text-sm font-bold text-white flex items-center justify-center gap-1 bg-up hover:bg-up/90"
             data-testid="button-long"
           >
             <TrendingUp className="w-4 h-4 shrink-0" />
@@ -260,11 +248,7 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
           </Button>
           <Button 
             onClick={() => handleBetClick('short')}
-            disabled={isBettingLocked}
-            className={cn(
-              "h-11 lg:h-14 text-xs lg:text-sm font-bold text-white flex items-center justify-center gap-1",
-              isBettingLocked ? "bg-gray-500 cursor-not-allowed" : "bg-down hover:bg-down/90"
-            )}
+            className="h-11 lg:h-14 text-xs lg:text-sm font-bold text-white flex items-center justify-center gap-1 bg-down hover:bg-down/90"
             data-testid="button-short"
           >
             <TrendingDown className="w-4 h-4 shrink-0" />
