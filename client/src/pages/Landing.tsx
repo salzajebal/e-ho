@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Shield, Zap, Headphones, TrendingUp, Lock, Award, X, ChevronDown, Phone, Mail, MessageCircle, History, Wallet, Menu, Bell } from "lucide-react";
+import { Shield, Zap, Headphones, TrendingUp, Lock, Award, X, ChevronDown, ChevronRight, Phone, Mail, MessageCircle, History, Wallet, Menu, Bell, FileText } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useLogin, useRegister, useAuth, useLogout } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
@@ -168,6 +168,13 @@ export default function Landing() {
   const [referralValid, setReferralValid] = useState<boolean | null>(null);
   const [referralName, setReferralName] = useState("");
   
+  // Inquiry form state
+  const [showInquiryFormModal, setShowInquiryFormModal] = useState(false);
+  const [showMyInquiriesModal, setShowMyInquiriesModal] = useState(false);
+  const [inquiryTitle, setInquiryTitle] = useState("");
+  const [inquiryContent, setInquiryContent] = useState("");
+  const [inquirySubmitting, setInquirySubmitting] = useState(false);
+  
   const login = useLogin();
   const register = useRegister();
   const logout = useLogout();
@@ -223,6 +230,17 @@ export default function Landing() {
     queryKey: ["/api/messages"],
     queryFn: async () => {
       const res = await fetch("/api/messages");
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!user,
+  });
+
+  // Fetch user inquiries
+  const { data: myInquiries = [], refetch: refetchInquiries } = useQuery<{id: number; title: string; content: string; reply: string | null; status: string; createdAt: string; repliedAt: string | null}[]>({
+    queryKey: ["/api/inquiries"],
+    queryFn: async () => {
+      const res = await fetch("/api/inquiries");
       if (!res.ok) return [];
       return res.json();
     },
@@ -1624,10 +1642,10 @@ export default function Landing() {
         </DialogContent>
       </Dialog>
 
-      {/* Customer Service Modal - Telegram Only */}
+      {/* Customer Service Modal - 1:1 문의 메뉴 */}
       <Dialog open={showCustomerServiceModal} onOpenChange={setShowCustomerServiceModal}>
         <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden">
-          <DialogTitle className="sr-only">고객센터</DialogTitle>
+          <DialogTitle className="sr-only">1:1 문의</DialogTitle>
           <div className="relative">
             <div className="absolute -inset-1 bg-gradient-to-r from-orange-500/20 via-amber-500/20 to-orange-500/20 rounded-2xl blur-xl" />
             <div className="relative backdrop-blur-xl bg-[#1a1a24]/95 border border-white/10 rounded-2xl p-6 shadow-2xl">
@@ -1642,52 +1660,52 @@ export default function Landing() {
                 <div className="flex items-center justify-center gap-2 mb-3">
                   <Headphones className="w-8 h-8 text-orange-500" />
                 </div>
-                <h2 className="text-2xl font-bold text-white mb-1">고객센터</h2>
-                <p className="text-gray-400 text-sm">24시간 전문 상담원이 도와드립니다</p>
+                <h2 className="text-2xl font-bold text-white mb-1">1:1 문의</h2>
+                <p className="text-gray-400 text-sm">문의를 남기시면 빠르게 답변드립니다</p>
               </div>
 
               <div className="space-y-3">
-                {/* 1:1 입금 문의 */}
-                <a 
-                  href={telegramData?.telegramLink || "#"}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full block bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30 rounded-xl p-4 hover:border-green-500/50 transition-colors cursor-pointer text-left"
-                  onClick={(e) => {
-                    if (!telegramData?.telegramLink) {
-                      e.preventDefault();
-                      toast.error("텔레그램 링크가 설정되지 않았습니다");
+                {/* 문의 작성하기 */}
+                <button 
+                  className="w-full block bg-gradient-to-r from-orange-500/10 to-amber-500/10 border border-orange-500/30 rounded-xl p-4 hover:border-orange-500/50 transition-colors cursor-pointer text-left"
+                  onClick={() => {
+                    if (!user) {
+                      toast.error("로그인이 필요합니다");
+                      setShowCustomerServiceModal(false);
+                      setShowLoginModal(true);
+                      return;
                     }
+                    setShowCustomerServiceModal(false);
+                    setShowInquiryFormModal(true);
                   }}
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center">
-                      <Wallet className="w-6 h-6 text-green-500" />
+                    <div className="w-12 h-12 bg-orange-500/20 rounded-full flex items-center justify-center">
+                      <FileText className="w-6 h-6 text-orange-500" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-white font-medium">1:1 입금 문의</h3>
-                      <p className="text-green-400 text-sm">입금 계좌 안내 및 입금 확인</p>
-                      <p className="text-gray-400 text-xs">빠른 처리 보장</p>
+                      <h3 className="text-white font-medium">문의 작성하기</h3>
+                      <p className="text-orange-400 text-sm">새로운 문의를 작성합니다</p>
+                      <p className="text-gray-400 text-xs">빠른 답변 보장</p>
                     </div>
-                    <div className="text-green-500">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
-                      </svg>
+                    <div className="text-orange-500">
+                      <ChevronRight className="w-5 h-5" />
                     </div>
                   </div>
-                </a>
+                </button>
 
-                {/* 일반 텔레그램 문의 */}
-                <a 
-                  href={telegramData?.telegramLink || "#"}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block bg-white/5 border border-white/10 rounded-xl p-4 hover:border-blue-500/50 transition-colors cursor-pointer"
-                  onClick={(e) => {
-                    if (!telegramData?.telegramLink) {
-                      e.preventDefault();
-                      toast.error("텔레그램 링크가 설정되지 않았습니다");
+                {/* 내 문의 내역 */}
+                <button 
+                  className="w-full block bg-white/5 border border-white/10 rounded-xl p-4 hover:border-blue-500/50 transition-colors cursor-pointer text-left"
+                  onClick={() => {
+                    if (!user) {
+                      toast.error("로그인이 필요합니다");
+                      setShowCustomerServiceModal(false);
+                      setShowLoginModal(true);
+                      return;
                     }
+                    setShowCustomerServiceModal(false);
+                    setShowMyInquiriesModal(true);
                   }}
                 >
                   <div className="flex items-center gap-4">
@@ -1695,24 +1713,184 @@ export default function Landing() {
                       <MessageCircle className="w-6 h-6 text-blue-500" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-white font-medium">일반 문의</h3>
-                      <p className="text-blue-500 font-bold">@investkorea</p>
-                      <p className="text-gray-400 text-xs">24시간 운영</p>
+                      <h3 className="text-white font-medium">내 문의 내역</h3>
+                      <p className="text-blue-400 text-sm">작성한 문의와 답변 확인</p>
+                      <p className="text-gray-400 text-xs">{myInquiries.length}건의 문의</p>
                     </div>
                     <div className="text-blue-500">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
-                      </svg>
+                      <ChevronRight className="w-5 h-5" />
                     </div>
                   </div>
-                </a>
+                </button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Inquiry Form Modal - 문의 작성 */}
+      <Dialog open={showInquiryFormModal} onOpenChange={setShowInquiryFormModal}>
+        <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+          <DialogTitle className="sr-only">문의 작성</DialogTitle>
+          <div className="relative">
+            <div className="absolute -inset-1 bg-gradient-to-r from-orange-500/20 via-amber-500/20 to-orange-500/20 rounded-2xl blur-xl" />
+            <div className="relative backdrop-blur-xl bg-[#1a1a24]/95 border border-white/10 rounded-2xl p-6 shadow-2xl">
+              <button 
+                onClick={() => setShowInquiryFormModal(false)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              
+              <div className="text-center mb-6">
+                <div className="flex items-center justify-center gap-2 mb-3">
+                  <FileText className="w-8 h-8 text-orange-500" />
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-1">문의 작성</h2>
+                <p className="text-gray-400 text-sm">문의를 남기시면 빠르게 답변드립니다</p>
               </div>
 
-              <div className="mt-4 p-3 bg-green-500/10 border border-green-500/30 rounded-xl">
-                <p className="text-center text-sm text-gray-300">
-                  <span className="text-green-500 font-bold">입금 문의</span>를 클릭하여 계좌 안내를 받으세요
-                </p>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">제목</label>
+                  <input
+                    type="text"
+                    placeholder="문의 제목을 입력해주세요"
+                    value={inquiryTitle}
+                    onChange={(e) => setInquiryTitle(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-orange-500"
+                    data-testid="input-inquiry-title"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">내용</label>
+                  <textarea
+                    placeholder="문의 내용을 자세히 작성해주세요"
+                    value={inquiryContent}
+                    onChange={(e) => setInquiryContent(e.target.value)}
+                    rows={5}
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 resize-none"
+                    data-testid="input-inquiry-content"
+                  />
+                </div>
+                <Button
+                  className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3"
+                  disabled={inquirySubmitting || !inquiryTitle.trim() || !inquiryContent.trim()}
+                  onClick={async () => {
+                    try {
+                      setInquirySubmitting(true);
+                      const res = await fetch('/api/inquiries', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ title: inquiryTitle, content: inquiryContent }),
+                      });
+                      const data = await res.json();
+                      if (!res.ok) {
+                        throw new Error(data.error || '문의 등록에 실패했습니다');
+                      }
+                      toast.success('문의가 등록되었습니다. 빠른 시일 내에 답변드리겠습니다.');
+                      setInquiryTitle('');
+                      setInquiryContent('');
+                      setShowInquiryFormModal(false);
+                      refetchInquiries();
+                    } catch (error: any) {
+                      toast.error(error.message || '문의 등록에 실패했습니다');
+                    } finally {
+                      setInquirySubmitting(false);
+                    }
+                  }}
+                  data-testid="button-submit-inquiry"
+                >
+                  {inquirySubmitting ? '등록 중...' : '문의 등록하기'}
+                </Button>
               </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* My Inquiries Modal - 내 문의 내역 */}
+      <Dialog open={showMyInquiriesModal} onOpenChange={setShowMyInquiriesModal}>
+        <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+          <DialogTitle className="sr-only">내 문의 내역</DialogTitle>
+          <div className="relative">
+            <div className="absolute -inset-1 bg-gradient-to-r from-orange-500/20 via-amber-500/20 to-orange-500/20 rounded-2xl blur-xl" />
+            <div className="relative backdrop-blur-xl bg-[#1a1a24]/95 border border-white/10 rounded-2xl p-6 shadow-2xl max-h-[80vh] overflow-y-auto">
+              <button 
+                onClick={() => setShowMyInquiriesModal(false)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              
+              <div className="text-center mb-6">
+                <div className="flex items-center justify-center gap-2 mb-3">
+                  <MessageCircle className="w-8 h-8 text-orange-500" />
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-1">내 문의 내역</h2>
+                <p className="text-gray-400 text-sm">총 {myInquiries.length}건의 문의</p>
+              </div>
+
+              <div className="space-y-3">
+                {myInquiries.length === 0 ? (
+                  <p className="text-gray-500 text-sm py-8 text-center">등록된 문의가 없습니다</p>
+                ) : (
+                  myInquiries.map((inquiry) => (
+                    <div key={inquiry.id} className="bg-white/5 border border-white/10 rounded-xl p-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <h3 className="text-white font-medium">{inquiry.title}</h3>
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                          inquiry.status === 'answered' 
+                            ? 'bg-green-500/20 text-green-400' 
+                            : 'bg-yellow-500/20 text-yellow-400'
+                        }`}>
+                          {inquiry.status === 'answered' ? '답변완료' : '대기중'}
+                        </span>
+                      </div>
+                      <p className="text-gray-400 text-sm mb-2 whitespace-pre-wrap">{inquiry.content}</p>
+                      <p className="text-gray-500 text-xs mb-3">
+                        {new Date(inquiry.createdAt).toLocaleDateString('ko-KR', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                      
+                      {inquiry.reply && (
+                        <div className="mt-3 pt-3 border-t border-white/10">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-orange-500 text-sm font-medium">관리자 답변</span>
+                            {inquiry.repliedAt && (
+                              <span className="text-gray-500 text-xs">
+                                {new Date(inquiry.repliedAt).toLocaleDateString('ko-KR', {
+                                  year: 'numeric',
+                                  month: '2-digit',
+                                  day: '2-digit',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-gray-300 text-sm whitespace-pre-wrap bg-orange-500/10 p-3 rounded-lg">{inquiry.reply}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+              
+              <Button
+                className="w-full mt-4 bg-orange-500 hover:bg-orange-600 text-white font-semibold"
+                onClick={() => {
+                  setShowMyInquiriesModal(false);
+                  setShowInquiryFormModal(true);
+                }}
+              >
+                새 문의 작성하기
+              </Button>
             </div>
           </div>
         </DialogContent>
