@@ -219,9 +219,9 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
       let message = "";
       
       if (currentHour < 9) {
-        message = `현재 게임 가능 시간이 아닙니다.\n\n운영시간: 오전 9시 ~ 오후 7시 (한국시간)\n\n오전 9시에 다시 방문해주세요!`;
+        message = `현재 거래 가능 시간이 아닙니다.\n\n운영시간: 오전 9시 ~ 오후 7시 (한국시간)\n\n오전 9시에 다시 방문해주세요!`;
       } else {
-        message = `현재 게임 가능 시간이 아닙니다.\n\n운영시간: 오전 9시 ~ 오후 7시 (한국시간)\n\n내일 오전 9시에 다시 방문해주세요!`;
+        message = `현재 거래 가능 시간이 아닙니다.\n\n운영시간: 오전 9시 ~ 오후 7시 (한국시간)\n\n내일 오전 9시에 다시 방문해주세요!`;
       }
       
       setTimeAlert({ show: true, message });
@@ -504,7 +504,7 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
           <div className="text-center space-y-4 py-4">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-lg font-bold bg-yellow-500/20 text-yellow-500">
               <Clock className="w-5 h-5" />
-              게임 시간 안내
+              거래시간 안내
             </div>
             
             <div className="space-y-2">
