@@ -674,15 +674,17 @@ export default function Landing() {
             >
               거래하기
             </Button>
-            <Button 
-              size="lg" 
-              variant="outline" 
-              className="border-white/30 text-white hover:bg-white/10 px-10 py-6 text-lg rounded-lg"
-              data-testid="button-register"
-              onClick={() => setShowRegisterModal(true)}
-            >
-              회원가입
-            </Button>
+            {!user && (
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="border-white/30 text-white hover:bg-white/10 px-10 py-6 text-lg rounded-lg"
+                data-testid="button-register"
+                onClick={() => setShowRegisterModal(true)}
+              >
+                회원가입
+              </Button>
+            )}
           </div>
         </div>
 
@@ -945,38 +947,40 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4" data-testid="text-cta-title">
-            INVEST KOREA에 가입하고<br />지금 바로 시작해보세요
-          </h2>
-          <p className="text-gray-400 text-lg mb-10">
-            당신의 첫 옵션 거래,<br />
-            믿을 수 있는 INVEST KOREA에서 시작하세요!
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              size="lg" 
-              variant="outline" 
-              className="border-white/30 text-white hover:bg-white/10 px-10 py-6 text-lg rounded-lg"
-              data-testid="button-login-cta"
-              onClick={() => setShowLoginModal(true)}
-            >
-              로그인
-            </Button>
-            <Link href="/register">
+      {/* CTA Section - Only show for non-logged-in users */}
+      {!user && (
+        <section className="py-20 px-4">
+          <div className="max-w-4xl mx-auto text-center">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4" data-testid="text-cta-title">
+              INVEST KOREA에 가입하고<br />지금 바로 시작해보세요
+            </h2>
+            <p className="text-gray-400 text-lg mb-10">
+              당신의 첫 옵션 거래,<br />
+              믿을 수 있는 INVEST KOREA에서 시작하세요!
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
                 size="lg" 
-                className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-10 py-6 text-lg rounded-lg"
-                data-testid="button-register-cta"
+                variant="outline" 
+                className="border-white/30 text-white hover:bg-white/10 px-10 py-6 text-lg rounded-lg"
+                data-testid="button-login-cta"
+                onClick={() => setShowLoginModal(true)}
               >
-                회원가입
+                로그인
               </Button>
-            </Link>
+              <Link href="/register">
+                <Button 
+                  size="lg" 
+                  className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-10 py-6 text-lg rounded-lg"
+                  data-testid="button-register-cta"
+                >
+                  회원가입
+                </Button>
+              </Link>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Footer */}
       <footer className="bg-[#08080c] py-16 px-4 border-t border-white/5">
