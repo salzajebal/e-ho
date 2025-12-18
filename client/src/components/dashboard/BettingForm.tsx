@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { TrendingUp, TrendingDown, Clock, Hash, Timer, History, CheckCircle, AlertCircle } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { TRADING_GAMES } from "@/lib/tradingGames";
 
 interface Game {
   id: string;
@@ -86,6 +87,14 @@ interface TimeAlert {
   message: string;
 }
 
+// Track all games state
+interface AllGamesState {
+  [gameId: string]: {
+    lastRound: number;
+    roundStartPrice: number;
+  };
+}
+
 export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormProps) {
   const [amount, setAmount] = useState<string>("10000");
   const [currentRound, setCurrentRound] = useState(calculateRoundNumber(game.duration));
@@ -93,8 +102,7 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
   const [gameResults, setGameResults] = useState<GameResult[]>([]);
   const [betConfirmation, setBetConfirmation] = useState<BetConfirmation>({ show: false, direction: 'long', amount: 0, price: 0 });
   const [timeAlert, setTimeAlert] = useState<TimeAlert>({ show: false, message: '' });
-  const lastRoundRef = useRef<number>(0);
-  const roundStartPriceRef = useRef<number>(currentPrice);
+  const allGamesStateRef = useRef<AllGamesState>({});
   const lastPriceRef = useRef<number>(currentPrice);
   const maxRounds = getMaxRoundsPerDay(game.duration);
   const availableBalance = balance ? parseFloat(balance) : 0;
@@ -104,7 +112,7 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
     lastPriceRef.current = currentPrice;
   }, [currentPrice]);
 
-  // Load saved results from localStorage
+  // Load saved results for current game from localStorage
   useEffect(() => {
     const storageKey = getStorageKey(game.id);
     const saved = localStorage.getItem(storageKey);
@@ -118,55 +126,79 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
     } else {
       setGameResults([]);
     }
-    lastRoundRef.current = 0;
-    roundStartPriceRef.current = currentPrice;
   }, [game.id]);
 
-  // Track round changes and record results
+  // Track round changes for ALL 6 games simultaneously
   useEffect(() => {
-    const checkForNewRound = () => {
+    const checkAllGames = () => {
+      const kstTime = getKSTDate();
+      const timeStr = kstTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+      
+      // Update current game display
       const newRound = calculateRoundNumber(game.duration);
       const newTime = getRoundTimeRemaining(game.duration);
       setCurrentRound(newRound);
       setTimeRemaining(newTime);
       
-      // Initialize on first check
-      if (lastRoundRef.current === 0) {
-        lastRoundRef.current = newRound;
-        roundStartPriceRef.current = currentPrice;
-        return;
-      }
-      
-      // Round changed - record result
-      if (newRound > lastRoundRef.current) {
-        const closePrice = lastPriceRef.current;
-        const openPrice = roundStartPriceRef.current;
-        const direction = closePrice >= openPrice ? 'up' : 'down';
+      // Check each of the 6 games
+      TRADING_GAMES.forEach((g) => {
+        const gameId = g.id;
+        const duration = g.duration;
+        const currentRoundForGame = calculateRoundNumber(duration);
         
-        const kstTime = getKSTDate();
-        const timeStr = kstTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+        // Initialize state for this game if not exists
+        if (!allGamesStateRef.current[gameId]) {
+          allGamesStateRef.current[gameId] = {
+            lastRound: currentRoundForGame,
+            roundStartPrice: currentPrice,
+          };
+          return;
+        }
         
-        const newResult: GameResult = {
-          round: lastRoundRef.current,
-          direction,
-          time: timeStr,
-        };
+        const gameState = allGamesStateRef.current[gameId];
         
-        setGameResults(prev => {
-          const updated = [newResult, ...prev];
-          // Save to localStorage
-          const storageKey = getStorageKey(game.id);
+        // Round changed for this game - record result
+        if (currentRoundForGame > gameState.lastRound) {
+          const closePrice = lastPriceRef.current;
+          const openPrice = gameState.roundStartPrice;
+          const direction = closePrice >= openPrice ? 'up' : 'down';
+          
+          const newResult: GameResult = {
+            round: gameState.lastRound,
+            direction,
+            time: timeStr,
+          };
+          
+          // Save to localStorage for this game
+          const storageKey = getStorageKey(gameId);
+          const saved = localStorage.getItem(storageKey);
+          let results: GameResult[] = [];
+          if (saved) {
+            try {
+              results = JSON.parse(saved);
+            } catch (e) {
+              results = [];
+            }
+          }
+          const updated = [newResult, ...results];
           localStorage.setItem(storageKey, JSON.stringify(updated));
-          return updated;
-        });
-        
-        lastRoundRef.current = newRound;
-        roundStartPriceRef.current = currentPrice;
-      }
+          
+          // If this is the currently selected game, update state
+          if (gameId === game.id) {
+            setGameResults(updated);
+          }
+          
+          // Update ref
+          allGamesStateRef.current[gameId] = {
+            lastRound: currentRoundForGame,
+            roundStartPrice: currentPrice,
+          };
+        }
+      });
     };
     
-    checkForNewRound();
-    const interval = setInterval(checkForNewRound, 1000);
+    checkAllGames();
+    const interval = setInterval(checkAllGames, 1000);
     return () => clearInterval(interval);
   }, [game.duration, game.id, currentPrice]);
 
