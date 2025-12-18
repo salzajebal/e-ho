@@ -90,8 +90,18 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
     return `${seconds / 60}분`;
   };
 
+  const isBettingLocked = timeRemaining <= 3;
+
   const validateBet = (direction: 'long' | 'short') => {
-    // Check operating hours first
+    // Check if round is about to end
+    if (isBettingLocked) {
+      toast.error("이 회차는 마감되었습니다", {
+        description: "다음 회차에 베팅해주세요",
+      });
+      return false;
+    }
+
+    // Check operating hours
     if (!isWithinOperatingHours()) {
       toast.error("영업시간이 아닙니다", {
         description: "운영시간: 오전 9시 ~ 오후 7시 (한국시간)",
@@ -231,10 +241,20 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
           </div>
         </div>
 
+        {isBettingLocked && (
+          <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-center">
+            <span className="text-red-500 font-medium text-sm">회차 마감 - 다음 회차 대기중</span>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-2 lg:gap-3 pt-1 lg:pt-2">
           <Button 
             onClick={() => handleBetClick('long')}
-            className="h-11 lg:h-14 text-sm lg:text-base font-bold bg-up hover:bg-up/90 text-white"
+            disabled={isBettingLocked}
+            className={cn(
+              "h-11 lg:h-14 text-sm lg:text-base font-bold text-white",
+              isBettingLocked ? "bg-gray-500 cursor-not-allowed" : "bg-up hover:bg-up/90"
+            )}
             data-testid="button-long"
           >
             <TrendingUp className="w-4 h-4 lg:w-5 lg:h-5 mr-1 lg:mr-2" />
@@ -242,7 +262,11 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
           </Button>
           <Button 
             onClick={() => handleBetClick('short')}
-            className="h-11 lg:h-14 text-sm lg:text-base font-bold bg-down hover:bg-down/90 text-white"
+            disabled={isBettingLocked}
+            className={cn(
+              "h-11 lg:h-14 text-sm lg:text-base font-bold text-white",
+              isBettingLocked ? "bg-gray-500 cursor-not-allowed" : "bg-down hover:bg-down/90"
+            )}
             data-testid="button-short"
           >
             <TrendingDown className="w-4 h-4 lg:w-5 lg:h-5 mr-1 lg:mr-2" />
