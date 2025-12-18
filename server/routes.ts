@@ -2135,5 +2135,112 @@ export async function registerRoutes(
     }
   });
 
+  // ===== 1:1 Inquiry Routes (1:1 문의) =====
+  
+  // Create inquiry (사용자)
+  app.post("/api/inquiries", requireAuth, async (req, res) => {
+    try {
+      const { title, content } = req.body;
+      
+      if (!title || !content) {
+        return res.status(400).json({ error: "제목과 내용을 입력해주세요" });
+      }
+
+      const inquiry = await storage.createInquiry({
+        userId: req.session.userId!,
+        title,
+        content,
+      });
+
+      res.json(inquiry);
+    } catch (error) {
+      console.error("Create inquiry error:", error);
+      res.status(500).json({ error: "문의 등록에 실패했습니다" });
+    }
+  });
+
+  // Get my inquiries (사용자)
+  app.get("/api/inquiries", requireAuth, async (req, res) => {
+    try {
+      const inquiries = await storage.getInquiriesForUser(req.session.userId!);
+      res.json(inquiries);
+    } catch (error) {
+      console.error("Get inquiries error:", error);
+      res.status(500).json({ error: "문의 조회에 실패했습니다" });
+    }
+  });
+
+  // Get all inquiries (관리자)
+  app.get("/api/admin/inquiries", requireAdmin, async (req, res) => {
+    try {
+      const inquiriesData = await storage.getAllInquiries();
+      
+      // Attach username for each inquiry
+      const inquiriesWithUser = await Promise.all(
+        inquiriesData.map(async (inquiry) => {
+          const user = await storage.getUser(inquiry.userId);
+          return {
+            ...inquiry,
+            username: user?.username || 'Unknown',
+          };
+        })
+      );
+      
+      res.json(inquiriesWithUser);
+    } catch (error) {
+      console.error("Get all inquiries error:", error);
+      res.status(500).json({ error: "문의 조회에 실패했습니다" });
+    }
+  });
+
+  // Get pending inquiries (관리자)
+  app.get("/api/admin/inquiries/pending", requireAdmin, async (req, res) => {
+    try {
+      const inquiriesData = await storage.getPendingInquiries();
+      
+      const inquiriesWithUser = await Promise.all(
+        inquiriesData.map(async (inquiry) => {
+          const user = await storage.getUser(inquiry.userId);
+          return {
+            ...inquiry,
+            username: user?.username || 'Unknown',
+          };
+        })
+      );
+      
+      res.json(inquiriesWithUser);
+    } catch (error) {
+      console.error("Get pending inquiries error:", error);
+      res.status(500).json({ error: "문의 조회에 실패했습니다" });
+    }
+  });
+
+  // Reply to inquiry (관리자)
+  app.post("/api/admin/inquiries/:id/reply", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { reply } = req.body;
+      
+      if (!reply) {
+        return res.status(400).json({ error: "답변 내용을 입력해주세요" });
+      }
+
+      const inquiry = await storage.getInquiry(parseInt(id));
+      if (!inquiry) {
+        return res.status(404).json({ error: "문의를 찾을 수 없습니다" });
+      }
+
+      const updated = await storage.replyToInquiry(parseInt(id), reply, req.session.userId!);
+
+      // Notify user via WebSocket
+      broadcastToUser(inquiry.userId, 'inquiry_replied', updated);
+
+      res.json({ success: true, inquiry: updated });
+    } catch (error) {
+      console.error("Reply to inquiry error:", error);
+      res.status(500).json({ error: "답변 등록에 실패했습니다" });
+    }
+  });
+
   return httpServer;
 }
