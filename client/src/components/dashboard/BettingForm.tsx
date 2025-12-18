@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { TrendingUp, TrendingDown, Clock, Hash, Timer, History, CheckCircle } from "lucide-react";
+import { TrendingUp, TrendingDown, Clock, Hash, Timer, History, CheckCircle, AlertCircle } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
@@ -81,12 +81,18 @@ interface BetConfirmation {
   price: number;
 }
 
+interface TimeAlert {
+  show: boolean;
+  message: string;
+}
+
 export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormProps) {
   const [amount, setAmount] = useState<string>("10000");
   const [currentRound, setCurrentRound] = useState(calculateRoundNumber(game.duration));
   const [timeRemaining, setTimeRemaining] = useState(getRoundTimeRemaining(game.duration));
   const [gameResults, setGameResults] = useState<GameResult[]>([]);
   const [betConfirmation, setBetConfirmation] = useState<BetConfirmation>({ show: false, direction: 'long', amount: 0, price: 0 });
+  const [timeAlert, setTimeAlert] = useState<TimeAlert>({ show: false, message: '' });
   const lastRoundRef = useRef<number>(0);
   const roundStartPriceRef = useRef<number>(currentPrice);
   const lastPriceRef = useRef<number>(currentPrice);
@@ -176,9 +182,17 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
   const validateBet = (direction: 'long' | 'short') => {
     // Check operating hours
     if (!isWithinOperatingHours()) {
-      toast.error("영업시간이 아닙니다", {
-        description: "운영시간: 오전 9시 ~ 오후 7시 (한국시간)",
-      });
+      const kstTime = getKSTDate();
+      const currentHour = kstTime.getHours();
+      let message = "";
+      
+      if (currentHour < 9) {
+        message = `현재 게임 가능 시간이 아닙니다.\n\n운영시간: 오전 9시 ~ 오후 7시 (한국시간)\n\n오전 9시에 다시 방문해주세요!`;
+      } else {
+        message = `현재 게임 가능 시간이 아닙니다.\n\n운영시간: 오전 9시 ~ 오후 7시 (한국시간)\n\n내일 오전 9시에 다시 방문해주세요!`;
+      }
+      
+      setTimeAlert({ show: true, message });
       return false;
     }
 
@@ -435,6 +449,36 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
                 <span className="text-up font-mono font-bold">+{(betConfirmation.amount * MULTIPLIER).toLocaleString()}원</span>
               </div>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Time Alert Dialog */}
+      <Dialog open={timeAlert.show} onOpenChange={(open) => setTimeAlert(prev => ({ ...prev, show: open }))}>
+        <DialogContent className="bg-card border-border max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-center gap-2 text-center">
+              <AlertCircle className="w-8 h-8 text-yellow-500" />
+            </DialogTitle>
+          </DialogHeader>
+          <div className="text-center space-y-4 py-4">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-lg font-bold bg-yellow-500/20 text-yellow-500">
+              <Clock className="w-5 h-5" />
+              게임 시간 안내
+            </div>
+            
+            <div className="space-y-2">
+              <p className="text-foreground whitespace-pre-line leading-relaxed">
+                {timeAlert.message}
+              </p>
+            </div>
+            
+            <Button 
+              onClick={() => setTimeAlert({ show: false, message: '' })}
+              className="w-full bg-primary hover:bg-primary/90"
+            >
+              확인
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
