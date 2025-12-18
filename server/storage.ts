@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Bet, type InsertBet, type Setting, type Message, type InsertMessage, type Affiliate, type InsertAffiliate, type AffiliateCommission, type AffiliateSettlement, type InsertAffiliateSettlement, type Announcement, type InsertAnnouncement, type BlockedIp, type InsertBlockedIp, type MaintenanceSymbol, type InsertMaintenanceSymbol, type TransactionRequest, type InsertTransactionRequest, users, bets, settings, messages, affiliates, affiliateCommissions, affiliateSettlements, announcements, blockedIps, maintenanceSymbols, transactionRequests } from "@shared/schema";
+import { type User, type InsertUser, type Bet, type InsertBet, type Setting, type Message, type InsertMessage, type Affiliate, type InsertAffiliate, type AffiliateCommission, type AffiliateSettlement, type InsertAffiliateSettlement, type Announcement, type InsertAnnouncement, type BlockedIp, type InsertBlockedIp, type MaintenanceSymbol, type InsertMaintenanceSymbol, type TransactionRequest, type InsertTransactionRequest, type Inquiry, type InsertInquiry, users, bets, settings, messages, affiliates, affiliateCommissions, affiliateSettlements, announcements, blockedIps, maintenanceSymbols, transactionRequests, inquiries } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, lt, sql, gte } from "drizzle-orm";
 
@@ -131,6 +131,14 @@ export interface IStorage {
 
   // Daily stats methods (날짜별 수익)
   getDailyStats(days?: number): Promise<DailyStats[]>;
+
+  // Inquiry methods (1:1 문의)
+  createInquiry(inquiry: InsertInquiry): Promise<Inquiry>;
+  getInquiry(id: number): Promise<Inquiry | undefined>;
+  getInquiriesForUser(userId: string): Promise<Inquiry[]>;
+  getAllInquiries(): Promise<Inquiry[]>;
+  getPendingInquiries(): Promise<Inquiry[]>;
+  replyToInquiry(id: number, reply: string, repliedBy: string): Promise<Inquiry>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -807,6 +815,46 @@ export class DatabaseStorage implements IStorage {
       .slice(0, days);
     
     return result;
+  }
+
+  // Inquiry methods (1:1 문의)
+  async createInquiry(inquiry: InsertInquiry): Promise<Inquiry> {
+    const [created] = await db.insert(inquiries).values(inquiry).returning();
+    return created;
+  }
+
+  async getInquiry(id: number): Promise<Inquiry | undefined> {
+    const [inquiry] = await db.select().from(inquiries).where(eq(inquiries.id, id));
+    return inquiry || undefined;
+  }
+
+  async getInquiriesForUser(userId: string): Promise<Inquiry[]> {
+    return await db.select().from(inquiries)
+      .where(eq(inquiries.userId, userId))
+      .orderBy(desc(inquiries.createdAt));
+  }
+
+  async getAllInquiries(): Promise<Inquiry[]> {
+    return await db.select().from(inquiries).orderBy(desc(inquiries.createdAt));
+  }
+
+  async getPendingInquiries(): Promise<Inquiry[]> {
+    return await db.select().from(inquiries)
+      .where(eq(inquiries.status, 'pending'))
+      .orderBy(desc(inquiries.createdAt));
+  }
+
+  async replyToInquiry(id: number, reply: string, repliedBy: string): Promise<Inquiry> {
+    const [updated] = await db.update(inquiries)
+      .set({ 
+        reply, 
+        repliedBy, 
+        status: 'answered', 
+        repliedAt: new Date() 
+      })
+      .where(eq(inquiries.id, id))
+      .returning();
+    return updated;
   }
 }
 
