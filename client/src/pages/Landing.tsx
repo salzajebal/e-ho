@@ -1620,13 +1620,26 @@ export default function Landing() {
                       throw new Error(data.error || '요청에 실패했습니다');
                     }
                     
-                    toast.success(
-                      transactionType === 'deposit'
-                        ? '입금 신청이 완료되었습니다. 관리자 승인 후 잔고에 반영됩니다.'
-                        : '출금 신청이 완료되었습니다. 처리까지 약 30분 소요됩니다.'
-                    );
-                    setShowDepositModal(false);
-                    setTransactionAmount('');
+                    if (transactionType === 'deposit') {
+                      // Create an inquiry for deposit request
+                      await fetch('/api/inquiries', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          title: `입금 신청 - ${Number(transactionAmount).toLocaleString()}원`,
+                          content: `입금 금액: ${Number(transactionAmount).toLocaleString()}원\n\n입금 계좌 정보를 안내해주세요.`,
+                        }),
+                      });
+                      refetchInquiries();
+                      toast.success('입금 신청이 완료되었습니다. 문의 내역에서 계좌 안내를 확인하세요.');
+                      setShowDepositModal(false);
+                      setTransactionAmount('');
+                      setShowMyInquiriesModal(true);
+                    } else {
+                      toast.success('출금 신청이 완료되었습니다. 처리까지 약 30분 소요됩니다.');
+                      setShowDepositModal(false);
+                      setTransactionAmount('');
+                    }
                   } catch (error: any) {
                     toast.error(error.message || '요청에 실패했습니다');
                   } finally {
