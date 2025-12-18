@@ -93,6 +93,7 @@ export const bets = pgTable("bets", {
   direction: text("direction").notNull(), // 'long' or 'short'
   amount: decimal("amount", { precision: 20, scale: 8 }).notNull(), // bet amount
   duration: integer("duration").notNull(), // duration in seconds (60, 120, 180, 300)
+  roundNumber: integer("round_number").notNull().default(1), // round number for the day (KST based): 1min=1440/day, 3min=480/day, 5min=288/day
   strikePrice: decimal("strike_price", { precision: 20, scale: 8 }).notNull(), // price at bet time
   closePrice: decimal("close_price", { precision: 20, scale: 8 }), // price at expiry
   payout: decimal("payout", { precision: 20, scale: 8 }), // payout amount if won

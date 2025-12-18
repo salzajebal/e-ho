@@ -8,6 +8,7 @@ import MemoryStore from "memorystore";
 import { broadcastToAdmins, broadcastToUser, onlineUsers } from "./index";
 import { parse as parseCookie } from "cookie";
 import { unsign } from "cookie-signature";
+import { calculateRoundNumber } from "@shared/rounds";
 
 const SessionStore = MemoryStore(session);
 
@@ -374,6 +375,7 @@ export async function registerRoutes(
       }
 
       const expiresAt = new Date(Date.now() + duration * 1000);
+      const roundNumber = calculateRoundNumber(duration);
 
       const bet = await storage.createBet({
         userId,
@@ -381,6 +383,7 @@ export async function registerRoutes(
         direction,
         amount: betAmount.toString(),
         duration,
+        roundNumber,
         strikePrice: strikePrice.toString(),
         multiplier: (multiplier || 1.90).toString(),
         expiresAt,
@@ -1605,6 +1608,7 @@ export async function registerRoutes(
       }
 
       const expiresAt = new Date(Date.now() + parsedDuration * 1000);
+      const roundNumber = calculateRoundNumber(parsedDuration);
       const newBalance = (currentBalance - betAmount).toString();
 
       await storage.updateUserBalance(userId, newBalance);
@@ -1617,6 +1621,7 @@ export async function registerRoutes(
           direction,
           amount: betAmount.toString(),
           duration: parsedDuration,
+          roundNumber,
           strikePrice: strikePrice.toString(),
           multiplier: (multiplier || 1.90).toString(),
           expiresAt,
