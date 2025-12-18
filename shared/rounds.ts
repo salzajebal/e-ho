@@ -7,18 +7,43 @@ export function getKSTDate(): Date {
 
 export function calculateRoundNumber(durationSeconds: number): number {
   const kstNow = getKSTDate();
-  const minutesSinceMidnight = kstNow.getHours() * 60 + kstNow.getMinutes();
-  const durationMinutes = durationSeconds / 60;
-  const roundNumber = Math.floor(minutesSinceMidnight / durationMinutes) + 1;
+  const secondsSinceMidnight = kstNow.getHours() * 3600 + kstNow.getMinutes() * 60 + kstNow.getSeconds();
+  const roundNumber = Math.floor(secondsSinceMidnight / durationSeconds) + 1;
   return roundNumber;
 }
 
 export function getMaxRoundsPerDay(durationSeconds: number): number {
-  const durationMinutes = durationSeconds / 60;
-  return Math.floor(24 * 60 / durationMinutes);
+  return Math.floor(24 * 3600 / durationSeconds);
+}
+
+export function getRoundTimeRemaining(durationSeconds: number): number {
+  const kstNow = getKSTDate();
+  const secondsSinceMidnight = kstNow.getHours() * 3600 + kstNow.getMinutes() * 60 + kstNow.getSeconds();
+  const elapsedInRound = secondsSinceMidnight % durationSeconds;
+  return durationSeconds - elapsedInRound;
+}
+
+export function getRoundEndTime(durationSeconds: number): Date {
+  const now = new Date();
+  const remainingSeconds = getRoundTimeRemaining(durationSeconds);
+  return new Date(now.getTime() + remainingSeconds * 1000);
+}
+
+export function getRoundStartTime(durationSeconds: number): Date {
+  const now = new Date();
+  const kstNow = getKSTDate();
+  const secondsSinceMidnight = kstNow.getHours() * 3600 + kstNow.getMinutes() * 60 + kstNow.getSeconds();
+  const elapsedInRound = secondsSinceMidnight % durationSeconds;
+  return new Date(now.getTime() - elapsedInRound * 1000);
 }
 
 export function formatRoundDisplay(roundNumber: number, durationSeconds: number): string {
   const maxRounds = getMaxRoundsPerDay(durationSeconds);
   return `${roundNumber}회차 / ${maxRounds}회`;
+}
+
+export function formatTimeRemaining(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
 }

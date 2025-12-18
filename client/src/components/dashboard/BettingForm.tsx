@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { TrendingUp, TrendingDown, Clock, Hash } from "lucide-react";
+import { TrendingUp, TrendingDown, Clock, Hash, Timer } from "lucide-react";
 
 interface Game {
   id: string;
@@ -21,50 +21,68 @@ interface BettingFormProps {
 
 const MULTIPLIER = 2.00;
 
-// Check if current time is within operating hours (9AM-7PM KST)
-const isWithinOperatingHours = () => {
-  const now = new Date();
-  // Convert to KST (UTC+9)
-  const kstOffset = 9 * 60; // 9 hours in minutes
-  const utcOffset = now.getTimezoneOffset(); // Current timezone offset in minutes
-  const kstTime = new Date(now.getTime() + (utcOffset + kstOffset) * 60 * 1000);
-  
-  const hours = kstTime.getHours();
-  // Operating hours: 9AM (09:00) to 7PM (19:00) KST
-  return hours >= 9 && hours < 19;
-};
-
-// Calculate current round number based on KST time
-const calculateRoundNumber = (durationSeconds: number): number => {
+// Get KST Date
+const getKSTDate = (): Date => {
   const now = new Date();
   const kstOffset = 9 * 60;
   const utcOffset = now.getTimezoneOffset();
-  const kstTime = new Date(now.getTime() + (utcOffset + kstOffset) * 60 * 1000);
-  
-  const minutesSinceMidnight = kstTime.getHours() * 60 + kstTime.getMinutes();
-  const durationMinutes = durationSeconds / 60;
-  return Math.floor(minutesSinceMidnight / durationMinutes) + 1;
+  return new Date(now.getTime() + (utcOffset + kstOffset) * 60 * 1000);
+};
+
+// Check if current time is within operating hours (9AM-7PM KST)
+const isWithinOperatingHours = () => {
+  const kstTime = getKSTDate();
+  const hours = kstTime.getHours();
+  return hours >= 9 && hours < 19;
+};
+
+// Calculate current round number based on KST time (seconds precision)
+const calculateRoundNumber = (durationSeconds: number): number => {
+  const kstTime = getKSTDate();
+  const secondsSinceMidnight = kstTime.getHours() * 3600 + kstTime.getMinutes() * 60 + kstTime.getSeconds();
+  return Math.floor(secondsSinceMidnight / durationSeconds) + 1;
 };
 
 // Get max rounds per day based on duration
 const getMaxRoundsPerDay = (durationSeconds: number): number => {
-  const durationMinutes = durationSeconds / 60;
-  return Math.floor(24 * 60 / durationMinutes);
+  return Math.floor(24 * 3600 / durationSeconds);
+};
+
+// Get remaining seconds in current round
+const getRoundTimeRemaining = (durationSeconds: number): number => {
+  const kstTime = getKSTDate();
+  const secondsSinceMidnight = kstTime.getHours() * 3600 + kstTime.getMinutes() * 60 + kstTime.getSeconds();
+  const elapsedInRound = secondsSinceMidnight % durationSeconds;
+  return durationSeconds - elapsedInRound;
+};
+
+// Format time as mm:ss
+const formatTime = (seconds: number): string => {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
 
 export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormProps) {
   const [amount, setAmount] = useState<string>("10000");
   const [currentRound, setCurrentRound] = useState(calculateRoundNumber(game.duration));
+  const [timeRemaining, setTimeRemaining] = useState(getRoundTimeRemaining(game.duration));
   const maxRounds = getMaxRoundsPerDay(game.duration);
   const availableBalance = balance ? parseFloat(balance) : 0;
 
   useEffect(() => {
-    setCurrentRound(calculateRoundNumber(game.duration));
-    const interval = setInterval(() => {
-      setCurrentRound(calculateRoundNumber(game.duration));
-    }, 10000);
+    const updateRoundInfo = () => {
+      const newRound = calculateRoundNumber(game.duration);
+      const newTime = getRoundTimeRemaining(game.duration);
+      setCurrentRound(newRound);
+      setTimeRemaining(newTime);
+    };
+    
+    updateRoundInfo();
+    const interval = setInterval(updateRoundInfo, 1000);
     return () => clearInterval(interval);
   }, [game.duration]);
+
   const betAmount = parseFloat(amount) || 0;
   const potentialWin = betAmount * MULTIPLIER;
 
@@ -134,14 +152,28 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
               {formatDuration(game.duration)}
             </span>
           </div>
-          <div className="flex items-center justify-center gap-2 bg-yellow-500/20 rounded py-1.5 px-2">
-            <Hash className="w-3.5 h-3.5 text-yellow-500" />
-            <span className="text-sm font-bold text-yellow-500">
-              {currentRound}회차
-            </span>
-            <span className="text-xs text-yellow-500/70">
-              / {maxRounds}회
-            </span>
+          <div className="grid grid-cols-2 gap-2 mt-2">
+            <div className="flex items-center justify-center gap-2 bg-yellow-500/20 rounded py-2 px-2">
+              <Hash className="w-3.5 h-3.5 text-yellow-500" />
+              <span className="text-sm font-bold text-yellow-500">
+                {currentRound}회차
+              </span>
+              <span className="text-xs text-yellow-500/70">
+                / {maxRounds}회
+              </span>
+            </div>
+            <div className={cn(
+              "flex items-center justify-center gap-2 rounded py-2 px-2",
+              timeRemaining <= 10 ? "bg-red-500/20 animate-pulse" : "bg-blue-500/20"
+            )}>
+              <Timer className={cn("w-3.5 h-3.5", timeRemaining <= 10 ? "text-red-500" : "text-blue-500")} />
+              <span className={cn(
+                "text-lg font-bold font-mono",
+                timeRemaining <= 10 ? "text-red-500" : "text-blue-500"
+              )}>
+                {formatTime(timeRemaining)}
+              </span>
+            </div>
           </div>
         </div>
 

@@ -8,7 +8,7 @@ import MemoryStore from "memorystore";
 import { broadcastToAdmins, broadcastToUser, onlineUsers } from "./index";
 import { parse as parseCookie } from "cookie";
 import { unsign } from "cookie-signature";
-import { calculateRoundNumber } from "@shared/rounds";
+import { calculateRoundNumber, getRoundEndTime, getRoundTimeRemaining } from "@shared/rounds";
 
 const SessionStore = MemoryStore(session);
 
@@ -374,8 +374,13 @@ export async function registerRoutes(
         return res.status(400).json({ error: "잔고가 부족합니다" });
       }
 
-      const expiresAt = new Date(Date.now() + duration * 1000);
       const roundNumber = calculateRoundNumber(duration);
+      const expiresAt = getRoundEndTime(duration);
+      const timeRemaining = getRoundTimeRemaining(duration);
+      
+      if (timeRemaining < 3) {
+        return res.status(400).json({ error: "이 회차는 마감되었습니다. 다음 회차에 베팅해주세요." });
+      }
 
       const bet = await storage.createBet({
         userId,
@@ -1607,8 +1612,8 @@ export async function registerRoutes(
         return res.status(400).json({ error: `잔고 부족: 현재 잔고 ₩${formattedBalance}` });
       }
 
-      const expiresAt = new Date(Date.now() + parsedDuration * 1000);
       const roundNumber = calculateRoundNumber(parsedDuration);
+      const expiresAt = getRoundEndTime(parsedDuration);
       const newBalance = (currentBalance - betAmount).toString();
 
       await storage.updateUserBalance(userId, newBalance);
