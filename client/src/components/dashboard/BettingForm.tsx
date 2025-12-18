@@ -163,13 +163,10 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
             </span>
           </div>
           <div className="grid grid-cols-2 gap-2 mt-2">
-            <div className="flex items-center justify-center gap-2 bg-yellow-500/20 rounded py-2 px-2">
-              <Hash className="w-3.5 h-3.5 text-yellow-500" />
-              <span className="text-sm font-bold text-yellow-500">
-                {currentRound}회차
-              </span>
-              <span className="text-xs text-yellow-500/70">
-                / {maxRounds}회
+            <div className="flex items-center justify-center gap-1.5 bg-yellow-500/20 rounded py-2 px-2">
+              <Hash className="w-3.5 h-3.5 text-yellow-500 shrink-0" />
+              <span className="text-sm font-bold text-yellow-500 whitespace-nowrap">
+                {currentRound}<span className="text-yellow-500/70 font-normal">/{maxRounds}</span>
               </span>
             </div>
             <div className={cn(
@@ -252,25 +249,27 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
             onClick={() => handleBetClick('long')}
             disabled={isBettingLocked}
             className={cn(
-              "h-11 lg:h-14 text-sm lg:text-base font-bold text-white",
+              "h-11 lg:h-14 text-xs lg:text-sm font-bold text-white flex items-center justify-center gap-1",
               isBettingLocked ? "bg-gray-500 cursor-not-allowed" : "bg-up hover:bg-up/90"
             )}
             data-testid="button-long"
           >
-            <TrendingUp className="w-4 h-4 lg:w-5 lg:h-5 mr-1 lg:mr-2" />
-            LONG (매수)
+            <TrendingUp className="w-4 h-4 shrink-0" />
+            <span>LONG</span>
+            <span className="text-white/80 font-normal">(매수)</span>
           </Button>
           <Button 
             onClick={() => handleBetClick('short')}
             disabled={isBettingLocked}
             className={cn(
-              "h-11 lg:h-14 text-sm lg:text-base font-bold text-white",
+              "h-11 lg:h-14 text-xs lg:text-sm font-bold text-white flex items-center justify-center gap-1",
               isBettingLocked ? "bg-gray-500 cursor-not-allowed" : "bg-down hover:bg-down/90"
             )}
             data-testid="button-short"
           >
-            <TrendingDown className="w-4 h-4 lg:w-5 lg:h-5 mr-1 lg:mr-2" />
-            SHORT (매도)
+            <TrendingDown className="w-4 h-4 shrink-0" />
+            <span>SHORT</span>
+            <span className="text-white/80 font-normal">(매도)</span>
           </Button>
         </div>
       </div>
