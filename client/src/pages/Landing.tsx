@@ -1793,6 +1793,7 @@ export default function Landing() {
                       setInquiryContent('');
                       setShowInquiryFormModal(false);
                       refetchInquiries();
+                      setShowMyInquiriesModal(true);
                     } catch (error: any) {
                       toast.error(error.message || '문의 등록에 실패했습니다');
                     } finally {
