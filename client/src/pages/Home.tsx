@@ -132,8 +132,8 @@ export default function Home() {
       <Navbar onSelectGame={setSelectedGameId} selectedGameId={selectedGameId} />
       <Ticker data={marketData} />
       
-      <main className="flex-1 flex min-h-0 overflow-hidden">
-        {/* Left: Game List */}
+      <main className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden">
+        {/* Left: Game List - Hidden on mobile/tablet */}
         <div className="hidden xl:flex flex-col border-r border-border">
            <MarketOverview 
              data={marketData} 
@@ -143,31 +143,48 @@ export default function Home() {
            />
         </div>
 
-        {/* Center: Chart + Bets */}
-        <div className="flex-1 flex flex-col min-w-0">
-          <ResizablePanelGroup direction="vertical">
-            <ResizablePanel defaultSize={60} minSize={30}>
-              <div className="h-full border-b border-border">
-                <PriceChart symbol={selectedGame.symbol} data={currentMarket} />
-              </div>
-            </ResizablePanel>
-            
-            <ResizableHandle withHandle />
-            
-            <ResizablePanel defaultSize={40} minSize={20}>
-              <div className="h-full">
-                <BetsPanel 
-                  bets={allBets} 
-                  currentPrices={currentPrices}
-                  onBetExpire={handleBetExpire}
-                />
-              </div>
-            </ResizablePanel>
-          </ResizablePanelGroup>
+        {/* Center: Chart + Bets - Full width on mobile */}
+        <div className="flex-1 flex flex-col min-w-0 min-h-0">
+          {/* Mobile: Stack vertically without resizable */}
+          <div className="lg:hidden flex flex-col h-full overflow-hidden">
+            <div className="h-[45vh] min-h-[200px] border-b border-border">
+              <PriceChart symbol={selectedGame.symbol} data={currentMarket} />
+            </div>
+            <div className="flex-1 min-h-[150px] overflow-auto">
+              <BetsPanel 
+                bets={allBets} 
+                currentPrices={currentPrices}
+                onBetExpire={handleBetExpire}
+              />
+            </div>
+          </div>
+          
+          {/* Desktop: Resizable panels */}
+          <div className="hidden lg:flex flex-col h-full">
+            <ResizablePanelGroup direction="vertical">
+              <ResizablePanel defaultSize={60} minSize={30}>
+                <div className="h-full border-b border-border">
+                  <PriceChart symbol={selectedGame.symbol} data={currentMarket} />
+                </div>
+              </ResizablePanel>
+              
+              <ResizableHandle withHandle />
+              
+              <ResizablePanel defaultSize={40} minSize={20}>
+                <div className="h-full">
+                  <BetsPanel 
+                    bets={allBets} 
+                    currentPrices={currentPrices}
+                    onBetExpire={handleBetExpire}
+                  />
+                </div>
+              </ResizablePanel>
+            </ResizablePanelGroup>
+          </div>
         </div>
 
-        {/* Right: Betting Form */}
-        <div className="flex flex-col border-l border-border w-[320px] shrink-0">
+        {/* Right: Betting Form - Bottom sheet on mobile, sidebar on desktop */}
+        <div className="flex flex-col border-t lg:border-t-0 lg:border-l border-border w-full lg:w-[320px] shrink-0 max-h-[50vh] lg:max-h-none overflow-auto">
           <BettingForm 
             currentPrice={currentMarket.price} 
             game={selectedGame}
