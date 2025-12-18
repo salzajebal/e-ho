@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Bet } from "@/hooks/use-bets";
-import { TrendingUp, TrendingDown, Clock, Trophy, XCircle, Calendar, History } from "lucide-react";
+import { TrendingUp, TrendingDown, Clock, Trophy, XCircle, Calendar } from "lucide-react";
 
 function getKSTDate(): Date {
   const now = new Date();
@@ -21,21 +21,10 @@ function isToday(dateString: string): boolean {
   return kstToday.getTime() === kstBetDay.getTime();
 }
 
-interface GameResult {
-  round: number;
-  openPrice: number;
-  closePrice: number;
-  direction: 'up' | 'down';
-  time: string;
-}
-
 interface BetsPanelProps {
   bets: Bet[];
   currentPrices: Record<string, number>;
   onBetExpire: (bet: Bet, currentPrice: number) => void;
-  gameSymbol?: string;
-  gameDuration?: number;
-  currentPrice?: number;
 }
 
 function BetRow({ bet, currentPrice, onExpire }: { bet: Bet; currentPrice: number; onExpire: (price: number) => void }) {
@@ -167,113 +156,8 @@ function BetRow({ bet, currentPrice, onExpire }: { bet: Bet; currentPrice: numbe
   );
 }
 
-function calculateRoundNumber(durationSeconds: number): number {
-  const kstTime = getKSTDate();
-  const secondsSinceMidnight = kstTime.getHours() * 3600 + kstTime.getMinutes() * 60 + kstTime.getSeconds();
-  return Math.floor(secondsSinceMidnight / durationSeconds) + 1;
-}
-
-function formatKSTTime(date: Date): string {
-  return date.toLocaleTimeString('ko-KR', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
-}
-
-function useGameHistory(symbol: string | undefined, duration: number | undefined, currentPrice: number | undefined) {
-  const [gameResults, setGameResults] = useState<GameResult[]>([]);
-  const lastRoundRef = useRef<number>(0);
-  const lastPriceRef = useRef<number>(currentPrice || 0);
-  const roundStartPriceRef = useRef<number>(currentPrice || 0);
-
-  useEffect(() => {
-    if (currentPrice) lastPriceRef.current = currentPrice;
-  }, [currentPrice]);
-
-  useEffect(() => {
-    if (!duration || !currentPrice) return;
-    
-    const checkForNewRound = () => {
-      const currentRound = calculateRoundNumber(duration);
-      
-      if (lastRoundRef.current === 0) {
-        lastRoundRef.current = currentRound;
-        roundStartPriceRef.current = currentPrice;
-        return;
-      }
-
-      if (currentRound > lastRoundRef.current) {
-        const closePrice = lastPriceRef.current;
-        const openPrice = roundStartPriceRef.current;
-        const direction = closePrice >= openPrice ? 'up' : 'down';
-        
-        const newResult: GameResult = {
-          round: lastRoundRef.current,
-          openPrice,
-          closePrice,
-          direction,
-          time: formatKSTTime(getKSTDate()),
-        };
-
-        setGameResults(prev => [newResult, ...prev].slice(0, 20));
-        
-        lastRoundRef.current = currentRound;
-        roundStartPriceRef.current = currentPrice;
-      }
-    };
-
-    checkForNewRound();
-    const interval = setInterval(checkForNewRound, 1000);
-    return () => clearInterval(interval);
-  }, [duration, currentPrice]);
-
-  useEffect(() => {
-    if (!symbol || !duration || !currentPrice) return;
-    
-    lastRoundRef.current = 0;
-    roundStartPriceRef.current = currentPrice;
-    
-    const generatePastResults = () => {
-      const currentRound = calculateRoundNumber(duration);
-      const results: GameResult[] = [];
-      let price = currentPrice;
-      
-      for (let i = 1; i <= 15; i++) {
-        const round = currentRound - i;
-        if (round <= 0) break;
-        
-        const change = price * 0.006 * (Math.random() - 0.5) * 2;
-        const openPrice = price - change;
-        const closePrice = price;
-        const direction = closePrice >= openPrice ? 'up' : 'down';
-        
-        const kst = getKSTDate();
-        const pastTime = new Date(kst.getTime() - i * duration * 1000);
-        
-        results.push({
-          round,
-          openPrice,
-          closePrice,
-          direction,
-          time: formatKSTTime(pastTime),
-        });
-        
-        price = openPrice;
-      }
-      
-      setGameResults(results);
-    };
-    
-    generatePastResults();
-  }, [symbol, duration, currentPrice]);
-
-  return gameResults;
-}
-
-export function BetsPanel({ bets, currentPrices, onBetExpire, gameSymbol, gameDuration, currentPrice }: BetsPanelProps) {
-  const [activeTab, setActiveTab] = useState<'active' | 'today' | 'history' | 'games'>('active');
-  const gameResults = useGameHistory(gameSymbol, gameDuration, currentPrice);
+export function BetsPanel({ bets, currentPrices, onBetExpire }: BetsPanelProps) {
+  const [activeTab, setActiveTab] = useState<'active' | 'today' | 'history'>('active');
   
   const activeBets = bets.filter(b => b.outcome === 'pending');
   const settledBets = bets.filter(b => b.outcome !== 'pending');
@@ -327,17 +211,6 @@ export function BetsPanel({ bets, currentPrices, onBetExpire, gameSymbol, gameDu
           )}
         >
           전체 ({settledBets.length})
-        </button>
-        <button 
-          onClick={() => setActiveTab('games')}
-          className={cn(
-            "text-xs font-medium h-full px-1 transition-colors",
-            activeTab === 'games' 
-              ? "text-primary border-b-2 border-primary" 
-              : "text-muted-foreground hover:text-foreground"
-          )}
-        >
-          게임결과
         </button>
         
         {activeTab === 'today' && todayBets.length > 0 && (
@@ -432,67 +305,6 @@ export function BetsPanel({ bets, currentPrices, onBetExpire, gameSymbol, gameDu
                   currentPrice={parseFloat(bet.closePrice || bet.strikePrice)}
                   onExpire={() => {}}
                 />
-              ))}
-            </div>
-          )
-        )}
-        {activeTab === 'games' && (
-          gameResults.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-32 text-muted-foreground text-sm">
-              <History className="w-8 h-8 mb-2 opacity-50" />
-              <span>게임 결과가 없습니다.</span>
-            </div>
-          ) : (
-            <div className="divide-y divide-border/50">
-              {gameResults.map((result, idx) => (
-                <div 
-                  key={`${result.round}-${idx}`}
-                  className={cn(
-                    "flex items-center gap-3 px-4 py-2.5 hover:bg-muted/10",
-                    idx === 0 && "bg-muted/20"
-                  )}
-                >
-                  <div className={cn(
-                    "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
-                    result.direction === 'up' ? "bg-up/20" : "bg-down/20"
-                  )}>
-                    {result.direction === 'up' ? (
-                      <TrendingUp className="w-4 h-4 text-up" />
-                    ) : (
-                      <TrendingDown className="w-4 h-4 text-down" />
-                    )}
-                  </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium text-muted-foreground">
-                        {result.round}회차
-                      </span>
-                      <span className="text-xs text-muted-foreground/60">
-                        {result.time}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1 text-xs">
-                      <span className="text-muted-foreground">
-                        {result.openPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </span>
-                      <span className="text-muted-foreground">→</span>
-                      <span className={cn(
-                        "font-mono font-medium",
-                        result.direction === 'up' ? "text-up" : "text-down"
-                      )}>
-                        {result.closePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className={cn(
-                    "px-2 py-1 rounded text-xs font-bold shrink-0",
-                    result.direction === 'up' ? "bg-up/20 text-up" : "bg-down/20 text-down"
-                  )}>
-                    {result.direction === 'up' ? 'UP' : 'DOWN'}
-                  </div>
-                </div>
               ))}
             </div>
           )

@@ -166,9 +166,6 @@ export default function Home() {
               bets={allBets} 
               currentPrices={currentPrices}
               onBetExpire={handleBetExpire}
-              gameSymbol={selectedGame.symbol}
-              gameDuration={selectedGame.duration}
-              currentPrice={currentMarket.price}
             />
           </div>
         </div>
@@ -192,9 +189,6 @@ export default function Home() {
                     bets={allBets} 
                     currentPrices={currentPrices}
                     onBetExpire={handleBetExpire}
-                    gameSymbol={selectedGame.symbol}
-                    gameDuration={selectedGame.duration}
-                    currentPrice={currentMarket.price}
                   />
                 </div>
               </ResizablePanel>

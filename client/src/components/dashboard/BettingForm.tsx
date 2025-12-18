@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { TrendingUp, TrendingDown, Clock, Hash, Timer } from "lucide-react";
+import { TrendingUp, TrendingDown, Clock, Hash, Timer, History } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface Game {
   id: string;
@@ -17,6 +18,12 @@ interface BettingFormProps {
   game: Game;
   balance?: string;
   onBet: (direction: 'long' | 'short', amount: number) => void;
+}
+
+interface GameResult {
+  round: number;
+  direction: 'up' | 'down';
+  time: string;
 }
 
 const MULTIPLIER = 2.00;
@@ -63,25 +70,90 @@ const formatTime = (seconds: number): string => {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
 
+// Storage key for game results per game type
+const getStorageKey = (gameId: string) => `gameResults_${gameId}_${getKSTDate().toDateString()}`;
+
 export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormProps) {
   const [amount, setAmount] = useState<string>("10000");
   const [currentRound, setCurrentRound] = useState(calculateRoundNumber(game.duration));
   const [timeRemaining, setTimeRemaining] = useState(getRoundTimeRemaining(game.duration));
+  const [gameResults, setGameResults] = useState<GameResult[]>([]);
+  const lastRoundRef = useRef<number>(0);
+  const roundStartPriceRef = useRef<number>(currentPrice);
+  const lastPriceRef = useRef<number>(currentPrice);
   const maxRounds = getMaxRoundsPerDay(game.duration);
   const availableBalance = balance ? parseFloat(balance) : 0;
 
+  // Update last price ref
   useEffect(() => {
-    const updateRoundInfo = () => {
+    lastPriceRef.current = currentPrice;
+  }, [currentPrice]);
+
+  // Load saved results from localStorage
+  useEffect(() => {
+    const storageKey = getStorageKey(game.id);
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setGameResults(parsed);
+      } catch (e) {
+        setGameResults([]);
+      }
+    } else {
+      setGameResults([]);
+    }
+    lastRoundRef.current = 0;
+    roundStartPriceRef.current = currentPrice;
+  }, [game.id]);
+
+  // Track round changes and record results
+  useEffect(() => {
+    const checkForNewRound = () => {
       const newRound = calculateRoundNumber(game.duration);
       const newTime = getRoundTimeRemaining(game.duration);
       setCurrentRound(newRound);
       setTimeRemaining(newTime);
+      
+      // Initialize on first check
+      if (lastRoundRef.current === 0) {
+        lastRoundRef.current = newRound;
+        roundStartPriceRef.current = currentPrice;
+        return;
+      }
+      
+      // Round changed - record result
+      if (newRound > lastRoundRef.current) {
+        const closePrice = lastPriceRef.current;
+        const openPrice = roundStartPriceRef.current;
+        const direction = closePrice >= openPrice ? 'up' : 'down';
+        
+        const kstTime = getKSTDate();
+        const timeStr = kstTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+        
+        const newResult: GameResult = {
+          round: lastRoundRef.current,
+          direction,
+          time: timeStr,
+        };
+        
+        setGameResults(prev => {
+          const updated = [newResult, ...prev];
+          // Save to localStorage
+          const storageKey = getStorageKey(game.id);
+          localStorage.setItem(storageKey, JSON.stringify(updated));
+          return updated;
+        });
+        
+        lastRoundRef.current = newRound;
+        roundStartPriceRef.current = currentPrice;
+      }
     };
     
-    updateRoundInfo();
-    const interval = setInterval(updateRoundInfo, 1000);
+    checkForNewRound();
+    const interval = setInterval(checkForNewRound, 1000);
     return () => clearInterval(interval);
-  }, [game.duration]);
+  }, [game.duration, game.id, currentPrice]);
 
   const betAmount = parseFloat(amount) || 0;
   const potentialWin = betAmount * MULTIPLIER;
@@ -255,6 +327,45 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
             <span>SHORT</span>
             <span className="text-white/80 font-normal">(매도)</span>
           </Button>
+        </div>
+
+        {/* Game Results Section */}
+        <div className="mt-4 border-t border-border pt-3">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-1.5">
+              <History className="w-3.5 h-3.5 text-muted-foreground" />
+              <span className="text-xs font-medium text-muted-foreground">오늘 게임결과</span>
+            </div>
+            <span className="text-xs text-muted-foreground">{gameResults.length}회</span>
+          </div>
+          
+          {gameResults.length === 0 ? (
+            <div className="text-center py-4 text-xs text-muted-foreground">
+              아직 기록된 게임이 없습니다
+            </div>
+          ) : (
+            <ScrollArea className="h-[120px] lg:h-[160px]">
+              <div className="grid grid-cols-5 gap-1">
+                {gameResults.map((result, idx) => (
+                  <div
+                    key={`${result.round}-${idx}`}
+                    className={cn(
+                      "flex flex-col items-center justify-center py-1.5 px-1 rounded text-xs",
+                      result.direction === 'up' ? "bg-up/20" : "bg-down/20"
+                    )}
+                    title={`${result.round}회차 ${result.time}`}
+                  >
+                    <span className="text-[10px] text-muted-foreground">{result.round}</span>
+                    {result.direction === 'up' ? (
+                      <TrendingUp className="w-3 h-3 text-up" />
+                    ) : (
+                      <TrendingDown className="w-3 h-3 text-down" />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          )}
         </div>
       </div>
     </div>
