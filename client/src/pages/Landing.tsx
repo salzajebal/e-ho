@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Shield, Zap, Headphones, TrendingUp, Lock, Award, X, ChevronDown, Phone, Mail, MessageCircle, History, Wallet } from "lucide-react";
+import { Shield, Zap, Headphones, TrendingUp, Lock, Award, X, ChevronDown, Phone, Mail, MessageCircle, History, Wallet, Menu } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useLogin, useRegister, useAuth, useLogout } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -146,6 +147,7 @@ export default function Landing() {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [showCustomerServiceModal, setShowCustomerServiceModal] = useState(false);
   const [showDepositModal, setShowDepositModal] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [transactionType, setTransactionType] = useState<'deposit' | 'withdrawal'>('deposit');
   const [transactionAmount, setTransactionAmount] = useState('');
   const [transactionSubmitting, setTransactionSubmitting] = useState(false);
@@ -344,27 +346,27 @@ export default function Landing() {
     <div className="min-h-screen bg-[#0a0a0f] text-white">
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-[#0a0a0f]/95 backdrop-blur-sm border-b border-white/5">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-3 md:px-4 h-14 md:h-16 flex items-center justify-between">
           {/* Logo */}
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-4 md:gap-8">
             <Link href="/" data-testid="link-logo">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 md:gap-3">
                 <img 
                   src="/logo.png" 
                   alt="Invest Korea Logo" 
-                  className="w-10 h-10 rounded-lg object-cover"
+                  className="w-8 h-8 md:w-10 md:h-10 rounded-lg object-cover"
                 />
                 <div className="flex flex-col">
-                  <span className="text-xl font-bold tracking-wide">
+                  <span className="text-lg md:text-xl font-bold tracking-wide">
                     <span className="text-white">INVEST</span>
                     <span className="text-orange-500 ml-1">KOREA</span>
                   </span>
-                  <span className="text-[10px] text-gray-400 tracking-widest uppercase">Premium Trading</span>
+                  <span className="hidden sm:block text-[10px] text-gray-400 tracking-widest uppercase">Premium Trading</span>
                 </div>
               </div>
             </Link>
             
-            {/* Navigation */}
+            {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-6">
               <DropdownMenu>
                 <DropdownMenuTrigger className="text-gray-300 hover:text-orange-500 transition-colors text-sm font-medium flex items-center gap-1" data-testid="nav-options-trading">
@@ -425,12 +427,12 @@ export default function Landing() {
             </nav>
           </div>
           
-          {/* Auth Buttons */}
-          <div className="flex items-center gap-3">
+          {/* Auth Buttons - Desktop */}
+          <div className="hidden md:flex items-center gap-3">
             {user ? (
               <>
                 {/* Balance Display */}
-                <div className="hidden sm:flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5">
+                <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5">
                   <Wallet className="w-4 h-4 text-orange-500" />
                   <span className="text-gray-400 text-xs">잔고</span>
                   <span className="text-white font-bold text-sm" data-testid="text-header-balance">
@@ -439,7 +441,7 @@ export default function Landing() {
                 </div>
                 
                 {/* Deposit/Withdraw Buttons */}
-                <div className="hidden md:flex items-center gap-1">
+                <div className="flex items-center gap-1">
                   <Button 
                     variant="ghost"
                     size="sm"
@@ -509,6 +511,125 @@ export default function Landing() {
               </>
             )}
           </div>
+          
+          {/* Mobile Menu Button */}
+          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+            <SheetTrigger asChild>
+              <button className="md:hidden p-2 text-gray-300 hover:text-white">
+                <Menu className="w-6 h-6" />
+              </button>
+            </SheetTrigger>
+            <SheetContent side="right" className="bg-[#0a0a0f] border-white/10 w-[280px]">
+              <SheetHeader>
+                <SheetTitle className="text-white text-left">메뉴</SheetTitle>
+              </SheetHeader>
+              <nav className="flex flex-col gap-2 mt-6">
+                {user && (
+                  <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2 mb-4">
+                    <Wallet className="w-4 h-4 text-orange-500" />
+                    <span className="text-gray-400 text-xs">잔고</span>
+                    <span className="text-white font-bold text-sm">
+                      {balanceData?.balance ? Math.floor(parseFloat(balanceData.balance)).toLocaleString() : '0'}원
+                    </span>
+                  </div>
+                )}
+                
+                <button 
+                  onClick={() => {
+                    if (user) {
+                      setLocation("/trade");
+                    } else {
+                      setShowLoginModal(true);
+                    }
+                    setMobileMenuOpen(false);
+                  }}
+                  className="text-left text-gray-300 hover:text-orange-500 py-3 border-b border-white/10"
+                >
+                  옵션거래
+                </button>
+                <button 
+                  onClick={() => {
+                    if (user) {
+                      setShowHistoryModal(true);
+                    } else {
+                      setShowLoginModal(true);
+                    }
+                    setMobileMenuOpen(false);
+                  }}
+                  className="text-left text-gray-300 hover:text-orange-500 py-3 border-b border-white/10"
+                >
+                  거래내역
+                </button>
+                <button 
+                  onClick={() => {
+                    if (user) {
+                      setShowDepositModal(true);
+                    } else {
+                      setShowLoginModal(true);
+                    }
+                    setMobileMenuOpen(false);
+                  }}
+                  className="text-left text-gray-300 hover:text-orange-500 py-3 border-b border-white/10"
+                >
+                  입출금
+                </button>
+                <button 
+                  onClick={() => {
+                    setShowCustomerServiceModal(true);
+                    setMobileMenuOpen(false);
+                  }}
+                  className="text-left text-gray-300 hover:text-orange-500 py-3 border-b border-white/10"
+                >
+                  고객센터
+                </button>
+                
+                <div className="mt-4 flex flex-col gap-2">
+                  {user ? (
+                    <>
+                      <p className="text-gray-400 text-sm mb-2">{user.username}님</p>
+                      {user.role === 'admin' && (
+                        <Button 
+                          className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold" 
+                          onClick={() => { setLocation("/admin"); setMobileMenuOpen(false); }}
+                        >
+                          관리자
+                        </Button>
+                      )}
+                      <Button 
+                        className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold" 
+                        onClick={() => { setLocation("/trade"); setMobileMenuOpen(false); }}
+                      >
+                        거래하기
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className="w-full border-white/20 text-gray-300 hover:text-white" 
+                        onClick={() => { logout.mutate(); setMobileMenuOpen(false); }}
+                      >
+                        로그아웃
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button 
+                        variant="outline" 
+                        className="w-full border-white/20 text-gray-300 hover:text-white" 
+                        onClick={() => { setShowLoginModal(true); setMobileMenuOpen(false); }}
+                      >
+                        로그인
+                      </Button>
+                      <Button 
+                        className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold" 
+                        onClick={() => { setShowRegisterModal(true); setMobileMenuOpen(false); }}
+                      >
+                        회원가입
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </nav>
+            </SheetContent>
+          </Sheet>
         </div>
       </header>
 

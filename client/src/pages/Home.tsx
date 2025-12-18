@@ -128,11 +128,11 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-background text-foreground overflow-hidden font-sans">
+    <div className="flex flex-col h-screen bg-background text-foreground lg:overflow-hidden font-sans">
       <Navbar onSelectGame={setSelectedGameId} selectedGameId={selectedGameId} />
       <Ticker data={marketData} />
       
-      <main className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden">
+      <main className="flex-1 flex flex-col lg:flex-row min-h-0 lg:overflow-hidden">
         {/* Left: Game List - Hidden on mobile/tablet */}
         <div className="hidden xl:flex flex-col border-r border-border">
            <MarketOverview 
@@ -143,24 +143,37 @@ export default function Home() {
            />
         </div>
 
-        {/* Center: Chart + Bets - Full width on mobile */}
-        <div className="flex-1 flex flex-col min-w-0 min-h-0">
-          {/* Mobile: Stack vertically without resizable */}
-          <div className="lg:hidden flex flex-col h-full overflow-hidden">
-            <div className="h-[45vh] min-h-[200px] border-b border-border">
-              <PriceChart symbol={selectedGame.symbol} data={currentMarket} />
-            </div>
-            <div className="flex-1 min-h-[150px] overflow-auto">
-              <BetsPanel 
-                bets={allBets} 
-                currentPrices={currentPrices}
-                onBetExpire={handleBetExpire}
-              />
-            </div>
+        {/* Mobile Layout: Full scrollable container with all sections */}
+        <div className="lg:hidden flex-1 min-h-0 overflow-auto">
+          {/* Chart */}
+          <div className="h-[35vh] min-h-[180px] border-b border-border">
+            <PriceChart symbol={selectedGame.symbol} data={currentMarket} />
           </div>
           
-          {/* Desktop: Resizable panels */}
-          <div className="hidden lg:flex flex-col h-full">
+          {/* Betting Form on Mobile */}
+          <div className="border-b border-border">
+            <BettingForm 
+              currentPrice={currentMarket.price} 
+              game={selectedGame}
+              onBet={handleBet}
+              balance={balanceData?.balance}
+            />
+          </div>
+          
+          {/* Bets Panel */}
+          <div className="min-h-[200px]">
+            <BetsPanel 
+              bets={allBets} 
+              currentPrices={currentPrices}
+              onBetExpire={handleBetExpire}
+            />
+          </div>
+        </div>
+        
+        {/* Desktop Layout: Resizable center panels + sidebar */}
+        <div className="hidden lg:flex flex-1 flex-row min-h-0">
+          {/* Center: Chart + Bets with Resizable */}
+          <div className="flex-1 flex flex-col min-w-0">
             <ResizablePanelGroup direction="vertical">
               <ResizablePanel defaultSize={60} minSize={30}>
                 <div className="h-full border-b border-border">
@@ -181,27 +194,27 @@ export default function Home() {
               </ResizablePanel>
             </ResizablePanelGroup>
           </div>
-        </div>
 
-        {/* Right: Betting Form - Bottom sheet on mobile, sidebar on desktop */}
-        <div className="flex flex-col border-t lg:border-t-0 lg:border-l border-border w-full lg:w-[320px] shrink-0 max-h-[50vh] lg:max-h-none overflow-auto">
-          <BettingForm 
-            currentPrice={currentMarket.price} 
-            game={selectedGame}
-            onBet={handleBet}
-            balance={balanceData?.balance}
-          />
+          {/* Right: Betting Form Sidebar */}
+          <div className="flex flex-col border-l border-border w-[320px] shrink-0 overflow-auto">
+            <BettingForm 
+              currentPrice={currentMarket.price} 
+              game={selectedGame}
+              onBet={handleBet}
+              balance={balanceData?.balance}
+            />
+          </div>
         </div>
       </main>
       
       {/* Footer */}
-      <div className="h-6 bg-card border-t border-border flex items-center px-4 text-[10px] text-muted-foreground justify-between">
-        <div className="flex gap-4">
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-up animate-pulse"></span> 실시간 데이터 연결됨</span>
-          <span>배당률: 2.0x</span>
+      <div className="h-6 bg-card border-t border-border flex items-center px-2 lg:px-4 text-[9px] lg:text-[10px] text-muted-foreground justify-between">
+        <div className="flex gap-2 lg:gap-4">
+          <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 lg:w-2 lg:h-2 rounded-full bg-up animate-pulse"></span> <span className="hidden sm:inline">실시간 데이터</span><span className="sm:hidden">Live</span></span>
+          <span>2.0x</span>
         </div>
         <div className="flex items-center gap-2">
-          <span>잔고: {balanceData?.balance ? Math.floor(parseFloat(balanceData.balance)).toLocaleString() : '0'}원</span>
+          <span>{balanceData?.balance ? Math.floor(parseFloat(balanceData.balance)).toLocaleString() : '0'}원</span>
         </div>
       </div>
 

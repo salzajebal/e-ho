@@ -89,27 +89,27 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
   };
 
   return (
-    <div className="flex flex-col h-full bg-card w-full">
-      <div className="flex items-center justify-between px-4 h-10 border-b border-border bg-muted/20 shrink-0">
+    <div className="flex flex-col lg:h-full bg-card w-full">
+      <div className="flex items-center justify-between px-3 lg:px-4 h-10 border-b border-border bg-muted/20 shrink-0">
         <h2 className="text-sm font-semibold text-foreground">베팅</h2>
         <span className="text-xs text-muted-foreground">배당률: {MULTIPLIER}x</span>
       </div>
 
-      <div className="p-4 space-y-5 flex-1 overflow-y-auto">
-        <div className="bg-primary/10 rounded-lg p-3 border border-primary/20">
+      <div className="p-3 lg:p-4 space-y-3 lg:space-y-5 lg:flex-1 lg:overflow-y-auto">
+        <div className="bg-primary/10 rounded-lg p-2 lg:p-3 border border-primary/20">
           <div className="flex items-center justify-between">
-            <span className="font-semibold text-foreground">{game.label}</span>
+            <span className="font-semibold text-foreground text-sm lg:text-base">{game.label}</span>
             <span className={cn(
-              "inline-flex items-center gap-1 px-2 py-1 rounded text-sm font-bold",
+              "inline-flex items-center gap-1 px-2 py-1 rounded text-xs lg:text-sm font-bold",
               "bg-primary text-primary-foreground"
             )}>
-              <Clock className="w-4 h-4" />
+              <Clock className="w-3 h-3 lg:w-4 lg:h-4" />
               {formatDuration(game.duration)}
             </span>
           </div>
         </div>
 
-        <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-2 lg:space-y-3 lg:block">
           <div className="flex justify-between text-xs">
             <span className="text-muted-foreground">가용 잔고</span>
             <span className="text-foreground font-mono font-semibold">
@@ -132,19 +132,19 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
               type="number" 
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="font-mono text-lg text-right pr-10 h-12 bg-input border-border focus-visible:ring-primary"
+              className="font-mono text-base lg:text-lg text-right pr-10 h-10 lg:h-12 bg-input border-border focus-visible:ring-primary"
               data-testid="input-bet-amount"
               min="1000"
               step="1000"
             />
-            <span className="absolute right-3 top-3.5 text-sm text-muted-foreground">원</span>
+            <span className="absolute right-3 top-2.5 lg:top-3.5 text-sm text-muted-foreground">원</span>
           </div>
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-4 gap-1.5 lg:gap-2">
             {[0.1, 0.25, 0.5, 1].map((percent) => (
               <button
                 key={percent}
                 onClick={() => handleQuickAmount(percent)}
-                className="py-1.5 text-xs rounded bg-muted/30 text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
+                className="py-1 lg:py-1.5 text-xs rounded bg-muted/30 text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
               >
                 {percent * 100}%
               </button>
@@ -152,32 +152,32 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
           </div>
         </div>
 
-        <div className="bg-muted/20 rounded-lg p-3 space-y-2">
+        <div className="bg-muted/20 rounded-lg p-2 lg:p-3 space-y-1 lg:space-y-2">
           <div className="flex justify-between text-xs">
             <span className="text-muted-foreground">베팅 금액</span>
             <span className="text-foreground font-mono">{betAmount.toLocaleString()}원</span>
           </div>
           <div className="flex justify-between text-xs">
-            <span className="text-muted-foreground">예상 수익 (승리 시)</span>
+            <span className="text-muted-foreground">예상 수익</span>
             <span className="text-up font-mono font-semibold">+{Math.floor(potentialWin).toLocaleString()}원</span>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 pt-2">
+        <div className="grid grid-cols-2 gap-2 lg:gap-3 pt-1 lg:pt-2">
           <Button 
             onClick={() => handleBetClick('long')}
-            className="h-14 text-base font-bold bg-up hover:bg-up/90 text-white"
+            className="h-11 lg:h-14 text-sm lg:text-base font-bold bg-up hover:bg-up/90 text-white"
             data-testid="button-long"
           >
-            <TrendingUp className="w-5 h-5 mr-2" />
+            <TrendingUp className="w-4 h-4 lg:w-5 lg:h-5 mr-1 lg:mr-2" />
             LONG (매수)
           </Button>
           <Button 
             onClick={() => handleBetClick('short')}
-            className="h-14 text-base font-bold bg-down hover:bg-down/90 text-white"
+            className="h-11 lg:h-14 text-sm lg:text-base font-bold bg-down hover:bg-down/90 text-white"
             data-testid="button-short"
           >
-            <TrendingDown className="w-5 h-5 mr-2" />
+            <TrendingDown className="w-4 h-4 lg:w-5 lg:h-5 mr-1 lg:mr-2" />
             SHORT (매도)
           </Button>
         </div>

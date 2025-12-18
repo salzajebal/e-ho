@@ -69,6 +69,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Menu } from "lucide-react";
 
 interface AdminUser {
   id: string;
@@ -1146,10 +1148,223 @@ export default function Admin() {
     return Math.floor(num).toLocaleString() + '원';
   };
 
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  const NavItems = () => (
+    <>
+      <button
+        onClick={() => { setActiveTab('dashboard'); setMobileMenuOpen(false); }}
+        className={cn(
+          "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+          activeTab === 'dashboard'
+            ? "bg-primary/10 text-primary"
+            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+        )}
+      >
+        <BarChart3 className="w-4 h-4" />
+        대시보드
+      </button>
+      <button
+        onClick={() => { setActiveTab('approvals'); setMobileMenuOpen(false); }}
+        className={cn(
+          "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors relative",
+          activeTab === 'approvals'
+            ? "bg-primary/10 text-primary"
+            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+        )}
+      >
+        <UserCheck className="w-4 h-4" />
+        가입 승인
+        {pendingUsers.length > 0 && (
+          <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center animate-pulse">
+            {pendingUsers.length}
+          </span>
+        )}
+      </button>
+      <button
+        onClick={() => { setActiveTab('transactions'); setMobileMenuOpen(false); }}
+        className={cn(
+          "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors relative",
+          activeTab === 'transactions'
+            ? "bg-primary/10 text-primary"
+            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+        )}
+      >
+        <Wallet className="w-4 h-4" />
+        입출금 관리
+        {pendingTransactions.length > 0 && (
+          <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-orange-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center animate-pulse">
+            {pendingTransactions.length}
+          </span>
+        )}
+      </button>
+      <button
+        onClick={() => { setActiveTab('users'); setMobileMenuOpen(false); }}
+        className={cn(
+          "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+          activeTab === 'users'
+            ? "bg-primary/10 text-primary"
+            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+        )}
+      >
+        <Users className="w-4 h-4" />
+        회원 관리
+      </button>
+      <button
+        onClick={() => { setActiveTab('bets'); setMobileMenuOpen(false); }}
+        className={cn(
+          "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+          activeTab === 'bets'
+            ? "bg-primary/10 text-primary"
+            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+        )}
+      >
+        <Target className="w-4 h-4" />
+        베팅 관리
+      </button>
+      <button
+        onClick={() => { setActiveTab('messages'); setMobileMenuOpen(false); }}
+        className={cn(
+          "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+          activeTab === 'messages'
+            ? "bg-primary/10 text-primary"
+            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+        )}
+      >
+        <MessageSquare className="w-4 h-4" />
+        쪽지 보내기
+      </button>
+      <button
+        onClick={() => { setActiveTab('affiliates'); setMobileMenuOpen(false); }}
+        className={cn(
+          "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+          activeTab === 'affiliates'
+            ? "bg-primary/10 text-primary"
+            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+        )}
+      >
+        <Share2 className="w-4 h-4" />
+        총판 관리
+      </button>
+      <button
+        onClick={() => { setActiveTab('announcements'); setMobileMenuOpen(false); }}
+        className={cn(
+          "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+          activeTab === 'announcements'
+            ? "bg-primary/10 text-primary"
+            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+        )}
+      >
+        <Bell className="w-4 h-4" />
+        공지사항
+      </button>
+      <button
+        onClick={() => { setActiveTab('blocked-ips'); setMobileMenuOpen(false); }}
+        className={cn(
+          "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+          activeTab === 'blocked-ips'
+            ? "bg-primary/10 text-primary"
+            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+        )}
+      >
+        <Ban className="w-4 h-4" />
+        IP 차단
+      </button>
+      <button
+        onClick={() => { setActiveTab('maintenance'); setMobileMenuOpen(false); }}
+        className={cn(
+          "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+          activeTab === 'maintenance'
+            ? "bg-primary/10 text-primary"
+            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+        )}
+      >
+        <Wrench className="w-4 h-4" />
+        서버 점검
+      </button>
+      <button
+        onClick={() => { setActiveTab('forced-bet'); setMobileMenuOpen(false); }}
+        className={cn(
+          "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+          activeTab === 'forced-bet'
+            ? "bg-primary/10 text-primary"
+            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+        )}
+        data-testid="tab-forced-bet"
+      >
+        <Zap className="w-4 h-4" />
+        강제 배팅
+      </button>
+      <button
+        onClick={() => { setActiveTab('settings'); setMobileMenuOpen(false); }}
+        className={cn(
+          "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+          activeTab === 'settings'
+            ? "bg-primary/10 text-primary"
+            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+        )}
+      >
+        <Shield className="w-4 h-4" />
+        설정
+      </button>
+    </>
+  );
+
   return (
-    <div className="min-h-screen bg-background flex">
-      {/* Sidebar */}
-      <div className="w-56 bg-card border-r border-border flex flex-col shrink-0">
+    <div className="min-h-screen bg-background flex flex-col lg:flex-row">
+      {/* Mobile Header */}
+      <div className="lg:hidden flex items-center justify-between p-3 bg-card border-b border-border sticky top-0 z-50">
+        <div className="flex items-center gap-2">
+          <img 
+            src="/logo.png" 
+            alt="Invest Korea Logo" 
+            className="w-7 h-7 rounded-lg object-cover"
+          />
+          <span className="font-bold text-sm">
+            <span className="text-white">INVEST</span>
+            <span className="text-orange-500 ml-1">KOREA</span>
+          </span>
+          <span className="text-xs text-muted-foreground">관리자</span>
+        </div>
+        <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+          <SheetTrigger asChild>
+            <button className="p-2 text-muted-foreground hover:text-foreground">
+              <Menu className="w-5 h-5" />
+            </button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-[260px] p-0 bg-card">
+            <SheetHeader className="p-4 border-b border-border">
+              <SheetTitle className="text-left text-sm">관리자 메뉴</SheetTitle>
+            </SheetHeader>
+            <nav className="p-3 space-y-1 max-h-[calc(100vh-120px)] overflow-y-auto">
+              <NavItems />
+            </nav>
+            <div className="p-3 border-t border-border space-y-2 absolute bottom-0 left-0 right-0 bg-card">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-start gap-2"
+                onClick={() => { setLocation("/"); setMobileMenuOpen(false); }}
+              >
+                <TrendingUp className="w-4 h-4" />
+                거래소
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start gap-2 text-muted-foreground"
+                onClick={() => { logout.mutate(); setMobileMenuOpen(false); }}
+              >
+                <LogOut className="w-4 h-4" />
+                로그아웃
+              </Button>
+            </div>
+          </SheetContent>
+        </Sheet>
+      </div>
+
+      {/* Desktop Sidebar */}
+      <div className="hidden lg:flex w-56 bg-card border-r border-border flex-col shrink-0">
         <div className="p-4 border-b border-border">
           <div className="flex items-center gap-2">
             <img 
@@ -1348,22 +1563,22 @@ export default function Admin() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-6 overflow-auto">
+      <div className="flex-1 p-3 lg:p-6 overflow-auto">
         {activeTab === 'dashboard' && (
-          <div className="space-y-6">
+          <div className="space-y-4 lg:space-y-6">
             <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold">대시보드</h1>
+              <h1 className="text-xl lg:text-2xl font-bold">대시보드</h1>
               <Button variant="outline" size="sm" onClick={() => { refetchStats(); refetchUsers(); refetchBets(); refetchOnlineUsers(); }}>
-                <RefreshCw className="w-4 h-4 mr-2" />
-                새로고침
+                <RefreshCw className="w-4 h-4 lg:mr-2" />
+                <span className="hidden lg:inline">새로고침</span>
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-              <div className="bg-card border border-border rounded-lg p-4">
-                <p className="text-sm text-muted-foreground">총 회원수</p>
-                <p className="text-2xl font-bold mt-1">{stats?.totalUsers || 0}명</p>
-                <p className="text-xs text-muted-foreground mt-1">활성: {stats?.activeUsers || 0}명</p>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 lg:gap-4">
+              <div className="bg-card border border-border rounded-lg p-3 lg:p-4">
+                <p className="text-xs lg:text-sm text-muted-foreground">총 회원수</p>
+                <p className="text-lg lg:text-2xl font-bold mt-1">{stats?.totalUsers || 0}명</p>
+                <p className="text-[10px] lg:text-xs text-muted-foreground mt-1">활성: {stats?.activeUsers || 0}명</p>
               </div>
               <div className="bg-card border border-border rounded-lg p-4">
                 <div className="flex items-center gap-2">
