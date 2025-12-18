@@ -21,6 +21,19 @@ interface BettingFormProps {
 
 const MULTIPLIER = 2.00;
 
+// Check if current time is within operating hours (9AM-7PM KST)
+const isWithinOperatingHours = () => {
+  const now = new Date();
+  // Convert to KST (UTC+9)
+  const kstOffset = 9 * 60; // 9 hours in minutes
+  const utcOffset = now.getTimezoneOffset(); // Current timezone offset in minutes
+  const kstTime = new Date(now.getTime() + (utcOffset + kstOffset) * 60 * 1000);
+  
+  const hours = kstTime.getHours();
+  // Operating hours: 9AM (09:00) to 7PM (19:00) KST
+  return hours >= 9 && hours < 19;
+};
+
 export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormProps) {
   const [amount, setAmount] = useState<string>("10000");
   const availableBalance = balance ? parseFloat(balance) : 0;
@@ -32,6 +45,14 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
   };
 
   const validateBet = (direction: 'long' | 'short') => {
+    // Check operating hours first
+    if (!isWithinOperatingHours()) {
+      toast.error("영업시간이 아닙니다", {
+        description: "운영시간: 오전 9시 ~ 오후 7시 (한국시간)",
+      });
+      return false;
+    }
+
     const numAmount = parseFloat(amount);
     if (isNaN(numAmount) || numAmount <= 0) {
       toast.error("유효한 금액을 입력해주세요.");
