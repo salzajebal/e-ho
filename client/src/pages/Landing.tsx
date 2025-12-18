@@ -1393,10 +1393,10 @@ export default function Landing() {
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <button
-                    onClick={() => setTransactionAmount('1000000')}
+                    onClick={() => setTransactionAmount(String(Number(transactionAmount || 0) + 1000000))}
                     className="py-2 bg-white/10 hover:bg-white/20 text-gray-300 text-sm rounded transition-colors"
                   >
-                    100만원
+                    +100만
                   </button>
                   <button
                     onClick={() => setTransactionAmount('')}
