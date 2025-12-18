@@ -3,8 +3,9 @@ import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { TrendingUp, TrendingDown, Clock, Hash, Timer, History } from "lucide-react";
+import { TrendingUp, TrendingDown, Clock, Hash, Timer, History, CheckCircle } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface Game {
   id: string;
@@ -73,11 +74,19 @@ const formatTime = (seconds: number): string => {
 // Storage key for game results per game type
 const getStorageKey = (gameId: string) => `gameResults_${gameId}_${getKSTDate().toDateString()}`;
 
+interface BetConfirmation {
+  show: boolean;
+  direction: 'long' | 'short';
+  amount: number;
+  price: number;
+}
+
 export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormProps) {
   const [amount, setAmount] = useState<string>("10000");
   const [currentRound, setCurrentRound] = useState(calculateRoundNumber(game.duration));
   const [timeRemaining, setTimeRemaining] = useState(getRoundTimeRemaining(game.duration));
   const [gameResults, setGameResults] = useState<GameResult[]>([]);
+  const [betConfirmation, setBetConfirmation] = useState<BetConfirmation>({ show: false, direction: 'long', amount: 0, price: 0 });
   const lastRoundRef = useRef<number>(0);
   const roundStartPriceRef = useRef<number>(currentPrice);
   const lastPriceRef = useRef<number>(currentPrice);
@@ -196,9 +205,19 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
     if (validateBet(direction)) {
       const numAmount = parseFloat(amount);
       onBet(direction, numAmount);
-      toast.success(`${direction === 'long' ? '📈 LONG (매수)' : '📉 SHORT (매도)'} 베팅 완료!`, {
-        description: `${game.label} | ${numAmount.toLocaleString()}원`,
+      
+      // Show confirmation popup
+      setBetConfirmation({
+        show: true,
+        direction,
+        amount: numAmount,
+        price: currentPrice,
       });
+      
+      // Auto close after 2 seconds
+      setTimeout(() => {
+        setBetConfirmation(prev => ({ ...prev, show: false }));
+      }, 2000);
     }
   };
 
@@ -368,6 +387,57 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
           )}
         </div>
       </div>
+
+      {/* Bet Confirmation Dialog */}
+      <Dialog open={betConfirmation.show} onOpenChange={(open) => setBetConfirmation(prev => ({ ...prev, show: open }))}>
+        <DialogContent className="bg-card border-border max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-center gap-2 text-center">
+              <CheckCircle className={cn(
+                "w-8 h-8",
+                betConfirmation.direction === 'long' ? "text-up" : "text-down"
+              )} />
+            </DialogTitle>
+          </DialogHeader>
+          <div className="text-center space-y-4 py-4">
+            <div className={cn(
+              "inline-flex items-center gap-2 px-4 py-2 rounded-lg text-lg font-bold",
+              betConfirmation.direction === 'long' ? "bg-up/20 text-up" : "bg-down/20 text-down"
+            )}>
+              {betConfirmation.direction === 'long' ? (
+                <TrendingUp className="w-5 h-5" />
+              ) : (
+                <TrendingDown className="w-5 h-5" />
+              )}
+              {betConfirmation.direction === 'long' ? 'LONG (매수)' : 'SHORT (매도)'}
+            </div>
+            
+            <div className="space-y-2">
+              <p className="text-2xl font-bold text-foreground">
+                {betConfirmation.amount.toLocaleString()}원
+              </p>
+              <p className="text-sm text-muted-foreground">
+                베팅이 완료되었습니다
+              </p>
+            </div>
+            
+            <div className="bg-muted/30 rounded-lg p-3 space-y-1 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">게임</span>
+                <span className="text-foreground font-medium">{game.label}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">진입가</span>
+                <span className="text-foreground font-mono">{betConfirmation.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">예상수익</span>
+                <span className="text-up font-mono font-bold">+{(betConfirmation.amount * MULTIPLIER).toLocaleString()}원</span>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
