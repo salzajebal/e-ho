@@ -286,7 +286,9 @@ export default function Admin() {
   const logout = useLogout();
   const queryClient = useQueryClient();
 
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'bets' | 'settings' | 'approvals' | 'messages' | 'affiliates' | 'announcements' | 'blocked-ips' | 'maintenance' | 'forced-bet' | 'transactions'>('users');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'bets' | 'settings' | 'approvals' | 'messages' | 'affiliates' | 'announcements' | 'blocked-ips' | 'maintenance' | 'forced-bet' | 'transactions' | 'inquiries'>('users');
+  const [inquiryReplyId, setInquiryReplyId] = useState<number | null>(null);
+  const [inquiryReplyContent, setInquiryReplyContent] = useState("");
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
   const [messageRecipient, setMessageRecipient] = useState<AdminUser | null>(null);
   const [messageTitle, setMessageTitle] = useState("");
@@ -456,6 +458,31 @@ export default function Admin() {
     refetchInterval: 5000,
   });
   const pendingTransactions = transactionRequests.filter(t => t.status === 'pending');
+
+  // Inquiries (1:1 문의)
+  interface Inquiry {
+    id: number;
+    userId: string;
+    title: string;
+    content: string;
+    reply: string | null;
+    status: 'pending' | 'answered';
+    repliedBy: string | null;
+    repliedAt: string | null;
+    createdAt: string;
+    username?: string;
+  }
+  const { data: inquiries = [], refetch: refetchInquiries } = useQuery<Inquiry[]>({
+    queryKey: ["/api/admin/inquiries"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/inquiries");
+      if (!res.ok) throw new Error("Failed to fetch inquiries");
+      return res.json();
+    },
+    enabled: auth?.role === 'admin',
+    refetchInterval: 5000,
+  });
+  const pendingInquiries = inquiries.filter(i => i.status === 'pending');
 
   // WebSocket for real-time bet and transaction updates
   useEffect(() => {
@@ -1199,6 +1226,23 @@ export default function Admin() {
         )}
       </button>
       <button
+        onClick={() => { setActiveTab('inquiries'); setMobileMenuOpen(false); }}
+        className={cn(
+          "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors relative",
+          activeTab === 'inquiries'
+            ? "bg-primary/10 text-primary"
+            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+        )}
+      >
+        <MessageSquare className="w-4 h-4" />
+        1:1 문의
+        {pendingInquiries.length > 0 && (
+          <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center animate-pulse">
+            {pendingInquiries.length}
+          </span>
+        )}
+      </button>
+      <button
         onClick={() => { setActiveTab('users'); setMobileMenuOpen(false); }}
         className={cn(
           "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
@@ -1426,6 +1470,23 @@ export default function Admin() {
             {pendingTransactions.length > 0 && (
               <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-orange-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center animate-pulse">
                 {pendingTransactions.length}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab('inquiries')}
+            className={cn(
+              "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors relative",
+              activeTab === 'inquiries'
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+            )}
+          >
+            <MessageSquare className="w-4 h-4" />
+            1:1 문의
+            {pendingInquiries.length > 0 && (
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center animate-pulse">
+                {pendingInquiries.length}
               </span>
             )}
           </button>
@@ -3076,6 +3137,142 @@ export default function Admin() {
                     )}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Inquiries Tab - 1:1 문의 관리 */}
+        {activeTab === 'inquiries' && (
+          <div className="space-y-4 lg:space-y-6">
+            <div className="flex items-center justify-between">
+              <h1 className="text-xl lg:text-2xl font-bold">1:1 문의 관리</h1>
+              <Button variant="outline" size="sm" onClick={() => refetchInquiries()}>
+                <RefreshCw className="w-4 h-4 lg:mr-2" />
+                <span className="hidden lg:inline">새로고침</span>
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="bg-card border border-border rounded-lg p-4">
+                <p className="text-sm text-muted-foreground">총 문의</p>
+                <p className="text-2xl font-bold">{inquiries.length}건</p>
+              </div>
+              <div className="bg-card border border-border rounded-lg p-4">
+                <p className="text-sm text-muted-foreground">대기 중</p>
+                <p className="text-2xl font-bold text-yellow-500">{pendingInquiries.length}건</p>
+              </div>
+            </div>
+
+            <div className="bg-card border border-border rounded-lg overflow-hidden">
+              <div className="divide-y divide-border">
+                {inquiries.length === 0 ? (
+                  <div className="p-8 text-center text-muted-foreground">
+                    등록된 문의가 없습니다
+                  </div>
+                ) : (
+                  inquiries.map((inquiry) => (
+                    <div key={inquiry.id} className="p-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className={cn(
+                            "px-2 py-0.5 rounded text-xs font-bold",
+                            inquiry.status === 'pending' 
+                              ? "bg-yellow-500/20 text-yellow-500"
+                              : "bg-green-500/20 text-green-500"
+                          )}>
+                            {inquiry.status === 'pending' ? '대기' : '답변완료'}
+                          </span>
+                          <span className="text-sm text-muted-foreground">{inquiry.username}</span>
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(inquiry.createdAt).toLocaleString('ko-KR', { 
+                            month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' 
+                          })}
+                        </span>
+                      </div>
+                      <h3 className="font-medium mb-2">{inquiry.title}</h3>
+                      <p className="text-sm text-muted-foreground whitespace-pre-wrap mb-3">{inquiry.content}</p>
+                      
+                      {inquiry.reply && (
+                        <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 mb-3">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs font-medium text-primary">답변</span>
+                            {inquiry.repliedAt && (
+                              <span className="text-xs text-muted-foreground">
+                                {new Date(inquiry.repliedAt).toLocaleString('ko-KR', { 
+                                  month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' 
+                                })}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm whitespace-pre-wrap">{inquiry.reply}</p>
+                        </div>
+                      )}
+                      
+                      {inquiry.status === 'pending' && (
+                        <div className="space-y-2">
+                          {inquiryReplyId === inquiry.id ? (
+                            <>
+                              <textarea
+                                value={inquiryReplyContent}
+                                onChange={(e) => setInquiryReplyContent(e.target.value)}
+                                placeholder="답변을 입력하세요..."
+                                rows={3}
+                                className="w-full bg-muted/50 border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+                              />
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={async () => {
+                                    if (!inquiryReplyContent.trim()) {
+                                      toast.error("답변 내용을 입력해주세요");
+                                      return;
+                                    }
+                                    try {
+                                      const res = await fetch(`/api/admin/inquiries/${inquiry.id}/reply`, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ reply: inquiryReplyContent }),
+                                      });
+                                      if (!res.ok) throw new Error("답변 등록 실패");
+                                      toast.success("답변이 등록되었습니다");
+                                      setInquiryReplyId(null);
+                                      setInquiryReplyContent("");
+                                      refetchInquiries();
+                                    } catch (error) {
+                                      toast.error("답변 등록에 실패했습니다");
+                                    }
+                                  }}
+                                >
+                                  답변 등록
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setInquiryReplyId(null);
+                                    setInquiryReplyContent("");
+                                  }}
+                                >
+                                  취소
+                                </Button>
+                              </div>
+                            </>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setInquiryReplyId(inquiry.id)}
+                            >
+                              답변하기
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>
