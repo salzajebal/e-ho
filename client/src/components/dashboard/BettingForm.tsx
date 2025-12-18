@@ -377,23 +377,31 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
               아직 기록된 게임이 없습니다
             </div>
           ) : (
-            <ScrollArea className="h-[120px] lg:h-[160px]">
-              <div className="grid grid-cols-5 gap-1">
+            <ScrollArea className="h-[140px] lg:h-[180px]">
+              <div className="space-y-1">
                 {gameResults.map((result, idx) => (
                   <div
                     key={`${result.round}-${idx}`}
                     className={cn(
-                      "flex flex-col items-center justify-center py-1.5 px-1 rounded text-xs",
-                      result.direction === 'up' ? "bg-up/20" : "bg-down/20"
+                      "flex items-center justify-between px-2 py-1.5 rounded text-xs",
+                      idx === 0 ? "bg-muted/30" : "bg-muted/10"
                     )}
-                    title={`${result.round}회차 ${result.time}`}
                   >
-                    <span className="text-[10px] text-muted-foreground">{result.round}</span>
-                    {result.direction === 'up' ? (
-                      <TrendingUp className="w-3 h-3 text-up" />
-                    ) : (
-                      <TrendingDown className="w-3 h-3 text-down" />
-                    )}
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground font-mono w-12">{result.round}회차</span>
+                      <span className="text-muted-foreground/70 w-12">{result.time}</span>
+                    </div>
+                    <div className={cn(
+                      "flex items-center gap-1 px-2 py-0.5 rounded font-bold",
+                      result.direction === 'up' ? "bg-up/20 text-up" : "bg-down/20 text-down"
+                    )}>
+                      {result.direction === 'up' ? (
+                        <TrendingUp className="w-3 h-3" />
+                      ) : (
+                        <TrendingDown className="w-3 h-3" />
+                      )}
+                      <span>{result.direction === 'up' ? 'UP' : 'DOWN'}</span>
+                    </div>
                   </div>
                 ))}
               </div>
