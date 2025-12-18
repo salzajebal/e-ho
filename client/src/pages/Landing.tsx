@@ -1588,17 +1588,11 @@ export default function Landing() {
                     
                     toast.success(
                       transactionType === 'deposit'
-                        ? '입금 신청이 완료되었습니다. 고객센터로 연결됩니다.'
+                        ? '입금 신청이 완료되었습니다. 관리자 승인 후 잔고에 반영됩니다.'
                         : '출금 신청이 완료되었습니다. 처리까지 약 30분 소요됩니다.'
                     );
                     setShowDepositModal(false);
                     setTransactionAmount('');
-                    
-                    if (transactionType === 'deposit') {
-                      setTimeout(() => {
-                        setShowCustomerServiceModal(true);
-                      }, 300);
-                    }
                   } catch (error: any) {
                     toast.error(error.message || '요청에 실패했습니다');
                   } finally {
