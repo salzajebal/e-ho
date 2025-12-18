@@ -20,20 +20,22 @@ const timeFrameLabels: Record<TimeFrame, string> = {
 
 function generateCandleData(basePrice: number, count: number, intervalMinutes: number): CandlestickData<Time>[] {
   const data: CandlestickData<Time>[] = [];
-  let currentPrice = basePrice * 0.995;
+  let currentPrice = basePrice * 0.98;
   const intervalMs = intervalMinutes * 60 * 1000;
   const now = Date.now();
   const currentIntervalStart = Math.floor(now / intervalMs) * intervalMs / 1000;
 
   for (let i = count - 1; i >= 0; i--) {
     const time = (currentIntervalStart - i * intervalMinutes * 60) as Time;
-    const volatility = 0.003;
+    const volatility = 0.012;
+    const trendBias = Math.sin(i * 0.1) * 0.003;
     
     const open = currentPrice;
-    const change = open * volatility * (Math.random() - 0.5) * 2;
+    const change = open * (volatility * (Math.random() - 0.5) * 2 + trendBias);
     const close = open + change;
-    const high = Math.max(open, close) * (1 + Math.random() * 0.002);
-    const low = Math.min(open, close) * (1 - Math.random() * 0.002);
+    const wickSize = Math.abs(change) * (0.3 + Math.random() * 0.5);
+    const high = Math.max(open, close) + wickSize;
+    const low = Math.min(open, close) - wickSize;
 
     data.push({ time, open, high, low, close });
     currentPrice = close;
@@ -217,13 +219,15 @@ export function PriceChart({ symbol, data }: PriceChartProps) {
         close: data.price,
       };
     } else if (currentCandleRef.current) {
-      // Update existing candle with new price
+      // Update existing candle with new price - add slight random movement for visibility
+      const microMovement = data.price * 0.0003 * (Math.random() - 0.5);
+      const newClose = data.price + microMovement;
       currentCandleRef.current = {
         time: currentCandleRef.current.time,
         open: currentCandleRef.current.open,
-        high: Math.max(currentCandleRef.current.high, data.price),
-        low: Math.min(currentCandleRef.current.low, data.price),
-        close: data.price,
+        high: Math.max(currentCandleRef.current.high, newClose),
+        low: Math.min(currentCandleRef.current.low, newClose),
+        close: newClose,
       };
     } else {
       // Initialize first candle
