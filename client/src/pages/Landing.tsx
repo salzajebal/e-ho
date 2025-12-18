@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Shield, Zap, Headphones, TrendingUp, Lock, Award, X, ChevronDown, Phone, Mail, MessageCircle, History, Wallet, Menu } from "lucide-react";
+import { Shield, Zap, Headphones, TrendingUp, Lock, Award, X, ChevronDown, Phone, Mail, MessageCircle, History, Wallet, Menu, Bell } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useLogin, useRegister, useAuth, useLogout } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
@@ -147,6 +147,7 @@ export default function Landing() {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [showCustomerServiceModal, setShowCustomerServiceModal] = useState(false);
   const [showDepositModal, setShowDepositModal] = useState(false);
+  const [showAnnouncementsModal, setShowAnnouncementsModal] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [transactionType, setTransactionType] = useState<'deposit' | 'withdrawal'>('deposit');
   const [transactionAmount, setTransactionAmount] = useState('');
@@ -1013,17 +1014,16 @@ export default function Landing() {
             <div>
               <h4 className="font-semibold mb-4 text-gray-300">입출금</h4>
               <ul className="space-y-2 text-gray-500 text-sm">
-                <li><Link href="/trade" className="hover:text-orange-500 transition-colors" data-testid="link-deposit">입금신청</Link></li>
-                <li><Link href="/trade" className="hover:text-orange-500 transition-colors" data-testid="link-withdraw">출금신청</Link></li>
-                <li><Link href="/trade" className="hover:text-orange-500 transition-colors" data-testid="link-transaction-history">입출금내역</Link></li>
+                <li><button onClick={() => { if (user) { setTransactionType('deposit'); setShowDepositModal(true); } else { setShowLoginModal(true); } }} className="hover:text-orange-500 transition-colors" data-testid="link-deposit">입금신청</button></li>
+                <li><button onClick={() => { if (user) { setTransactionType('withdrawal'); setShowDepositModal(true); } else { setShowLoginModal(true); } }} className="hover:text-orange-500 transition-colors" data-testid="link-withdraw">출금신청</button></li>
+                <li><button onClick={() => { if (user) { setShowHistoryModal(true); } else { setShowLoginModal(true); } }} className="hover:text-orange-500 transition-colors" data-testid="link-transaction-history">입출금내역</button></li>
               </ul>
             </div>
             <div>
               <h4 className="font-semibold mb-4 text-gray-300">고객센터</h4>
               <ul className="space-y-2 text-gray-500 text-sm">
-                <li><a href="#" className="hover:text-orange-500 transition-colors" data-testid="link-notice">공지사항</a></li>
-                <li><a href="#" className="hover:text-orange-500 transition-colors" data-testid="link-inquiry">1:1문의</a></li>
-                <li><a href="#" className="hover:text-orange-500 transition-colors" data-testid="link-terms">이용약관</a></li>
+                <li><button onClick={() => setShowAnnouncementsModal(true)} className="hover:text-orange-500 transition-colors" data-testid="link-notice">공지사항</button></li>
+                <li><button onClick={() => setShowCustomerServiceModal(true)} className="hover:text-orange-500 transition-colors" data-testid="link-inquiry">1:1문의</button></li>
               </ul>
             </div>
           </div>
@@ -1702,6 +1702,55 @@ export default function Landing() {
                 <p className="text-center text-sm text-gray-300">
                   <span className="text-green-500 font-bold">입금 문의</span>를 클릭하여 계좌 안내를 받으세요
                 </p>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Announcements Modal */}
+      <Dialog open={showAnnouncementsModal} onOpenChange={setShowAnnouncementsModal}>
+        <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+          <DialogTitle className="sr-only">공지사항</DialogTitle>
+          <div className="relative">
+            <div className="absolute -inset-1 bg-gradient-to-r from-orange-500/20 via-amber-500/20 to-orange-500/20 rounded-2xl blur-xl" />
+            <div className="relative backdrop-blur-xl bg-[#1a1a24]/95 border border-white/10 rounded-2xl p-6 shadow-2xl max-h-[80vh] overflow-y-auto">
+              <button 
+                onClick={() => setShowAnnouncementsModal(false)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              
+              <div className="text-center mb-6">
+                <div className="flex items-center justify-center gap-2 mb-3">
+                  <Bell className="w-8 h-8 text-orange-500" />
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-1">공지사항</h2>
+                <p className="text-gray-400 text-sm">중요한 안내사항을 확인하세요</p>
+              </div>
+
+              <div className="space-y-3">
+                {announcements.length === 0 ? (
+                  <p className="text-gray-500 text-sm py-8 text-center">등록된 공지사항이 없습니다</p>
+                ) : (
+                  announcements.map((ann) => (
+                    <div key={ann.id} className="bg-white/5 border border-white/10 rounded-xl p-4">
+                      <div className="flex items-start gap-3">
+                        {ann.isPinned && (
+                          <span className="px-2 py-0.5 bg-orange-500/20 text-orange-500 rounded text-xs font-medium">고정</span>
+                        )}
+                        <div className="flex-1">
+                          <h3 className="text-white font-medium mb-2">{ann.title}</h3>
+                          <p className="text-gray-400 text-sm whitespace-pre-wrap">{ann.content}</p>
+                          <p className="text-gray-500 text-xs mt-2">
+                            {new Date(ann.createdAt).toLocaleDateString('ko-KR')}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>
