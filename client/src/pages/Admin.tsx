@@ -174,10 +174,11 @@ function AdminLogin() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [loginErrorMessage, setLoginErrorMessage] = useState("");
 
   const doLogin = async () => {
     if (!username || !password) {
-      toast.error("아이디와 비밀번호를 입력해주세요");
+      setLoginErrorMessage("아이디와 비밀번호를 입력해주세요");
       return;
     }
     
@@ -194,13 +195,13 @@ function AdminLogin() {
       const data = await res.json();
       
       if (!res.ok) {
-        toast.error(data.error || "로그인에 실패했습니다");
+        setLoginErrorMessage(data.error || "아이디 또는 비밀번호가 일치하지 않습니다");
         setIsLoading(false);
         return;
       }
       
       if (data.role !== 'admin') {
-        toast.error("관리자 권한이 없습니다");
+        setLoginErrorMessage("관리자 권한이 없습니다");
         await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
         setIsLoading(false);
         return;
@@ -209,7 +210,7 @@ function AdminLogin() {
       toast.success("관리자 로그인 성공");
       window.location.reload();
     } catch (error) {
-      toast.error("로그인에 실패했습니다");
+      setLoginErrorMessage("로그인에 실패했습니다");
       setIsLoading(false);
     }
   };
@@ -277,6 +278,29 @@ function AdminLogin() {
           </div>
         </div>
       </div>
+
+      {/* Login Error Alert Dialog */}
+      <AlertDialog open={!!loginErrorMessage} onOpenChange={() => setLoginErrorMessage("")}>
+        <AlertDialogContent className="bg-[#1a1a24] border border-red-500/30">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-red-500 flex items-center gap-2">
+              <X className="w-5 h-5" />
+              로그인 실패
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-300">
+              {loginErrorMessage}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction 
+              onClick={() => setLoginErrorMessage("")}
+              className="bg-orange-500 hover:bg-orange-600 text-white"
+            >
+              확인
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

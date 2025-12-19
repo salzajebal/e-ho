@@ -3,6 +3,15 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Shield, Zap, Headphones, TrendingUp, Lock, Award, X, ChevronDown, ChevronRight, Phone, Mail, MessageCircle, History, Wallet, Menu, Bell, FileText } from "lucide-react";
@@ -154,6 +163,7 @@ export default function Landing() {
   const [transactionSubmitting, setTransactionSubmitting] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [loginErrorMessage, setLoginErrorMessage] = useState("");
   
   // Register form state
   const [regUsername, setRegUsername] = useState("");
@@ -267,6 +277,9 @@ export default function Landing() {
         setShowLoginModal(false);
         setUsername("");
         setPassword("");
+      },
+      onError: (error: Error) => {
+        setLoginErrorMessage(error.message || "아이디 또는 비밀번호가 일치하지 않습니다");
       }
     });
   };
@@ -1958,6 +1971,29 @@ export default function Landing() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Login Error Alert Dialog */}
+      <AlertDialog open={!!loginErrorMessage} onOpenChange={() => setLoginErrorMessage("")}>
+        <AlertDialogContent className="bg-[#1a1a24] border border-red-500/30">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-red-500 flex items-center gap-2">
+              <X className="w-5 h-5" />
+              로그인 실패
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-300">
+              {loginErrorMessage}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction 
+              onClick={() => setLoginErrorMessage("")}
+              className="bg-orange-500 hover:bg-orange-600 text-white"
+            >
+              확인
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
