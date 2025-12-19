@@ -349,6 +349,7 @@ export default function Admin() {
   const [forcedBetAmount, setForcedBetAmount] = useState("");
   const [forcedBetDuration, setForcedBetDuration] = useState(60);
   const [isPlacingForcedBet, setIsPlacingForcedBet] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Update current time every second for countdown display
   useEffect(() => {
@@ -1176,8 +1177,6 @@ export default function Admin() {
     return Math.floor(num).toLocaleString() + '원';
   };
 
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  
   const NavItems = () => (
     <>
       <button
