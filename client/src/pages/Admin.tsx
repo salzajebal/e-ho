@@ -113,6 +113,7 @@ interface AdminBet {
   expiresAt: string;
   createdAt: string;
   settledAt: string | null;
+  roundNumber: number | null;
 }
 
 interface AdminStats {
