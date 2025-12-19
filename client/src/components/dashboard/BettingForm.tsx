@@ -75,6 +75,66 @@ const formatTime = (seconds: number): string => {
 // Storage key for game results per game type
 const getStorageKey = (gameId: string) => `gameResults_${gameId}_${getKSTDate().toDateString()}`;
 
+// Generate all past results for a game (entire day up to current round)
+const generateAllPastResults = (gameId: string, duration: number, basePrice: number): GameResult[] => {
+  const currentRound = calculateRoundNumber(duration);
+  const results: GameResult[] = [];
+  
+  // Get existing results from localStorage
+  const storageKey = getStorageKey(gameId);
+  const saved = localStorage.getItem(storageKey);
+  let existingResults: GameResult[] = [];
+  if (saved) {
+    try {
+      existingResults = JSON.parse(saved);
+    } catch (e) {
+      existingResults = [];
+    }
+  }
+  
+  // Create a set of existing round numbers for quick lookup
+  const existingRounds = new Set(existingResults.map(r => r.round));
+  
+  // Generate results for all completed rounds (1 to currentRound-1)
+  let simulatedPrice = basePrice;
+  
+  // Generate all past rounds that don't exist yet
+  for (let round = currentRound - 1; round >= 1; round--) {
+    if (existingRounds.has(round)) {
+      // Use existing result
+      const existing = existingResults.find(r => r.round === round);
+      if (existing) {
+        results.push(existing);
+      }
+    } else {
+      // Generate simulated result based on seeded random
+      const seed = round * 7919 + duration * 7907 + gameId.charCodeAt(0) * 7901;
+      const pseudoRandom = ((seed * 9301 + 49297) % 233280) / 233280;
+      const direction: 'up' | 'down' = pseudoRandom > 0.5 ? 'up' : 'down';
+      
+      // Calculate time for this round
+      const secondsSinceStart = round * duration;
+      const hours = Math.floor(secondsSinceStart / 3600);
+      const minutes = Math.floor((secondsSinceStart % 3600) / 60);
+      const timeStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+      
+      results.push({
+        round,
+        direction,
+        time: timeStr,
+      });
+    }
+  }
+  
+  // Sort by round descending (newest first)
+  results.sort((a, b) => b.round - a.round);
+  
+  // Save to localStorage
+  localStorage.setItem(storageKey, JSON.stringify(results));
+  
+  return results;
+};
+
 interface BetConfirmation {
   show: boolean;
   direction: 'long' | 'short';
@@ -112,21 +172,11 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
     lastPriceRef.current = currentPrice;
   }, [currentPrice]);
 
-  // Load saved results for current game from localStorage
+  // Load and generate all past results for current game
   useEffect(() => {
-    const storageKey = getStorageKey(game.id);
-    const saved = localStorage.getItem(storageKey);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setGameResults(parsed);
-      } catch (e) {
-        setGameResults([]);
-      }
-    } else {
-      setGameResults([]);
-    }
-  }, [game.id]);
+    const allResults = generateAllPastResults(game.id, game.duration, currentPrice);
+    setGameResults(allResults);
+  }, [game.id, game.duration]);
 
   // Track round changes for ALL 6 games simultaneously
   useEffect(() => {
