@@ -45,6 +45,41 @@ const isWithinOperatingHours = () => {
   return hours >= 9 && hours < 19;
 };
 
+// Check if today is a weekday (Mon-Fri) in KST
+const isWeekday = (): boolean => {
+  const kstTime = getKSTDate();
+  const dayOfWeek = kstTime.getDay(); // 0 = Sunday, 6 = Saturday
+  return dayOfWeek >= 1 && dayOfWeek <= 5;
+};
+
+// Check if symbol is allowed for current day
+// Weekdays: NDX, SP500 only
+// Weekends: GOLD only
+const isSymbolAllowedToday = (symbol: string): { allowed: boolean; message: string } => {
+  const weekday = isWeekday();
+  
+  if (weekday) {
+    // Weekdays: Only NDX and SP500 allowed
+    if (symbol === 'GOLD') {
+      return {
+        allowed: false,
+        message: '금(GOLD) 거래는 주말(토요일, 일요일)에만 가능합니다.\n\n평일에는 나스닥(NDX)과 S&P500 거래만 가능합니다.'
+      };
+    }
+  } else {
+    // Weekends: Only GOLD allowed
+    if (symbol === 'NDX' || symbol === 'SP500') {
+      const symbolName = symbol === 'NDX' ? '나스닥(NDX)' : 'S&P500';
+      return {
+        allowed: false,
+        message: `${symbolName} 거래는 평일(월요일~금요일)에만 가능합니다.\n\n주말에는 금(GOLD) 거래만 가능합니다.`
+      };
+    }
+  }
+  
+  return { allowed: true, message: '' };
+};
+
 // Calculate current round number based on KST time (seconds precision)
 const calculateRoundNumber = (durationSeconds: number): number => {
   const kstTime = getKSTDate();
@@ -262,6 +297,13 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
   const isBettingLocked = timeRemaining <= 3;
 
   const validateBet = (direction: 'long' | 'short') => {
+    // Check if symbol is allowed for current day (weekday/weekend restriction)
+    const symbolCheck = isSymbolAllowedToday(game.symbol);
+    if (!symbolCheck.allowed) {
+      setTimeAlert({ show: true, message: symbolCheck.message });
+      return false;
+    }
+
     // Check operating hours
     if (!isWithinOperatingHours()) {
       const kstTime = getKSTDate();

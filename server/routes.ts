@@ -12,6 +12,14 @@ import { calculateRoundNumber, getRoundEndTime, getRoundTimeRemaining } from "@s
 
 const SessionStore = MemoryStore(session);
 
+// Get KST Date (Korea Standard Time, UTC+9)
+const getKSTDate = (): Date => {
+  const now = new Date();
+  const kstOffset = 9 * 60;
+  const utcOffset = now.getTimezoneOffset();
+  return new Date(now.getTime() + (utcOffset + kstOffset) * 60 * 1000);
+};
+
 declare module "express-session" {
   interface SessionData {
     userId?: string;
@@ -347,6 +355,20 @@ export async function registerRoutes(
 
       if (![60, 120, 180, 300].includes(duration)) {
         return res.status(400).json({ error: "Duration must be 60, 120, 180, or 300 seconds" });
+      }
+
+      // Check weekday/weekend trading restrictions (KST timezone)
+      const kstTime = getKSTDate();
+      const dayOfWeek = kstTime.getDay(); // 0 = Sunday, 6 = Saturday
+      const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
+      
+      if (isWeekday && symbol === 'GOLD') {
+        return res.status(403).json({ error: "금(GOLD) 거래는 주말(토요일, 일요일)에만 가능합니다." });
+      }
+      
+      if (!isWeekday && (symbol === 'NDX' || symbol === 'SP500')) {
+        const symbolName = symbol === 'NDX' ? '나스닥(NDX)' : 'S&P500';
+        return res.status(403).json({ error: `${symbolName} 거래는 평일(월요일~금요일)에만 가능합니다.` });
       }
 
       let betAmount = parseFloat(amount);
