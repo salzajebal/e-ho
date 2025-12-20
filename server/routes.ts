@@ -1705,6 +1705,7 @@ export async function registerRoutes(
   const YAHOO_SYMBOLS: Record<string, string> = {
     'NDX': '^NDX',      // NASDAQ 100 Index
     'SP500': '^GSPC',   // S&P 500 Index
+    'GOLD': 'GC=F',     // Gold Futures (COMEX)
     'AAPL': 'AAPL',
     'MSFT': 'MSFT',
     'GOOGL': 'GOOGL',

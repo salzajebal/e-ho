@@ -162,10 +162,12 @@ const KOREAN_BANKS = [
 ];
 
 const SYMBOL_NAMES: Record<string, string> = {
+  'NDX': 'NASDAQ 100',
+  'SP500': 'S&P 500',
+  'GOLD': 'GOLD',
   'BTCUSDT': 'BTC/USDT',
   'ETHUSDT': 'ETH/USDT',
   'USDKRW': 'USD/KRW',
-  'GOLD': 'Gold',
   'OIL': 'Oil',
   'HSI': 'Hang Seng',
 };
@@ -725,7 +727,7 @@ export default function Admin() {
   });
 
   // Available symbols for maintenance
-  const availableSymbols = ["NDX", "SP500"];
+  const availableSymbols = ["NDX", "SP500", "GOLD"];
 
   // Notification for new pending users
   useEffect(() => {
@@ -2845,6 +2847,7 @@ export default function Admin() {
                     <SelectContent className="bg-card border-border">
                       <SelectItem value="NDX">NDX (NASDAQ 100)</SelectItem>
                       <SelectItem value="SP500">SP500 (S&P 500)</SelectItem>
+                      <SelectItem value="GOLD">GOLD (금)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
