@@ -1497,17 +1497,27 @@ export default function Landing() {
 
       {/* Deposit/Withdrawal Modal */}
       <Dialog open={showDepositModal} onOpenChange={setShowDepositModal}>
-        <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+        <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden max-h-[90vh] overflow-y-auto">
           <DialogTitle className="sr-only">입출금 신청</DialogTitle>
           <div className="relative">
             <div className="absolute -inset-1 bg-gradient-to-r from-orange-500/20 via-amber-500/20 to-orange-500/20 rounded-2xl blur-xl" />
-            <div className="relative backdrop-blur-xl bg-[#1a1a24]/95 border border-white/10 rounded-2xl p-6 shadow-2xl">
-              <button 
-                onClick={() => setShowDepositModal(false)}
-                className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
-              >
-                <X className="w-5 h-5" />
-              </button>
+            <div className="relative backdrop-blur-xl bg-[#1a1a24]/95 border border-white/10 rounded-2xl p-6 shadow-2xl max-h-[85vh] overflow-y-auto overscroll-contain touch-pan-y">
+              {/* Mobile-friendly header with back button */}
+              <div className="flex items-center justify-between mb-6">
+                <button 
+                  onClick={() => setShowDepositModal(false)}
+                  className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+                >
+                  <ChevronRight className="w-5 h-5 rotate-180" />
+                  <span className="text-sm">뒤로가기</span>
+                </button>
+                <button 
+                  onClick={() => setShowDepositModal(false)}
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
               
               <div className="text-center mb-6">
                 <div className="flex items-center justify-center gap-2 mb-3">
