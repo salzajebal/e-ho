@@ -1995,12 +1995,15 @@ export async function registerRoutes(
         return res.status(400).json({ error: "유효한 금액을 입력해주세요" });
       }
 
-      // For withdrawal, check if user has enough balance
+      // For withdrawal, check if user has enough balance and pre-deduct
       if (type === 'withdrawal') {
         const user = await storage.getUser(req.session.userId!);
         if (!user || parseFloat(user.balance) < parseFloat(amount)) {
           return res.status(400).json({ error: "잔액이 부족합니다" });
         }
+        // Pre-deduct balance (hold funds)
+        const newBalance = parseFloat(user.balance) - parseFloat(amount);
+        await storage.updateUserBalance(user.id, newBalance.toString());
       }
 
       const request = await storage.createTransactionRequest({
@@ -2114,35 +2117,40 @@ export async function registerRoutes(
       // Process the transaction
       const updated = await storage.processTransactionRequest(id, status, req.session.userId!, adminNote);
 
-      // If approved, update user balance
-      if (status === 'approved') {
-        const user = await storage.getUser(request.userId);
-        if (user) {
-          const currentBalance = parseFloat(user.balance);
-          const amount = parseFloat(request.amount);
-          
-          if (request.type === 'deposit') {
+      // Handle balance updates based on status and type
+      const user = await storage.getUser(request.userId);
+      if (user) {
+        const currentBalance = parseFloat(user.balance);
+        const amount = parseFloat(request.amount);
+        
+        if (request.type === 'deposit') {
+          // Deposit: add balance only if approved
+          if (status === 'approved') {
             const newBalance = currentBalance + amount;
             await storage.updateUserBalance(user.id, newBalance.toString());
             await storage.updateUser(user.id, {
               totalDeposit: (parseFloat(user.totalDeposit) + amount).toString(),
             });
-          } else if (request.type === 'withdrawal') {
-            const newBalance = currentBalance - amount;
-            if (newBalance >= 0) {
-              await storage.updateUserBalance(user.id, newBalance.toString());
-              await storage.updateUser(user.id, {
-                totalWithdrawal: (parseFloat(user.totalWithdrawal) + amount).toString(),
-              });
-            }
           }
-
-          // Notify user via WebSocket
-          broadcastToUser(user.id, 'transaction_processed', {
-            ...updated,
-            newBalance: (await storage.getUser(user.id))?.balance,
-          });
+        } else if (request.type === 'withdrawal') {
+          // Withdrawal: balance was pre-deducted at request time
+          if (status === 'approved') {
+            // On approval, just update totalWithdrawal (balance already deducted)
+            await storage.updateUser(user.id, {
+              totalWithdrawal: (parseFloat(user.totalWithdrawal) + amount).toString(),
+            });
+          } else if (status === 'rejected') {
+            // On rejection, refund the pre-deducted balance
+            const newBalance = currentBalance + amount;
+            await storage.updateUserBalance(user.id, newBalance.toString());
+          }
         }
+
+        // Notify user via WebSocket
+        broadcastToUser(user.id, 'transaction_processed', {
+          ...updated,
+          newBalance: (await storage.getUser(user.id))?.balance,
+        });
       }
 
       // Send message to user if requested
