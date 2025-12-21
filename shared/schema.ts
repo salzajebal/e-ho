@@ -40,7 +40,7 @@ export const users = pgTable("users", {
   bankName: text("bank_name"),
   accountHolder: text("account_holder"),
   accountNumber: text("account_number"),
-  balance: decimal("balance", { precision: 20, scale: 0 }).notNull().default("10000000"),
+  balance: decimal("balance", { precision: 20, scale: 0 }).notNull().default("0"),
   totalDeposit: decimal("total_deposit", { precision: 20, scale: 0 }).notNull().default("0"),
   totalWithdrawal: decimal("total_withdrawal", { precision: 20, scale: 0 }).notNull().default("0"),
   totalBet: decimal("total_bet", { precision: 20, scale: 0 }).notNull().default("0"),

@@ -357,7 +357,7 @@ export default function Admin() {
     bankName: '',
     accountHolder: '',
     accountNumber: '',
-    balance: '10000000',
+    balance: '0',
     role: 'user',
   });
 
@@ -863,7 +863,7 @@ export default function Admin() {
       setNewUser({
         username: '', password: '', name: '', phone: '',
         bankName: '', accountHolder: '', accountNumber: '',
-        balance: '10000000', role: 'user',
+        balance: '0', role: 'user',
       });
       toast.success("회원이 생성되었습니다");
     },
