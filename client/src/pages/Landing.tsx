@@ -190,6 +190,7 @@ export default function Landing() {
   const [withdrawalSuccessAmount, setWithdrawalSuccessAmount] = useState('');
   const [showMessagesModal, setShowMessagesModal] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState<{id: number; title: string; content: string; isRead: boolean; createdAt: string} | null>(null);
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState<{id: number; title: string; content: string; isPinned: boolean; createdAt: string} | null>(null);
   const [inquiryTitle, setInquiryTitle] = useState("");
   const [inquiryContent, setInquiryContent] = useState("");
   const [inquirySubmitting, setInquirySubmitting] = useState(false);
@@ -864,14 +865,19 @@ export default function Landing() {
                   <p className="text-gray-500 text-sm py-4 text-center">등록된 공지사항이 없습니다</p>
                 ) : (
                   announcements.slice(0, 5).map((ann) => (
-                    <div key={ann.id} className="p-3 bg-black/30 rounded-lg border border-white/5 hover:border-orange-500/30 transition-colors">
+                    <button
+                      key={ann.id}
+                      onClick={() => { setSelectedAnnouncement(ann); setShowAnnouncementsModal(true); }}
+                      className="w-full text-left p-3 bg-black/30 rounded-lg border border-white/5 hover:border-orange-500/30 transition-colors cursor-pointer"
+                      data-testid={`landing-announcement-${ann.id}`}
+                    >
                       <div className="flex items-center gap-2 mb-1">
                         {ann.isPinned && <span className="text-[10px] px-1.5 py-0.5 bg-orange-500/20 text-orange-400 rounded">고정</span>}
                         <span className="text-white font-medium text-sm line-clamp-1">{ann.title}</span>
                       </div>
                       <p className="text-gray-400 text-xs line-clamp-2">{ann.content}</p>
                       <p className="text-gray-600 text-[10px] mt-1">{new Date(ann.createdAt).toLocaleDateString('ko-KR')}</p>
-                    </div>
+                    </button>
                   ))
                 )}
               </div>
@@ -2063,14 +2069,14 @@ export default function Landing() {
       </Dialog>
 
       {/* Announcements Modal */}
-      <Dialog open={showAnnouncementsModal} onOpenChange={setShowAnnouncementsModal}>
+      <Dialog open={showAnnouncementsModal} onOpenChange={(open) => { setShowAnnouncementsModal(open); if (!open) setSelectedAnnouncement(null); }}>
         <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden">
           <DialogTitle className="sr-only">공지사항</DialogTitle>
           <div className="relative">
             <div className="absolute -inset-1 bg-gradient-to-r from-orange-500/20 via-amber-500/20 to-orange-500/20 rounded-2xl blur-xl" />
             <div className="relative backdrop-blur-xl bg-[#1a1a24]/95 border border-white/10 rounded-2xl p-6 shadow-2xl max-h-[80vh] overflow-y-auto">
               <button 
-                onClick={() => setShowAnnouncementsModal(false)}
+                onClick={() => { setShowAnnouncementsModal(false); setSelectedAnnouncement(null); }}
                 className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
               >
                 <X className="w-5 h-5" />
@@ -2081,31 +2087,68 @@ export default function Landing() {
                   <Bell className="w-8 h-8 text-orange-500" />
                 </div>
                 <h2 className="text-2xl font-bold text-white mb-1">공지사항</h2>
-                <p className="text-gray-400 text-sm">중요한 안내사항을 확인하세요</p>
+                <p className="text-gray-400 text-sm">
+                  {selectedAnnouncement ? '공지사항 상세' : '중요한 안내사항을 확인하세요'}
+                </p>
               </div>
 
-              <div className="space-y-3">
-                {announcements.length === 0 ? (
-                  <p className="text-gray-500 text-sm py-8 text-center">등록된 공지사항이 없습니다</p>
-                ) : (
-                  announcements.map((ann) => (
-                    <div key={ann.id} className="bg-white/5 border border-white/10 rounded-xl p-4">
-                      <div className="flex items-start gap-3">
-                        {ann.isPinned && (
-                          <span className="px-2 py-0.5 bg-orange-500/20 text-orange-500 rounded text-xs font-medium">고정</span>
-                        )}
-                        <div className="flex-1">
-                          <h3 className="text-white font-medium mb-2">{ann.title}</h3>
-                          <p className="text-gray-400 text-sm whitespace-pre-wrap">{ann.content}</p>
-                          <p className="text-gray-500 text-xs mt-2">
-                            {new Date(ann.createdAt).toLocaleDateString('ko-KR')}
-                          </p>
-                        </div>
-                      </div>
+              {selectedAnnouncement ? (
+                <div className="space-y-4">
+                  <button
+                    onClick={() => setSelectedAnnouncement(null)}
+                    className="flex items-center gap-2 text-orange-400 hover:text-orange-300 text-sm"
+                  >
+                    <ChevronRight className="w-4 h-4 rotate-180" />
+                    목록으로 돌아가기
+                  </button>
+                  <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+                    <div className="flex items-start gap-3 mb-3">
+                      {selectedAnnouncement.isPinned && (
+                        <span className="px-2 py-0.5 bg-orange-500/20 text-orange-500 rounded text-xs font-medium">고정</span>
+                      )}
+                      <h3 className="text-white font-medium text-lg">{selectedAnnouncement.title}</h3>
                     </div>
-                  ))
-                )}
-              </div>
+                    <p className="text-gray-300 text-sm whitespace-pre-wrap mb-3">{selectedAnnouncement.content}</p>
+                    <p className="text-gray-500 text-xs">
+                      {new Date(selectedAnnouncement.createdAt).toLocaleDateString('ko-KR', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {announcements.length === 0 ? (
+                    <p className="text-gray-500 text-sm py-8 text-center">등록된 공지사항이 없습니다</p>
+                  ) : (
+                    announcements.map((ann) => (
+                      <button
+                        key={ann.id}
+                        onClick={() => setSelectedAnnouncement(ann)}
+                        className="w-full text-left bg-white/5 border border-white/10 rounded-xl p-4 hover:border-orange-500/50 transition-colors"
+                        data-testid={`announcement-item-${ann.id}`}
+                      >
+                        <div className="flex items-start gap-3">
+                          {ann.isPinned && (
+                            <span className="px-2 py-0.5 bg-orange-500/20 text-orange-500 rounded text-xs font-medium">고정</span>
+                          )}
+                          <div className="flex-1">
+                            <h3 className="text-white font-medium mb-1">{ann.title}</h3>
+                            <p className="text-gray-400 text-sm line-clamp-2">{ann.content}</p>
+                            <p className="text-gray-500 text-xs mt-2">
+                              {new Date(ann.createdAt).toLocaleDateString('ko-KR')}
+                            </p>
+                          </div>
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </DialogContent>
