@@ -188,6 +188,8 @@ export default function Landing() {
   const [showMyInquiriesModal, setShowMyInquiriesModal] = useState(false);
   const [showWithdrawalSuccessModal, setShowWithdrawalSuccessModal] = useState(false);
   const [withdrawalSuccessAmount, setWithdrawalSuccessAmount] = useState('');
+  const [showMessagesModal, setShowMessagesModal] = useState(false);
+  const [selectedMessage, setSelectedMessage] = useState<{id: number; title: string; content: string; isRead: boolean; createdAt: string} | null>(null);
   const [inquiryTitle, setInquiryTitle] = useState("");
   const [inquiryContent, setInquiryContent] = useState("");
   const [inquirySubmitting, setInquirySubmitting] = useState(false);
@@ -243,7 +245,7 @@ export default function Landing() {
   });
 
   // Fetch user messages
-  const { data: messages = [] } = useQuery<{id: number; title: string; content: string; isRead: boolean; createdAt: string}[]>({
+  const { data: messages = [], refetch: refetchMessages } = useQuery<{id: number; title: string; content: string; isRead: boolean; createdAt: string}[]>({
     queryKey: ["/api/messages"],
     queryFn: async () => {
       const res = await fetch("/api/messages");
@@ -252,6 +254,15 @@ export default function Landing() {
     },
     enabled: !!user,
   });
+
+  const handleOpenMessage = async (msg: {id: number; title: string; content: string; isRead: boolean; createdAt: string}) => {
+    setSelectedMessage(msg);
+    setShowMessagesModal(true);
+    if (!msg.isRead) {
+      await fetch(`/api/messages/${msg.id}/read`, { method: 'POST' });
+      refetchMessages();
+    }
+  };
 
   // Fetch user inquiries
   const { data: myInquiries = [], refetch: refetchInquiries } = useQuery<{id: number; title: string; content: string; reply: string | null; status: string; createdAt: string; repliedAt: string | null}[]>({
@@ -896,14 +907,19 @@ export default function Landing() {
                   <p className="text-gray-500 text-sm py-4 text-center">받은 쪽지가 없습니다</p>
                 ) : (
                   messages.slice(0, 5).map((msg) => (
-                    <div key={msg.id} className={`p-3 rounded-lg border transition-colors ${msg.isRead ? 'bg-black/20 border-white/5' : 'bg-blue-500/10 border-blue-500/30'}`}>
+                    <button
+                      key={msg.id}
+                      onClick={() => handleOpenMessage(msg)}
+                      className={`w-full text-left p-3 rounded-lg border transition-colors cursor-pointer hover:border-blue-500/50 ${msg.isRead ? 'bg-black/20 border-white/5' : 'bg-blue-500/10 border-blue-500/30'}`}
+                      data-testid={`message-item-${msg.id}`}
+                    >
                       <div className="flex items-center gap-2 mb-1">
                         {!msg.isRead && <span className="w-2 h-2 bg-blue-500 rounded-full" />}
                         <span className={`font-medium text-sm line-clamp-1 ${msg.isRead ? 'text-gray-400' : 'text-white'}`}>{msg.title}</span>
                       </div>
                       <p className="text-gray-400 text-xs line-clamp-2">{msg.content}</p>
                       <p className="text-gray-600 text-[10px] mt-1">{new Date(msg.createdAt).toLocaleDateString('ko-KR')}</p>
-                    </div>
+                    </button>
                   ))
                 )}
               </div>
@@ -1955,6 +1971,92 @@ export default function Landing() {
               >
                 새 문의 작성하기
               </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Messages Modal - 쪽지함 */}
+      <Dialog open={showMessagesModal} onOpenChange={setShowMessagesModal}>
+        <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+          <DialogTitle className="sr-only">쪽지함</DialogTitle>
+          <div className="relative">
+            <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 via-cyan-500/20 to-blue-500/20 rounded-2xl blur-xl" />
+            <div className="relative backdrop-blur-xl bg-[#1a1a24]/95 border border-white/10 rounded-2xl p-6 shadow-2xl max-h-[80vh] overflow-y-auto">
+              <button 
+                onClick={() => { setShowMessagesModal(false); setSelectedMessage(null); }}
+                className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              
+              <div className="text-center mb-6">
+                <div className="flex items-center justify-center gap-2 mb-3">
+                  <Mail className="w-8 h-8 text-blue-500" />
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-1">쪽지함</h2>
+                <p className="text-gray-400 text-sm">
+                  {selectedMessage ? '쪽지 내용' : `총 ${messages.length}건의 쪽지`}
+                </p>
+              </div>
+
+              {selectedMessage ? (
+                <div className="space-y-4">
+                  <button
+                    onClick={() => setSelectedMessage(null)}
+                    className="flex items-center gap-2 text-blue-400 hover:text-blue-300 text-sm"
+                  >
+                    <ChevronRight className="w-4 h-4 rotate-180" />
+                    목록으로 돌아가기
+                  </button>
+                  <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <h3 className="text-white font-medium text-lg">{selectedMessage.title}</h3>
+                    </div>
+                    <p className="text-gray-300 text-sm whitespace-pre-wrap mb-3">{selectedMessage.content}</p>
+                    <p className="text-gray-500 text-xs">
+                      {new Date(selectedMessage.createdAt).toLocaleDateString('ko-KR', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {messages.length === 0 ? (
+                    <p className="text-gray-500 text-sm py-8 text-center">받은 쪽지가 없습니다</p>
+                  ) : (
+                    messages.map((msg) => (
+                      <button
+                        key={msg.id}
+                        onClick={() => handleOpenMessage(msg)}
+                        className={`w-full text-left bg-white/5 border rounded-xl p-4 hover:border-blue-500/50 transition-colors ${msg.isRead ? 'border-white/10' : 'border-blue-500/30 bg-blue-500/10'}`}
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            {!msg.isRead && <span className="w-2 h-2 bg-blue-500 rounded-full" />}
+                            <h3 className={`font-medium ${msg.isRead ? 'text-gray-400' : 'text-white'}`}>{msg.title}</h3>
+                          </div>
+                        </div>
+                        <p className="text-gray-400 text-sm line-clamp-2">{msg.content}</p>
+                        <p className="text-gray-500 text-xs mt-2">
+                          {new Date(msg.createdAt).toLocaleDateString('ko-KR', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </p>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </DialogContent>
