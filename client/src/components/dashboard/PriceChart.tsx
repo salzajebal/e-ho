@@ -1,76 +1,75 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { createChart, ColorType, CandlestickSeries, CandlestickData, Time } from "lightweight-charts";
 import type { IChartApi, ISeriesApi } from "lightweight-charts";
 import { MarketData } from "@/lib/marketData";
+import { calculateRoundNumber, getKSTDate } from "@shared/rounds";
 
 interface PriceChartProps {
   symbol: string;
   data: MarketData;
+  duration?: number; // Game duration in seconds (60, 180, 300)
 }
 
-type TimeFrame = '1m' | '5m' | '15m' | '1h' | '1d';
-
-const timeFrameLabels: Record<TimeFrame, string> = {
-  '1m': '1분',
-  '5m': '5분',
-  '15m': '15분',
-  '1h': '1시간',
-  '1d': '1일'
-};
-
-function getKSTTimestamp(): number {
-  const now = new Date();
-  const kstOffset = 9 * 60 * 60 * 1000;
-  return now.getTime() + kstOffset;
+// Get round start time in seconds since epoch (for chart timestamp)
+function getRoundStartTimeSeconds(durationSeconds: number, roundNumber: number): number {
+  const kstTime = getKSTDate();
+  const startOfDay = new Date(kstTime);
+  startOfDay.setHours(0, 0, 0, 0);
+  const roundStartSeconds = (roundNumber - 1) * durationSeconds;
+  return Math.floor(startOfDay.getTime() / 1000) + roundStartSeconds;
 }
 
-function generateCandleData(basePrice: number, count: number, intervalMinutes: number): CandlestickData<Time>[] {
+// Generate deterministic candle data based on round history
+function generateRoundCandles(basePrice: number, count: number, durationSeconds: number, symbol: string): CandlestickData<Time>[] {
   const data: CandlestickData<Time>[] = [];
-  let currentPrice = basePrice * 0.98;
-  const intervalMs = intervalMinutes * 60 * 1000;
-  const kstNow = getKSTTimestamp();
-  const currentIntervalStart = Math.floor(kstNow / intervalMs) * intervalMs / 1000;
-
-  for (let i = count - 1; i >= 0; i--) {
-    const time = (currentIntervalStart - i * intervalMinutes * 60) as Time;
-    const volatility = 0.012;
-    const trendBias = Math.sin(i * 0.1) * 0.003;
+  const currentRound = calculateRoundNumber(durationSeconds);
+  
+  // Start from earliest round to show
+  const startRound = Math.max(1, currentRound - count);
+  
+  let price = basePrice * 0.995; // Start slightly below base price
+  
+  for (let round = startRound; round < currentRound; round++) {
+    const time = getRoundStartTimeSeconds(durationSeconds, round) as Time;
     
-    const open = currentPrice;
-    const change = open * (volatility * (Math.random() - 0.5) * 2 + trendBias);
+    // Use deterministic random based on round, duration, and symbol
+    const seed = round * 7919 + durationSeconds * 7907 + symbol.charCodeAt(0) * 7901;
+    const pseudoRandom = ((seed * 9301 + 49297) % 233280) / 233280;
+    
+    const open = price;
+    const volatility = basePrice * 0.002; // 0.2% volatility per round
+    const change = volatility * (pseudoRandom - 0.5) * 2;
     const close = open + change;
-    const wickSize = Math.abs(change) * (0.3 + Math.random() * 0.5);
+    
+    // Create wicks
+    const wickRandom = ((seed * 1234 + 56789) % 100000) / 100000;
+    const wickSize = Math.abs(change) * 0.3 + volatility * 0.2 * wickRandom;
     const high = Math.max(open, close) + wickSize;
     const low = Math.min(open, close) - wickSize;
-
+    
     data.push({ time, open, high, low, close });
-    currentPrice = close;
+    price = close;
   }
-
+  
   return data;
 }
 
-export function PriceChart({ symbol, data }: PriceChartProps) {
+export function PriceChart({ symbol, data, duration = 60 }: PriceChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
-  const [timeFrame, setTimeFrame] = useState<TimeFrame>('5m');
   const lastSymbolRef = useRef<string>(symbol);
-  const lastTimeFrameRef = useRef<TimeFrame>(timeFrame);
+  const lastDurationRef = useRef<number>(duration);
   const lastPriceRef = useRef<number>(data.price);
   const currentCandleRef = useRef<CandlestickData<Time> | null>(null);
-  const intervalStartRef = useRef<number>(0);
+  const currentRoundRef = useRef<number>(0);
+  const roundStartPriceRef = useRef<number>(data.price);
 
   const isPositive = data.change >= 0;
 
-  const getIntervalMinutes = (tf: TimeFrame): number => {
-    switch (tf) {
-      case '1m': return 1;
-      case '5m': return 5;
-      case '15m': return 15;
-      case '1h': return 60;
-      case '1d': return 1440;
-    }
+  // Get duration label
+  const getDurationLabel = (d: number): string => {
+    return `${d / 60}분`;
   };
 
   // Initialize chart
@@ -125,7 +124,6 @@ export function PriceChart({ symbol, data }: PriceChartProps) {
       handleScale: { axisPressedMouseMove: true, mouseWheel: true, pinch: true },
     });
 
-    // v5 API: Use addSeries with CandlestickSeries
     const candlestickSeries = chart.addSeries(CandlestickSeries, {
       upColor: '#0ECB81',
       downColor: '#F6465D',
@@ -136,24 +134,27 @@ export function PriceChart({ symbol, data }: PriceChartProps) {
     });
 
     // Set initial data
-    const initialData = generateCandleData(data.price, 100, getIntervalMinutes(timeFrame));
+    const initialData = generateRoundCandles(data.price, 50, duration, symbol);
     candlestickSeries.setData(initialData);
     chart.timeScale().fitContent();
 
     chartRef.current = chart;
     seriesRef.current = candlestickSeries;
 
-    // Initialize interval tracking from the last candle
-    if (initialData.length > 0) {
-      const lastCandle = initialData[initialData.length - 1];
-      intervalStartRef.current = lastCandle.time as number;
-      currentCandleRef.current = {
-        ...lastCandle,
-        close: data.price,
-        high: Math.max(lastCandle.high, data.price),
-        low: Math.min(lastCandle.low, data.price),
-      };
-    }
+    // Initialize round tracking
+    const currentRound = calculateRoundNumber(duration);
+    currentRoundRef.current = currentRound;
+    roundStartPriceRef.current = data.price;
+    
+    // Create initial current candle
+    const roundStartTime = getRoundStartTimeSeconds(duration, currentRound);
+    currentCandleRef.current = {
+      time: roundStartTime as Time,
+      open: data.price,
+      high: data.price,
+      low: data.price,
+      close: data.price,
+    };
 
     // Handle resize
     const handleResize = () => {
@@ -177,30 +178,32 @@ export function PriceChart({ symbol, data }: PriceChartProps) {
     };
   }, []);
 
-  // Update chart when symbol or timeframe changes
+  // Update chart when symbol or duration changes
   useEffect(() => {
     if (!seriesRef.current || !chartRef.current) return;
 
-    if (symbol !== lastSymbolRef.current || timeFrame !== lastTimeFrameRef.current) {
-      const newData = generateCandleData(data.price, 100, getIntervalMinutes(timeFrame));
+    if (symbol !== lastSymbolRef.current || duration !== lastDurationRef.current) {
+      const newData = generateRoundCandles(data.price, 50, duration, symbol);
       seriesRef.current.setData(newData);
       chartRef.current.timeScale().fitContent();
       lastSymbolRef.current = symbol;
-      lastTimeFrameRef.current = timeFrame;
+      lastDurationRef.current = duration;
       
-      // Reinitialize interval tracking from the last candle
-      if (newData.length > 0) {
-        const lastCandle = newData[newData.length - 1];
-        intervalStartRef.current = lastCandle.time as number;
-        currentCandleRef.current = {
-          ...lastCandle,
-          close: data.price,
-          high: Math.max(lastCandle.high, data.price),
-          low: Math.min(lastCandle.low, data.price),
-        };
-      }
+      // Reinitialize round tracking
+      const currentRound = calculateRoundNumber(duration);
+      currentRoundRef.current = currentRound;
+      roundStartPriceRef.current = data.price;
+      
+      const roundStartTime = getRoundStartTimeSeconds(duration, currentRound);
+      currentCandleRef.current = {
+        time: roundStartTime as Time,
+        open: data.price,
+        high: data.price,
+        low: data.price,
+        close: data.price,
+      };
     }
-  }, [symbol, timeFrame, data.price]);
+  }, [symbol, duration, data.price]);
 
   // Update chart immediately when price changes
   useEffect(() => {
@@ -208,40 +211,29 @@ export function PriceChart({ symbol, data }: PriceChartProps) {
     
     lastPriceRef.current = data.price;
     
-    const intervalMs = getIntervalMinutes(timeFrame) * 60 * 1000;
-    const kstNow = getKSTTimestamp();
-    const currentIntervalStart = Math.floor(kstNow / intervalMs) * intervalMs / 1000;
+    const currentRound = calculateRoundNumber(duration);
     
-    // Check if we need to start a new candle
-    if (currentIntervalStart > intervalStartRef.current) {
-      // New candle period
-      intervalStartRef.current = currentIntervalStart;
+    // Check if we moved to a new round
+    if (currentRound !== currentRoundRef.current) {
+      // Close the old candle and start a new one
+      currentRoundRef.current = currentRound;
+      roundStartPriceRef.current = data.price;
+      
+      const roundStartTime = getRoundStartTimeSeconds(duration, currentRound);
       currentCandleRef.current = {
-        time: currentIntervalStart as Time,
+        time: roundStartTime as Time,
         open: data.price,
         high: data.price,
         low: data.price,
         close: data.price,
       };
     } else if (currentCandleRef.current) {
-      // Update existing candle with new price - add slight random movement for visibility
-      const microMovement = data.price * 0.0003 * (Math.random() - 0.5);
-      const newClose = data.price + microMovement;
+      // Update existing candle with new price
       currentCandleRef.current = {
         time: currentCandleRef.current.time,
         open: currentCandleRef.current.open,
-        high: Math.max(currentCandleRef.current.high, newClose),
-        low: Math.min(currentCandleRef.current.low, newClose),
-        close: newClose,
-      };
-    } else {
-      // Initialize first candle
-      intervalStartRef.current = currentIntervalStart;
-      currentCandleRef.current = {
-        time: currentIntervalStart as Time,
-        open: data.price,
-        high: data.price,
-        low: data.price,
+        high: Math.max(currentCandleRef.current.high, data.price),
+        low: Math.min(currentCandleRef.current.low, data.price),
         close: data.price,
       };
     }
@@ -254,25 +246,25 @@ export function PriceChart({ symbol, data }: PriceChartProps) {
     } catch {
       // Silently ignore update errors
     }
-  }, [data.price, timeFrame]);
+  }, [data.price, duration]);
 
-  // Periodic check for new candle periods (in case price doesn't change)
+  // Periodic check for new rounds (in case price doesn't change)
   useEffect(() => {
     if (!seriesRef.current) return;
-
-    const intervalMs = getIntervalMinutes(timeFrame) * 60 * 1000;
     
     const checkInterval = setInterval(() => {
       if (!seriesRef.current || !currentCandleRef.current) return;
       
-      const kstNow = getKSTTimestamp();
-      const currentIntervalStart = Math.floor(kstNow / intervalMs) * intervalMs / 1000;
+      const currentRound = calculateRoundNumber(duration);
       
-      if (currentIntervalStart > intervalStartRef.current) {
-        // New candle period - create new candle with last known price
-        intervalStartRef.current = currentIntervalStart;
+      if (currentRound !== currentRoundRef.current) {
+        // New round - create new candle
+        currentRoundRef.current = currentRound;
+        roundStartPriceRef.current = lastPriceRef.current;
+        
+        const roundStartTime = getRoundStartTimeSeconds(duration, currentRound);
         currentCandleRef.current = {
-          time: currentIntervalStart as Time,
+          time: roundStartTime as Time,
           open: lastPriceRef.current,
           high: lastPriceRef.current,
           low: lastPriceRef.current,
@@ -288,7 +280,7 @@ export function PriceChart({ symbol, data }: PriceChartProps) {
     return () => {
       clearInterval(checkInterval);
     };
-  }, [timeFrame, symbol]);
+  }, [duration, symbol]);
 
   return (
     <div className="flex flex-col h-full bg-card relative overflow-hidden">
@@ -296,7 +288,9 @@ export function PriceChart({ symbol, data }: PriceChartProps) {
       <div className="flex flex-wrap items-center gap-4 px-4 py-3 border-b border-border bg-card z-10 shrink-0">
         <div className="flex items-baseline gap-2">
           <h1 className="text-2xl font-bold text-foreground">{symbol}</h1>
-          <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{data.category}</span>
+          <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-primary/20 text-primary">
+            {getDurationLabel(duration)}
+          </span>
         </div>
         
         <div className="flex items-center gap-4 ml-2">
@@ -330,23 +324,6 @@ export function PriceChart({ symbol, data }: PriceChartProps) {
             <span className="text-xs text-muted-foreground">24시간 거래량</span>
             <span className="text-sm font-mono text-foreground">{data.volume.toLocaleString()}</span>
           </div>
-        </div>
-
-        <div className="ml-auto flex gap-1 text-xs font-medium">
-          {(Object.keys(timeFrameLabels) as TimeFrame[]).map((tf) => (
-            <button
-              key={tf}
-              onClick={() => setTimeFrame(tf)}
-              data-testid={`timeframe-${tf}`}
-              className={`px-2 py-1 rounded transition-all ${
-                timeFrame === tf
-                  ? 'text-primary bg-primary/20'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/30'
-              }`}
-            >
-              {timeFrameLabels[tf]}
-            </button>
-          ))}
         </div>
       </div>
 
