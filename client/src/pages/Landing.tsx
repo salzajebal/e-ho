@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Shield, Zap, Headphones, TrendingUp, Lock, Award, X, ChevronDown, ChevronRight, Phone, Mail, MessageCircle, History, Wallet, Menu, Bell, FileText } from "lucide-react";
+import { Shield, Zap, Headphones, TrendingUp, Lock, Award, X, ChevronDown, ChevronRight, Phone, Mail, MessageCircle, History, Wallet, Menu, Bell, FileText, Check } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useLogin, useRegister, useAuth, useLogout } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
@@ -186,6 +186,8 @@ export default function Landing() {
   // Inquiry form state
   const [showInquiryFormModal, setShowInquiryFormModal] = useState(false);
   const [showMyInquiriesModal, setShowMyInquiriesModal] = useState(false);
+  const [showWithdrawalSuccessModal, setShowWithdrawalSuccessModal] = useState(false);
+  const [withdrawalSuccessAmount, setWithdrawalSuccessAmount] = useState('');
   const [inquiryTitle, setInquiryTitle] = useState("");
   const [inquiryContent, setInquiryContent] = useState("");
   const [inquirySubmitting, setInquirySubmitting] = useState(false);
@@ -1654,9 +1656,10 @@ export default function Landing() {
                       setTransactionAmount('');
                       setShowMyInquiriesModal(true);
                     } else {
-                      toast.success('출금 신청이 완료되었습니다. 처리까지 약 30분 소요됩니다.');
+                      setWithdrawalSuccessAmount(transactionAmount);
                       setShowDepositModal(false);
                       setTransactionAmount('');
+                      setShowWithdrawalSuccessModal(true);
                     }
                   } catch (error: any) {
                     toast.error(error.message || '요청에 실패했습니다');
@@ -1758,6 +1761,35 @@ export default function Landing() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Withdrawal Success Modal */}
+      <AlertDialog open={showWithdrawalSuccessModal} onOpenChange={setShowWithdrawalSuccessModal}>
+        <AlertDialogContent className="bg-[#1a1a24] border border-white/10">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white flex items-center gap-2">
+              <div className="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center">
+                <Check className="w-5 h-5 text-green-500" />
+              </div>
+              출금 신청 완료
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-400 space-y-3">
+              <p className="text-lg">
+                <span className="text-green-400 font-bold">{Number(withdrawalSuccessAmount).toLocaleString()}원</span> 출금 신청이 완료되었습니다.
+              </p>
+              <p>처리까지 약 30분이 소요됩니다.</p>
+              <p className="text-sm text-gray-500">가입 시 등록한 계좌로 입금됩니다.</p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction 
+              onClick={() => setShowWithdrawalSuccessModal(false)}
+              className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white"
+            >
+              확인
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Inquiry Form Modal - 문의 작성 */}
       <Dialog open={showInquiryFormModal} onOpenChange={setShowInquiryFormModal}>
