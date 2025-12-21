@@ -29,7 +29,9 @@ export default function Home() {
   const { data: user } = useAuth();
   
   // Real-time WebSocket for message notifications
-  useUserWebSocket(!!user);
+  useUserWebSocket(!!user, {
+    onNewMessage: () => setInboxOpen(true),
+  });
   
   const { data: activeBets = [] } = useBets();
   const { data: historyBets = [] } = useBetHistory();
@@ -252,10 +254,16 @@ export default function Home() {
               <div className="text-xs text-muted-foreground">
                 {formatMessageDate(messagePopup.createdAt as unknown as string)}
               </div>
-              <div className="flex justify-end">
-                <Button onClick={handleClosePopup}>
-                  <Check className="w-4 h-4 mr-2" />
-                  확인
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={handleClosePopup}>
+                  닫기
+                </Button>
+                <Button onClick={() => {
+                  handleClosePopup();
+                  setInboxOpen(true);
+                }}>
+                  <Mail className="w-4 h-4 mr-2" />
+                  쪽지함 열기
                 </Button>
               </div>
             </div>

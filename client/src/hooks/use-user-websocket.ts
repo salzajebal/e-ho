@@ -2,12 +2,21 @@ import { useEffect, useRef, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-export function useUserWebSocket(isAuthenticated: boolean) {
+interface WebSocketOptions {
+  onNewMessage?: () => void;
+}
+
+export function useUserWebSocket(isAuthenticated: boolean, options?: WebSocketOptions) {
   const wsRef = useRef<WebSocket | null>(null);
   const queryClient = useQueryClient();
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttemptsRef = useRef(0);
   const maxReconnectAttempts = 5;
+  const optionsRef = useRef(options);
+  
+  useEffect(() => {
+    optionsRef.current = options;
+  }, [options]);
 
   const connect = useCallback(() => {
     if (!isAuthenticated || wsRef.current?.readyState === WebSocket.OPEN) {
@@ -36,6 +45,13 @@ export function useUserWebSocket(isAuthenticated: boolean) {
             
             toast("새 쪽지가 도착했습니다", {
               description: data.data?.title || "새로운 메시지가 있습니다",
+              action: {
+                label: "쪽지함 열기",
+                onClick: () => {
+                  optionsRef.current?.onNewMessage?.();
+                },
+              },
+              duration: 10000,
             });
           }
         } catch (err) {
