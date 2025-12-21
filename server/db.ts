@@ -100,7 +100,7 @@ export async function initializeDatabase(): Promise<void> {
         strike_price DECIMAL(20, 8) NOT NULL,
         close_price DECIMAL(20, 8),
         payout DECIMAL(20, 8),
-        multiplier DECIMAL(5, 2) NOT NULL DEFAULT '1.90',
+        multiplier DECIMAL(5, 2) NOT NULL DEFAULT '2.00',
         outcome TEXT NOT NULL DEFAULT 'pending',
         expires_at TIMESTAMP NOT NULL,
         created_at TIMESTAMP NOT NULL DEFAULT NOW(),

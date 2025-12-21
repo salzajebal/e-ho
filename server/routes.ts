@@ -410,7 +410,7 @@ export async function registerRoutes(
         duration,
         roundNumber,
         strikePrice: strikePrice.toString(),
-        multiplier: (multiplier || 1.90).toString(),
+        multiplier: (multiplier || 2.00).toString(),
         expiresAt,
       });
 
@@ -1648,7 +1648,7 @@ export async function registerRoutes(
           duration: parsedDuration,
           roundNumber,
           strikePrice: strikePrice.toString(),
-          multiplier: (multiplier || 1.90).toString(),
+          multiplier: (multiplier || 2.00).toString(),
           expiresAt,
         });
         
