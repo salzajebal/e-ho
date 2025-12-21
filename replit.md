@@ -7,7 +7,6 @@ This is a real-time binary options trading platform styled after Binance's inter
 ## Trading Rules
 - **Operating Hours**: 9AM - 6PM KST (Korean Standard Time)
 - **NDX (NASDAQ 100)**: Weekdays only (Monday - Friday)
-- **SP500 (S&P 500)**: Weekdays only (Monday - Friday)
 - **GOLD**: Available every day (including weekends and holidays)
 - **New User Balance**: Starts at 0원 (deposit required)
 

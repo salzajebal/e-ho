@@ -359,14 +359,13 @@ export async function registerRoutes(
 
       // Check weekday/weekend trading restrictions (KST timezone)
       // GOLD: Available every day
-      // NDX, SP500: Weekdays only (Mon-Fri)
+      // NDX: Weekdays only (Mon-Fri)
       const kstTime = getKSTDate();
       const dayOfWeek = kstTime.getDay(); // 0 = Sunday, 6 = Saturday
       const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
       
-      if (!isWeekday && (symbol === 'NDX' || symbol === 'SP500')) {
-        const symbolName = symbol === 'NDX' ? '나스닥(NDX)' : 'S&P500';
-        return res.status(403).json({ error: `${symbolName} 거래는 평일(월요일~금요일)에만 가능합니다.` });
+      if (!isWeekday && symbol === 'NDX') {
+        return res.status(403).json({ error: `나스닥(NDX) 거래는 평일(월요일~금요일)에만 가능합니다.` });
       }
 
       let betAmount = parseFloat(amount);
@@ -1724,7 +1723,6 @@ export async function registerRoutes(
   // Yahoo Finance symbol mapping
   const YAHOO_SYMBOLS: Record<string, string> = {
     'NDX': '^NDX',      // NASDAQ 100 Index
-    'SP500': '^GSPC',   // S&P 500 Index
     'GOLD': 'GC=F',     // Gold Futures (COMEX)
     'AAPL': 'AAPL',
     'MSFT': 'MSFT',

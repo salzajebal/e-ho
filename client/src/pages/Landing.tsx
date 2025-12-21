@@ -22,7 +22,6 @@ import { toast } from "sonner";
 
 const NASDAQ_STOCKS = [
   { symbol: "NDX", name: "NASDAQ 100" },
-  { symbol: "SP500", name: "S&P 500" },
   { symbol: "GOLD", name: "GOLD" },
 ];
 
@@ -46,13 +45,11 @@ interface LandingMarketData {
 function useLandingMarketData() {
   const [markets, setMarkets] = useState<LandingMarketData[]>([
     { symbol: "NDX", name: "NASDAQ 100", price: 0, changePercent: 0, priceHistory: [] },
-    { symbol: "SP500", name: "S&P 500", price: 0, changePercent: 0, priceHistory: [] },
     { symbol: "GOLD", name: "GOLD", price: 0, changePercent: 0, priceHistory: [] },
   ]);
   
   const historyRef = useRef<Record<string, number[]>>({
     "NDX": [],
-    "SP500": [],
     "GOLD": [],
   });
   

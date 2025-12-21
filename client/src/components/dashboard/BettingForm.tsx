@@ -53,7 +53,7 @@ const isWeekday = (): boolean => {
 };
 
 // Check if symbol is allowed for current day
-// Weekdays (Mon-Fri): NDX, SP500, GOLD all allowed
+// Weekdays (Mon-Fri): NDX, GOLD all allowed
 // Weekends (Sat-Sun): GOLD only
 const isSymbolAllowedToday = (symbol: string): { allowed: boolean; message: string } => {
   const weekday = isWeekday();
@@ -63,12 +63,11 @@ const isSymbolAllowedToday = (symbol: string): { allowed: boolean; message: stri
     return { allowed: true, message: '' };
   }
   
-  // NDX and SP500 are only allowed on weekdays
-  if (!weekday && (symbol === 'NDX' || symbol === 'SP500')) {
-    const symbolName = symbol === 'NDX' ? '나스닥(NDX)' : 'S&P500';
+  // NDX is only allowed on weekdays
+  if (!weekday && symbol === 'NDX') {
     return {
       allowed: false,
-      message: `${symbolName} 거래는 평일(월요일~금요일)에만 가능합니다.\n\n주말에는 금(GOLD) 거래만 가능합니다.`
+      message: `나스닥(NDX) 거래는 평일(월요일~금요일)에만 가능합니다.\n\n주말에는 금(GOLD) 거래만 가능합니다.`
     };
   }
   

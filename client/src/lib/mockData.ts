@@ -12,7 +12,6 @@ export interface MarketData {
 
 export const INITIAL_MARKET_DATA: MarketData[] = [
   { symbol: 'NDX', name: 'NASDAQ 100', price: 21547.80, change: -110.50, changePercent: -0.51, high: 21660.00, low: 21520.00, volume: 920000, category: '지수' },
-  { symbol: 'SP500', name: 'S&P 500', price: 5867.50, change: -25.40, changePercent: -0.43, high: 5895.00, low: 5855.00, volume: 1350000, category: '지수' },
   { symbol: 'GOLD', name: 'GOLD', price: 2650.30, change: 12.50, changePercent: 0.47, high: 2660.00, low: 2640.00, volume: 450000, category: '지수' },
 ];
 
