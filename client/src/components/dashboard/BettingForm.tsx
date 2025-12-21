@@ -38,11 +38,11 @@ const getKSTDate = (): Date => {
   return new Date(now.getTime() + (utcOffset + kstOffset) * 60 * 1000);
 };
 
-// Check if current time is within operating hours (9AM-7PM KST)
+// Check if current time is within operating hours (9AM-6PM KST)
 const isWithinOperatingHours = () => {
   const kstTime = getKSTDate();
   const hours = kstTime.getHours();
-  return hours >= 9 && hours < 19;
+  return hours >= 9 && hours < 18;
 };
 
 // Check if today is a weekday (Mon-Fri) in KST
@@ -53,28 +53,23 @@ const isWeekday = (): boolean => {
 };
 
 // Check if symbol is allowed for current day
-// Weekdays: NDX, SP500 only
-// Weekends: GOLD only
+// Weekdays (Mon-Fri): NDX, SP500, GOLD all allowed
+// Weekends (Sat-Sun): GOLD only
 const isSymbolAllowedToday = (symbol: string): { allowed: boolean; message: string } => {
   const weekday = isWeekday();
   
-  if (weekday) {
-    // Weekdays: Only NDX and SP500 allowed
-    if (symbol === 'GOLD') {
-      return {
-        allowed: false,
-        message: '금(GOLD) 거래는 주말(토요일, 일요일)에만 가능합니다.\n\n평일에는 나스닥(NDX)과 S&P500 거래만 가능합니다.'
-      };
-    }
-  } else {
-    // Weekends: Only GOLD allowed
-    if (symbol === 'NDX' || symbol === 'SP500') {
-      const symbolName = symbol === 'NDX' ? '나스닥(NDX)' : 'S&P500';
-      return {
-        allowed: false,
-        message: `${symbolName} 거래는 평일(월요일~금요일)에만 가능합니다.\n\n주말에는 금(GOLD) 거래만 가능합니다.`
-      };
-    }
+  // GOLD is allowed every day
+  if (symbol === 'GOLD') {
+    return { allowed: true, message: '' };
+  }
+  
+  // NDX and SP500 are only allowed on weekdays
+  if (!weekday && (symbol === 'NDX' || symbol === 'SP500')) {
+    const symbolName = symbol === 'NDX' ? '나스닥(NDX)' : 'S&P500';
+    return {
+      allowed: false,
+      message: `${symbolName} 거래는 평일(월요일~금요일)에만 가능합니다.\n\n주말에는 금(GOLD) 거래만 가능합니다.`
+    };
   }
   
   return { allowed: true, message: '' };
@@ -311,9 +306,9 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
       let message = "";
       
       if (currentHour < 9) {
-        message = `현재 거래 가능 시간이 아닙니다.\n\n운영시간: 오전 9시 ~ 오후 7시 (한국시간)\n\n오전 9시에 다시 방문해주세요!`;
+        message = `현재 거래 가능 시간이 아닙니다.\n\n운영시간: 오전 9시 ~ 오후 6시 (한국시간)\n\n오전 9시에 다시 방문해주세요!`;
       } else {
-        message = `현재 거래 가능 시간이 아닙니다.\n\n운영시간: 오전 9시 ~ 오후 7시 (한국시간)\n\n내일 오전 9시에 다시 방문해주세요!`;
+        message = `현재 거래 가능 시간이 아닙니다.\n\n운영시간: 오전 9시 ~ 오후 6시 (한국시간)\n\n내일 오전 9시에 다시 방문해주세요!`;
       }
       
       setTimeAlert({ show: true, message });

@@ -4,6 +4,13 @@
 
 This is a real-time binary options trading platform styled after Binance's interface. Users can place time-limited bets (1-5 minutes) on price movements (long/short) for various assets including cryptocurrencies, forex, commodities, and indices. The platform features live market data via Binance WebSocket, interactive candlestick charts using lightweight-charts, and a demo account system with virtual balance.
 
+## Trading Rules
+- **Operating Hours**: 9AM - 6PM KST (Korean Standard Time)
+- **NDX (NASDAQ 100)**: Weekdays only (Monday - Friday)
+- **SP500 (S&P 500)**: Weekdays only (Monday - Friday)
+- **GOLD**: Available every day (including weekends and holidays)
+- **New User Balance**: Starts at 0원 (deposit required)
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.

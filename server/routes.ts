@@ -358,13 +358,11 @@ export async function registerRoutes(
       }
 
       // Check weekday/weekend trading restrictions (KST timezone)
+      // GOLD: Available every day
+      // NDX, SP500: Weekdays only (Mon-Fri)
       const kstTime = getKSTDate();
       const dayOfWeek = kstTime.getDay(); // 0 = Sunday, 6 = Saturday
       const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
-      
-      if (isWeekday && symbol === 'GOLD') {
-        return res.status(403).json({ error: "금(GOLD) 거래는 주말(토요일, 일요일)에만 가능합니다." });
-      }
       
       if (!isWeekday && (symbol === 'NDX' || symbol === 'SP500')) {
         const symbolName = symbol === 'NDX' ? '나스닥(NDX)' : 'S&P500';
