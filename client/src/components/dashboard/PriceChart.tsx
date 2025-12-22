@@ -31,56 +31,23 @@ function getRoundTimestamp(roundNumber: number, durationSeconds: number, roundDa
 
 function generatePlaceholderCandles(basePrice: number, count: number, durationSeconds: number, symbol: string): CandlestickData<Time>[] {
   const data: CandlestickData<Time>[] = [];
-  const currentRound = calculateRoundNumber(durationSeconds);
-  const roundDate = getKSTDateString();
+  const now = Math.floor(Date.now() / 1000);
   
-  // Create natural-looking candles with good visual volatility
-  let price = basePrice;
-  const candles: { round: number; open: number; high: number; low: number; close: number }[] = [];
+  // Start from current price and work backwards
+  let currentPrice = basePrice * 0.998;
+  const volatility = symbol === 'NDX' ? 0.004 : 0.003;
   
-  // Higher volatility for better visual appearance (0.8% - 1.2%)
-  const baseVolatility = symbol === 'NDX' ? basePrice * 0.012 : basePrice * 0.008;
-  
-  // Generate prices backwards (from current round to older rounds)
-  for (let i = 0; i < count; i++) {
-    const round = currentRound - 1 - i;
-    if (round < 1) break;
+  for (let i = count - 1; i >= 0; i--) {
+    const time = (now - i * durationSeconds) as Time;
     
-    // Use multiple seeded random values for variety
-    const seed1 = round * 7919 + durationSeconds * 7907 + symbol.charCodeAt(0) * 7901;
-    const seed2 = round * 3571 + durationSeconds * 2897 + symbol.charCodeAt(0) * 1571;
-    const seed3 = round * 5501 + durationSeconds * 4007 + symbol.charCodeAt(0) * 3109;
-    const seed4 = round * 6173 + durationSeconds * 5309 + symbol.charCodeAt(0) * 4217;
+    const open = currentPrice;
+    const change = open * volatility * (Math.random() - 0.5) * 2;
+    const close = open + change;
+    const high = Math.max(open, close) * (1 + Math.random() * 0.002);
+    const low = Math.min(open, close) * (1 - Math.random() * 0.002);
     
-    const rand1 = ((seed1 * 9301 + 49297) % 233280) / 233280;
-    const rand2 = ((seed2 * 9301 + 49297) % 233280) / 233280;
-    const rand3 = ((seed3 * 9301 + 49297) % 233280) / 233280;
-    const rand4 = ((seed4 * 9301 + 49297) % 233280) / 233280;
-    
-    // More dynamic direction with momentum
-    const direction = rand1 > 0.5 ? 1 : -1;
-    const momentum = 0.3 + rand4 * 0.7; // 30-100% strength
-    const changePercent = direction * momentum * (0.5 + rand2 * 0.5);
-    const volatility = baseVolatility * (0.6 + rand3 * 0.8); // Variable 60-140%
-    const change = volatility * changePercent;
-    
-    const close = price;
-    const open = price - change;
-    
-    // Larger wicks for more realistic candles
-    const wickUp = volatility * (0.3 + rand1 * 0.5);
-    const wickDown = volatility * (0.3 + rand2 * 0.5);
-    const high = Math.max(open, close) + wickUp;
-    const low = Math.min(open, close) - wickDown;
-    
-    candles.unshift({ round, open, high, low, close });
-    price = open;
-  }
-  
-  // Convert to chart data with timestamps
-  for (const c of candles) {
-    const time = getRoundTimestamp(c.round, durationSeconds, roundDate) as Time;
-    data.push({ time, open: c.open, high: c.high, low: c.low, close: c.close });
+    data.push({ time, open, high, low, close });
+    currentPrice = close;
   }
   
   return data;
@@ -223,7 +190,7 @@ export function PriceChart({ symbol, data, duration = 60 }: PriceChartProps) {
     if (roundResults && roundResults.length > 0) {
       candleData = convertRoundResultsToCandles(roundResults, duration);
     } else {
-      candleData = generatePlaceholderCandles(data.price, 60, duration, symbol);
+      candleData = generatePlaceholderCandles(data.price, 100, duration, symbol);
     }
 
     if (candleData.length > 0) {
@@ -261,10 +228,8 @@ export function PriceChart({ symbol, data, duration = 60 }: PriceChartProps) {
       seriesRef.current.setData([currentCandleRef.current]);
     }
 
-    // Fit content to fill chart area when symbol or duration changes
-    if (symbolChanged || durationChanged) {
-      chartRef.current.timeScale().fitContent();
-    }
+    // Always fit content to fill chart area properly
+    chartRef.current.timeScale().fitContent();
     
     lastSymbolRef.current = symbol;
     lastDurationRef.current = duration;
