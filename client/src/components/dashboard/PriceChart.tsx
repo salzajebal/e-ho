@@ -11,12 +11,25 @@ interface PriceChartProps {
 }
 
 // Get round start time in seconds since epoch (for chart timestamp)
+// Returns UTC timestamp that when converted to KST shows correct time
 function getRoundStartTimeSeconds(durationSeconds: number, roundNumber: number): number {
-  const kstTime = getKSTDate();
-  const startOfDay = new Date(kstTime);
-  startOfDay.setHours(0, 0, 0, 0);
-  const roundStartSeconds = (roundNumber - 1) * durationSeconds;
-  return Math.floor(startOfDay.getTime() / 1000) + roundStartSeconds;
+  // Get current time in KST
+  const now = new Date();
+  const kstOffset = 9 * 60 * 60 * 1000; // 9 hours in ms
+  const kstTime = new Date(now.getTime() + now.getTimezoneOffset() * 60 * 1000 + kstOffset);
+  
+  // Get start of day in KST (midnight KST)
+  const kstMidnight = new Date(kstTime);
+  kstMidnight.setHours(0, 0, 0, 0);
+  
+  // Calculate round start time in KST
+  const roundStartSecondsFromMidnight = (roundNumber - 1) * durationSeconds;
+  
+  // Convert KST midnight back to UTC timestamp, then add round offset
+  // KST midnight = UTC (midnight - 9 hours)
+  const utcMidnight = kstMidnight.getTime() - kstOffset;
+  
+  return Math.floor(utcMidnight / 1000) + roundStartSecondsFromMidnight;
 }
 
 // Generate deterministic candle data based on round history
@@ -144,16 +157,20 @@ export function PriceChart({ symbol, data, duration = 60 }: PriceChartProps) {
     // Initialize round tracking
     const currentRound = calculateRoundNumber(duration);
     currentRoundRef.current = currentRound;
-    roundStartPriceRef.current = data.price;
     
-    // Create initial current candle
+    // Use the last candle's close price as the starting point for the current candle
+    // This ensures price continuity and prevents jumps
+    const lastCandleClose = initialData.length > 0 ? initialData[initialData.length - 1].close : data.price;
+    roundStartPriceRef.current = lastCandleClose;
+    
+    // Create initial current candle starting from last candle's close
     const roundStartTime = getRoundStartTimeSeconds(duration, currentRound);
     currentCandleRef.current = {
       time: roundStartTime as Time,
-      open: data.price,
-      high: data.price,
-      low: data.price,
-      close: data.price,
+      open: lastCandleClose,
+      high: lastCandleClose,
+      low: lastCandleClose,
+      close: lastCandleClose,
     };
 
     // Handle resize
@@ -192,15 +209,18 @@ export function PriceChart({ symbol, data, duration = 60 }: PriceChartProps) {
       // Reinitialize round tracking
       const currentRound = calculateRoundNumber(duration);
       currentRoundRef.current = currentRound;
-      roundStartPriceRef.current = data.price;
+      
+      // Use last candle's close price for continuity
+      const lastCandleClose = newData.length > 0 ? newData[newData.length - 1].close : data.price;
+      roundStartPriceRef.current = lastCandleClose;
       
       const roundStartTime = getRoundStartTimeSeconds(duration, currentRound);
       currentCandleRef.current = {
         time: roundStartTime as Time,
-        open: data.price,
-        high: data.price,
-        low: data.price,
-        close: data.price,
+        open: lastCandleClose,
+        high: lastCandleClose,
+        low: lastCandleClose,
+        close: lastCandleClose,
       };
     }
   }, [symbol, duration, data.price]);
