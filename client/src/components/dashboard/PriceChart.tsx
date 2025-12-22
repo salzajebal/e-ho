@@ -159,6 +159,11 @@ export function PriceChart({ symbol, data, duration = 60 }: PriceChartProps) {
         borderColor: '#2B2B43',
         timeVisible: true,
         secondsVisible: false,
+        rightOffset: 2,
+        barSpacing: 12,
+        minBarSpacing: 8,
+        fixLeftEdge: false,
+        fixRightEdge: true,
       },
       localization: {
         locale: 'ko-KR',
@@ -258,9 +263,9 @@ export function PriceChart({ symbol, data, duration = 60 }: PriceChartProps) {
       seriesRef.current.setData([currentCandleRef.current]);
     }
 
-    // Only fit content when symbol or duration changes, not on every update
+    // Only scroll to latest when symbol or duration changes
     if (symbolChanged || durationChanged) {
-      chartRef.current.timeScale().fitContent();
+      chartRef.current.timeScale().scrollToRealTime();
     }
     
     lastSymbolRef.current = symbol;
