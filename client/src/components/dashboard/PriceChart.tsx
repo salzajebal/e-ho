@@ -22,12 +22,11 @@ function getKSTDateString(): string {
 
 function getRoundTimestamp(roundNumber: number, durationSeconds: number, roundDate: string): number {
   const [year, month, day] = roundDate.split('-').map(Number);
-  // KST midnight is UTC minus 9 hours
-  // So midnight KST = 15:00 UTC of previous day
-  // Date.UTC gives midnight UTC, subtract 9h to get the UTC equivalent of midnight KST
-  const kstMidnightInUtc = Date.UTC(year, month - 1, day, 0, 0, 0) - 9 * 60 * 60 * 1000;
+  // Use KST time directly as the timestamp value
+  // This way the chart displays KST time without conversion
+  const kstMidnight = Date.UTC(year, month - 1, day, 0, 0, 0);
   const roundStartSeconds = (roundNumber - 1) * durationSeconds;
-  return Math.floor(kstMidnightInUtc / 1000) + roundStartSeconds;
+  return Math.floor(kstMidnight / 1000) + roundStartSeconds;
 }
 
 function generatePlaceholderCandles(basePrice: number, count: number, durationSeconds: number, symbol: string): CandlestickData<Time>[] {
@@ -161,10 +160,10 @@ export function PriceChart({ symbol, data, duration = 60 }: PriceChartProps) {
       localization: {
         locale: 'ko-KR',
         timeFormatter: (time: number) => {
-          // Add 9 hours to convert UTC timestamp to KST display
-          const kstDate = new Date((time + 9 * 60 * 60) * 1000);
-          const hours = kstDate.getUTCHours().toString().padStart(2, '0');
-          const mins = kstDate.getUTCMinutes().toString().padStart(2, '0');
+          // Timestamp already represents KST time, just format it
+          const date = new Date(time * 1000);
+          const hours = date.getUTCHours().toString().padStart(2, '0');
+          const mins = date.getUTCMinutes().toString().padStart(2, '0');
           return `${hours}:${mins}`;
         },
       },
