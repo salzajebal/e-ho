@@ -35,7 +35,11 @@ function generatePlaceholderCandles(basePrice: number, count: number, durationSe
   
   // Start from current price and work backwards
   let currentPrice = basePrice * 0.998;
-  const volatility = symbol === 'NDX' ? 0.004 : 0.003;
+  
+  // Volatility increases with duration (1min=0.4%, 3min=0.8%, 5min=1.2%)
+  const durationMinutes = durationSeconds / 60;
+  const baseVol = symbol === 'NDX' ? 0.004 : 0.003;
+  const volatility = baseVol * durationMinutes;
   
   for (let i = count - 1; i >= 0; i--) {
     const time = (now - i * durationSeconds) as Time;
@@ -43,8 +47,10 @@ function generatePlaceholderCandles(basePrice: number, count: number, durationSe
     const open = currentPrice;
     const change = open * volatility * (Math.random() - 0.5) * 2;
     const close = open + change;
-    const high = Math.max(open, close) * (1 + Math.random() * 0.002);
-    const low = Math.min(open, close) * (1 - Math.random() * 0.002);
+    // Wicks proportional to candle size
+    const wickMultiplier = 0.002 * durationMinutes;
+    const high = Math.max(open, close) * (1 + Math.random() * wickMultiplier);
+    const low = Math.min(open, close) * (1 - Math.random() * wickMultiplier);
     
     data.push({ time, open, high, low, close });
     currentPrice = close;
