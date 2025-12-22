@@ -159,11 +159,9 @@ export function PriceChart({ symbol, data, duration = 60 }: PriceChartProps) {
         borderColor: '#2B2B43',
         timeVisible: true,
         secondsVisible: false,
-        rightOffset: 2,
-        barSpacing: 12,
-        minBarSpacing: 8,
-        fixLeftEdge: false,
-        fixRightEdge: true,
+        rightOffset: 5,
+        barSpacing: 8,
+        minBarSpacing: 4,
       },
       localization: {
         locale: 'ko-KR',
@@ -225,7 +223,7 @@ export function PriceChart({ symbol, data, duration = 60 }: PriceChartProps) {
     if (roundResults && roundResults.length > 0) {
       candleData = convertRoundResultsToCandles(roundResults, duration);
     } else {
-      candleData = generatePlaceholderCandles(data.price, 30, duration, symbol);
+      candleData = generatePlaceholderCandles(data.price, 60, duration, symbol);
     }
 
     if (candleData.length > 0) {
@@ -263,9 +261,9 @@ export function PriceChart({ symbol, data, duration = 60 }: PriceChartProps) {
       seriesRef.current.setData([currentCandleRef.current]);
     }
 
-    // Only scroll to latest when symbol or duration changes
+    // Fit content to fill chart area when symbol or duration changes
     if (symbolChanged || durationChanged) {
-      chartRef.current.timeScale().scrollToRealTime();
+      chartRef.current.timeScale().fitContent();
     }
     
     lastSymbolRef.current = symbol;
