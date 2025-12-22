@@ -291,6 +291,29 @@ export const insertInquirySchema = createInsertSchema(inquiries).omit({
 export type InsertInquiry = z.infer<typeof insertInquirySchema>;
 export type Inquiry = typeof inquiries.$inferSelect;
 
+// Round results table (라운드 결과 - 차트 캔들용)
+export const roundResults = pgTable("round_results", {
+  id: serial("id").primaryKey(),
+  symbol: text("symbol").notNull(),
+  duration: integer("duration").notNull(), // 60, 180, 300 seconds
+  roundNumber: integer("round_number").notNull(),
+  roundDate: text("round_date").notNull(), // YYYY-MM-DD in KST
+  openPrice: decimal("open_price", { precision: 20, scale: 8 }).notNull(),
+  closePrice: decimal("close_price", { precision: 20, scale: 8 }).notNull(),
+  highPrice: decimal("high_price", { precision: 20, scale: 8 }).notNull(),
+  lowPrice: decimal("low_price", { precision: 20, scale: 8 }).notNull(),
+  direction: text("direction").notNull(), // 'up' or 'down' - determines candle color
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertRoundResultSchema = createInsertSchema(roundResults).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertRoundResult = z.infer<typeof insertRoundResultSchema>;
+export type RoundResult = typeof roundResults.$inferSelect;
+
 // Korean banks list
 export const KOREAN_BANKS = [
   "KB국민은행",
