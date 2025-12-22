@@ -1450,6 +1450,24 @@ export async function registerRoutes(
     }
   });
 
+  // Get round candles for chart (public)
+  app.get("/api/rounds/candles", async (req, res) => {
+    try {
+      const symbol = req.query.symbol as string;
+      const duration = parseInt(req.query.duration as string);
+      const limit = parseInt(req.query.limit as string) || 50;
+
+      if (!symbol || !duration) {
+        return res.status(400).json({ error: "symbol과 duration이 필요합니다" });
+      }
+
+      const results = await storage.getRoundResults(symbol, duration, limit);
+      res.json(results);
+    } catch (error) {
+      res.status(500).json({ error: "라운드 캔들 조회에 실패했습니다" });
+    }
+  });
+
   // Verify referral code (public - for registration)
   app.get("/api/referral/:code", async (req, res) => {
     try {
