@@ -34,12 +34,12 @@ function generatePlaceholderCandles(basePrice: number, count: number, durationSe
   const currentRound = calculateRoundNumber(durationSeconds);
   const roundDate = getKSTDateString();
   
-  // Create natural-looking candles with realistic volatility
+  // Create natural-looking candles with good visual volatility
   let price = basePrice;
   const candles: { round: number; open: number; high: number; low: number; close: number }[] = [];
   
-  // Volatility based on asset type (higher for stocks/indices)
-  const baseVolatility = symbol === 'NDX' ? basePrice * 0.003 : basePrice * 0.002; // 0.3% or 0.2%
+  // Higher volatility for better visual appearance (0.8% - 1.2%)
+  const baseVolatility = symbol === 'NDX' ? basePrice * 0.012 : basePrice * 0.008;
   
   // Generate prices backwards (from current round to older rounds)
   for (let i = 0; i < count; i++) {
@@ -50,23 +50,26 @@ function generatePlaceholderCandles(basePrice: number, count: number, durationSe
     const seed1 = round * 7919 + durationSeconds * 7907 + symbol.charCodeAt(0) * 7901;
     const seed2 = round * 3571 + durationSeconds * 2897 + symbol.charCodeAt(0) * 1571;
     const seed3 = round * 5501 + durationSeconds * 4007 + symbol.charCodeAt(0) * 3109;
+    const seed4 = round * 6173 + durationSeconds * 5309 + symbol.charCodeAt(0) * 4217;
     
     const rand1 = ((seed1 * 9301 + 49297) % 233280) / 233280;
     const rand2 = ((seed2 * 9301 + 49297) % 233280) / 233280;
     const rand3 = ((seed3 * 9301 + 49297) % 233280) / 233280;
+    const rand4 = ((seed4 * 9301 + 49297) % 233280) / 233280;
     
-    // Direction bias - slight trend with randomness
-    const trendBias = (rand1 > 0.5 ? 1 : -1) * 0.3;
-    const changePercent = (rand2 - 0.5 + trendBias) * 2;
-    const volatility = baseVolatility * (0.5 + rand3); // Variable volatility
+    // More dynamic direction with momentum
+    const direction = rand1 > 0.5 ? 1 : -1;
+    const momentum = 0.3 + rand4 * 0.7; // 30-100% strength
+    const changePercent = direction * momentum * (0.5 + rand2 * 0.5);
+    const volatility = baseVolatility * (0.6 + rand3 * 0.8); // Variable 60-140%
     const change = volatility * changePercent;
     
     const close = price;
     const open = price - change;
     
-    // Wicks add visual interest
-    const wickUp = volatility * rand1 * 0.5;
-    const wickDown = volatility * rand2 * 0.5;
+    // Larger wicks for more realistic candles
+    const wickUp = volatility * (0.3 + rand1 * 0.5);
+    const wickDown = volatility * (0.3 + rand2 * 0.5);
     const high = Math.max(open, close) + wickUp;
     const low = Math.min(open, close) - wickDown;
     
