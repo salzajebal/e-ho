@@ -473,6 +473,34 @@ export async function registerRoutes(
         }
       }
 
+      // Record round result for chart candles (use bet creation time for round date)
+      try {
+        const betCreatedAt = new Date(bet.createdAt);
+        const kstOffset = 9 * 60 * 60 * 1000;
+        const kstTime = new Date(betCreatedAt.getTime() + betCreatedAt.getTimezoneOffset() * 60 * 1000 + kstOffset);
+        const roundDate = `${kstTime.getFullYear()}-${String(kstTime.getMonth() + 1).padStart(2, '0')}-${String(kstTime.getDate()).padStart(2, '0')}`;
+        
+        const direction = closePriceNum >= strikePrice ? 'up' : 'down';
+        const variation = strikePrice * 0.001;
+        const openPrice = strikePrice;
+        const highPrice = Math.max(openPrice, closePriceNum) + variation * 0.3;
+        const lowPrice = Math.min(openPrice, closePriceNum) - variation * 0.3;
+        
+        await storage.upsertRoundResult({
+          symbol: bet.symbol,
+          duration: bet.duration,
+          roundNumber: bet.roundNumber,
+          roundDate,
+          openPrice: openPrice.toString(),
+          closePrice: closePrice,
+          highPrice: highPrice.toString(),
+          lowPrice: lowPrice.toString(),
+          direction,
+        });
+      } catch (e) {
+        console.error("Failed to record round result:", e);
+      }
+
       res.json(settledBet);
     } catch (error) {
       console.error("Failed to settle bet:", error);
@@ -1598,6 +1626,35 @@ export async function registerRoutes(
           const newBalance = (currentBalance + parseFloat(payout)).toString();
           await storage.updateUserBalance(bet.userId, newBalance);
         }
+      }
+
+      // Record round result for chart candles (use bet creation time for round date)
+      try {
+        const betCreatedAt = new Date(bet.createdAt);
+        const kstOffset = 9 * 60 * 60 * 1000;
+        const kstTime = new Date(betCreatedAt.getTime() + betCreatedAt.getTimezoneOffset() * 60 * 1000 + kstOffset);
+        const roundDate = `${kstTime.getFullYear()}-${String(kstTime.getMonth() + 1).padStart(2, '0')}-${String(kstTime.getDate()).padStart(2, '0')}`;
+        
+        const actualClosePrice = parseFloat(closePrice || bet.strikePrice);
+        const strikePrice = parseFloat(bet.strikePrice);
+        const direction = actualClosePrice >= strikePrice ? 'up' : 'down';
+        const variation = strikePrice * 0.001;
+        const highPrice = Math.max(strikePrice, actualClosePrice) + variation * 0.3;
+        const lowPrice = Math.min(strikePrice, actualClosePrice) - variation * 0.3;
+        
+        await storage.upsertRoundResult({
+          symbol: bet.symbol,
+          duration: bet.duration,
+          roundNumber: bet.roundNumber,
+          roundDate,
+          openPrice: bet.strikePrice,
+          closePrice: (closePrice || bet.strikePrice).toString(),
+          highPrice: highPrice.toString(),
+          lowPrice: lowPrice.toString(),
+          direction,
+        });
+      } catch (e) {
+        console.error("Failed to record round result:", e);
       }
 
       // Broadcast settlement to admin clients
