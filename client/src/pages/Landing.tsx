@@ -1302,7 +1302,7 @@ export default function Landing() {
                         <SelectTrigger className="h-10 bg-white/5 border-white/10 text-white text-sm">
                           <SelectValue placeholder="은행을 선택하세요" />
                         </SelectTrigger>
-                        <SelectContent className="bg-gray-900 border-white/20">
+                        <SelectContent className="bg-gray-900 border-white/20 max-h-60 overflow-y-auto">
                           {KOREAN_BANKS.map((bank) => (
                             <SelectItem key={bank} value={bank} className="text-white hover:bg-white/10">
                               {bank}
