@@ -35,31 +35,44 @@ function generatePlaceholderCandles(basePrice: number, count: number, durationSe
   const currentRound = calculateRoundNumber(durationSeconds);
   const roundDate = getKSTDateString();
   
-  // Start from current price and work backwards with small variations
+  // Create natural-looking candles with realistic volatility
   let price = basePrice;
   const candles: { round: number; open: number; high: number; low: number; close: number }[] = [];
+  
+  // Volatility based on asset type (higher for stocks/indices)
+  const baseVolatility = symbol === 'NDX' ? basePrice * 0.003 : basePrice * 0.002; // 0.3% or 0.2%
   
   // Generate prices backwards (from current round to older rounds)
   for (let i = 0; i < count; i++) {
     const round = currentRound - 1 - i;
     if (round < 1) break;
     
-    const seed = round * 7919 + durationSeconds * 7907 + symbol.charCodeAt(0) * 7901;
-    const pseudoRandom = ((seed * 9301 + 49297) % 233280) / 233280;
+    // Use multiple seeded random values for variety
+    const seed1 = round * 7919 + durationSeconds * 7907 + symbol.charCodeAt(0) * 7901;
+    const seed2 = round * 3571 + durationSeconds * 2897 + symbol.charCodeAt(0) * 1571;
+    const seed3 = round * 5501 + durationSeconds * 4007 + symbol.charCodeAt(0) * 3109;
     
-    const volatility = basePrice * 0.0008; // 0.08% volatility
-    const change = volatility * (pseudoRandom - 0.5) * 2;
+    const rand1 = ((seed1 * 9301 + 49297) % 233280) / 233280;
+    const rand2 = ((seed2 * 9301 + 49297) % 233280) / 233280;
+    const rand3 = ((seed3 * 9301 + 49297) % 233280) / 233280;
+    
+    // Direction bias - slight trend with randomness
+    const trendBias = (rand1 > 0.5 ? 1 : -1) * 0.3;
+    const changePercent = (rand2 - 0.5 + trendBias) * 2;
+    const volatility = baseVolatility * (0.5 + rand3); // Variable volatility
+    const change = volatility * changePercent;
     
     const close = price;
-    const open = price - change; // Work backwards
+    const open = price - change;
     
-    const wickRandom = ((seed * 1234 + 56789) % 100000) / 100000;
-    const wickSize = Math.abs(change) * 0.2 + volatility * 0.1 * wickRandom;
-    const high = Math.max(open, close) + wickSize;
-    const low = Math.min(open, close) - wickSize;
+    // Wicks add visual interest
+    const wickUp = volatility * rand1 * 0.5;
+    const wickDown = volatility * rand2 * 0.5;
+    const high = Math.max(open, close) + wickUp;
+    const low = Math.min(open, close) - wickDown;
     
     candles.unshift({ round, open, high, low, close });
-    price = open; // Next (older) round closes at this round's open
+    price = open;
   }
   
   // Convert to chart data with timestamps
