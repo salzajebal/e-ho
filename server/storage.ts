@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Bet, type InsertBet, type Setting, type Message, type InsertMessage, type Affiliate, type InsertAffiliate, type AffiliateCommission, type AffiliateSettlement, type InsertAffiliateSettlement, type Announcement, type InsertAnnouncement, type BlockedIp, type InsertBlockedIp, type MaintenanceSymbol, type InsertMaintenanceSymbol, type TransactionRequest, type InsertTransactionRequest, type Inquiry, type InsertInquiry, users, bets, settings, messages, affiliates, affiliateCommissions, affiliateSettlements, announcements, blockedIps, maintenanceSymbols, transactionRequests, inquiries } from "@shared/schema";
+import { type User, type InsertUser, type Bet, type InsertBet, type Setting, type Message, type InsertMessage, type Affiliate, type InsertAffiliate, type AffiliateCommission, type AffiliateSettlement, type InsertAffiliateSettlement, type Announcement, type InsertAnnouncement, type BlockedIp, type InsertBlockedIp, type MaintenanceSymbol, type InsertMaintenanceSymbol, type TransactionRequest, type InsertTransactionRequest, type Inquiry, type InsertInquiry, type RoundResult, type InsertRoundResult, users, bets, settings, messages, affiliates, affiliateCommissions, affiliateSettlements, announcements, blockedIps, maintenanceSymbols, transactionRequests, inquiries, roundResults } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, lt, sql, gte } from "drizzle-orm";
 
@@ -139,6 +139,12 @@ export interface IStorage {
   getAllInquiries(): Promise<Inquiry[]>;
   getPendingInquiries(): Promise<Inquiry[]>;
   replyToInquiry(id: number, reply: string, repliedBy: string): Promise<Inquiry>;
+
+  // Round result methods (라운드 결과 - 차트 캔들용)
+  createRoundResult(result: InsertRoundResult): Promise<RoundResult>;
+  getRoundResults(symbol: string, duration: number, limit?: number): Promise<RoundResult[]>;
+  getRoundResult(symbol: string, duration: number, roundNumber: number, roundDate: string): Promise<RoundResult | undefined>;
+  upsertRoundResult(result: InsertRoundResult): Promise<RoundResult>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -855,6 +861,51 @@ export class DatabaseStorage implements IStorage {
       .where(eq(inquiries.id, id))
       .returning();
     return updated;
+  }
+
+  // Round result methods (라운드 결과 - 차트 캔들용)
+  async createRoundResult(result: InsertRoundResult): Promise<RoundResult> {
+    const [created] = await db.insert(roundResults).values(result).returning();
+    return created;
+  }
+
+  async getRoundResults(symbol: string, duration: number, limit: number = 50): Promise<RoundResult[]> {
+    return await db.select().from(roundResults)
+      .where(and(
+        eq(roundResults.symbol, symbol),
+        eq(roundResults.duration, duration)
+      ))
+      .orderBy(desc(roundResults.roundDate), desc(roundResults.roundNumber))
+      .limit(limit);
+  }
+
+  async getRoundResult(symbol: string, duration: number, roundNumber: number, roundDate: string): Promise<RoundResult | undefined> {
+    const [result] = await db.select().from(roundResults)
+      .where(and(
+        eq(roundResults.symbol, symbol),
+        eq(roundResults.duration, duration),
+        eq(roundResults.roundNumber, roundNumber),
+        eq(roundResults.roundDate, roundDate)
+      ));
+    return result || undefined;
+  }
+
+  async upsertRoundResult(result: InsertRoundResult): Promise<RoundResult> {
+    const existing = await this.getRoundResult(result.symbol, result.duration, result.roundNumber, result.roundDate);
+    if (existing) {
+      const [updated] = await db.update(roundResults)
+        .set({
+          openPrice: result.openPrice,
+          closePrice: result.closePrice,
+          highPrice: result.highPrice,
+          lowPrice: result.lowPrice,
+          direction: result.direction,
+        })
+        .where(eq(roundResults.id, existing.id))
+        .returning();
+      return updated;
+    }
+    return this.createRoundResult(result);
   }
 }
 
