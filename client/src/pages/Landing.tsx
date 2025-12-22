@@ -1466,7 +1466,7 @@ export default function Landing() {
                           {Number(bet.amount).toLocaleString()}원
                         </div>
                         <div className={`text-xs ${bet.outcome === 'win' ? 'text-green-400' : bet.outcome === 'lose' ? 'text-red-400' : 'text-yellow-400'}`}>
-                          {bet.outcome === 'win' ? '승리' : bet.outcome === 'lose' ? '패배' : '진행중'}
+                          {bet.outcome === 'win' ? '실현' : bet.outcome === 'lose' ? '실격' : '진행중'}
                         </div>
                       </div>
                     </div>

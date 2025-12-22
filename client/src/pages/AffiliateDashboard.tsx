@@ -822,7 +822,7 @@ export default function AffiliateDashboard() {
                             ) : (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-red-500/20 text-red-500 text-xs font-medium">
                                 <XCircle className="w-3 h-3" />
-                                실패
+                                실격
                               </span>
                             )}
                           </td>
@@ -845,9 +845,9 @@ export default function AffiliateDashboard() {
                           <td className="px-4 py-3">{Math.floor(bet.duration / 60)}분</td>
                           <td className="px-4 py-3">
                             {isActive ? '-' : isWin ? (
-                              <span className="text-green-500 font-medium">승리</span>
+                              <span className="text-green-500 font-medium">실현</span>
                             ) : (
-                              <span className="text-red-500">패배</span>
+                              <span className="text-red-500">실격</span>
                             )}
                           </td>
                           <td className="px-4 py-3 text-right">

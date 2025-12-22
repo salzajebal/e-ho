@@ -102,7 +102,7 @@ function BetRow({ bet, currentPrice, onExpire }: { bet: Bet; currentPrice: numbe
             "text-xs font-medium",
             bet.outcome === 'win' ? "text-up" : "text-down"
           )}>
-            {bet.outcome === 'win' ? '승리' : '패배'}
+            {bet.outcome === 'win' ? '실현' : '실격'}
           </div>
         </div>
       </div>
