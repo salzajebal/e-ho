@@ -208,6 +208,11 @@ export function PriceChart({ symbol, data, duration = 60 }: PriceChartProps) {
   useEffect(() => {
     if (!seriesRef.current || !chartRef.current) return;
 
+    // Only rebuild chart data when symbol, duration, or roundResults change
+    // NOT when price changes (price updates handled by separate effect)
+    const symbolChanged = symbol !== lastSymbolRef.current;
+    const durationChanged = duration !== lastDurationRef.current;
+    
     let candleData: CandlestickData<Time>[];
     
     if (roundResults && roundResults.length > 0) {
@@ -251,10 +256,14 @@ export function PriceChart({ symbol, data, duration = 60 }: PriceChartProps) {
       seriesRef.current.setData([currentCandleRef.current]);
     }
 
-    chartRef.current.timeScale().fitContent();
+    // Only fit content when symbol or duration changes, not on every update
+    if (symbolChanged || durationChanged) {
+      chartRef.current.timeScale().fitContent();
+    }
+    
     lastSymbolRef.current = symbol;
     lastDurationRef.current = duration;
-  }, [symbol, duration, roundResults, data.price]);
+  }, [symbol, duration, roundResults]);
 
   useEffect(() => {
     if (!seriesRef.current || data.price === 0) return;
