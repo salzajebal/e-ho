@@ -1789,16 +1789,19 @@ export async function registerRoutes(
     }
   });
 
-  // ==================== REAL-TIME MARKET DATA (Yahoo Finance) ====================
+  // ==================== REAL-TIME MARKET DATA (Finnhub API) ====================
   
-  // Cache for market data (refresh every 5 seconds for real-time feel)
+  const FINNHUB_API_KEY = process.env.FINNHUB_API_KEY;
+  
+  // Cache for market data (refresh every 3 seconds for real-time feel)
   let marketDataCache: { data: any; timestamp: number } | null = null;
-  const CACHE_DURATION = 5000; // 5 seconds
+  const CACHE_DURATION = 3000; // 3 seconds
 
-  // Yahoo Finance symbol mapping (matches TradingView chart data sources)
-  const YAHOO_SYMBOLS: Record<string, string> = {
-    'NDX': '^NDX',      // NASDAQ 100 Index
-    'GOLD': 'GC=F',     // Gold Futures (matches TradingView OANDA:XAUUSD closely)
+  // Finnhub Forex symbol mapping (matches TradingView symbols)
+  // Finnhub uses format: OANDA:EUR_USD for forex pairs
+  const FINNHUB_SYMBOLS: Record<string, string> = {
+    'NDX': 'OANDA:NAS100_USD',   // NASDAQ 100 CFD
+    'GOLD': 'OANDA:XAU_USD',     // Gold spot
   };
 
   // Fallback prices when API is unavailable
@@ -1807,41 +1810,42 @@ export async function registerRoutes(
     'GOLD': { price: 2650.30, previousClose: 2637.80 },
   };
 
-  // Fetch quote from Yahoo Finance
-  async function fetchYahooQuote(yahooSymbol: string): Promise<any> {
+  // Fetch quote from Finnhub API
+  async function fetchFinnhubQuote(finnhubSymbol: string): Promise<any> {
+    if (!FINNHUB_API_KEY) {
+      console.log('Finnhub API key not configured');
+      return null;
+    }
+    
     try {
-      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSymbol)}?interval=1m&range=1d`;
-      const response = await fetch(url, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        }
-      });
+      const url = `https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(finnhubSymbol)}&token=${FINNHUB_API_KEY}`;
+      console.log(`Fetching Finnhub: ${finnhubSymbol}`);
+      const response = await fetch(url);
       
       if (!response.ok) {
-        throw new Error(`Yahoo API error: ${response.status}`);
+        const text = await response.text();
+        console.error(`Finnhub API error ${response.status}: ${text}`);
+        return null;
       }
       
       const data = await response.json();
-      const result = data.chart?.result?.[0];
+      console.log(`Finnhub response for ${finnhubSymbol}:`, JSON.stringify(data));
       
-      if (!result) {
-        throw new Error('No data returned');
+      // Finnhub returns: c (current), h (high), l (low), o (open), pc (previous close)
+      if (!data || (data.c === 0 && data.pc === 0)) {
+        console.log(`No valid data for ${finnhubSymbol}`);
+        return null;
       }
       
-      const meta = result.meta;
-      const regularMarketPrice = meta.regularMarketPrice || 0;
-      const previousClose = meta.previousClose || meta.chartPreviousClose || regularMarketPrice;
-      const regularMarketDayHigh = meta.regularMarketDayHigh || regularMarketPrice;
-      const regularMarketDayLow = meta.regularMarketDayLow || regularMarketPrice;
-      
       return {
-        price: regularMarketPrice,
-        previousClose,
-        high: regularMarketDayHigh,
-        low: regularMarketDayLow,
+        price: data.c,
+        previousClose: data.pc || data.c,
+        high: data.h || data.c,
+        low: data.l || data.c,
+        open: data.o || data.c,
       };
     } catch (error) {
-      console.error(`Yahoo fetch error for ${yahooSymbol}:`, error);
+      console.error(`Finnhub fetch error for ${finnhubSymbol}:`, error);
       return null;
     }
   }
@@ -1853,11 +1857,11 @@ export async function registerRoutes(
         return res.json(marketDataCache.data);
       }
 
-      const symbols = Object.keys(YAHOO_SYMBOLS);
+      const symbols = Object.keys(FINNHUB_SYMBOLS);
       const pricePromises = symbols.map(async (symbol) => {
-        const yahooSymbol = YAHOO_SYMBOLS[symbol];
+        const finnhubSymbol = FINNHUB_SYMBOLS[symbol];
         try {
-          const quote = await fetchYahooQuote(yahooSymbol);
+          const quote = await fetchFinnhubQuote(finnhubSymbol);
           
           // Use fallback if API fails
           const fallback = FALLBACK_PRICES[symbol];
@@ -1877,7 +1881,7 @@ export async function registerRoutes(
             high: parseFloat(high.toFixed(2)),
             low: parseFloat(low.toFixed(2)),
             timestamp: Date.now(),
-            source: quote ? 'yahoo' : 'fallback',
+            source: quote ? 'finnhub' : 'fallback',
           };
         } catch (err) {
           console.error(`Failed to fetch ${symbol}:`, err);
@@ -1914,13 +1918,13 @@ export async function registerRoutes(
   app.get("/api/market/price/:symbol", async (req, res) => {
     try {
       const { symbol } = req.params;
-      const yahooSymbol = YAHOO_SYMBOLS[symbol];
+      const finnhubSymbol = FINNHUB_SYMBOLS[symbol];
       
-      if (!yahooSymbol) {
+      if (!finnhubSymbol) {
         return res.status(400).json({ error: "Unknown symbol" });
       }
 
-      const quote = await fetchYahooQuote(yahooSymbol);
+      const quote = await fetchFinnhubQuote(finnhubSymbol);
       const fallback = FALLBACK_PRICES[symbol];
       
       const price = quote?.price || fallback?.price || 0;
@@ -1939,7 +1943,7 @@ export async function registerRoutes(
         high: parseFloat(high.toFixed(2)),
         low: parseFloat(low.toFixed(2)),
         timestamp: Date.now(),
-        source: quote ? 'yahoo' : 'fallback',
+        source: quote ? 'finnhub' : 'fallback',
       });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch price", fallback: true });
