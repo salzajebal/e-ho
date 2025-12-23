@@ -15,10 +15,10 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
   const priceLineRef = useRef<any>(null);
   const [chartReady, setChartReady] = useState(false);
   const initPriceRef = useRef<number>(0);
+  const [ohlc, setOhlc] = useState({ open: 0, high: 0, low: 0, close: 0 });
 
   const durationMinutes = duration / 60;
 
-  // Generate initial candle data
   const generateInitialCandles = useCallback((basePrice: number, candleDuration: number, series: any) => {
     if (!series || basePrice <= 0) return;
 
@@ -27,7 +27,7 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
     const kstNow = new Date(now.getTime() + kstOffset);
     
     const candles: CandlestickData<Time>[] = [];
-    const candleCount = 50;
+    const candleCount = 100;
     
     let price = basePrice * (0.995 + Math.random() * 0.01);
     
@@ -35,7 +35,7 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
       const candleTime = new Date(kstNow.getTime() - (i * candleDuration * 1000));
       const timestamp = Math.floor(candleTime.getTime() / 1000) as Time;
       
-      const volatility = basePrice * 0.001;
+      const volatility = basePrice * 0.0008;
       const open = price;
       const change = (Math.random() - 0.5) * 2 * volatility;
       const close = open + change;
@@ -53,12 +53,17 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
       price = close;
     }
     
-    // Set last candle close to current price
     if (candles.length > 0) {
       const lastIdx = candles.length - 1;
       candles[lastIdx].close = basePrice;
       candles[lastIdx].high = Math.max(candles[lastIdx].high, basePrice);
       candles[lastIdx].low = Math.min(candles[lastIdx].low, basePrice);
+      setOhlc({
+        open: candles[lastIdx].open,
+        high: candles[lastIdx].high,
+        low: candles[lastIdx].low,
+        close: candles[lastIdx].close,
+      });
     }
     
     try {
@@ -69,16 +74,13 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
     }
   }, []);
 
-  // Initialize chart
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // Reset state
     setChartReady(false);
     setLastCandle(null);
     initPriceRef.current = 0;
 
-    // Clean up previous chart
     if (chartRef.current) {
       chartRef.current.remove();
       chartRef.current = null;
@@ -90,37 +92,58 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
       height: containerRef.current.clientHeight,
       layout: {
         background: { color: '#131722' },
-        textColor: '#d1d4dc',
+        textColor: '#787b86',
+        fontFamily: "'Trebuchet MS', Roboto, Ubuntu, sans-serif",
+        fontSize: 12,
       },
       grid: {
-        vertLines: { color: '#1e222d' },
-        horzLines: { color: '#1e222d' },
+        vertLines: { 
+          color: 'rgba(42, 46, 57, 0.6)',
+          style: 1,
+        },
+        horzLines: { 
+          color: 'rgba(42, 46, 57, 0.6)',
+          style: 1,
+        },
       },
       crosshair: {
         mode: 1,
         vertLine: {
-          color: '#758696',
+          color: 'rgba(152, 157, 174, 0.6)',
           width: 1,
-          style: 2,
+          style: 0,
+          labelBackgroundColor: '#2a2e39',
         },
         horzLine: {
-          color: '#758696',
+          color: 'rgba(152, 157, 174, 0.6)',
           width: 1,
-          style: 2,
+          style: 0,
+          labelBackgroundColor: '#2a2e39',
         },
       },
       rightPriceScale: {
-        borderColor: '#2B2B43',
+        borderColor: '#2a2e39',
         scaleMargins: {
           top: 0.1,
-          bottom: 0.1,
+          bottom: 0.08,
         },
+        borderVisible: true,
+        entireTextOnly: true,
       },
       timeScale: {
-        borderColor: '#2B2B43',
+        borderColor: '#2a2e39',
         timeVisible: true,
         secondsVisible: false,
-        rightOffset: 5,
+        rightOffset: 10,
+        barSpacing: 8,
+        minBarSpacing: 4,
+        fixLeftEdge: false,
+        fixRightEdge: false,
+        borderVisible: true,
+      },
+      localization: {
+        locale: 'ko-KR',
+        dateFormat: 'yyyy-MM-dd',
       },
     });
 
@@ -131,13 +154,13 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
       borderDownColor: '#ef5350',
       wickUpColor: '#26a69a',
       wickDownColor: '#ef5350',
+      borderVisible: true,
     });
 
     chartRef.current = chart;
     candleSeriesRef.current = candleSeries;
     setChartReady(true);
 
-    // Handle resize
     const handleResize = () => {
       if (containerRef.current && chartRef.current) {
         chartRef.current.applyOptions({
@@ -159,20 +182,17 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
     };
   }, [symbol, duration]);
 
-  // Generate candles when chart is ready and we have a valid price
   useEffect(() => {
     if (chartReady && candleSeriesRef.current && currentPrice > 0 && initPriceRef.current === 0) {
       initPriceRef.current = currentPrice;
       generateInitialCandles(currentPrice, duration, candleSeriesRef.current);
       
-      // Fit content after data is set
       if (chartRef.current) {
         chartRef.current.timeScale().fitContent();
       }
     }
   }, [chartReady, currentPrice, duration, generateInitialCandles]);
 
-  // Update candle with real-time price
   useEffect(() => {
     if (!candleSeriesRef.current || !lastCandle || currentPrice <= 0) return;
 
@@ -186,7 +206,6 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
     
     try {
       if (candleStartTime > lastCandleTime) {
-        // New candle
         const newCandle: CandlestickData<Time> = {
           time: candleStartTime as Time,
           open: currentPrice,
@@ -196,8 +215,13 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
         };
         candleSeriesRef.current.update(newCandle);
         setLastCandle(newCandle);
+        setOhlc({
+          open: currentPrice,
+          high: currentPrice,
+          low: currentPrice,
+          close: currentPrice,
+        });
       } else {
-        // Update current candle
         const updatedCandle: CandlestickData<Time> = {
           ...lastCandle,
           high: Math.max(lastCandle.high, currentPrice),
@@ -206,9 +230,14 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
         };
         candleSeriesRef.current.update(updatedCandle);
         setLastCandle(updatedCandle);
+        setOhlc({
+          open: updatedCandle.open,
+          high: updatedCandle.high,
+          low: updatedCandle.low,
+          close: updatedCandle.close,
+        });
       }
 
-      // Update price line
       if (priceLineRef.current) {
         candleSeriesRef.current.removePriceLine(priceLineRef.current);
       }
@@ -221,32 +250,77 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
         title: '',
       });
     } catch (e) {
-      // Ignore errors during updates
     }
   }, [currentPrice, duration, lastCandle]);
 
-  const isUp = lastCandle ? lastCandle.close >= lastCandle.open : true;
+  const isUp = ohlc.close >= ohlc.open;
+  const change = ohlc.close - ohlc.open;
+  const changePercent = ohlc.open > 0 ? (change / ohlc.open) * 100 : 0;
 
   return (
     <div className="flex flex-col h-full w-full" style={{ backgroundColor: '#131722' }} data-testid="chart-container">
-      {/* Price Header */}
-      <div className="flex items-center justify-between px-3 py-2 border-b border-[#1e222d] shrink-0">
-        <div className="flex items-center gap-3">
-          <span className="text-white font-bold text-lg">{symbol}</span>
-          <span className="text-xs text-gray-400">지수</span>
+      {/* TradingView Style Header */}
+      <div className="flex items-center gap-4 px-3 py-2 border-b border-[#2a2e39] shrink-0">
+        {/* Symbol Info */}
+        <div className="flex items-center gap-2">
+          <span className="text-white font-semibold text-base">{symbol}</span>
+          <span className="text-[#787b86] text-xs">• {durationMinutes}분</span>
         </div>
-        <div className="flex items-center gap-3">
-          <span className={`text-xl font-bold ${isUp ? 'text-[#26a69a]' : 'text-[#ef5350]'}`}>
+        
+        {/* OHLC Values */}
+        <div className="flex items-center gap-3 text-xs">
+          <div className="flex items-center gap-1">
+            <span className="text-[#787b86]">O</span>
+            <span className={isUp ? 'text-[#26a69a]' : 'text-[#ef5350]'}>
+              {ohlc.open.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="text-[#787b86]">H</span>
+            <span className={isUp ? 'text-[#26a69a]' : 'text-[#ef5350]'}>
+              {ohlc.high.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="text-[#787b86]">L</span>
+            <span className={isUp ? 'text-[#26a69a]' : 'text-[#ef5350]'}>
+              {ohlc.low.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="text-[#787b86]">C</span>
+            <span className={isUp ? 'text-[#26a69a]' : 'text-[#ef5350]'}>
+              {ohlc.close.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </span>
+          </div>
+        </div>
+
+        {/* Price Change */}
+        <div className="flex items-center gap-2 ml-auto">
+          <span className={`text-lg font-semibold ${isUp ? 'text-[#26a69a]' : 'text-[#ef5350]'}`}>
             {currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </span>
-          <span className="bg-[#ef5350] text-white text-xs px-2 py-0.5 rounded font-semibold">
-            {durationMinutes}분봉
+          <span className={`text-xs ${isUp ? 'text-[#26a69a]' : 'text-[#ef5350]'}`}>
+            {isUp ? '+' : ''}{change.toFixed(2)} ({isUp ? '+' : ''}{changePercent.toFixed(2)}%)
           </span>
         </div>
       </div>
 
-      {/* Chart */}
+      {/* Chart Canvas */}
       <div ref={containerRef} className="flex-1 min-h-0" />
+      
+      {/* TradingView Style Footer */}
+      <div className="flex items-center justify-between px-3 py-1 border-t border-[#2a2e39] text-[10px] text-[#787b86] shrink-0">
+        <div className="flex items-center gap-3">
+          <span>UTC+9</span>
+          <span>•</span>
+          <span>{durationMinutes}분봉</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[#26a69a]">▲</span>
+          <span>실시간</span>
+        </div>
+      </div>
     </div>
   );
 }
