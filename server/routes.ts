@@ -1791,21 +1791,20 @@ export async function registerRoutes(
 
   // ==================== REAL-TIME MARKET DATA (Yahoo Finance) ====================
   
-  // Cache for market data (refresh every 15 seconds)
+  // Cache for market data (refresh every 5 seconds for real-time feel)
   let marketDataCache: { data: any; timestamp: number } | null = null;
-  const CACHE_DURATION = 15000; // 15 seconds
+  const CACHE_DURATION = 5000; // 5 seconds
 
-  // Yahoo Finance symbol mapping
+  // Yahoo Finance symbol mapping (matches TradingView chart data sources)
   const YAHOO_SYMBOLS: Record<string, string> = {
     'NDX': '^NDX',      // NASDAQ 100 Index
-    'GOLD': 'GC=F',     // Gold Futures (COMEX)
-    'AAPL': 'AAPL',
-    'MSFT': 'MSFT',
-    'GOOGL': 'GOOGL',
-    'AMZN': 'AMZN',
-    'NVDA': 'NVDA',
-    'META': 'META',
-    'TSLA': 'TSLA',
+    'GOLD': 'GC=F',     // Gold Futures (matches TradingView OANDA:XAUUSD closely)
+  };
+
+  // Fallback prices when API is unavailable
+  const FALLBACK_PRICES: Record<string, { price: number; previousClose: number }> = {
+    'NDX': { price: 21547.80, previousClose: 21658.30 },
+    'GOLD': { price: 2650.30, previousClose: 2637.80 },
   };
 
   // Fetch quote from Yahoo Finance
@@ -1860,38 +1859,47 @@ export async function registerRoutes(
         try {
           const quote = await fetchYahooQuote(yahooSymbol);
           
-          if (!quote || quote.price === 0) {
-            return null;
-          }
+          // Use fallback if API fails
+          const fallback = FALLBACK_PRICES[symbol];
+          const price = quote?.price || fallback.price;
+          const previousClose = quote?.previousClose || fallback.previousClose;
+          const high = quote?.high || price * 1.002;
+          const low = quote?.low || price * 0.998;
           
-          const change = quote.price - quote.previousClose;
-          const changePercent = quote.previousClose > 0 ? (change / quote.previousClose) * 100 : 0;
+          const change = price - previousClose;
+          const changePercent = previousClose > 0 ? (change / previousClose) * 100 : 0;
           
           return {
             symbol,
-            price: parseFloat(quote.price.toFixed(2)),
+            price: parseFloat(price.toFixed(2)),
             change: parseFloat(change.toFixed(2)),
             changePercent: parseFloat(changePercent.toFixed(2)),
-            high: parseFloat(quote.high.toFixed(2)),
-            low: parseFloat(quote.low.toFixed(2)),
+            high: parseFloat(high.toFixed(2)),
+            low: parseFloat(low.toFixed(2)),
             timestamp: Date.now(),
+            source: quote ? 'yahoo' : 'fallback',
           };
         } catch (err) {
           console.error(`Failed to fetch ${symbol}:`, err);
-          return null;
+          const fallback = FALLBACK_PRICES[symbol];
+          return {
+            symbol,
+            price: fallback.price,
+            change: 0,
+            changePercent: 0,
+            high: fallback.price,
+            low: fallback.price,
+            timestamp: Date.now(),
+            source: 'fallback',
+          };
         }
       });
 
       const results = await Promise.all(pricePromises);
-      const validResults = results.filter(r => r !== null);
-
-      if (validResults.length === 0) {
-        return res.status(503).json({ error: "Failed to fetch market data", fallback: true });
-      }
 
       // Update cache
       marketDataCache = {
-        data: { prices: validResults, timestamp: Date.now() },
+        data: { prices: results, timestamp: Date.now() },
         timestamp: Date.now(),
       };
 
@@ -1913,22 +1921,25 @@ export async function registerRoutes(
       }
 
       const quote = await fetchYahooQuote(yahooSymbol);
+      const fallback = FALLBACK_PRICES[symbol];
       
-      if (!quote || quote.price === 0) {
-        return res.status(503).json({ error: "Failed to fetch price", fallback: true });
-      }
+      const price = quote?.price || fallback?.price || 0;
+      const previousClose = quote?.previousClose || fallback?.previousClose || price;
+      const high = quote?.high || price * 1.002;
+      const low = quote?.low || price * 0.998;
       
-      const change = quote.price - quote.previousClose;
-      const changePercent = quote.previousClose > 0 ? (change / quote.previousClose) * 100 : 0;
+      const change = price - previousClose;
+      const changePercent = previousClose > 0 ? (change / previousClose) * 100 : 0;
 
       res.json({
         symbol,
-        price: parseFloat(quote.price.toFixed(2)),
+        price: parseFloat(price.toFixed(2)),
         change: parseFloat(change.toFixed(2)),
         changePercent: parseFloat(changePercent.toFixed(2)),
-        high: parseFloat(quote.high.toFixed(2)),
-        low: parseFloat(quote.low.toFixed(2)),
+        high: parseFloat(high.toFixed(2)),
+        low: parseFloat(low.toFixed(2)),
         timestamp: Date.now(),
+        source: quote ? 'yahoo' : 'fallback',
       });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch price", fallback: true });

@@ -133,8 +133,8 @@ export function useMarketData() {
     // Initial API fetch
     fetchRealPrices();
 
-    // Fetch from API every 15 seconds
-    const apiInterval = setInterval(fetchRealPrices, 15000);
+    // Fetch from API every 5 seconds for real-time sync with TradingView
+    const apiInterval = setInterval(fetchRealPrices, 5000);
     
     // Micro-simulation for smooth price display (every second)
     const simInterval = setInterval(() => {
