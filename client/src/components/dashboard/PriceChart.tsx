@@ -1,9 +1,7 @@
 import { useEffect, useRef, memo } from "react";
-import { MarketData } from "@/lib/marketData";
 
 interface PriceChartProps {
   symbol: string;
-  data: MarketData;
   duration?: number;
 }
 
@@ -32,14 +30,13 @@ function getInterval(durationSeconds: number): string {
   }
 }
 
-function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
+function PriceChartComponent({ symbol, duration = 60 }: PriceChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetRef = useRef<HTMLDivElement>(null);
 
   const tvSymbol = getTradingViewSymbol(symbol);
   const interval = getInterval(duration);
   const durationMinutes = duration / 60;
-  const isUp = data.change >= 0;
 
   useEffect(() => {
     if (!widgetRef.current) return;
@@ -92,13 +89,7 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
           <span className="text-white font-bold text-lg">{symbol}</span>
           <span className="text-xs text-gray-400">지수</span>
         </div>
-        <div className="flex items-center gap-3">
-          <span className={`text-xl font-bold ${isUp ? 'text-[#26a69a]' : 'text-[#ef5350]'}`}>
-            ${data.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </span>
-          <span className={`text-sm ${isUp ? 'text-[#26a69a]' : 'text-[#ef5350]'}`}>
-            {isUp ? '+' : ''}{data.change.toFixed(2)} ({isUp ? '+' : ''}{data.changePercent.toFixed(2)}%)
-          </span>
+        <div className="flex items-center gap-1">
           <span className="bg-[#ef5350] text-white text-xs px-2 py-0.5 rounded font-semibold">
             {durationMinutes}분봉
           </span>
