@@ -1,10 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { createChart, ColorType, CandlestickSeries, CandlestickData, Time } from "lightweight-charts";
 import type { IChartApi, ISeriesApi } from "lightweight-charts";
 import { MarketData } from "@/lib/marketData";
-import { calculateRoundNumber, getKSTDate } from "@shared/rounds";
-import { useQuery } from "@tanstack/react-query";
-import type { RoundResult } from "@shared/schema";
 
 interface PriceChartProps {
   symbol: string;
@@ -12,63 +9,33 @@ interface PriceChartProps {
   duration?: number;
 }
 
-function getKSTDateString(): string {
-  const kst = getKSTDate();
-  const year = kst.getFullYear();
-  const month = String(kst.getMonth() + 1).padStart(2, '0');
-  const day = String(kst.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-function getRoundTimestamp(roundNumber: number, durationSeconds: number, roundDate: string): number {
-  const [year, month, day] = roundDate.split('-').map(Number);
-  // Use KST time directly as the timestamp value
-  // This way the chart displays KST time without conversion
-  const kstMidnight = Date.UTC(year, month - 1, day, 0, 0, 0);
-  const roundStartSeconds = (roundNumber - 1) * durationSeconds;
-  return Math.floor(kstMidnight / 1000) + roundStartSeconds;
-}
-
-function generatePlaceholderCandles(basePrice: number, count: number, durationSeconds: number, symbol: string): CandlestickData<Time>[] {
+function generateCandleData(basePrice: number, count: number, intervalSeconds: number): CandlestickData<Time>[] {
   const data: CandlestickData<Time>[] = [];
   const now = Math.floor(Date.now() / 1000);
   
-  // Start from current price and work backwards
-  let currentPrice = basePrice * 0.998;
+  // Align to interval boundary
+  const alignedNow = Math.floor(now / intervalSeconds) * intervalSeconds;
   
-  // Volatility increases with duration (1min=0.4%, 3min=0.8%, 5min=1.2%)
-  const durationMinutes = durationSeconds / 60;
-  const baseVol = symbol === 'NDX' ? 0.004 : 0.003;
-  const volatility = baseVol * durationMinutes;
+  let currentPrice = basePrice * 0.995;
+  const intervalMinutes = intervalSeconds / 60;
   
+  // Volatility based on interval (longer intervals = bigger moves)
+  const volatility = 0.003 * Math.sqrt(intervalMinutes);
+
   for (let i = count - 1; i >= 0; i--) {
-    const time = (now - i * durationSeconds) as Time;
+    const time = (alignedNow - i * intervalSeconds) as Time;
     
     const open = currentPrice;
     const change = open * volatility * (Math.random() - 0.5) * 2;
     const close = open + change;
-    // Wicks proportional to candle size
-    const wickMultiplier = 0.002 * durationMinutes;
-    const high = Math.max(open, close) * (1 + Math.random() * wickMultiplier);
-    const low = Math.min(open, close) * (1 - Math.random() * wickMultiplier);
-    
+    const high = Math.max(open, close) * (1 + Math.random() * volatility * 0.5);
+    const low = Math.min(open, close) * (1 - Math.random() * volatility * 0.5);
+
     data.push({ time, open, high, low, close });
     currentPrice = close;
   }
-  
-  return data;
-}
 
-function convertRoundResultsToCandles(results: RoundResult[], durationSeconds: number): CandlestickData<Time>[] {
-  return results
-    .map(r => ({
-      time: getRoundTimestamp(r.roundNumber, durationSeconds, r.roundDate) as Time,
-      open: parseFloat(r.openPrice),
-      high: parseFloat(r.highPrice),
-      low: parseFloat(r.lowPrice),
-      close: parseFloat(r.closePrice),
-    }))
-    .sort((a, b) => (a.time as number) - (b.time as number));
+  return data;
 }
 
 export function PriceChart({ symbol, data, duration = 60 }: PriceChartProps) {
@@ -77,37 +44,24 @@ export function PriceChart({ symbol, data, duration = 60 }: PriceChartProps) {
   const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const lastSymbolRef = useRef<string>(symbol);
   const lastDurationRef = useRef<number>(duration);
+  const lastPriceRef = useRef<number>(data.price);
   const currentCandleRef = useRef<CandlestickData<Time> | null>(null);
-  const currentRoundRef = useRef<number>(0);
 
   const isPositive = data.change >= 0;
+  const durationMinutes = duration / 60;
 
-  const { data: roundResults } = useQuery<RoundResult[]>({
-    queryKey: ['/api/rounds/candles', symbol, duration],
-    queryFn: async () => {
-      const res = await fetch(`/api/rounds/candles?symbol=${symbol}&duration=${duration}&limit=50`);
-      if (!res.ok) return [];
-      return res.json();
-    },
-    refetchInterval: 60000,
-    staleTime: 30000,
-  });
-
-  const getDurationLabel = (d: number): string => {
-    return `${d / 60}분`;
-  };
-
+  // Initialize chart once
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
     const chart = createChart(chartContainerRef.current, {
       layout: {
-        background: { type: ColorType.Solid, color: 'transparent' },
-        textColor: '#848e9c',
+        background: { type: ColorType.Solid, color: '#131722' },
+        textColor: '#d1d4dc',
       },
       grid: {
-        vertLines: { color: 'rgba(42, 46, 57, 0.5)' },
-        horzLines: { color: 'rgba(42, 46, 57, 0.5)' },
+        vertLines: { color: 'rgba(42, 46, 57, 0.6)' },
+        horzLines: { color: 'rgba(42, 46, 57, 0.6)' },
       },
       crosshair: {
         mode: 1,
@@ -115,35 +69,32 @@ export function PriceChart({ symbol, data, duration = 60 }: PriceChartProps) {
           width: 1,
           color: '#758696',
           style: 3,
-          labelBackgroundColor: '#2B2B43',
+          labelBackgroundColor: '#2a2e39',
         },
         horzLine: {
           width: 1,
           color: '#758696',
           style: 3,
-          labelBackgroundColor: '#2B2B43',
+          labelBackgroundColor: '#2a2e39',
         },
       },
       rightPriceScale: {
-        borderColor: '#2B2B43',
+        borderColor: '#2a2e39',
         scaleMargins: { top: 0.1, bottom: 0.1 },
       },
       timeScale: {
-        borderColor: '#2B2B43',
+        borderColor: '#2a2e39',
         timeVisible: true,
         secondsVisible: false,
-        rightOffset: 5,
-        barSpacing: 8,
-        minBarSpacing: 4,
       },
       localization: {
         locale: 'ko-KR',
-        timeFormatter: (time: number) => {
-          // Timestamp already represents KST time, just format it
-          const date = new Date(time * 1000);
-          const hours = date.getUTCHours().toString().padStart(2, '0');
-          const mins = date.getUTCMinutes().toString().padStart(2, '0');
-          return `${hours}:${mins}`;
+        timeFormatter: (timestamp: number) => {
+          // Convert to KST (UTC+9)
+          const date = new Date(timestamp * 1000);
+          const kstHours = (date.getUTCHours() + 9) % 24;
+          const minutes = date.getUTCMinutes();
+          return `${kstHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
         },
       },
       handleScroll: { mouseWheel: true, pressedMouseMove: true },
@@ -151,17 +102,23 @@ export function PriceChart({ symbol, data, duration = 60 }: PriceChartProps) {
     });
 
     const candlestickSeries = chart.addSeries(CandlestickSeries, {
-      upColor: '#0ECB81',
-      downColor: '#F6465D',
-      borderDownColor: '#F6465D',
-      borderUpColor: '#0ECB81',
-      wickDownColor: '#F6465D',
-      wickUpColor: '#0ECB81',
+      upColor: '#26a69a',
+      downColor: '#ef5350',
+      borderDownColor: '#ef5350',
+      borderUpColor: '#26a69a',
+      wickDownColor: '#ef5350',
+      wickUpColor: '#26a69a',
     });
 
     chartRef.current = chart;
     seriesRef.current = candlestickSeries;
 
+    // Initial data
+    const initialData = generateCandleData(data.price, 100, duration);
+    candlestickSeries.setData(initialData);
+    chart.timeScale().fitContent();
+
+    // Handle resize
     const handleResize = () => {
       if (chartContainerRef.current && chartRef.current) {
         chartRef.current.applyOptions({
@@ -183,176 +140,136 @@ export function PriceChart({ symbol, data, duration = 60 }: PriceChartProps) {
     };
   }, []);
 
+  // Update data when symbol or duration changes
   useEffect(() => {
     if (!seriesRef.current || !chartRef.current) return;
 
-    // Only rebuild chart data when symbol, duration, or roundResults change
-    // NOT when price changes (price updates handled by separate effect)
-    const symbolChanged = symbol !== lastSymbolRef.current;
-    const durationChanged = duration !== lastDurationRef.current;
-    
-    let candleData: CandlestickData<Time>[];
-    
-    if (roundResults && roundResults.length > 0) {
-      candleData = convertRoundResultsToCandles(roundResults, duration);
-    } else {
-      candleData = generatePlaceholderCandles(data.price, 100, duration, symbol);
-    }
-
-    if (candleData.length > 0) {
-      const lastCandle = candleData[candleData.length - 1];
+    if (symbol !== lastSymbolRef.current || duration !== lastDurationRef.current) {
+      const newData = generateCandleData(data.price, 100, duration);
+      seriesRef.current.setData(newData);
+      chartRef.current.timeScale().fitContent();
+      lastSymbolRef.current = symbol;
+      lastDurationRef.current = duration;
       
-      const currentRound = calculateRoundNumber(duration);
-      const roundDate = getKSTDateString();
-      const currentRoundTime = getRoundTimestamp(currentRound, duration, roundDate) as Time;
-      
-      currentRoundRef.current = currentRound;
-      
-      currentCandleRef.current = {
-        time: currentRoundTime,
-        open: lastCandle.close,
-        high: Math.max(lastCandle.close, data.price),
-        low: Math.min(lastCandle.close, data.price),
-        close: data.price,
-      };
-      
-      seriesRef.current.setData([...candleData, currentCandleRef.current]);
-    } else {
-      const currentRound = calculateRoundNumber(duration);
-      const roundDate = getKSTDateString();
-      const currentRoundTime = getRoundTimestamp(currentRound, duration, roundDate) as Time;
-      
-      currentRoundRef.current = currentRound;
-      currentCandleRef.current = {
-        time: currentRoundTime,
-        open: data.price,
-        high: data.price,
-        low: data.price,
-        close: data.price,
-      };
-      
-      seriesRef.current.setData([currentCandleRef.current]);
-    }
-
-    // Always fit content to fill chart area properly
-    chartRef.current.timeScale().fitContent();
-    
-    lastSymbolRef.current = symbol;
-    lastDurationRef.current = duration;
-  }, [symbol, duration, roundResults]);
-
-  useEffect(() => {
-    if (!seriesRef.current || data.price === 0) return;
-    
-    const currentRound = calculateRoundNumber(duration);
-    const roundDate = getKSTDateString();
-    
-    if (currentRound !== currentRoundRef.current) {
-      currentRoundRef.current = currentRound;
-      const roundTime = getRoundTimestamp(currentRound, duration, roundDate) as Time;
-      
-      currentCandleRef.current = {
-        time: roundTime,
-        open: data.price,
-        high: data.price,
-        low: data.price,
-        close: data.price,
-      };
-    } else if (currentCandleRef.current) {
-      currentCandleRef.current = {
-        time: currentCandleRef.current.time,
-        open: currentCandleRef.current.open,
-        high: Math.max(currentCandleRef.current.high, data.price),
-        low: Math.min(currentCandleRef.current.low, data.price),
-        close: data.price,
-      };
-    }
-
-    if (currentCandleRef.current) {
-      try {
-        seriesRef.current.update(currentCandleRef.current);
-      } catch {
+      // Reset current candle tracking
+      if (newData.length > 0) {
+        currentCandleRef.current = { ...newData[newData.length - 1] };
       }
     }
-  }, [data.price, duration]);
+  }, [symbol, duration, data.price]);
 
+  // Track price for real-time updates
+  useEffect(() => {
+    lastPriceRef.current = data.price;
+  }, [data.price]);
+
+  // Real-time candle updates
   useEffect(() => {
     if (!seriesRef.current) return;
-    
-    const checkInterval = setInterval(() => {
-      if (!seriesRef.current || !currentCandleRef.current) return;
-      
-      const currentRound = calculateRoundNumber(duration);
-      const roundDate = getKSTDateString();
-      
-      if (currentRound !== currentRoundRef.current) {
-        currentRoundRef.current = currentRound;
-        const roundTime = getRoundTimestamp(currentRound, duration, roundDate) as Time;
-        
-        currentCandleRef.current = {
-          time: roundTime,
-          open: data.price,
-          high: data.price,
-          low: data.price,
-          close: data.price,
-        };
-        
-        try {
-          seriesRef.current.update(currentCandleRef.current);
-        } catch {}
-      }
-    }, 1000);
 
-    return () => {
-      clearInterval(checkInterval);
+    const intervalMs = duration * 1000;
+    
+    // Get current interval start time
+    let currentIntervalStart = Math.floor(Date.now() / intervalMs) * intervalMs / 1000;
+    
+    // Initialize current candle
+    currentCandleRef.current = {
+      time: currentIntervalStart as Time,
+      open: lastPriceRef.current,
+      high: lastPriceRef.current,
+      low: lastPriceRef.current,
+      close: lastPriceRef.current,
     };
-  }, [duration, data.price]);
+
+    const updateInterval = setInterval(() => {
+      if (!seriesRef.current || !currentCandleRef.current) return;
+
+      const now = Date.now();
+      const newIntervalStart = Math.floor(now / intervalMs) * intervalMs / 1000;
+      const price = lastPriceRef.current;
+
+      if (newIntervalStart > currentIntervalStart) {
+        // New candle period
+        currentIntervalStart = newIntervalStart;
+        currentCandleRef.current = {
+          time: newIntervalStart as Time,
+          open: price,
+          high: price,
+          low: price,
+          close: price,
+        };
+      } else {
+        // Update current candle
+        currentCandleRef.current = {
+          ...currentCandleRef.current,
+          high: Math.max(currentCandleRef.current.high, price),
+          low: Math.min(currentCandleRef.current.low, price),
+          close: price,
+        };
+      }
+
+      try {
+        seriesRef.current.update(currentCandleRef.current);
+      } catch {}
+    }, 500);
+
+    return () => clearInterval(updateInterval);
+  }, [duration]);
 
   return (
-    <div className="flex flex-col h-full bg-card relative overflow-hidden">
-      <div className="flex flex-wrap items-center gap-4 px-4 py-3 border-b border-border bg-card z-10 shrink-0">
+    <div className="flex flex-col h-full relative overflow-hidden" style={{ backgroundColor: '#131722' }}>
+      {/* Header */}
+      <div className="flex flex-wrap items-center gap-4 px-4 py-3 border-b border-[#2a2e39] z-10 shrink-0">
         <div className="flex items-baseline gap-2">
-          <h1 className="text-2xl font-bold text-foreground">{symbol}</h1>
-          <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-primary/20 text-primary">
-            {getDurationLabel(duration)}
+          <h1 className="text-2xl font-bold text-white">{symbol}</h1>
+          <span className="text-xs font-semibold px-2 py-0.5 rounded bg-blue-500/20 text-blue-400">
+            {durationMinutes}분봉
           </span>
         </div>
         
         <div className="flex items-center gap-4 ml-2">
           <div className="flex flex-col">
-            <span className={`text-xl font-mono font-bold ${isPositive ? 'text-up' : 'text-down'}`}>
+            <span className={`text-xl font-mono font-bold ${isPositive ? 'text-[#26a69a]' : 'text-[#ef5350]'}`}>
               {data.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
-            <span className="text-xs text-muted-foreground">
-              {data.symbol.includes('KRW') ? '₩' : '$'}{data.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            <span className={`text-sm ${isPositive ? 'text-[#26a69a]' : 'text-[#ef5350]'}`}>
+              {isPositive ? '+' : ''}{data.change.toFixed(2)} ({isPositive ? '+' : ''}{data.changePercent.toFixed(2)}%)
             </span>
           </div>
-          
-          <div className="flex flex-col hidden sm:flex">
-            <span className="text-xs text-muted-foreground">24시간 변동</span>
-            <span className={`text-sm font-mono ${isPositive ? 'text-up' : 'text-down'}`}>
-              {data.change >= 0 ? '+' : ''}{data.change.toFixed(2)} ({data.changePercent >= 0 ? '+' : ''}{data.changePercent.toFixed(2)}%)
-            </span>
+        </div>
+        
+        <div className="hidden sm:flex items-center gap-6 ml-auto text-xs">
+          <div className="flex flex-col">
+            <span className="text-gray-500">24시간 고가</span>
+            <span className="text-white font-mono">{data.high.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
           </div>
-          
-          <div className="flex flex-col hidden md:flex">
-            <span className="text-xs text-muted-foreground">24시간 고가</span>
-            <span className="text-sm font-mono text-foreground">{data.high.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+          <div className="flex flex-col">
+            <span className="text-gray-500">24시간 저가</span>
+            <span className="text-white font-mono">{data.low.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
           </div>
-          
-          <div className="flex flex-col hidden md:flex">
-            <span className="text-xs text-muted-foreground">24시간 저가</span>
-            <span className="text-sm font-mono text-foreground">{data.low.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-          </div>
-
-          <div className="flex flex-col hidden lg:flex">
-            <span className="text-xs text-muted-foreground">24시간 거래량</span>
-            <span className="text-sm font-mono text-foreground">{data.volume.toLocaleString()}</span>
+          <div className="flex flex-col">
+            <span className="text-gray-500">24시간 거래량</span>
+            <span className="text-white font-mono">{(data.volume || 920000).toLocaleString()}</span>
           </div>
         </div>
       </div>
 
-      <div className="flex-1 w-full min-h-0" ref={chartContainerRef} />
+      {/* TradingView Logo */}
+      <div className="absolute bottom-14 left-3 z-10 opacity-50">
+        <div className="flex items-center gap-1 text-[#2962ff]">
+          <svg width="20" height="20" viewBox="0 0 36 28" fill="currentColor">
+            <path d="M14 22H7V6h7v16zm8-16h-7v16h7V6zm8 0h-7v16h7V6z"/>
+          </svg>
+          <span className="text-xs font-semibold">TradingView</span>
+        </div>
+      </div>
+
+      {/* Chart Container */}
+      <div 
+        ref={chartContainerRef} 
+        className="flex-1 w-full min-h-0"
+        data-testid="chart-container"
+      />
     </div>
   );
 }
