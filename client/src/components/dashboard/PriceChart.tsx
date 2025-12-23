@@ -9,12 +9,16 @@ interface PriceChartProps {
   duration?: number;
 }
 
-const KST_OFFSET = 9 * 60 * 60;
+function getKSTTimestamp(): number {
+  const now = new Date();
+  const kstDate = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
+  return Math.floor(kstDate.getTime() / 1000);
+}
 
 function generateCandleData(basePrice: number, count: number, intervalSeconds: number): CandlestickData<Time>[] {
   const candles: CandlestickData<Time>[] = [];
-  const now = Math.floor(Date.now() / 1000);
-  const alignedNow = Math.floor(now / intervalSeconds) * intervalSeconds + KST_OFFSET;
+  const kstNow = getKSTTimestamp();
+  const alignedNow = Math.floor(kstNow / intervalSeconds) * intervalSeconds;
   
   let price = basePrice * 0.998;
   const volatility = 0.0015 * Math.sqrt(intervalSeconds / 60);
@@ -135,8 +139,12 @@ export function PriceChart({ symbol, data, duration = 60 }: PriceChartProps) {
   useEffect(() => {
     if (!seriesRef.current || !isReady) return;
 
-    const intervalMs = duration * 1000;
-    let currentStart = Math.floor(Date.now() / intervalMs) * intervalMs / 1000 + KST_OFFSET;
+    const getAlignedKST = () => {
+      const kstNow = getKSTTimestamp();
+      return Math.floor(kstNow / duration) * duration;
+    };
+    
+    let currentStart = getAlignedKST();
 
     if (!candleRef.current) {
       candleRef.current = {
@@ -151,8 +159,7 @@ export function PriceChart({ symbol, data, duration = 60 }: PriceChartProps) {
     const tick = setInterval(() => {
       if (!seriesRef.current || !candleRef.current) return;
 
-      const now = Date.now();
-      const newStart = Math.floor(now / intervalMs) * intervalMs / 1000 + KST_OFFSET;
+      const newStart = getAlignedKST();
       const p = priceRef.current;
 
       if (newStart > currentStart) {
