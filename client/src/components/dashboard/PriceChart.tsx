@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createChart, ColorType, CandlestickSeries, CandlestickData, Time } from "lightweight-charts";
 import type { IChartApi, ISeriesApi } from "lightweight-charts";
 import { MarketData } from "@/lib/marketData";
@@ -9,273 +9,222 @@ interface PriceChartProps {
   duration?: number;
 }
 
+const KST_OFFSET = 9 * 60 * 60;
+
 function generateCandleData(basePrice: number, count: number, intervalSeconds: number): CandlestickData<Time>[] {
-  const data: CandlestickData<Time>[] = [];
+  const candles: CandlestickData<Time>[] = [];
   const now = Math.floor(Date.now() / 1000);
+  const alignedNow = Math.floor(now / intervalSeconds) * intervalSeconds + KST_OFFSET;
   
-  // Align to interval boundary and add 9 hours for KST display
-  const kstOffset = 9 * 60 * 60;
-  const alignedNow = Math.floor(now / intervalSeconds) * intervalSeconds + kstOffset;
-  
-  let currentPrice = basePrice * 0.995;
-  const intervalMinutes = intervalSeconds / 60;
-  
-  // Volatility based on interval (longer intervals = bigger moves)
-  const volatility = 0.003 * Math.sqrt(intervalMinutes);
+  let price = basePrice * 0.998;
+  const volatility = 0.0015 * Math.sqrt(intervalSeconds / 60);
 
   for (let i = count - 1; i >= 0; i--) {
     const time = (alignedNow - i * intervalSeconds) as Time;
-    
-    const open = currentPrice;
+    const open = price;
     const change = open * volatility * (Math.random() - 0.5) * 2;
     const close = open + change;
-    const high = Math.max(open, close) * (1 + Math.random() * volatility * 0.5);
-    const low = Math.min(open, close) * (1 - Math.random() * volatility * 0.5);
-
-    data.push({ time, open, high, low, close });
-    currentPrice = close;
+    const high = Math.max(open, close) * (1 + Math.random() * volatility * 0.3);
+    const low = Math.min(open, close) * (1 - Math.random() * volatility * 0.3);
+    candles.push({ time, open, high, low, close });
+    price = close;
   }
-
-  return data;
+  return candles;
 }
 
 export function PriceChart({ symbol, data, duration = 60 }: PriceChartProps) {
-  const chartContainerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
-  const lastSymbolRef = useRef<string>(symbol);
-  const lastDurationRef = useRef<number>(duration);
-  const lastPriceRef = useRef<number>(data.price);
-  const currentCandleRef = useRef<CandlestickData<Time> | null>(null);
+  const priceRef = useRef(data.price);
+  const candleRef = useRef<CandlestickData<Time> | null>(null);
+  const [isReady, setIsReady] = useState(false);
 
-  const isPositive = data.change >= 0;
   const durationMinutes = duration / 60;
+  const isUp = data.change >= 0;
 
-  // Initialize chart once
   useEffect(() => {
-    if (!chartContainerRef.current) return;
+    priceRef.current = data.price;
+  }, [data.price]);
 
-    const chart = createChart(chartContainerRef.current, {
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const chart = createChart(containerRef.current, {
       layout: {
         background: { type: ColorType.Solid, color: '#131722' },
-        textColor: '#d1d4dc',
+        textColor: '#787b86',
       },
       grid: {
-        vertLines: { color: 'rgba(42, 46, 57, 0.6)' },
-        horzLines: { color: 'rgba(42, 46, 57, 0.6)' },
+        vertLines: { color: '#1e222d' },
+        horzLines: { color: '#1e222d' },
       },
       crosshair: {
         mode: 1,
-        vertLine: {
-          width: 1,
-          color: '#758696',
-          style: 3,
-          labelBackgroundColor: '#2a2e39',
-        },
-        horzLine: {
-          width: 1,
-          color: '#758696',
-          style: 3,
-          labelBackgroundColor: '#2a2e39',
-        },
+        vertLine: { color: '#505050', width: 1, style: 0, labelBackgroundColor: '#363a45' },
+        horzLine: { color: '#505050', width: 1, style: 0, labelBackgroundColor: '#363a45' },
       },
       rightPriceScale: {
-        borderColor: '#2a2e39',
+        borderColor: '#1e222d',
         scaleMargins: { top: 0.1, bottom: 0.1 },
       },
       timeScale: {
-        borderColor: '#2a2e39',
+        borderColor: '#1e222d',
         timeVisible: true,
         secondsVisible: false,
+        tickMarkFormatter: (time: number) => {
+          const d = new Date(time * 1000);
+          return `${d.getUTCHours().toString().padStart(2, '0')}:${d.getUTCMinutes().toString().padStart(2, '0')}`;
+        },
       },
       localization: {
         locale: 'ko-KR',
-        timeFormatter: (timestamp: number) => {
-          // Timestamps are already in KST
-          const date = new Date(timestamp * 1000);
-          const hours = date.getUTCHours();
-          const minutes = date.getUTCMinutes();
-          return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+        timeFormatter: (time: number) => {
+          const d = new Date(time * 1000);
+          return `${d.getUTCHours().toString().padStart(2, '0')}:${d.getUTCMinutes().toString().padStart(2, '0')}`;
         },
       },
       handleScroll: { mouseWheel: true, pressedMouseMove: true },
       handleScale: { axisPressedMouseMove: true, mouseWheel: true, pinch: true },
     });
 
-    const candlestickSeries = chart.addSeries(CandlestickSeries, {
+    const series = chart.addSeries(CandlestickSeries, {
       upColor: '#26a69a',
       downColor: '#ef5350',
-      borderDownColor: '#ef5350',
       borderUpColor: '#26a69a',
-      wickDownColor: '#ef5350',
+      borderDownColor: '#ef5350',
       wickUpColor: '#26a69a',
+      wickDownColor: '#ef5350',
     });
 
     chartRef.current = chart;
-    seriesRef.current = candlestickSeries;
+    seriesRef.current = series;
 
-    // Initial data
-    const initialData = generateCandleData(data.price, 100, duration);
-    candlestickSeries.setData(initialData);
+    const candles = generateCandleData(data.price, 80, duration);
+    series.setData(candles);
+    if (candles.length > 0) {
+      candleRef.current = { ...candles[candles.length - 1] };
+    }
 
-    // Handle resize
-    const handleResize = () => {
-      if (chartContainerRef.current && chartRef.current) {
+    const resize = () => {
+      if (containerRef.current && chartRef.current) {
         chartRef.current.applyOptions({
-          width: chartContainerRef.current.clientWidth,
-          height: chartContainerRef.current.clientHeight,
+          width: containerRef.current.clientWidth,
+          height: containerRef.current.clientHeight,
         });
         chartRef.current.timeScale().fitContent();
       }
     };
 
-    const resizeObserver = new ResizeObserver(handleResize);
-    resizeObserver.observe(chartContainerRef.current);
-    
-    // Initial resize and fit with delay to ensure container is properly sized
+    const observer = new ResizeObserver(resize);
+    observer.observe(containerRef.current);
     setTimeout(() => {
-      handleResize();
-    }, 100);
+      resize();
+      setIsReady(true);
+    }, 50);
 
     return () => {
-      resizeObserver.disconnect();
+      observer.disconnect();
       chart.remove();
       chartRef.current = null;
       seriesRef.current = null;
+      setIsReady(false);
     };
-  }, []);
+  }, [symbol, duration]);
 
-  // Update data when symbol or duration changes
   useEffect(() => {
-    if (!seriesRef.current || !chartRef.current) return;
-
-    if (symbol !== lastSymbolRef.current || duration !== lastDurationRef.current) {
-      const newData = generateCandleData(data.price, 100, duration);
-      seriesRef.current.setData(newData);
-      chartRef.current.timeScale().fitContent();
-      lastSymbolRef.current = symbol;
-      lastDurationRef.current = duration;
-      
-      // Reset current candle tracking
-      if (newData.length > 0) {
-        currentCandleRef.current = { ...newData[newData.length - 1] };
-      }
-    }
-  }, [symbol, duration, data.price]);
-
-  // Track price for real-time updates
-  useEffect(() => {
-    lastPriceRef.current = data.price;
-  }, [data.price]);
-
-  // Real-time candle updates
-  useEffect(() => {
-    if (!seriesRef.current) return;
+    if (!seriesRef.current || !isReady) return;
 
     const intervalMs = duration * 1000;
-    const kstOffset = 9 * 60 * 60;
-    
-    // Get current interval start time with KST offset
-    let currentIntervalStart = Math.floor(Date.now() / intervalMs) * intervalMs / 1000 + kstOffset;
-    
-    // Initialize current candle
-    currentCandleRef.current = {
-      time: currentIntervalStart as Time,
-      open: lastPriceRef.current,
-      high: lastPriceRef.current,
-      low: lastPriceRef.current,
-      close: lastPriceRef.current,
-    };
+    let currentStart = Math.floor(Date.now() / intervalMs) * intervalMs / 1000 + KST_OFFSET;
 
-    const updateInterval = setInterval(() => {
-      if (!seriesRef.current || !currentCandleRef.current) return;
+    if (!candleRef.current) {
+      candleRef.current = {
+        time: currentStart as Time,
+        open: priceRef.current,
+        high: priceRef.current,
+        low: priceRef.current,
+        close: priceRef.current,
+      };
+    }
+
+    const tick = setInterval(() => {
+      if (!seriesRef.current || !candleRef.current) return;
 
       const now = Date.now();
-      const newIntervalStart = Math.floor(now / intervalMs) * intervalMs / 1000 + kstOffset;
-      const price = lastPriceRef.current;
+      const newStart = Math.floor(now / intervalMs) * intervalMs / 1000 + KST_OFFSET;
+      const p = priceRef.current;
 
-      if (newIntervalStart > currentIntervalStart) {
-        // New candle period
-        currentIntervalStart = newIntervalStart;
-        currentCandleRef.current = {
-          time: newIntervalStart as Time,
-          open: price,
-          high: price,
-          low: price,
-          close: price,
-        };
+      if (newStart > currentStart) {
+        currentStart = newStart;
+        candleRef.current = { time: newStart as Time, open: p, high: p, low: p, close: p };
       } else {
-        // Update current candle
-        currentCandleRef.current = {
-          ...currentCandleRef.current,
-          high: Math.max(currentCandleRef.current.high, price),
-          low: Math.min(currentCandleRef.current.low, price),
-          close: price,
+        candleRef.current = {
+          ...candleRef.current,
+          high: Math.max(candleRef.current.high, p),
+          low: Math.min(candleRef.current.low, p),
+          close: p,
         };
       }
 
-      try {
-        seriesRef.current.update(currentCandleRef.current);
-      } catch {}
+      try { seriesRef.current.update(candleRef.current); } catch {}
     }, 500);
 
-    return () => clearInterval(updateInterval);
-  }, [duration]);
+    return () => clearInterval(tick);
+  }, [duration, isReady]);
 
   return (
-    <div className="flex flex-col h-full relative overflow-hidden" style={{ backgroundColor: '#131722' }}>
-      {/* Header */}
-      <div className="flex flex-wrap items-center gap-4 px-4 py-3 border-b border-[#2a2e39] z-10 shrink-0">
-        <div className="flex items-baseline gap-2">
-          <h1 className="text-2xl font-bold text-white">{symbol}</h1>
-          <span className="text-xs font-semibold px-2 py-0.5 rounded bg-blue-500/20 text-blue-400">
+    <div className="flex flex-col h-full w-full" style={{ backgroundColor: '#131722' }}>
+      <div className="flex items-center justify-between px-3 py-2 border-b border-[#1e222d]">
+        <div className="flex items-center gap-3">
+          <span className="text-white font-bold text-lg">{symbol}</span>
+          <span className="text-xs text-gray-400">지수</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className={`text-xl font-bold ${isUp ? 'text-[#26a69a]' : 'text-[#ef5350]'}`}>
+            ${data.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </span>
+          <span className={`text-sm ${isUp ? 'text-[#26a69a]' : 'text-[#ef5350]'}`}>
+            {isUp ? '+' : ''}{data.change.toFixed(2)} ({isUp ? '+' : ''}{data.changePercent.toFixed(2)}%)
+          </span>
+          <span className="bg-[#ef5350] text-white text-xs px-2 py-0.5 rounded font-semibold">
             {durationMinutes}분봉
           </span>
         </div>
-        
-        <div className="flex items-center gap-4 ml-2">
-          <div className="flex flex-col">
-            <span className={`text-xl font-mono font-bold ${isPositive ? 'text-[#26a69a]' : 'text-[#ef5350]'}`}>
-              {data.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </span>
-            <span className={`text-sm ${isPositive ? 'text-[#26a69a]' : 'text-[#ef5350]'}`}>
-              {isPositive ? '+' : ''}{data.change.toFixed(2)} ({isPositive ? '+' : ''}{data.changePercent.toFixed(2)}%)
-            </span>
-          </div>
-        </div>
-        
-        <div className="hidden sm:flex items-center gap-6 ml-auto text-xs">
-          <div className="flex flex-col">
-            <span className="text-gray-500">24시간 고가</span>
-            <span className="text-white font-mono">{data.high.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-gray-500">24시간 저가</span>
-            <span className="text-white font-mono">{data.low.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-gray-500">24시간 거래량</span>
-            <span className="text-white font-mono">{(data.volume || 920000).toLocaleString()}</span>
-          </div>
-        </div>
       </div>
 
-      {/* TradingView Logo */}
-      <div className="absolute bottom-14 left-3 z-10 opacity-50">
-        <div className="flex items-center gap-1 text-[#2962ff]">
-          <svg width="20" height="20" viewBox="0 0 36 28" fill="currentColor">
+      <div className="flex items-center gap-2 px-3 py-1.5 border-b border-[#1e222d] text-xs text-gray-400">
+        <span className="text-blue-400">{durationMinutes}분</span>
+        <span>30분</span>
+        <span>1시간</span>
+        <span className="mx-2">|</span>
+        <span>📊 지표</span>
+      </div>
+
+      <div className="flex items-center gap-4 px-3 py-1 border-b border-[#1e222d] text-xs">
+        <span className="text-gray-500">나스닥 100 인덱스 · 1 · NASDAQ</span>
+        <span className="text-gray-500">시</span>
+        <span className="text-[#26a69a]">{(data.price - 2).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+        <span className="text-gray-500">고</span>
+        <span className="text-[#26a69a]">{data.high.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+        <span className="text-gray-500">저</span>
+        <span className="text-[#26a69a]">{data.low.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+        <span className="text-gray-500">종</span>
+        <span className="text-[#26a69a]">{data.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+        <span className={`${isUp ? 'text-[#26a69a]' : 'text-[#ef5350]'}`}>
+          {isUp ? '+' : ''}{data.change.toFixed(2)} ({isUp ? '+' : ''}{data.changePercent.toFixed(2)}%)
+        </span>
+      </div>
+
+      <div className="flex-1 relative min-h-0">
+        <div ref={containerRef} className="absolute inset-0" data-testid="chart-container" />
+        <div className="absolute bottom-2 left-2 flex items-center gap-1 text-[#2962ff] opacity-60 z-10">
+          <svg width="16" height="16" viewBox="0 0 36 28" fill="currentColor">
             <path d="M14 22H7V6h7v16zm8-16h-7v16h7V6zm8 0h-7v16h7V6z"/>
           </svg>
           <span className="text-xs font-semibold">TradingView</span>
         </div>
       </div>
-
-      {/* Chart Container */}
-      <div 
-        ref={chartContainerRef} 
-        className="flex-1 w-full min-h-0"
-        data-testid="chart-container"
-      />
     </div>
   );
 }
