@@ -1,9 +1,7 @@
 import { useEffect, useRef, memo } from "react";
-import { MarketData } from "@/lib/marketData";
 
 interface PriceChartProps {
   symbol: string;
-  data: MarketData;
   duration?: number;
 }
 
@@ -32,14 +30,12 @@ function getInterval(durationSeconds: number): string {
   }
 }
 
-function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
+function PriceChartComponent({ symbol, duration = 60 }: PriceChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetRef = useRef<HTMLDivElement>(null);
 
   const tvSymbol = getTradingViewSymbol(symbol);
   const interval = getInterval(duration);
-  const durationMinutes = duration / 60;
-  const isUp = data.change >= 0;
 
   useEffect(() => {
     if (!widgetRef.current) return;
@@ -83,39 +79,18 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
   return (
     <div 
       ref={containerRef}
-      className="flex flex-col h-full w-full" 
+      className="h-full w-full" 
       style={{ backgroundColor: '#131722' }}
       data-testid="chart-container"
     >
-      <div className="flex items-center justify-between px-3 py-2 border-b border-[#1e222d] shrink-0">
-        <div className="flex items-center gap-3">
-          <span className="text-white font-bold text-lg">{symbol}</span>
-          <span className="text-xs text-gray-400">지수</span>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className={`text-xl font-bold ${isUp ? 'text-[#26a69a]' : 'text-[#ef5350]'}`}>
-            ${data.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </span>
-          <span className={`text-sm ${isUp ? 'text-[#26a69a]' : 'text-[#ef5350]'}`}>
-            {isUp ? '+' : ''}{data.change.toFixed(2)} ({isUp ? '+' : ''}{data.changePercent.toFixed(2)}%)
-          </span>
-          <span className="bg-[#ef5350] text-white text-xs px-2 py-0.5 rounded font-semibold">
-            {durationMinutes}분봉
-          </span>
-        </div>
-      </div>
-
-      <div className="flex-1 relative min-h-0">
+      <div 
+        ref={widgetRef}
+        className="tradingview-widget-container h-full w-full"
+      >
         <div 
-          ref={widgetRef}
-          className="tradingview-widget-container absolute inset-0"
+          className="tradingview-widget-container__widget" 
           style={{ height: '100%', width: '100%' }}
-        >
-          <div 
-            className="tradingview-widget-container__widget" 
-            style={{ height: '100%', width: '100%' }}
-          />
-        </div>
+        />
       </div>
     </div>
   );
