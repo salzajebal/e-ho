@@ -16,6 +16,7 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
   const [chartReady, setChartReady] = useState(false);
   const initPriceRef = useRef<number>(0);
   const [ohlc, setOhlc] = useState({ open: 0, high: 0, low: 0, close: 0 });
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
   const durationMinutes = duration / 60;
 
@@ -70,26 +71,49 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
       series.setData(candles);
       setLastCandle(candles[candles.length - 1]);
     } catch (e) {
-      console.error('Error setting chart data:', e);
+      // Ignore errors
     }
   }, []);
 
+  // Observe container size changes
   useEffect(() => {
     if (!containerRef.current) return;
 
-    setChartReady(false);
-    setLastCandle(null);
-    initPriceRef.current = 0;
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        if (width > 0 && height > 0) {
+          setContainerSize({ width, height });
+        }
+      }
+    });
 
+    resizeObserver.observe(containerRef.current);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
+
+  // Create chart when container has valid size
+  useEffect(() => {
+    if (!containerRef.current || containerSize.width === 0 || containerSize.height === 0) return;
+
+    // Cleanup existing chart
     if (chartRef.current) {
       chartRef.current.remove();
       chartRef.current = null;
       candleSeriesRef.current = null;
     }
 
+    // Reset state
+    setChartReady(false);
+    setLastCandle(null);
+    initPriceRef.current = 0;
+
     const chart = createChart(containerRef.current, {
-      width: containerRef.current.clientWidth,
-      height: containerRef.current.clientHeight,
+      width: containerSize.width,
+      height: containerSize.height,
       layout: {
         background: { color: '#131722' },
         textColor: '#787b86',
@@ -161,27 +185,26 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
     candleSeriesRef.current = candleSeries;
     setChartReady(true);
 
-    const handleResize = () => {
-      if (containerRef.current && chartRef.current) {
-        chartRef.current.applyOptions({
-          width: containerRef.current.clientWidth,
-          height: containerRef.current.clientHeight,
-        });
-      }
-    };
-
-    window.addEventListener('resize', handleResize);
-
     return () => {
-      window.removeEventListener('resize', handleResize);
       if (chartRef.current) {
         chartRef.current.remove();
         chartRef.current = null;
         candleSeriesRef.current = null;
       }
     };
-  }, [symbol, duration]);
+  }, [symbol, duration, containerSize.width, containerSize.height]);
 
+  // Resize chart when container size changes
+  useEffect(() => {
+    if (chartRef.current && containerSize.width > 0 && containerSize.height > 0) {
+      chartRef.current.applyOptions({
+        width: containerSize.width,
+        height: containerSize.height,
+      });
+    }
+  }, [containerSize]);
+
+  // Initialize candles when chart is ready and price is available
   useEffect(() => {
     if (chartReady && candleSeriesRef.current && currentPrice > 0 && initPriceRef.current === 0) {
       initPriceRef.current = currentPrice;
@@ -193,6 +216,7 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
     }
   }, [chartReady, currentPrice, duration, generateInitialCandles]);
 
+  // Update candles with real-time price
   useEffect(() => {
     if (!candleSeriesRef.current || !lastCandle || currentPrice <= 0) return;
 
@@ -239,7 +263,11 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
       }
 
       if (priceLineRef.current) {
-        candleSeriesRef.current.removePriceLine(priceLineRef.current);
+        try {
+          candleSeriesRef.current.removePriceLine(priceLineRef.current);
+        } catch (e) {
+          // Ignore
+        }
       }
       priceLineRef.current = candleSeriesRef.current.createPriceLine({
         price: currentPrice,
@@ -250,6 +278,7 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
         title: '',
       });
     } catch (e) {
+      // Ignore errors
     }
   }, [currentPrice, duration, lastCandle]);
 
