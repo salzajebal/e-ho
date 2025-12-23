@@ -1,4 +1,4 @@
-import { useEffect, useRef, memo, useState } from "react";
+import { useEffect, useRef, memo, useState, useCallback } from "react";
 import { createChart, IChartApi, CandlestickData, Time, CandlestickSeries } from "lightweight-charts";
 
 interface PriceChartProps {
@@ -13,14 +13,81 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
   const candleSeriesRef = useRef<any>(null);
   const [lastCandle, setLastCandle] = useState<CandlestickData<Time> | null>(null);
   const priceLineRef = useRef<any>(null);
+  const [chartReady, setChartReady] = useState(false);
+  const initPriceRef = useRef<number>(0);
 
   const durationMinutes = duration / 60;
+
+  // Generate initial candle data
+  const generateInitialCandles = useCallback((basePrice: number, candleDuration: number, series: any) => {
+    if (!series || basePrice <= 0) return;
+
+    const now = new Date();
+    const kstOffset = 9 * 60 * 60 * 1000;
+    const kstNow = new Date(now.getTime() + kstOffset);
+    
+    const candles: CandlestickData<Time>[] = [];
+    const candleCount = 50;
+    
+    let price = basePrice * (0.995 + Math.random() * 0.01);
+    
+    for (let i = candleCount - 1; i >= 0; i--) {
+      const candleTime = new Date(kstNow.getTime() - (i * candleDuration * 1000));
+      const timestamp = Math.floor(candleTime.getTime() / 1000) as Time;
+      
+      const volatility = basePrice * 0.001;
+      const open = price;
+      const change = (Math.random() - 0.5) * 2 * volatility;
+      const close = open + change;
+      const high = Math.max(open, close) + Math.random() * volatility * 0.5;
+      const low = Math.min(open, close) - Math.random() * volatility * 0.5;
+      
+      candles.push({
+        time: timestamp,
+        open: parseFloat(open.toFixed(2)),
+        high: parseFloat(high.toFixed(2)),
+        low: parseFloat(low.toFixed(2)),
+        close: parseFloat(close.toFixed(2)),
+      });
+      
+      price = close;
+    }
+    
+    // Set last candle close to current price
+    if (candles.length > 0) {
+      const lastIdx = candles.length - 1;
+      candles[lastIdx].close = basePrice;
+      candles[lastIdx].high = Math.max(candles[lastIdx].high, basePrice);
+      candles[lastIdx].low = Math.min(candles[lastIdx].low, basePrice);
+    }
+    
+    try {
+      series.setData(candles);
+      setLastCandle(candles[candles.length - 1]);
+    } catch (e) {
+      console.error('Error setting chart data:', e);
+    }
+  }, []);
 
   // Initialize chart
   useEffect(() => {
     if (!containerRef.current) return;
 
+    // Reset state
+    setChartReady(false);
+    setLastCandle(null);
+    initPriceRef.current = 0;
+
+    // Clean up previous chart
+    if (chartRef.current) {
+      chartRef.current.remove();
+      chartRef.current = null;
+      candleSeriesRef.current = null;
+    }
+
     const chart = createChart(containerRef.current, {
+      width: containerRef.current.clientWidth,
+      height: containerRef.current.clientHeight,
       layout: {
         background: { color: '#131722' },
         textColor: '#d1d4dc',
@@ -68,9 +135,7 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
 
     chartRef.current = chart;
     candleSeriesRef.current = candleSeries;
-
-    // Generate initial candle data based on current price
-    generateInitialCandles(currentPrice, duration);
+    setChartReady(true);
 
     // Handle resize
     const handleResize = () => {
@@ -83,68 +148,29 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
     };
 
     window.addEventListener('resize', handleResize);
-    handleResize();
 
     return () => {
       window.removeEventListener('resize', handleResize);
       if (chartRef.current) {
         chartRef.current.remove();
         chartRef.current = null;
+        candleSeriesRef.current = null;
       }
     };
   }, [symbol, duration]);
 
-  // Generate initial candle data
-  const generateInitialCandles = (basePrice: number, candleDuration: number) => {
-    if (!candleSeriesRef.current) return;
-
-    const now = new Date();
-    const kstOffset = 9 * 60 * 60 * 1000;
-    const kstNow = new Date(now.getTime() + kstOffset);
-    
-    const candles: CandlestickData<Time>[] = [];
-    const candleCount = 50;
-    
-    let price = basePrice * (0.995 + Math.random() * 0.01);
-    
-    for (let i = candleCount - 1; i >= 0; i--) {
-      const candleTime = new Date(kstNow.getTime() - (i * candleDuration * 1000));
-      const timestamp = Math.floor(candleTime.getTime() / 1000) as Time;
+  // Generate candles when chart is ready and we have a valid price
+  useEffect(() => {
+    if (chartReady && candleSeriesRef.current && currentPrice > 0 && initPriceRef.current === 0) {
+      initPriceRef.current = currentPrice;
+      generateInitialCandles(currentPrice, duration, candleSeriesRef.current);
       
-      const volatility = basePrice * 0.001;
-      const open = price;
-      const change = (Math.random() - 0.5) * 2 * volatility;
-      const close = open + change;
-      const high = Math.max(open, close) + Math.random() * volatility * 0.5;
-      const low = Math.min(open, close) - Math.random() * volatility * 0.5;
-      
-      candles.push({
-        time: timestamp,
-        open: parseFloat(open.toFixed(2)),
-        high: parseFloat(high.toFixed(2)),
-        low: parseFloat(low.toFixed(2)),
-        close: parseFloat(close.toFixed(2)),
-      });
-      
-      price = close;
+      // Fit content after data is set
+      if (chartRef.current) {
+        chartRef.current.timeScale().fitContent();
+      }
     }
-    
-    // Set last candle close to current price
-    if (candles.length > 0) {
-      const lastIdx = candles.length - 1;
-      candles[lastIdx].close = basePrice;
-      candles[lastIdx].high = Math.max(candles[lastIdx].high, basePrice);
-      candles[lastIdx].low = Math.min(candles[lastIdx].low, basePrice);
-    }
-    
-    candleSeriesRef.current.setData(candles);
-    setLastCandle(candles[candles.length - 1]);
-    
-    // Fit content
-    if (chartRef.current) {
-      chartRef.current.timeScale().fitContent();
-    }
-  };
+  }, [chartReady, currentPrice, duration, generateInitialCandles]);
 
   // Update candle with real-time price
   useEffect(() => {
@@ -158,31 +184,31 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
     const candleStartTime = Math.floor(currentTimestamp / duration) * duration;
     const lastCandleTime = lastCandle.time as number;
     
-    if (candleStartTime > lastCandleTime) {
-      // New candle
-      const newCandle: CandlestickData<Time> = {
-        time: candleStartTime as Time,
-        open: currentPrice,
-        high: currentPrice,
-        low: currentPrice,
-        close: currentPrice,
-      };
-      candleSeriesRef.current.update(newCandle);
-      setLastCandle(newCandle);
-    } else {
-      // Update current candle
-      const updatedCandle: CandlestickData<Time> = {
-        ...lastCandle,
-        high: Math.max(lastCandle.high, currentPrice),
-        low: Math.min(lastCandle.low, currentPrice),
-        close: currentPrice,
-      };
-      candleSeriesRef.current.update(updatedCandle);
-      setLastCandle(updatedCandle);
-    }
+    try {
+      if (candleStartTime > lastCandleTime) {
+        // New candle
+        const newCandle: CandlestickData<Time> = {
+          time: candleStartTime as Time,
+          open: currentPrice,
+          high: currentPrice,
+          low: currentPrice,
+          close: currentPrice,
+        };
+        candleSeriesRef.current.update(newCandle);
+        setLastCandle(newCandle);
+      } else {
+        // Update current candle
+        const updatedCandle: CandlestickData<Time> = {
+          ...lastCandle,
+          high: Math.max(lastCandle.high, currentPrice),
+          low: Math.min(lastCandle.low, currentPrice),
+          close: currentPrice,
+        };
+        candleSeriesRef.current.update(updatedCandle);
+        setLastCandle(updatedCandle);
+      }
 
-    // Update price line
-    if (candleSeriesRef.current) {
+      // Update price line
       if (priceLineRef.current) {
         candleSeriesRef.current.removePriceLine(priceLineRef.current);
       }
@@ -194,6 +220,8 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
         axisLabelVisible: true,
         title: '',
       });
+    } catch (e) {
+      // Ignore errors during updates
     }
   }, [currentPrice, duration, lastCandle]);
 
