@@ -20,20 +20,24 @@ function generateCandleData(basePrice: number, count: number, intervalSeconds: n
   const kstNow = getKSTTimestamp();
   const alignedNow = Math.floor(kstNow / intervalSeconds) * intervalSeconds;
   
-  let price = basePrice * 0.998;
-  const volatility = 0.0015 * Math.sqrt(intervalSeconds / 60);
-
-  for (let i = count - 1; i >= 0; i--) {
+  const volatility = 0.001 * Math.sqrt(intervalSeconds / 60);
+  
+  // Generate backwards from current price to keep prices consistent
+  const tempCandles: CandlestickData<Time>[] = [];
+  let price = basePrice;
+  
+  for (let i = 0; i < count; i++) {
     const time = (alignedNow - i * intervalSeconds) as Time;
-    const open = price;
-    const change = open * volatility * (Math.random() - 0.5) * 2;
-    const close = open + change;
-    const high = Math.max(open, close) * (1 + Math.random() * volatility * 0.3);
-    const low = Math.min(open, close) * (1 - Math.random() * volatility * 0.3);
-    candles.push({ time, open, high, low, close });
-    price = close;
+    const close = price;
+    const change = close * volatility * (Math.random() - 0.5) * 2;
+    const open = close - change;
+    const high = Math.max(open, close) * (1 + Math.random() * volatility * 0.2);
+    const low = Math.min(open, close) * (1 - Math.random() * volatility * 0.2);
+    tempCandles.unshift({ time, open, high, low, close });
+    price = open;
   }
-  return candles;
+  
+  return tempCandles;
 }
 
 export function PriceChart({ symbol, data, duration = 60 }: PriceChartProps) {
