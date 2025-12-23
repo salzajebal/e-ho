@@ -9,15 +9,16 @@ interface PriceChartProps {
   duration?: number;
 }
 
-function getKSTTimestamp(): number {
-  const now = new Date();
-  const kstDate = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
-  return Math.floor(kstDate.getTime() / 1000);
+const KST_OFFSET_SECONDS = 9 * 60 * 60;
+
+function getKSTDisplayTimestamp(): number {
+  const nowUtc = Math.floor(Date.now() / 1000);
+  return nowUtc + KST_OFFSET_SECONDS;
 }
 
 function generateCandleData(basePrice: number, count: number, intervalSeconds: number): CandlestickData<Time>[] {
   const candles: CandlestickData<Time>[] = [];
-  const kstNow = getKSTTimestamp();
+  const kstNow = getKSTDisplayTimestamp();
   const alignedNow = Math.floor(kstNow / intervalSeconds) * intervalSeconds;
   
   const volatility = 0.001 * Math.sqrt(intervalSeconds / 60);
@@ -144,7 +145,7 @@ export function PriceChart({ symbol, data, duration = 60 }: PriceChartProps) {
     if (!seriesRef.current || !isReady) return;
 
     const getAlignedKST = () => {
-      const kstNow = getKSTTimestamp();
+      const kstNow = getKSTDisplayTimestamp();
       return Math.floor(kstNow / duration) * duration;
     };
     
