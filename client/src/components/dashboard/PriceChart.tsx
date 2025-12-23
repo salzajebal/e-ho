@@ -13,8 +13,9 @@ function generateCandleData(basePrice: number, count: number, intervalSeconds: n
   const data: CandlestickData<Time>[] = [];
   const now = Math.floor(Date.now() / 1000);
   
-  // Align to interval boundary
-  const alignedNow = Math.floor(now / intervalSeconds) * intervalSeconds;
+  // Align to interval boundary and add 9 hours for KST display
+  const kstOffset = 9 * 60 * 60;
+  const alignedNow = Math.floor(now / intervalSeconds) * intervalSeconds + kstOffset;
   
   let currentPrice = basePrice * 0.995;
   const intervalMinutes = intervalSeconds / 60;
@@ -90,11 +91,11 @@ export function PriceChart({ symbol, data, duration = 60 }: PriceChartProps) {
       localization: {
         locale: 'ko-KR',
         timeFormatter: (timestamp: number) => {
-          // Convert to KST (UTC+9)
+          // Timestamps are already in KST
           const date = new Date(timestamp * 1000);
-          const kstHours = (date.getUTCHours() + 9) % 24;
+          const hours = date.getUTCHours();
           const minutes = date.getUTCMinutes();
-          return `${kstHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+          return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
         },
       },
       handleScroll: { mouseWheel: true, pressedMouseMove: true },
@@ -116,7 +117,6 @@ export function PriceChart({ symbol, data, duration = 60 }: PriceChartProps) {
     // Initial data
     const initialData = generateCandleData(data.price, 100, duration);
     candlestickSeries.setData(initialData);
-    chart.timeScale().fitContent();
 
     // Handle resize
     const handleResize = () => {
@@ -125,12 +125,17 @@ export function PriceChart({ symbol, data, duration = 60 }: PriceChartProps) {
           width: chartContainerRef.current.clientWidth,
           height: chartContainerRef.current.clientHeight,
         });
+        chartRef.current.timeScale().fitContent();
       }
     };
 
     const resizeObserver = new ResizeObserver(handleResize);
     resizeObserver.observe(chartContainerRef.current);
-    handleResize();
+    
+    // Initial resize and fit with delay to ensure container is properly sized
+    setTimeout(() => {
+      handleResize();
+    }, 100);
 
     return () => {
       resizeObserver.disconnect();
@@ -168,9 +173,10 @@ export function PriceChart({ symbol, data, duration = 60 }: PriceChartProps) {
     if (!seriesRef.current) return;
 
     const intervalMs = duration * 1000;
+    const kstOffset = 9 * 60 * 60;
     
-    // Get current interval start time
-    let currentIntervalStart = Math.floor(Date.now() / intervalMs) * intervalMs / 1000;
+    // Get current interval start time with KST offset
+    let currentIntervalStart = Math.floor(Date.now() / intervalMs) * intervalMs / 1000 + kstOffset;
     
     // Initialize current candle
     currentCandleRef.current = {
@@ -185,7 +191,7 @@ export function PriceChart({ symbol, data, duration = 60 }: PriceChartProps) {
       if (!seriesRef.current || !currentCandleRef.current) return;
 
       const now = Date.now();
-      const newIntervalStart = Math.floor(now / intervalMs) * intervalMs / 1000;
+      const newIntervalStart = Math.floor(now / intervalMs) * intervalMs / 1000 + kstOffset;
       const price = lastPriceRef.current;
 
       if (newIntervalStart > currentIntervalStart) {
