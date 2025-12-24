@@ -10,11 +10,10 @@ interface PriceChartProps {
 }
 
 function generateInitialCandles(basePrice: number, count: number, intervalSeconds: number): CandlestickData<Time>[] {
-  const candles: CandlestickData<Time>[] = [];
   const now = Math.floor(Date.now() / 1000);
   const alignedNow = Math.floor(now / intervalSeconds) * intervalSeconds;
   
-  const volatility = 0.0008 * Math.sqrt(intervalSeconds / 60);
+  const volatility = 0.0005 * Math.sqrt(intervalSeconds / 60);
   
   let price = basePrice;
   const tempCandles: CandlestickData<Time>[] = [];
@@ -24,8 +23,8 @@ function generateInitialCandles(basePrice: number, count: number, intervalSecond
     const close = price;
     const change = close * volatility * (Math.random() - 0.5) * 2;
     const open = close - change;
-    const high = Math.max(open, close) * (1 + Math.random() * volatility * 0.3);
-    const low = Math.min(open, close) * (1 - Math.random() * volatility * 0.3);
+    const high = Math.max(open, close) * (1 + Math.random() * volatility * 0.2);
+    const low = Math.min(open, close) * (1 - Math.random() * volatility * 0.2);
     tempCandles.unshift({ time, open, high, low, close });
     price = open;
   }
@@ -38,8 +37,11 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const priceRef = useRef(data.price);
-  const candleRef = useRef<CandlestickData<Time> | null>(null);
+  const lastBarRef = useRef<CandlestickData<Time> | null>(null);
+  const lastValidPriceRef = useRef<number | null>(null);
+  const currentStartRef = useRef<number>(0);
   const [isReady, setIsReady] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const durationMinutes = duration / 60;
   const isUp = data.change >= 0;
@@ -47,6 +49,13 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
   useEffect(() => {
     priceRef.current = data.price;
   }, [data.price]);
+
+  useEffect(() => {
+    setIsInitialized(false);
+    lastBarRef.current = null;
+    lastValidPriceRef.current = null;
+    currentStartRef.current = 0;
+  }, [symbol, duration]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -93,12 +102,6 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
     chartRef.current = chart;
     seriesRef.current = series;
 
-    const candles = generateInitialCandles(data.price, 100, duration);
-    series.setData(candles);
-    if (candles.length > 0) {
-      candleRef.current = { ...candles[candles.length - 1] };
-    }
-
     const resize = () => {
       if (containerRef.current && chartRef.current) {
         chartRef.current.applyOptions({
@@ -127,47 +130,70 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
 
   useEffect(() => {
     if (!seriesRef.current || !isReady) return;
+    if (isInitialized) return;
+    if (data.price <= 0) return;
+
+    const candles = generateInitialCandles(data.price, 100, duration);
+    seriesRef.current.setData(candles);
+    
+    if (candles.length > 0) {
+      lastBarRef.current = { ...candles[candles.length - 1] };
+      lastValidPriceRef.current = data.price;
+      
+      const now = Math.floor(Date.now() / 1000);
+      currentStartRef.current = Math.floor(now / duration) * duration;
+    }
+    
+    chartRef.current?.timeScale().fitContent();
+    setIsInitialized(true);
+  }, [data.price, isReady, isInitialized, duration]);
+
+  useEffect(() => {
+    if (!seriesRef.current || !isReady || !isInitialized) return;
 
     const getAlignedTime = () => {
       const now = Math.floor(Date.now() / 1000);
       return Math.floor(now / duration) * duration;
     };
-    
-    let currentStart = getAlignedTime();
-
-    if (!candleRef.current) {
-      candleRef.current = {
-        time: currentStart as Time,
-        open: priceRef.current,
-        high: priceRef.current,
-        low: priceRef.current,
-        close: priceRef.current,
-      };
-    }
 
     const tick = setInterval(() => {
-      if (!seriesRef.current || !candleRef.current) return;
+      if (!seriesRef.current || !lastBarRef.current || !lastValidPriceRef.current) return;
+
+      const p = priceRef.current;
+      if (p <= 0) return;
+
+      const pctChange = Math.abs(p - lastValidPriceRef.current) / lastValidPriceRef.current;
+      if (pctChange > 0.05) return;
 
       const newStart = getAlignedTime();
-      const p = priceRef.current;
 
-      if (newStart > currentStart) {
-        currentStart = newStart;
-        candleRef.current = { time: newStart as Time, open: p, high: p, low: p, close: p };
+      if (newStart > currentStartRef.current) {
+        currentStartRef.current = newStart;
+        lastBarRef.current = { 
+          time: newStart as Time, 
+          open: p, 
+          high: p, 
+          low: p, 
+          close: p 
+        };
       } else {
-        candleRef.current = {
-          ...candleRef.current,
-          high: Math.max(candleRef.current.high, p),
-          low: Math.min(candleRef.current.low, p),
+        lastBarRef.current = {
+          ...lastBarRef.current,
+          high: Math.max(lastBarRef.current.high, p),
+          low: Math.min(lastBarRef.current.low, p),
           close: p,
         };
       }
 
-      try { seriesRef.current.update(candleRef.current); } catch {}
+      lastValidPriceRef.current = p;
+
+      try { 
+        seriesRef.current.update(lastBarRef.current); 
+      } catch {}
     }, 200);
 
     return () => clearInterval(tick);
-  }, [duration, isReady]);
+  }, [duration, isReady, isInitialized]);
 
   return (
     <div className="flex flex-col h-full w-full" style={{ backgroundColor: '#131722' }} data-testid="chart-container">
@@ -193,6 +219,7 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
         <span className="text-blue-400">{durationMinutes}분</span>
         <span>|</span>
         <span>서버 동기화</span>
+        {!isInitialized && <span className="text-yellow-500 ml-2">로딩중...</span>}
       </div>
 
       <div 
