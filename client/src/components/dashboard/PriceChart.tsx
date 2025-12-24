@@ -9,11 +9,17 @@ interface PriceChartProps {
   duration?: number;
 }
 
+const KST_OFFSET = 9 * 60 * 60;
+
+function getKSTAlignedTime(intervalSeconds: number): number {
+  const now = Math.floor(Date.now() / 1000) + KST_OFFSET;
+  return Math.floor(now / intervalSeconds) * intervalSeconds;
+}
+
 function generateInitialCandles(basePrice: number, count: number, intervalSeconds: number): CandlestickData<Time>[] {
-  const now = Math.floor(Date.now() / 1000);
-  const alignedNow = Math.floor(now / intervalSeconds) * intervalSeconds;
+  const alignedNow = getKSTAlignedTime(intervalSeconds);
   
-  const volatility = 0.0005 * Math.sqrt(intervalSeconds / 60);
+  const volatility = 0.0003 * Math.sqrt(intervalSeconds / 60);
   
   let price = basePrice;
   const tempCandles: CandlestickData<Time>[] = [];
@@ -23,23 +29,21 @@ function generateInitialCandles(basePrice: number, count: number, intervalSecond
     const close = price;
     const change = close * volatility * (Math.random() - 0.5) * 2;
     const open = close - change;
-    const high = Math.max(open, close) * (1 + Math.random() * volatility * 0.2);
-    const low = Math.min(open, close) * (1 - Math.random() * volatility * 0.2);
+    const high = Math.max(open, close) * (1 + Math.random() * volatility * 0.1);
+    const low = Math.min(open, close) * (1 - Math.random() * volatility * 0.1);
     tempCandles.unshift({ time, open, high, low, close });
     price = open;
   }
   
+  if (tempCandles.length > 0) {
+    const lastCandle = tempCandles[tempCandles.length - 1];
+    lastCandle.open = basePrice;
+    lastCandle.high = basePrice;
+    lastCandle.low = basePrice;
+    lastCandle.close = basePrice;
+  }
+  
   return tempCandles;
-}
-
-function formatKSTTime(utcTimestamp: number): string {
-  const date = new Date(utcTimestamp * 1000);
-  return date.toLocaleTimeString('ko-KR', { 
-    timeZone: 'Asia/Seoul',
-    hour: '2-digit', 
-    minute: '2-digit',
-    hour12: false
-  });
 }
 
 function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
@@ -95,7 +99,6 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
       },
       localization: {
         locale: 'ko-KR',
-        timeFormatter: (time: number) => formatKSTTime(time),
       },
       handleScroll: { mouseWheel: true, pressedMouseMove: true },
       handleScale: { axisPressedMouseMove: true, mouseWheel: true, pinch: true },
@@ -148,11 +151,18 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
     seriesRef.current.setData(candles);
     
     if (candles.length > 0) {
-      lastBarRef.current = { ...candles[candles.length - 1] };
+      const lastCandle = candles[candles.length - 1];
+      lastBarRef.current = { 
+        time: lastCandle.time,
+        open: data.price,
+        high: data.price,
+        low: data.price,
+        close: data.price
+      };
       lastValidPriceRef.current = data.price;
+      currentStartRef.current = lastCandle.time as number;
       
-      const now = Math.floor(Date.now() / 1000);
-      currentStartRef.current = Math.floor(now / duration) * duration;
+      seriesRef.current.update(lastBarRef.current);
     }
     
     chartRef.current?.timeScale().fitContent();
@@ -161,11 +171,6 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
 
   useEffect(() => {
     if (!seriesRef.current || !isReady || !isInitialized) return;
-
-    const getAlignedTime = () => {
-      const now = Math.floor(Date.now() / 1000);
-      return Math.floor(now / duration) * duration;
-    };
 
     const tick = setInterval(() => {
       if (!seriesRef.current || !lastBarRef.current || !lastValidPriceRef.current) return;
@@ -176,7 +181,7 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
       const pctChange = Math.abs(p - lastValidPriceRef.current) / lastValidPriceRef.current;
       if (pctChange > 0.05) return;
 
-      const newStart = getAlignedTime();
+      const newStart = getKSTAlignedTime(duration);
 
       if (newStart > currentStartRef.current) {
         currentStartRef.current = newStart;
