@@ -321,7 +321,7 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
     }
 
     if (numAmount < 1000) {
-      toast.error("최소 베팅금액은 1,000원입니다.");
+      toast.error("최소 주문금액은 1,000원입니다.");
       return false;
     }
 
@@ -361,7 +361,7 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
   return (
     <div className="flex flex-col lg:h-full bg-card w-full">
       <div className="flex items-center justify-between px-3 lg:px-4 h-10 border-b border-border bg-muted/20 shrink-0">
-        <h2 className="text-sm font-semibold text-foreground">베팅</h2>
+        <h2 className="text-sm font-semibold text-foreground">주문</h2>
         <span className="text-xs text-muted-foreground">배당률: {MULTIPLIER}x</span>
       </div>
 
@@ -416,7 +416,7 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
         </div>
 
         <div className="space-y-2">
-          <label className="text-xs text-muted-foreground">베팅 금액 (원)</label>
+          <label className="text-xs text-muted-foreground">주문금액 (원)</label>
           <div className="relative">
             <Input 
               type="number" 
@@ -444,7 +444,7 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
 
         <div className="bg-muted/20 rounded-lg p-2 lg:p-3 space-y-1 lg:space-y-2">
           <div className="flex justify-between text-xs">
-            <span className="text-muted-foreground">베팅 금액</span>
+            <span className="text-muted-foreground">주문금액</span>
             <span className="text-foreground font-mono">{betAmount.toLocaleString()}원</span>
           </div>
           <div className="flex justify-between text-xs">
