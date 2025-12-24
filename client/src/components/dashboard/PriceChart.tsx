@@ -19,18 +19,18 @@ function getKSTAlignedTime(intervalSeconds: number): number {
 function generateInitialCandles(basePrice: number, count: number, intervalSeconds: number): CandlestickData<Time>[] {
   const alignedNow = getKSTAlignedTime(intervalSeconds);
   
-  const volatility = 0.0003 * Math.sqrt(intervalSeconds / 60);
+  const volatility = 0.00005;
   
   let price = basePrice;
   const tempCandles: CandlestickData<Time>[] = [];
   
   for (let i = 0; i < count; i++) {
     const time = (alignedNow - i * intervalSeconds) as Time;
+    const change = price * volatility * (Math.random() - 0.5) * 2;
+    const open = price - change;
     const close = price;
-    const change = close * volatility * (Math.random() - 0.5) * 2;
-    const open = close - change;
-    const high = Math.max(open, close) * (1 + Math.random() * volatility * 0.1);
-    const low = Math.min(open, close) * (1 - Math.random() * volatility * 0.1);
+    const high = Math.max(open, close) + Math.abs(change) * 0.3;
+    const low = Math.min(open, close) - Math.abs(change) * 0.3;
     tempCandles.unshift({ time, open, high, low, close });
     price = open;
   }
@@ -96,12 +96,14 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
       },
       rightPriceScale: {
         borderColor: '#1e222d',
-        scaleMargins: { top: 0.1, bottom: 0.1 },
+        scaleMargins: { top: 0.2, bottom: 0.2 },
+        autoScale: true,
       },
       timeScale: {
         borderColor: '#1e222d',
         timeVisible: true,
         secondsVisible: false,
+        rightOffset: 5,
       },
       localization: {
         locale: 'ko-KR',
@@ -153,7 +155,7 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
     if (isInitialized) return;
     if (data.price <= 0) return;
 
-    const candles = generateInitialCandles(data.price, 100, duration);
+    const candles = generateInitialCandles(data.price, 50, duration);
     seriesRef.current.setData(candles);
     
     if (candles.length > 0) {
