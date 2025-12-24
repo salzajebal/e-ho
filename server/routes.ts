@@ -1789,72 +1789,60 @@ export async function registerRoutes(
     }
   });
 
-  // ==================== REAL-TIME MARKET DATA (Twelve Data API) ====================
+  // ==================== REAL-TIME MARKET DATA (Yahoo Finance) ====================
   
-  const TWELVE_DATA_API_KEY = process.env.TWELVE_DATA_API_KEY;
-  
-  // Cache for market data (refresh every 2 seconds for real-time feel)
+  // Cache for market data (refresh every 15 seconds)
   let marketDataCache: { data: any; timestamp: number } | null = null;
-  const CACHE_DURATION = 2000; // 2 seconds
+  const CACHE_DURATION = 15000; // 15 seconds
 
-  // Twelve Data symbol mapping (matches TradingView symbols)
-  const TWELVE_DATA_SYMBOLS: Record<string, string> = {
-    'NDX': 'QQQ',       // NASDAQ 100 ETF (tracks NASDAQ 100 index)
-    'GOLD': 'XAU/USD',  // Gold spot (same as TradingView OANDA:XAUUSD)
-  };
-  
-  // Price multiplier for NDX to convert QQQ price to approximate NAS100 value
-  // As of Dec 2025: NASDAQ 100 ~25,576 while QQQ ~619
-  // Multiplier: ~41.3 (25576/619)
-  const NDX_MULTIPLIER = 41.3;
-
-  // Fallback prices when API is unavailable
-  const FALLBACK_PRICES: Record<string, { price: number; previousClose: number }> = {
-    'NDX': { price: 25576.00, previousClose: 25461.70 },
-    'GOLD': { price: 2650.30, previousClose: 2637.80 },
+  // Yahoo Finance symbol mapping
+  const YAHOO_SYMBOLS: Record<string, string> = {
+    'NDX': '^NDX',      // NASDAQ 100 Index
+    'GOLD': 'GC=F',     // Gold Futures (COMEX)
+    'AAPL': 'AAPL',
+    'MSFT': 'MSFT',
+    'GOOGL': 'GOOGL',
+    'AMZN': 'AMZN',
+    'NVDA': 'NVDA',
+    'META': 'META',
+    'TSLA': 'TSLA',
   };
 
-  // Fetch quote from Twelve Data API
-  async function fetchTwelveDataQuote(symbol: string): Promise<any> {
-    if (!TWELVE_DATA_API_KEY) {
-      console.log('Twelve Data API key not configured');
-      return null;
-    }
-    
+  // Fetch quote from Yahoo Finance
+  async function fetchYahooQuote(yahooSymbol: string): Promise<any> {
     try {
-      const url = `https://api.twelvedata.com/price?symbol=${encodeURIComponent(symbol)}&apikey=${TWELVE_DATA_API_KEY}`;
-      console.log(`Fetching Twelve Data: ${symbol}`);
-      const response = await fetch(url);
+      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSymbol)}?interval=1m&range=1d`;
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+      });
       
       if (!response.ok) {
-        const text = await response.text();
-        console.error(`Twelve Data API error ${response.status}: ${text}`);
-        return null;
+        throw new Error(`Yahoo API error: ${response.status}`);
       }
       
       const data = await response.json();
-      console.log(`Twelve Data response for ${symbol}:`, JSON.stringify(data));
+      const result = data.chart?.result?.[0];
       
-      if (data.status === 'error' || !data.price) {
-        console.log(`No valid data for ${symbol}:`, data.message || 'Unknown error');
-        return null;
+      if (!result) {
+        throw new Error('No data returned');
       }
       
-      let price = parseFloat(data.price);
-      
-      // Apply multiplier for NDX (QQQ to NAS100 conversion)
-      if (symbol === 'QQQ') {
-        price = price * NDX_MULTIPLIER;
-      }
+      const meta = result.meta;
+      const regularMarketPrice = meta.regularMarketPrice || 0;
+      const previousClose = meta.previousClose || meta.chartPreviousClose || regularMarketPrice;
+      const regularMarketDayHigh = meta.regularMarketDayHigh || regularMarketPrice;
+      const regularMarketDayLow = meta.regularMarketDayLow || regularMarketPrice;
       
       return {
-        price: price,
-        previousClose: price * 0.995, // Estimate previous close
-        high: price * 1.002,
-        low: price * 0.998,
+        price: regularMarketPrice,
+        previousClose,
+        high: regularMarketDayHigh,
+        low: regularMarketDayLow,
       };
     } catch (error) {
-      console.error(`Twelve Data fetch error for ${symbol}:`, error);
+      console.error(`Yahoo fetch error for ${yahooSymbol}:`, error);
       return null;
     }
   }
@@ -1866,53 +1854,44 @@ export async function registerRoutes(
         return res.json(marketDataCache.data);
       }
 
-      const symbols = Object.keys(TWELVE_DATA_SYMBOLS);
+      const symbols = Object.keys(YAHOO_SYMBOLS);
       const pricePromises = symbols.map(async (symbol) => {
-        const twelveDataSymbol = TWELVE_DATA_SYMBOLS[symbol];
+        const yahooSymbol = YAHOO_SYMBOLS[symbol];
         try {
-          const quote = await fetchTwelveDataQuote(twelveDataSymbol);
+          const quote = await fetchYahooQuote(yahooSymbol);
           
-          // Use fallback if API fails
-          const fallback = FALLBACK_PRICES[symbol];
-          const price = quote?.price || fallback.price;
-          const previousClose = quote?.previousClose || fallback.previousClose;
-          const high = quote?.high || price * 1.002;
-          const low = quote?.low || price * 0.998;
+          if (!quote || quote.price === 0) {
+            return null;
+          }
           
-          const change = price - previousClose;
-          const changePercent = previousClose > 0 ? (change / previousClose) * 100 : 0;
+          const change = quote.price - quote.previousClose;
+          const changePercent = quote.previousClose > 0 ? (change / quote.previousClose) * 100 : 0;
           
           return {
             symbol,
-            price: parseFloat(price.toFixed(2)),
+            price: parseFloat(quote.price.toFixed(2)),
             change: parseFloat(change.toFixed(2)),
             changePercent: parseFloat(changePercent.toFixed(2)),
-            high: parseFloat(high.toFixed(2)),
-            low: parseFloat(low.toFixed(2)),
+            high: parseFloat(quote.high.toFixed(2)),
+            low: parseFloat(quote.low.toFixed(2)),
             timestamp: Date.now(),
-            source: quote ? 'twelvedata' : 'fallback',
           };
         } catch (err) {
           console.error(`Failed to fetch ${symbol}:`, err);
-          const fallback = FALLBACK_PRICES[symbol];
-          return {
-            symbol,
-            price: fallback.price,
-            change: 0,
-            changePercent: 0,
-            high: fallback.price,
-            low: fallback.price,
-            timestamp: Date.now(),
-            source: 'fallback',
-          };
+          return null;
         }
       });
 
       const results = await Promise.all(pricePromises);
+      const validResults = results.filter(r => r !== null);
+
+      if (validResults.length === 0) {
+        return res.status(503).json({ error: "Failed to fetch market data", fallback: true });
+      }
 
       // Update cache
       marketDataCache = {
-        data: { prices: results, timestamp: Date.now() },
+        data: { prices: validResults, timestamp: Date.now() },
         timestamp: Date.now(),
       };
 
@@ -1927,32 +1906,29 @@ export async function registerRoutes(
   app.get("/api/market/price/:symbol", async (req, res) => {
     try {
       const { symbol } = req.params;
-      const twelveDataSymbol = TWELVE_DATA_SYMBOLS[symbol];
+      const yahooSymbol = YAHOO_SYMBOLS[symbol];
       
-      if (!twelveDataSymbol) {
+      if (!yahooSymbol) {
         return res.status(400).json({ error: "Unknown symbol" });
       }
 
-      const quote = await fetchTwelveDataQuote(twelveDataSymbol);
-      const fallback = FALLBACK_PRICES[symbol];
+      const quote = await fetchYahooQuote(yahooSymbol);
       
-      const price = quote?.price || fallback?.price || 0;
-      const previousClose = quote?.previousClose || fallback?.previousClose || price;
-      const high = quote?.high || price * 1.002;
-      const low = quote?.low || price * 0.998;
+      if (!quote || quote.price === 0) {
+        return res.status(503).json({ error: "Failed to fetch price", fallback: true });
+      }
       
-      const change = price - previousClose;
-      const changePercent = previousClose > 0 ? (change / previousClose) * 100 : 0;
+      const change = quote.price - quote.previousClose;
+      const changePercent = quote.previousClose > 0 ? (change / quote.previousClose) * 100 : 0;
 
       res.json({
         symbol,
-        price: parseFloat(price.toFixed(2)),
+        price: parseFloat(quote.price.toFixed(2)),
         change: parseFloat(change.toFixed(2)),
         changePercent: parseFloat(changePercent.toFixed(2)),
-        high: parseFloat(high.toFixed(2)),
-        low: parseFloat(low.toFixed(2)),
+        high: parseFloat(quote.high.toFixed(2)),
+        low: parseFloat(quote.low.toFixed(2)),
         timestamp: Date.now(),
-        source: quote ? 'twelvedata' : 'fallback',
       });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch price", fallback: true });

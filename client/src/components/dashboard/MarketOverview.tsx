@@ -3,15 +3,15 @@ import { cn } from "@/lib/utils";
 import { Clock } from "lucide-react";
 
 interface Game {
-  readonly id: string;
-  readonly symbol: string;
-  readonly duration: number;
-  readonly label: string;
+  id: string;
+  symbol: string;
+  duration: number;
+  label: string;
 }
 
 interface MarketOverviewProps {
   data: MarketData[];
-  games: readonly Game[];
+  games: Game[];
   onSelectGame: (gameId: string) => void;
   selectedGameId: string;
 }

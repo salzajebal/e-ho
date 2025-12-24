@@ -274,35 +274,12 @@ app.use((req, res, next) => {
       },
       () => {
         log(`serving on port ${port}`);
-        console.log(`==============================================`);
-        console.log(`Server ready and listening on 0.0.0.0:${port}`);
-        console.log(`Environment: ${process.env.NODE_ENV}`);
+        console.log(`Server ready and listening on port ${port}`);
         console.log(`WebSocket server ready at /ws/admin`);
-        console.log(`WebSocket server ready at /ws/user`);
-        console.log(`==============================================`);
       },
     );
-    
-    // Handle server errors
-    httpServer.on('error', (error: any) => {
-      console.error('HTTP Server error:', error.message);
-      if (error.code === 'EADDRINUSE') {
-        console.error(`Port ${port} is already in use`);
-      }
-    });
-    
   } catch (error) {
     console.error("Failed to start server:", error);
-    // Don't exit immediately in production - give time for logs
-    setTimeout(() => process.exit(1), 1000);
+    process.exit(1);
   }
 })();
-
-// Handle uncaught exceptions
-process.on('uncaughtException', (error) => {
-  console.error('Uncaught Exception:', error);
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-});

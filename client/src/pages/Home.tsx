@@ -149,7 +149,7 @@ export default function Home() {
         <div className="lg:hidden flex-1 min-h-0 overflow-auto">
           {/* Chart */}
           <div className="h-[35vh] min-h-[180px] border-b border-border">
-            <PriceChart key={`${selectedGame.symbol}-${selectedGame.duration}`} symbol={selectedGame.symbol} duration={selectedGame.duration} currentPrice={currentMarket.price} />
+            <PriceChart symbol={selectedGame.symbol} data={currentMarket} duration={selectedGame.duration} />
           </div>
           
           {/* Betting Form on Mobile */}
@@ -179,7 +179,7 @@ export default function Home() {
             <ResizablePanelGroup direction="vertical">
               <ResizablePanel defaultSize={60} minSize={30}>
                 <div className="h-full border-b border-border">
-                  <PriceChart key={`${selectedGame.symbol}-${selectedGame.duration}`} symbol={selectedGame.symbol} duration={selectedGame.duration} currentPrice={currentMarket.price} />
+                  <PriceChart symbol={selectedGame.symbol} data={currentMarket} duration={selectedGame.duration} />
                 </div>
               </ResizablePanel>
               
