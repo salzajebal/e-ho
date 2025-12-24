@@ -1,5 +1,4 @@
-import { useEffect, useRef, memo, useState, useCallback } from "react";
-import { createChart, IChartApi, CandlestickData, Time, CandlestickSeries } from "lightweight-charts";
+import { useEffect, useRef, memo, useState } from "react";
 
 interface PriceChartProps {
   symbol: string;
@@ -9,336 +8,129 @@ interface PriceChartProps {
 
 function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const chartRef = useRef<IChartApi | null>(null);
-  const candleSeriesRef = useRef<any>(null);
-  const [lastCandle, setLastCandle] = useState<CandlestickData<Time> | null>(null);
-  const priceLineRef = useRef<any>(null);
-  const [chartReady, setChartReady] = useState(false);
-  const initPriceRef = useRef<number>(0);
-  const [ohlc, setOhlc] = useState({ open: 0, high: 0, low: 0, close: 0 });
-  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+  const [widgetLoaded, setWidgetLoaded] = useState(false);
 
   const durationMinutes = duration / 60;
-  const symbolName = symbol === 'NDX' ? '나스닥 100 인덱스' : symbol === 'GOLD' ? '골드 스팟' : symbol;
+  
+  // TradingView symbol mapping
+  const getTradingViewSymbol = () => {
+    if (symbol === 'NDX') {
+      return 'OANDA:NAS100USD'; // NASDAQ 100 CFD - closely tracks NDX
+    } else if (symbol === 'GOLD') {
+      return 'OANDA:XAUUSD'; // Gold spot
+    }
+    return 'OANDA:NAS100USD';
+  };
 
-  const generateInitialCandles = useCallback((basePrice: number, candleDuration: number, series: any, chart: IChartApi) => {
-    if (!series || !chart || basePrice <= 0) return;
-
-    // Use UTC timestamp (lightweight-charts expects UTC)
-    const now = Math.floor(Date.now() / 1000);
-    const currentCandleTime = Math.floor(now / candleDuration) * candleDuration;
-    
-    const candles: CandlestickData<Time>[] = [];
-    const candleCount = 80;
-    
-    // Mean-reverting generator that keeps prices within tight band around basePrice
-    const maxDeviation = basePrice * 0.002; // Max 0.2% deviation from base
-    let currentPrice = basePrice;
-    
-    for (let i = candleCount - 1; i >= 0; i--) {
-      const candleTime = (currentCandleTime - (i * candleDuration)) as Time;
-      
-      // Mean reversion: pull price back toward basePrice
-      const reversionStrength = 0.3;
-      const deviation = currentPrice - basePrice;
-      const meanReversion = -deviation * reversionStrength;
-      
-      // Small random noise
-      const noise = (Math.random() - 0.5) * maxDeviation * 0.5;
-      
-      const open = currentPrice;
-      let close = open + meanReversion + noise;
-      
-      // Clamp to stay within band
-      close = Math.max(basePrice - maxDeviation, Math.min(basePrice + maxDeviation, close));
-      
-      const wickSize = Math.abs(close - open) * 0.3 + basePrice * 0.0001;
-      const high = Math.max(open, close) + wickSize;
-      const low = Math.min(open, close) - wickSize;
-      
-      candles.push({
-        time: candleTime,
-        open: parseFloat(open.toFixed(2)),
-        high: parseFloat(high.toFixed(2)),
-        low: parseFloat(low.toFixed(2)),
-        close: parseFloat(close.toFixed(2)),
-      });
-      
-      currentPrice = close;
-    }
-    
-    // Set last candle to exactly match current price
-    if (candles.length > 0) {
-      const lastIdx = candles.length - 1;
-      candles[lastIdx].close = basePrice;
-      if (candles[lastIdx].high < basePrice) candles[lastIdx].high = basePrice;
-      if (candles[lastIdx].low > basePrice) candles[lastIdx].low = basePrice;
-      
-      setOhlc({
-        open: candles[lastIdx].open,
-        high: candles[lastIdx].high,
-        low: candles[lastIdx].low,
-        close: basePrice,
-      });
-    }
-    
-    try {
-      series.setData(candles);
-      setLastCandle(candles[candles.length - 1]);
-      
-      // Set visible range to show ~35 candles based on duration
-      const visibleBars = 35;
-      const lastTime = candles[candles.length - 1].time as number;
-      const fromTime = (lastTime - (visibleBars * candleDuration)) as Time;
-      const toTime = (lastTime + candleDuration * 3) as Time;
-      
-      chart.timeScale().setVisibleRange({ from: fromTime, to: toTime });
-    } catch (e) {
-      try { chart.timeScale().fitContent(); } catch (err) {}
-    }
-  }, []);
+  // TradingView interval mapping
+  const getInterval = () => {
+    if (durationMinutes === 1) return '1';
+    if (durationMinutes === 3) return '3';
+    if (durationMinutes === 5) return '5';
+    return '1';
+  };
 
   useEffect(() => {
     if (!containerRef.current) return;
 
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const { width, height } = entry.contentRect;
-        if (width > 0 && height > 0) {
-          setContainerSize({ width, height });
-        }
-      }
+    // Clear previous widget
+    containerRef.current.innerHTML = '';
+    setWidgetLoaded(false);
+
+    // Create TradingView widget container
+    const widgetContainer = document.createElement('div');
+    widgetContainer.className = 'tradingview-widget-container';
+    widgetContainer.style.height = '100%';
+    widgetContainer.style.width = '100%';
+
+    const widgetDiv = document.createElement('div');
+    widgetDiv.className = 'tradingview-widget-container__widget';
+    widgetDiv.style.height = '100%';
+    widgetDiv.style.width = '100%';
+    widgetContainer.appendChild(widgetDiv);
+
+    containerRef.current.appendChild(widgetContainer);
+
+    // Load TradingView widget script
+    const script = document.createElement('script');
+    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+    script.type = 'text/javascript';
+    script.async = true;
+    script.innerHTML = JSON.stringify({
+      autosize: true,
+      symbol: getTradingViewSymbol(),
+      interval: getInterval(),
+      timezone: "Asia/Seoul",
+      theme: "dark",
+      style: "1",
+      locale: "kr",
+      allow_symbol_change: false,
+      hide_top_toolbar: false,
+      hide_legend: false,
+      save_image: false,
+      calendar: false,
+      hide_volume: true,
+      support_host: "https://www.tradingview.com",
+      backgroundColor: "rgba(19, 23, 34, 1)",
+      gridColor: "rgba(30, 34, 45, 0.6)",
     });
 
-    resizeObserver.observe(containerRef.current);
-    return () => resizeObserver.disconnect();
-  }, []);
+    script.onload = () => {
+      setWidgetLoaded(true);
+    };
 
-  useEffect(() => {
-    if (!containerRef.current || containerSize.width === 0 || containerSize.height === 0) return;
-
-    if (chartRef.current) {
-      chartRef.current.remove();
-      chartRef.current = null;
-      candleSeriesRef.current = null;
-    }
-
-    setChartReady(false);
-    setLastCandle(null);
-    initPriceRef.current = 0;
-
-    const chart = createChart(containerRef.current, {
-      width: containerSize.width,
-      height: containerSize.height,
-      layout: {
-        background: { color: '#131722' },
-        textColor: '#B2B5BE',
-        fontFamily: "-apple-system, BlinkMacSystemFont, 'Trebuchet MS', Roboto, Ubuntu, sans-serif",
-        fontSize: 12,
-      },
-      grid: {
-        vertLines: { color: '#1e222d', style: 0 },
-        horzLines: { color: '#1e222d', style: 0 },
-      },
-      crosshair: {
-        mode: 1,
-        vertLine: {
-          color: '#758696',
-          width: 1,
-          style: 0,
-          labelBackgroundColor: '#2A2E39',
-        },
-        horzLine: {
-          color: '#758696',
-          width: 1,
-          style: 0,
-          labelBackgroundColor: '#2A2E39',
-        },
-      },
-      rightPriceScale: {
-        borderColor: '#1e222d',
-        scaleMargins: { top: 0.1, bottom: 0.1 },
-        borderVisible: true,
-        textColor: '#B2B5BE',
-      },
-      timeScale: {
-        borderColor: '#1e222d',
-        timeVisible: true,
-        secondsVisible: false,
-        rightOffset: 3,
-        // Adjust bar spacing based on duration: 1min=12, 3min=10, 5min=8
-        barSpacing: durationMinutes === 1 ? 12 : durationMinutes === 3 ? 10 : 8,
-        minBarSpacing: 5,
-        fixLeftEdge: false,
-        fixRightEdge: false,
-        borderVisible: true,
-      },
-      localization: {
-        locale: 'ko-KR',
-        timeFormatter: (time: number) => {
-          // Convert UTC to KST (UTC+9) for display
-          const date = new Date((time + 9 * 60 * 60) * 1000);
-          const hours = date.getUTCHours().toString().padStart(2, '0');
-          const minutes = date.getUTCMinutes().toString().padStart(2, '0');
-          return `${hours}:${minutes}`;
-        },
-      },
-    });
-
-    const candleSeries = chart.addSeries(CandlestickSeries, {
-      upColor: '#26A69A',
-      downColor: '#EF5350',
-      borderUpColor: '#26A69A',
-      borderDownColor: '#EF5350',
-      wickUpColor: '#26A69A',
-      wickDownColor: '#EF5350',
-      borderVisible: false,
-    });
-
-    chartRef.current = chart;
-    candleSeriesRef.current = candleSeries;
-    setChartReady(true);
+    widgetContainer.appendChild(script);
 
     return () => {
-      if (chartRef.current) {
-        chartRef.current.remove();
-        chartRef.current = null;
-        candleSeriesRef.current = null;
+      if (containerRef.current) {
+        containerRef.current.innerHTML = '';
       }
     };
-  }, [symbol, duration, containerSize.width, containerSize.height]);
+  }, [symbol, duration]);
 
-  useEffect(() => {
-    if (chartRef.current && containerSize.width > 0 && containerSize.height > 0) {
-      chartRef.current.applyOptions({
-        width: containerSize.width,
-        height: containerSize.height,
-      });
-    }
-  }, [containerSize]);
-
-  useEffect(() => {
-    if (chartReady && candleSeriesRef.current && chartRef.current && currentPrice > 0 && initPriceRef.current === 0) {
-      initPriceRef.current = currentPrice;
-      generateInitialCandles(currentPrice, duration, candleSeriesRef.current, chartRef.current);
-    }
-  }, [chartReady, currentPrice, duration, generateInitialCandles]);
-
-  useEffect(() => {
-    if (!candleSeriesRef.current || !lastCandle || currentPrice <= 0) return;
-
-    // Use UTC timestamp (same as initial candle generation)
-    const now = Math.floor(Date.now() / 1000);
-    const candleStartTime = Math.floor(now / duration) * duration;
-    const lastCandleTime = lastCandle.time as number;
-    
-    try {
-      if (candleStartTime > lastCandleTime) {
-        const newCandle: CandlestickData<Time> = {
-          time: candleStartTime as Time,
-          open: currentPrice,
-          high: currentPrice,
-          low: currentPrice,
-          close: currentPrice,
-        };
-        candleSeriesRef.current.update(newCandle);
-        setLastCandle(newCandle);
-        setOhlc({ open: currentPrice, high: currentPrice, low: currentPrice, close: currentPrice });
-      } else {
-        const updatedCandle: CandlestickData<Time> = {
-          ...lastCandle,
-          high: Math.max(lastCandle.high, currentPrice),
-          low: Math.min(lastCandle.low, currentPrice),
-          close: currentPrice,
-        };
-        candleSeriesRef.current.update(updatedCandle);
-        setLastCandle(updatedCandle);
-        setOhlc({
-          open: updatedCandle.open,
-          high: updatedCandle.high,
-          low: updatedCandle.low,
-          close: updatedCandle.close,
-        });
-      }
-
-      if (priceLineRef.current) {
-        try { candleSeriesRef.current.removePriceLine(priceLineRef.current); } catch (e) {}
-      }
-      priceLineRef.current = candleSeriesRef.current.createPriceLine({
-        price: currentPrice,
-        color: '#2962FF',
-        lineWidth: 1,
-        lineStyle: 2,
-        axisLabelVisible: true,
-        title: '',
-      });
-    } catch (e) {}
-  }, [currentPrice, duration, lastCandle]);
-
-  const isUp = ohlc.close >= ohlc.open;
-  const priceChange = currentPrice - ohlc.open;
-  const priceChangePercent = ohlc.open > 0 ? (priceChange / ohlc.open) * 100 : 0;
+  const isUp = currentPrice > 0;
+  const symbolName = symbol === 'NDX' ? '나스닥 100' : symbol === 'GOLD' ? '골드' : symbol;
 
   return (
     <div className="flex flex-col h-full w-full" style={{ backgroundColor: '#131722' }} data-testid="chart-container">
-      {/* TradingView Header - Top Bar */}
-      <div className="flex items-center justify-between px-2 py-1 border-b border-[#2A2E39]" style={{ backgroundColor: '#1E222D' }}>
+      {/* Price Header */}
+      <div className="flex items-center justify-between px-3 py-2 border-b border-[#2A2E39]" style={{ backgroundColor: '#1E222D' }}>
         <div className="flex items-center gap-3">
           <span className="text-white font-semibold text-sm">{symbol}</span>
-          <span className="text-[#787B86] text-xs">지수</span>
+          <span className="text-[#787B86] text-xs">{symbolName}</span>
+          <span className="text-[#787B86] text-xs">• {durationMinutes}분</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className={`text-base font-bold ${isUp ? 'text-[#26A69A]' : 'text-[#EF5350]'}`}>
-            ${currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          <span className="text-[#26A69A] text-base font-bold">
+            {currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </span>
-          <span className={`text-xs ${isUp ? 'text-[#26A69A]' : 'text-[#EF5350]'}`}>
-            {isUp ? '+' : ''}{priceChange.toFixed(2)} ({isUp ? '+' : ''}{priceChangePercent.toFixed(2)}%)
-          </span>
-          <div className="ml-2 px-2 py-0.5 rounded text-xs font-medium" style={{ backgroundColor: '#2962FF', color: 'white' }}>
+          <div className="px-2 py-0.5 rounded text-xs font-medium" style={{ backgroundColor: '#2962FF', color: 'white' }}>
             {durationMinutes}분봉
           </div>
         </div>
       </div>
 
-      {/* TradingView Symbol Info Bar */}
-      <div className="flex items-center gap-2 px-2 py-1 border-b border-[#2A2E39]" style={{ backgroundColor: '#131722' }}>
-        <div className="flex items-center gap-1">
-          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#F7931A' }}></div>
-          <span className="text-[#B2B5BE] text-xs">{symbolName}</span>
-          <span className="text-[#787B86] text-xs">• {durationMinutes} •</span>
-          <span className="text-[#787B86] text-xs">{symbol === 'NDX' ? 'NASDAQ' : 'FOREX'}</span>
-        </div>
-        <div className="flex items-center gap-3 ml-4 text-xs">
-          <span className="text-[#787B86]">시</span>
-          <span className={isUp ? 'text-[#26A69A]' : 'text-[#EF5350]'}>
-            {ohlc.open.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </span>
-          <span className="text-[#787B86]">고</span>
-          <span className={isUp ? 'text-[#26A69A]' : 'text-[#EF5350]'}>
-            {ohlc.high.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </span>
-          <span className="text-[#787B86]">저</span>
-          <span className={isUp ? 'text-[#26A69A]' : 'text-[#EF5350]'}>
-            {ohlc.low.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </span>
-          <span className="text-[#787B86]">종</span>
-          <span className={isUp ? 'text-[#26A69A]' : 'text-[#EF5350]'}>
-            {ohlc.close.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </span>
-          <span className={`ml-1 ${isUp ? 'text-[#26A69A]' : 'text-[#EF5350]'}`}>
-            {isUp ? '+' : ''}{(ohlc.close - ohlc.open).toFixed(2)} ({isUp ? '+' : ''}{((ohlc.close - ohlc.open) / ohlc.open * 100).toFixed(2)}%)
-          </span>
-        </div>
+      {/* TradingView Widget */}
+      <div ref={containerRef} className="flex-1 min-h-0 relative">
+        {!widgetLoaded && (
+          <div className="absolute inset-0 flex items-center justify-center bg-[#131722]">
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-8 h-8 border-2 border-[#2962FF] border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-[#787B86] text-sm">차트 로딩 중...</span>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Chart Canvas */}
-      <div ref={containerRef} className="flex-1 min-h-0 relative">
-        {/* TradingView Logo */}
-        <div className="absolute bottom-2 left-2 z-10 flex items-center gap-1 text-[#363A45]">
-          <svg width="20" height="20" viewBox="0 0 36 28" fill="currentColor">
-            <path d="M14 22H7V6h7v16zm8 0h-7V2h7v20zm8 0h-7v-8h7v8z"/>
-          </svg>
+      {/* Footer with current betting price */}
+      <div className="flex items-center justify-between px-3 py-1.5 border-t border-[#2A2E39]" style={{ backgroundColor: '#1E222D' }}>
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-[#26A69A] animate-pulse"></div>
+          <span className="text-[#787B86] text-xs">실시간 베팅가</span>
         </div>
+        <span className="text-[#F0B90B] text-sm font-bold">
+          {currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        </span>
       </div>
     </div>
   );
