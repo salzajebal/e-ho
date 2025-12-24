@@ -1,4 +1,6 @@
-import { useEffect, useRef, memo } from "react";
+import { useEffect, useRef, useState, memo } from "react";
+import { createChart, ColorType, CandlestickData, Time, CandlestickSeries } from "lightweight-charts";
+import type { IChartApi, ISeriesApi } from "lightweight-charts";
 import { MarketData } from "@/lib/marketData";
 
 interface PriceChartProps {
@@ -7,86 +9,168 @@ interface PriceChartProps {
   duration?: number;
 }
 
-function getTradingViewSymbol(symbol: string): string {
-  switch (symbol) {
-    case "NDX":
-      return "OANDA:NAS100USD";
-    case "GOLD":
-      return "OANDA:XAUUSD";
-    default:
-      return "OANDA:NAS100USD";
+function generateInitialCandles(basePrice: number, count: number, intervalSeconds: number): CandlestickData<Time>[] {
+  const candles: CandlestickData<Time>[] = [];
+  const now = Math.floor(Date.now() / 1000);
+  const alignedNow = Math.floor(now / intervalSeconds) * intervalSeconds;
+  
+  const volatility = 0.0008 * Math.sqrt(intervalSeconds / 60);
+  
+  let price = basePrice;
+  const tempCandles: CandlestickData<Time>[] = [];
+  
+  for (let i = 0; i < count; i++) {
+    const time = (alignedNow - i * intervalSeconds) as Time;
+    const close = price;
+    const change = close * volatility * (Math.random() - 0.5) * 2;
+    const open = close - change;
+    const high = Math.max(open, close) * (1 + Math.random() * volatility * 0.3);
+    const low = Math.min(open, close) * (1 - Math.random() * volatility * 0.3);
+    tempCandles.unshift({ time, open, high, low, close });
+    price = open;
   }
-}
-
-function getInterval(durationSeconds: number): string {
-  const minutes = durationSeconds / 60;
-  switch (minutes) {
-    case 1:
-      return "1";
-    case 3:
-      return "3";
-    case 5:
-      return "5";
-    default:
-      return "1";
-  }
+  
+  return tempCandles;
 }
 
 function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const widgetRef = useRef<HTMLDivElement>(null);
+  const chartRef = useRef<IChartApi | null>(null);
+  const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
+  const priceRef = useRef(data.price);
+  const candleRef = useRef<CandlestickData<Time> | null>(null);
+  const [isReady, setIsReady] = useState(false);
 
-  const tvSymbol = getTradingViewSymbol(symbol);
-  const interval = getInterval(duration);
   const durationMinutes = duration / 60;
   const isUp = data.change >= 0;
 
   useEffect(() => {
-    if (!widgetRef.current) return;
+    priceRef.current = data.price;
+  }, [data.price]);
 
-    // Clear previous widget
-    widgetRef.current.innerHTML = "";
+  useEffect(() => {
+    if (!containerRef.current) return;
 
-    const script = document.createElement("script");
-    script.src = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
-    script.type = "text/javascript";
-    script.async = true;
-    script.innerHTML = JSON.stringify({
-      autosize: true,
-      symbol: tvSymbol,
-      interval: interval,
-      timezone: "Asia/Seoul",
-      theme: "dark",
-      style: "1",
-      locale: "ko_KR",
-      backgroundColor: "rgba(19, 23, 34, 1)",
-      gridColor: "rgba(30, 34, 45, 0.6)",
-      hide_top_toolbar: false,
-      hide_legend: false,
-      hide_side_toolbar: true,
-      allow_symbol_change: false,
-      save_image: false,
-      calendar: false,
-      hide_volume: true,
-      support_host: "https://www.tradingview.com",
+    const chart = createChart(containerRef.current, {
+      layout: {
+        background: { type: ColorType.Solid, color: '#131722' },
+        textColor: '#787b86',
+      },
+      grid: {
+        vertLines: { color: '#1e222d' },
+        horzLines: { color: '#1e222d' },
+      },
+      crosshair: {
+        mode: 1,
+        vertLine: { color: '#505050', width: 1, style: 0, labelBackgroundColor: '#363a45' },
+        horzLine: { color: '#505050', width: 1, style: 0, labelBackgroundColor: '#363a45' },
+      },
+      rightPriceScale: {
+        borderColor: '#1e222d',
+        scaleMargins: { top: 0.1, bottom: 0.1 },
+      },
+      timeScale: {
+        borderColor: '#1e222d',
+        timeVisible: true,
+        secondsVisible: false,
+      },
+      localization: {
+        locale: 'ko-KR',
+      },
+      handleScroll: { mouseWheel: true, pressedMouseMove: true },
+      handleScale: { axisPressedMouseMove: true, mouseWheel: true, pinch: true },
     });
 
-    widgetRef.current.appendChild(script);
+    const series = (chart as any).addSeries(CandlestickSeries, {
+      upColor: '#26a69a',
+      downColor: '#ef5350',
+      borderUpColor: '#26a69a',
+      borderDownColor: '#ef5350',
+      wickUpColor: '#26a69a',
+      wickDownColor: '#ef5350',
+    });
 
-    return () => {
-      if (widgetRef.current) {
-        widgetRef.current.innerHTML = "";
+    chartRef.current = chart;
+    seriesRef.current = series;
+
+    const candles = generateInitialCandles(data.price, 100, duration);
+    series.setData(candles);
+    if (candles.length > 0) {
+      candleRef.current = { ...candles[candles.length - 1] };
+    }
+
+    const resize = () => {
+      if (containerRef.current && chartRef.current) {
+        chartRef.current.applyOptions({
+          width: containerRef.current.clientWidth,
+          height: containerRef.current.clientHeight,
+        });
+        chartRef.current.timeScale().fitContent();
       }
     };
-  }, [tvSymbol, interval]);
+
+    const observer = new ResizeObserver(resize);
+    observer.observe(containerRef.current);
+    setTimeout(() => {
+      resize();
+      setIsReady(true);
+    }, 50);
+
+    return () => {
+      observer.disconnect();
+      chart.remove();
+      chartRef.current = null;
+      seriesRef.current = null;
+      setIsReady(false);
+    };
+  }, [symbol, duration]);
+
+  useEffect(() => {
+    if (!seriesRef.current || !isReady) return;
+
+    const getAlignedTime = () => {
+      const now = Math.floor(Date.now() / 1000);
+      return Math.floor(now / duration) * duration;
+    };
+    
+    let currentStart = getAlignedTime();
+
+    if (!candleRef.current) {
+      candleRef.current = {
+        time: currentStart as Time,
+        open: priceRef.current,
+        high: priceRef.current,
+        low: priceRef.current,
+        close: priceRef.current,
+      };
+    }
+
+    const tick = setInterval(() => {
+      if (!seriesRef.current || !candleRef.current) return;
+
+      const newStart = getAlignedTime();
+      const p = priceRef.current;
+
+      if (newStart > currentStart) {
+        currentStart = newStart;
+        candleRef.current = { time: newStart as Time, open: p, high: p, low: p, close: p };
+      } else {
+        candleRef.current = {
+          ...candleRef.current,
+          high: Math.max(candleRef.current.high, p),
+          low: Math.min(candleRef.current.low, p),
+          close: p,
+        };
+      }
+
+      try { seriesRef.current.update(candleRef.current); } catch {}
+    }, 200);
+
+    return () => clearInterval(tick);
+  }, [duration, isReady]);
 
   return (
-    <div 
-      ref={containerRef}
-      className="flex flex-col h-full w-full" 
-      style={{ backgroundColor: '#131722' }}
-      data-testid="chart-container"
-    >
+    <div className="flex flex-col h-full w-full" style={{ backgroundColor: '#131722' }} data-testid="chart-container">
       <div className="flex items-center justify-between px-3 py-2 border-b border-[#1e222d] shrink-0">
         <div className="flex items-center gap-3">
           <span className="text-white font-bold text-lg">{symbol}</span>
@@ -105,18 +189,17 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
         </div>
       </div>
 
-      <div className="flex-1 relative min-h-0">
-        <div 
-          ref={widgetRef}
-          className="tradingview-widget-container absolute inset-0"
-          style={{ height: '100%', width: '100%' }}
-        >
-          <div 
-            className="tradingview-widget-container__widget" 
-            style={{ height: '100%', width: '100%' }}
-          />
-        </div>
+      <div className="flex items-center gap-2 px-3 py-1.5 border-b border-[#1e222d] text-xs text-gray-400 shrink-0">
+        <span className="text-blue-400">{durationMinutes}분</span>
+        <span>|</span>
+        <span>서버 동기화</span>
       </div>
+
+      <div 
+        ref={containerRef}
+        className="flex-1 min-h-0"
+        style={{ width: '100%' }}
+      />
     </div>
   );
 }

@@ -79,21 +79,18 @@ export function useMarketData() {
       }
     };
 
-    // Micro-simulation for smooth UI (only tiny variations around API price)
-    const microSimulate = () => {
+    // No micro-simulation - use exact API prices for 100% sync with server
+    const syncWithApi = () => {
       if (!apiAvailable) return;
       
       setData(prev => prev.map(item => {
         const apiData = lastApiPrices.current[item.symbol];
         if (!apiData) return item;
         
-        // Very small random variation (0.01% max) for smooth UI
-        const microChange = apiData.price * 0.0001 * (Math.random() - 0.5);
-        const newPrice = apiData.price + microChange;
-        
+        // Use exact API price without any modification
         return {
           ...item,
-          price: parseFloat(newPrice.toFixed(2)),
+          price: apiData.price,
           change: apiData.change,
           changePercent: apiData.changePercent,
           high: apiData.high,
@@ -136,10 +133,10 @@ export function useMarketData() {
     // Fetch from API every 3 seconds for more real-time updates
     const apiInterval = setInterval(fetchRealPrices, 3000);
     
-    // Micro-simulation for smooth price display (every 500ms for smoother UI)
+    // Sync prices (every 500ms) - exact API prices, no random variation
     const simInterval = setInterval(() => {
       if (apiAvailable) {
-        microSimulate();
+        syncWithApi();
       } else {
         fallbackSimulate();
       }
