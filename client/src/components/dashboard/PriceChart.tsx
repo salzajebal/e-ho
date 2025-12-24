@@ -34,33 +34,28 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
     const candles: CandlestickData<Time>[] = [];
     const candleCount = 60; // Show 60 candles
     
-    let price = basePrice;
-    
-    // Generate candles backwards from current time
+    // Generate candles - all based on current price with small variations
     for (let i = candleCount - 1; i >= 0; i--) {
       const candleTime = (currentCandleTime - (i * candleDuration)) as Time;
       
-      // Small random variation for realistic look
-      const volatility = basePrice * 0.0005;
-      const randomChange = (Math.random() - 0.5) * 2 * volatility;
+      // Very small random variation around current price (0.03% max)
+      const volatility = basePrice * 0.0003;
+      const centerPrice = basePrice + (Math.random() - 0.5) * volatility * 2;
+      const open = centerPrice + (Math.random() - 0.5) * volatility;
+      const close = centerPrice + (Math.random() - 0.5) * volatility;
+      const high = Math.max(open, close) + Math.random() * volatility * 0.5;
+      const low = Math.min(open, close) - Math.random() * volatility * 0.5;
       
       if (i === 0) {
-        // Most recent candle uses current price
-        const open = basePrice - randomChange;
+        // Most recent candle - close is current price
         candles.push({
           time: candleTime,
           open: parseFloat(open.toFixed(2)),
-          high: parseFloat(Math.max(open, basePrice).toFixed(2)),
-          low: parseFloat(Math.min(open, basePrice).toFixed(2)),
+          high: parseFloat(Math.max(high, basePrice).toFixed(2)),
+          low: parseFloat(Math.min(low, basePrice).toFixed(2)),
           close: parseFloat(basePrice.toFixed(2)),
         });
       } else {
-        // Historical candles with small variations
-        const open = price;
-        const close = price + randomChange;
-        const high = Math.max(open, close) + Math.random() * volatility * 0.3;
-        const low = Math.min(open, close) - Math.random() * volatility * 0.3;
-        
         candles.push({
           time: candleTime,
           open: parseFloat(open.toFixed(2)),
@@ -68,13 +63,8 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
           low: parseFloat(low.toFixed(2)),
           close: parseFloat(close.toFixed(2)),
         });
-        
-        price = close;
       }
     }
-    
-    // Sort by time
-    candles.sort((a, b) => (a.time as number) - (b.time as number));
     
     if (candles.length > 0) {
       const lastIdx = candles.length - 1;
