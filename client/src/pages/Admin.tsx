@@ -324,6 +324,7 @@ export default function Admin() {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
   const [telegramLink, setTelegramLink] = useState("");
+  const [companyInfo, setCompanyInfo] = useState("");
   const [prevPendingCount, setPrevPendingCount] = useState(0);
   const [createAffiliateOpen, setCreateAffiliateOpen] = useState(false);
   const [editingAffiliate, setEditingAffiliate] = useState<AdminAffiliate | null>(null);
@@ -815,10 +816,13 @@ export default function Admin() {
     setMessageDialogOpen(true);
   };
 
-  // Update telegram link when settings load
+  // Update settings when data loads
   useEffect(() => {
     if (settingsData?.telegram_link !== undefined) {
       setTelegramLink(settingsData.telegram_link);
+    }
+    if (settingsData?.company_info !== undefined) {
+      setCompanyInfo(settingsData.company_info);
     }
   }, [settingsData]);
 
@@ -835,6 +839,7 @@ export default function Admin() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/settings"] });
       queryClient.invalidateQueries({ queryKey: ["/api/settings/telegram"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/settings/company-info"] });
       toast.success("설정이 저장되었습니다");
     },
     onError: () => {
@@ -2395,6 +2400,40 @@ export default function Admin() {
                         <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
                       </svg>
                     </a>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-card border border-border rounded-lg p-6">
+              <h2 className="text-lg font-semibold mb-4">회사 정보 설정</h2>
+              
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-muted-foreground">대표이사 / 회사 정보</label>
+                  <div className="flex gap-3">
+                    <Input
+                      value={companyInfo}
+                      onChange={(e) => setCompanyInfo(e.target.value)}
+                      placeholder="대표이사 김동호 외2인"
+                      className="flex-1"
+                    />
+                    <Button
+                      onClick={() => updateSetting.mutate({ key: 'company_info', value: companyInfo })}
+                      disabled={updateSetting.isPending}
+                    >
+                      {updateSetting.isPending ? '저장 중...' : '저장'}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    메인 페이지 하단에 표시될 회사 정보입니다.
+                  </p>
+                </div>
+
+                {companyInfo && (
+                  <div className="pt-4 border-t border-border">
+                    <p className="text-sm text-muted-foreground mb-2">현재 설정된 정보:</p>
+                    <p className="text-foreground">{companyInfo}</p>
                   </div>
                 )}
               </div>

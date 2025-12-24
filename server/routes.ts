@@ -1782,6 +1782,16 @@ export async function registerRoutes(
     }
   });
 
+  // Get public setting (company info)
+  app.get("/api/settings/company-info", async (req, res) => {
+    try {
+      const companyInfo = await storage.getSetting("company_info");
+      res.json({ companyInfo: companyInfo || "" });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch setting" });
+    }
+  });
+
   // Update setting (admin only)
   app.post("/api/admin/settings", requireAdmin, async (req, res) => {
     try {
@@ -1800,7 +1810,11 @@ export async function registerRoutes(
   app.get("/api/admin/settings", requireAdmin, async (req, res) => {
     try {
       const telegramLink = await storage.getSetting("telegram_link");
-      res.json({ telegram_link: telegramLink || "" });
+      const companyInfo = await storage.getSetting("company_info");
+      res.json({ 
+        telegram_link: telegramLink || "",
+        company_info: companyInfo || "" 
+      });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch settings" });
     }
