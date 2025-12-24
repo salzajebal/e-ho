@@ -107,6 +107,12 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
       },
       localization: {
         locale: 'ko-KR',
+        timeFormatter: (time: number) => {
+          const date = new Date(time * 1000);
+          const hours = date.getUTCHours().toString().padStart(2, '0');
+          const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+          return `${hours}:${minutes}`;
+        },
       },
       handleScroll: { mouseWheel: true, pressedMouseMove: true },
       handleScale: { axisPressedMouseMove: true, mouseWheel: true, pinch: true },
