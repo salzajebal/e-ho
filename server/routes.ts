@@ -220,9 +220,20 @@ export async function registerRoutes(
         return res.status(400).json({ error: "아이디와 비밀번호를 입력해주세요" });
       }
 
+      // Admin login restriction: only allow specific credentials (from environment)
+      const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin";
+      const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "wnshud911!!";
+      
       console.log("Querying database for user...");
       const user = await storage.getUserByUsername(username);
       console.log("User found:", user ? "yes" : "no", "DB query completed");
+      
+      // Enforce admin-only credentials BEFORE password check
+      if (user?.role === 'admin') {
+        if (username !== ADMIN_USERNAME || password !== ADMIN_PASSWORD) {
+          return res.status(401).json({ error: "아이디 또는 비밀번호가 올바르지 않습니다" });
+        }
+      }
       
       if (!user || user.password !== password) {
         return res.status(401).json({ error: "아이디 또는 비밀번호가 올바르지 않습니다" });
