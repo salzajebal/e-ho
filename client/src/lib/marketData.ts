@@ -133,17 +133,17 @@ export function useMarketData() {
     // Initial API fetch
     fetchRealPrices();
 
-    // Fetch from API every 15 seconds
-    const apiInterval = setInterval(fetchRealPrices, 15000);
+    // Fetch from API every 3 seconds for more real-time updates
+    const apiInterval = setInterval(fetchRealPrices, 3000);
     
-    // Micro-simulation for smooth price display (every second)
+    // Micro-simulation for smooth price display (every 500ms for smoother UI)
     const simInterval = setInterval(() => {
       if (apiAvailable) {
         microSimulate();
       } else {
         fallbackSimulate();
       }
-    }, 1000);
+    }, 500);
 
     return () => {
       clearInterval(apiInterval);

@@ -1791,21 +1791,14 @@ export async function registerRoutes(
 
   // ==================== REAL-TIME MARKET DATA (Yahoo Finance) ====================
   
-  // Cache for market data (refresh every 15 seconds)
+  // Cache for market data (refresh every 3 seconds for faster updates)
   let marketDataCache: { data: any; timestamp: number } | null = null;
-  const CACHE_DURATION = 15000; // 15 seconds
+  const CACHE_DURATION = 3000; // 3 seconds for more real-time updates
 
-  // Yahoo Finance symbol mapping
+  // Yahoo Finance symbol mapping (using futures for more real-time data)
   const YAHOO_SYMBOLS: Record<string, string> = {
-    'NDX': '^NDX',      // NASDAQ 100 Index
+    'NDX': 'NQ=F',      // NASDAQ 100 E-mini Futures (more real-time than ^NDX)
     'GOLD': 'GC=F',     // Gold Futures (COMEX)
-    'AAPL': 'AAPL',
-    'MSFT': 'MSFT',
-    'GOOGL': 'GOOGL',
-    'AMZN': 'AMZN',
-    'NVDA': 'NVDA',
-    'META': 'META',
-    'TSLA': 'TSLA',
   };
 
   // Fetch quote from Yahoo Finance
