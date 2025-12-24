@@ -34,6 +34,15 @@ const KOREAN_BANKS = [
   "산림조합", "저축은행",
 ];
 
+function isWithinOperatingHours(): boolean {
+  const now = new Date();
+  const kstOffset = 9 * 60;
+  const utcMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
+  const kstMinutes = utcMinutes + kstOffset;
+  const kstHours = Math.floor((kstMinutes % 1440) / 60);
+  return kstHours >= 9 && kstHours < 18;
+}
+
 interface LandingMarketData {
   symbol: string;
   name: string;
@@ -454,11 +463,15 @@ export default function Landing() {
               </button>
               <button 
                 onClick={() => {
-                  if (user) {
-                    setShowDepositModal(true);
-                  } else {
+                  if (!user) {
                     setShowLoginModal(true);
+                    return;
                   }
+                  if (!isWithinOperatingHours()) {
+                    toast.error("입출금 신청은 오전 9시~오후 6시 사이에만 가능합니다");
+                    return;
+                  }
+                  setShowDepositModal(true);
                 }}
                 className="text-gray-300 hover:text-orange-500 transition-colors text-sm font-medium" 
                 data-testid="nav-deposit-withdraw"
@@ -502,7 +515,13 @@ export default function Landing() {
                     size="sm"
                     className="text-green-400 hover:text-green-300 hover:bg-green-500/10 text-xs px-2"
                     data-testid="button-header-deposit"
-                    onClick={() => { setTransactionType('deposit'); setShowDepositModal(true); }}
+                    onClick={() => { 
+                      if (!isWithinOperatingHours()) {
+                        toast.error("입출금 신청은 오전 9시~오후 6시 사이에만 가능합니다");
+                        return;
+                      }
+                      setTransactionType('deposit'); setShowDepositModal(true); 
+                    }}
                   >
                     입금
                   </Button>
@@ -511,7 +530,13 @@ export default function Landing() {
                     size="sm"
                     className="text-red-400 hover:text-red-300 hover:bg-red-500/10 text-xs px-2"
                     data-testid="button-header-withdraw"
-                    onClick={() => { setTransactionType('withdrawal'); setShowDepositModal(true); }}
+                    onClick={() => { 
+                      if (!isWithinOperatingHours()) {
+                        toast.error("입출금 신청은 오전 9시~오후 6시 사이에만 가능합니다");
+                        return;
+                      }
+                      setTransactionType('withdrawal'); setShowDepositModal(true); 
+                    }}
                   >
                     출금
                   </Button>
@@ -617,11 +642,17 @@ export default function Landing() {
                 </button>
                 <button 
                   onClick={() => {
-                    if (user) {
-                      setShowDepositModal(true);
-                    } else {
+                    if (!user) {
                       setShowLoginModal(true);
+                      setMobileMenuOpen(false);
+                      return;
                     }
+                    if (!isWithinOperatingHours()) {
+                      toast.error("입출금 신청은 오전 9시~오후 6시 사이에만 가능합니다");
+                      setMobileMenuOpen(false);
+                      return;
+                    }
+                    setShowDepositModal(true);
                     setMobileMenuOpen(false);
                   }}
                   className="text-left text-gray-300 hover:text-orange-500 py-3 border-b border-white/10"
@@ -1087,8 +1118,16 @@ export default function Landing() {
             <div>
               <h4 className="font-semibold mb-4 text-gray-300">입출금</h4>
               <ul className="space-y-2 text-gray-500 text-sm">
-                <li><button onClick={() => { if (user) { setTransactionType('deposit'); setShowDepositModal(true); } else { setShowLoginModal(true); } }} className="hover:text-orange-500 transition-colors" data-testid="link-deposit">입금신청</button></li>
-                <li><button onClick={() => { if (user) { setTransactionType('withdrawal'); setShowDepositModal(true); } else { setShowLoginModal(true); } }} className="hover:text-orange-500 transition-colors" data-testid="link-withdraw">출금신청</button></li>
+                <li><button onClick={() => { 
+                  if (!user) { setShowLoginModal(true); return; }
+                  if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 9시~오후 6시 사이에만 가능합니다"); return; }
+                  setTransactionType('deposit'); setShowDepositModal(true); 
+                }} className="hover:text-orange-500 transition-colors" data-testid="link-deposit">입금신청</button></li>
+                <li><button onClick={() => { 
+                  if (!user) { setShowLoginModal(true); return; }
+                  if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 9시~오후 6시 사이에만 가능합니다"); return; }
+                  setTransactionType('withdrawal'); setShowDepositModal(true); 
+                }} className="hover:text-orange-500 transition-colors" data-testid="link-withdraw">출금신청</button></li>
                 <li><button onClick={() => { if (user) { setShowHistoryModal(true); } else { setShowLoginModal(true); } }} className="hover:text-orange-500 transition-colors" data-testid="link-transaction-history">입출금내역</button></li>
               </ul>
             </div>
