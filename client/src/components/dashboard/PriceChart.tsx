@@ -20,45 +20,64 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
 
   const durationMinutes = duration / 60;
 
-  const generateInitialCandles = useCallback((basePrice: number, candleDuration: number, series: any) => {
-    if (!series || basePrice <= 0) return;
+  const generateInitialCandles = useCallback((basePrice: number, candleDuration: number, series: any, chart: IChartApi) => {
+    if (!series || !chart || basePrice <= 0) return;
 
     const now = new Date();
     const kstOffset = 9 * 60 * 60 * 1000;
     const kstNow = new Date(now.getTime() + kstOffset);
+    const currentTimestamp = Math.floor(kstNow.getTime() / 1000);
+    
+    // Align to candle bucket
+    const currentCandleTime = Math.floor(currentTimestamp / candleDuration) * candleDuration;
     
     const candles: CandlestickData<Time>[] = [];
-    const candleCount = 100;
+    const candleCount = 60; // Show 60 candles
     
-    let price = basePrice * (0.995 + Math.random() * 0.01);
+    let price = basePrice;
     
+    // Generate candles backwards from current time
     for (let i = candleCount - 1; i >= 0; i--) {
-      const candleTime = new Date(kstNow.getTime() - (i * candleDuration * 1000));
-      const timestamp = Math.floor(candleTime.getTime() / 1000) as Time;
+      const candleTime = (currentCandleTime - (i * candleDuration)) as Time;
       
-      const volatility = basePrice * 0.0008;
-      const open = price;
-      const change = (Math.random() - 0.5) * 2 * volatility;
-      const close = open + change;
-      const high = Math.max(open, close) + Math.random() * volatility * 0.5;
-      const low = Math.min(open, close) - Math.random() * volatility * 0.5;
+      // Small random variation for realistic look
+      const volatility = basePrice * 0.0005;
+      const randomChange = (Math.random() - 0.5) * 2 * volatility;
       
-      candles.push({
-        time: timestamp,
-        open: parseFloat(open.toFixed(2)),
-        high: parseFloat(high.toFixed(2)),
-        low: parseFloat(low.toFixed(2)),
-        close: parseFloat(close.toFixed(2)),
-      });
-      
-      price = close;
+      if (i === 0) {
+        // Most recent candle uses current price
+        const open = basePrice - randomChange;
+        candles.push({
+          time: candleTime,
+          open: parseFloat(open.toFixed(2)),
+          high: parseFloat(Math.max(open, basePrice).toFixed(2)),
+          low: parseFloat(Math.min(open, basePrice).toFixed(2)),
+          close: parseFloat(basePrice.toFixed(2)),
+        });
+      } else {
+        // Historical candles with small variations
+        const open = price;
+        const close = price + randomChange;
+        const high = Math.max(open, close) + Math.random() * volatility * 0.3;
+        const low = Math.min(open, close) - Math.random() * volatility * 0.3;
+        
+        candles.push({
+          time: candleTime,
+          open: parseFloat(open.toFixed(2)),
+          high: parseFloat(high.toFixed(2)),
+          low: parseFloat(low.toFixed(2)),
+          close: parseFloat(close.toFixed(2)),
+        });
+        
+        price = close;
+      }
     }
+    
+    // Sort by time
+    candles.sort((a, b) => (a.time as number) - (b.time as number));
     
     if (candles.length > 0) {
       const lastIdx = candles.length - 1;
-      candles[lastIdx].close = basePrice;
-      candles[lastIdx].high = Math.max(candles[lastIdx].high, basePrice);
-      candles[lastIdx].low = Math.min(candles[lastIdx].low, basePrice);
       setOhlc({
         open: candles[lastIdx].open,
         high: candles[lastIdx].high,
@@ -70,8 +89,23 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
     try {
       series.setData(candles);
       setLastCandle(candles[candles.length - 1]);
+      
+      // Set visible range to show last 40 candles with proper spacing
+      const visibleBars = 40;
+      const fromTime = candles[Math.max(0, candles.length - visibleBars)].time;
+      const toTime = candles[candles.length - 1].time;
+      
+      chart.timeScale().setVisibleRange({
+        from: fromTime,
+        to: toTime,
+      });
     } catch (e) {
-      // Ignore errors
+      // Fallback to fitContent
+      try {
+        chart.timeScale().fitContent();
+      } catch (err) {
+        // Ignore
+      }
     }
   }, []);
 
@@ -157,12 +191,12 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
       timeScale: {
         borderColor: '#2a2e39',
         timeVisible: true,
-        secondsVisible: false,
-        rightOffset: 10,
-        barSpacing: 8,
-        minBarSpacing: 4,
+        secondsVisible: durationMinutes === 1, // Show seconds for 1-minute candles
+        rightOffset: 3,
+        barSpacing: 10,
+        minBarSpacing: 6,
         fixLeftEdge: false,
-        fixRightEdge: false,
+        fixRightEdge: true,
         borderVisible: true,
       },
       localization: {
@@ -192,7 +226,7 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
         candleSeriesRef.current = null;
       }
     };
-  }, [symbol, duration, containerSize.width, containerSize.height]);
+  }, [symbol, duration, containerSize.width, containerSize.height, durationMinutes]);
 
   // Resize chart when container size changes
   useEffect(() => {
@@ -206,13 +240,9 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
 
   // Initialize candles when chart is ready and price is available
   useEffect(() => {
-    if (chartReady && candleSeriesRef.current && currentPrice > 0 && initPriceRef.current === 0) {
+    if (chartReady && candleSeriesRef.current && chartRef.current && currentPrice > 0 && initPriceRef.current === 0) {
       initPriceRef.current = currentPrice;
-      generateInitialCandles(currentPrice, duration, candleSeriesRef.current);
-      
-      if (chartRef.current) {
-        chartRef.current.timeScale().fitContent();
-      }
+      generateInitialCandles(currentPrice, duration, candleSeriesRef.current, chartRef.current);
     }
   }, [chartReady, currentPrice, duration, generateInitialCandles]);
 
