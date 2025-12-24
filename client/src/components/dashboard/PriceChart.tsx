@@ -9,10 +9,8 @@ interface PriceChartProps {
   duration?: number;
 }
 
-const KST_OFFSET = 9 * 60 * 60;
-
 function generateInitialCandles(basePrice: number, count: number, intervalSeconds: number): CandlestickData<Time>[] {
-  const now = Math.floor(Date.now() / 1000) + KST_OFFSET;
+  const now = Math.floor(Date.now() / 1000);
   const alignedNow = Math.floor(now / intervalSeconds) * intervalSeconds;
   
   const volatility = 0.0005 * Math.sqrt(intervalSeconds / 60);
@@ -32,6 +30,16 @@ function generateInitialCandles(basePrice: number, count: number, intervalSecond
   }
   
   return tempCandles;
+}
+
+function formatKSTTime(utcTimestamp: number): string {
+  const date = new Date(utcTimestamp * 1000);
+  return date.toLocaleTimeString('ko-KR', { 
+    timeZone: 'Asia/Seoul',
+    hour: '2-digit', 
+    minute: '2-digit',
+    hour12: false
+  });
 }
 
 function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
@@ -87,6 +95,7 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
       },
       localization: {
         locale: 'ko-KR',
+        timeFormatter: (time: number) => formatKSTTime(time),
       },
       handleScroll: { mouseWheel: true, pressedMouseMove: true },
       handleScale: { axisPressedMouseMove: true, mouseWheel: true, pinch: true },
@@ -142,7 +151,7 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
       lastBarRef.current = { ...candles[candles.length - 1] };
       lastValidPriceRef.current = data.price;
       
-      const now = Math.floor(Date.now() / 1000) + KST_OFFSET;
+      const now = Math.floor(Date.now() / 1000);
       currentStartRef.current = Math.floor(now / duration) * duration;
     }
     
@@ -154,7 +163,7 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
     if (!seriesRef.current || !isReady || !isInitialized) return;
 
     const getAlignedTime = () => {
-      const now = Math.floor(Date.now() / 1000) + KST_OFFSET;
+      const now = Math.floor(Date.now() / 1000);
       return Math.floor(now / duration) * duration;
     };
 
@@ -220,7 +229,7 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
       <div className="flex items-center gap-2 px-3 py-1.5 border-b border-[#1e222d] text-xs text-gray-400 shrink-0">
         <span className="text-blue-400">{durationMinutes}분</span>
         <span>|</span>
-        <span>서버 동기화</span>
+        <span>서버 동기화 (KST)</span>
         {!isInitialized && <span className="text-yellow-500 ml-2">로딩중...</span>}
       </div>
 
