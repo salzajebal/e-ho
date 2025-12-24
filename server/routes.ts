@@ -1804,13 +1804,13 @@ export async function registerRoutes(
   };
   
   // Price multiplier for NDX to convert QQQ price to approximate NAS100 value
-  // TradingView shows NAS100 around 21,500 while QQQ is around 619
-  // Multiplier: ~34.7 (21500/619)
-  const NDX_MULTIPLIER = 34.7;
+  // As of Dec 2025: NASDAQ 100 ~25,576 while QQQ ~619
+  // Multiplier: ~41.3 (25576/619)
+  const NDX_MULTIPLIER = 41.3;
 
   // Fallback prices when API is unavailable
   const FALLBACK_PRICES: Record<string, { price: number; previousClose: number }> = {
-    'NDX': { price: 21547.80, previousClose: 21658.30 },
+    'NDX': { price: 25576.00, previousClose: 25461.70 },
     'GOLD': { price: 2650.30, previousClose: 2637.80 },
   };
 
