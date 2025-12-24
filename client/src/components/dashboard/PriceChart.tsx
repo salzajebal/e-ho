@@ -29,7 +29,7 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
     const currentCandleTime = Math.floor(now / candleDuration) * candleDuration;
     
     const candles: CandlestickData<Time>[] = [];
-    const candleCount = 100;
+    const candleCount = 80;
     
     // Generate continuous candles with realistic price movement
     let prevClose = basePrice;
@@ -78,8 +78,13 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
       series.setData(candles);
       setLastCandle(candles[candles.length - 1]);
       
-      // Scroll to show recent candles
-      chart.timeScale().scrollToRealTime();
+      // Set visible range to show ~35 candles based on duration
+      const visibleBars = 35;
+      const lastTime = candles[candles.length - 1].time as number;
+      const fromTime = (lastTime - (visibleBars * candleDuration)) as Time;
+      const toTime = (lastTime + candleDuration * 3) as Time; // Add some padding on right
+      
+      chart.timeScale().setVisibleRange({ from: fromTime, to: toTime });
     } catch (e) {
       try { chart.timeScale().fitContent(); } catch (err) {}
     }
@@ -152,11 +157,12 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
         borderColor: '#1e222d',
         timeVisible: true,
         secondsVisible: false,
-        rightOffset: 5,
-        barSpacing: 8,
-        minBarSpacing: 4,
+        rightOffset: 3,
+        // Adjust bar spacing based on duration: 1min=12, 3min=10, 5min=8
+        barSpacing: durationMinutes === 1 ? 12 : durationMinutes === 3 ? 10 : 8,
+        minBarSpacing: 5,
         fixLeftEdge: false,
-        fixRightEdge: true,
+        fixRightEdge: false,
         borderVisible: true,
       },
       localization: {
