@@ -19,6 +19,7 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
   const durationMinutes = duration / 60;
+  const symbolName = symbol === 'NDX' ? '나스닥 100 인덱스' : symbol === 'GOLD' ? '골드 스팟' : symbol;
 
   const generateInitialCandles = useCallback((basePrice: number, candleDuration: number, series: any, chart: IChartApi) => {
     if (!series || !chart || basePrice <= 0) return;
@@ -28,26 +29,22 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
     const kstNow = new Date(now.getTime() + kstOffset);
     const currentTimestamp = Math.floor(kstNow.getTime() / 1000);
     
-    // Align to candle bucket
     const currentCandleTime = Math.floor(currentTimestamp / candleDuration) * candleDuration;
     
     const candles: CandlestickData<Time>[] = [];
-    const candleCount = 60; // Show 60 candles
+    const candleCount = 80;
     
-    // Generate candles - all based on current price with small variations
     for (let i = candleCount - 1; i >= 0; i--) {
       const candleTime = (currentCandleTime - (i * candleDuration)) as Time;
       
-      // Very small random variation around current price (0.03% max)
-      const volatility = basePrice * 0.0003;
-      const centerPrice = basePrice + (Math.random() - 0.5) * volatility * 2;
+      const volatility = basePrice * 0.0004;
+      const centerPrice = basePrice + (Math.random() - 0.5) * volatility * 3;
       const open = centerPrice + (Math.random() - 0.5) * volatility;
       const close = centerPrice + (Math.random() - 0.5) * volatility;
-      const high = Math.max(open, close) + Math.random() * volatility * 0.5;
-      const low = Math.min(open, close) - Math.random() * volatility * 0.5;
+      const high = Math.max(open, close) + Math.random() * volatility * 0.8;
+      const low = Math.min(open, close) - Math.random() * volatility * 0.8;
       
       if (i === 0) {
-        // Most recent candle - close is current price
         candles.push({
           time: candleTime,
           open: parseFloat(open.toFixed(2)),
@@ -80,26 +77,16 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
       series.setData(candles);
       setLastCandle(candles[candles.length - 1]);
       
-      // Set visible range to show last 40 candles with proper spacing
-      const visibleBars = 40;
+      const visibleBars = 50;
       const fromTime = candles[Math.max(0, candles.length - visibleBars)].time;
       const toTime = candles[candles.length - 1].time;
       
-      chart.timeScale().setVisibleRange({
-        from: fromTime,
-        to: toTime,
-      });
+      chart.timeScale().setVisibleRange({ from: fromTime, to: toTime });
     } catch (e) {
-      // Fallback to fitContent
-      try {
-        chart.timeScale().fitContent();
-      } catch (err) {
-        // Ignore
-      }
+      try { chart.timeScale().fitContent(); } catch (err) {}
     }
   }, []);
 
-  // Observe container size changes
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -113,24 +100,18 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
     });
 
     resizeObserver.observe(containerRef.current);
-
-    return () => {
-      resizeObserver.disconnect();
-    };
+    return () => resizeObserver.disconnect();
   }, []);
 
-  // Create chart when container has valid size
   useEffect(() => {
     if (!containerRef.current || containerSize.width === 0 || containerSize.height === 0) return;
 
-    // Cleanup existing chart
     if (chartRef.current) {
       chartRef.current.remove();
       chartRef.current = null;
       candleSeriesRef.current = null;
     }
 
-    // Reset state
     setChartReady(false);
     setLastCandle(null);
     initPriceRef.current = 0;
@@ -140,69 +121,65 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
       height: containerSize.height,
       layout: {
         background: { color: '#131722' },
-        textColor: '#787b86',
-        fontFamily: "'Trebuchet MS', Roboto, Ubuntu, sans-serif",
+        textColor: '#B2B5BE',
+        fontFamily: "-apple-system, BlinkMacSystemFont, 'Trebuchet MS', Roboto, Ubuntu, sans-serif",
         fontSize: 12,
       },
       grid: {
-        vertLines: { 
-          color: 'rgba(42, 46, 57, 0.6)',
-          style: 1,
-        },
-        horzLines: { 
-          color: 'rgba(42, 46, 57, 0.6)',
-          style: 1,
-        },
+        vertLines: { color: '#1e222d', style: 0 },
+        horzLines: { color: '#1e222d', style: 0 },
       },
       crosshair: {
         mode: 1,
         vertLine: {
-          color: 'rgba(152, 157, 174, 0.6)',
+          color: '#758696',
           width: 1,
           style: 0,
-          labelBackgroundColor: '#2a2e39',
+          labelBackgroundColor: '#2A2E39',
         },
         horzLine: {
-          color: 'rgba(152, 157, 174, 0.6)',
+          color: '#758696',
           width: 1,
           style: 0,
-          labelBackgroundColor: '#2a2e39',
+          labelBackgroundColor: '#2A2E39',
         },
       },
       rightPriceScale: {
-        borderColor: '#2a2e39',
-        scaleMargins: {
-          top: 0.1,
-          bottom: 0.08,
-        },
+        borderColor: '#1e222d',
+        scaleMargins: { top: 0.1, bottom: 0.1 },
         borderVisible: true,
-        entireTextOnly: true,
+        textColor: '#B2B5BE',
       },
       timeScale: {
-        borderColor: '#2a2e39',
+        borderColor: '#1e222d',
         timeVisible: true,
-        secondsVisible: durationMinutes === 1, // Show seconds for 1-minute candles
-        rightOffset: 3,
-        barSpacing: 10,
-        minBarSpacing: 6,
+        secondsVisible: false,
+        rightOffset: 5,
+        barSpacing: 8,
+        minBarSpacing: 4,
         fixLeftEdge: false,
         fixRightEdge: true,
         borderVisible: true,
       },
       localization: {
         locale: 'ko-KR',
-        dateFormat: 'yyyy-MM-dd',
+        timeFormatter: (time: number) => {
+          const date = new Date(time * 1000);
+          const hours = date.getUTCHours().toString().padStart(2, '0');
+          const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+          return `${hours}:${minutes}`;
+        },
       },
     });
 
     const candleSeries = chart.addSeries(CandlestickSeries, {
-      upColor: '#26a69a',
-      downColor: '#ef5350',
-      borderUpColor: '#26a69a',
-      borderDownColor: '#ef5350',
-      wickUpColor: '#26a69a',
-      wickDownColor: '#ef5350',
-      borderVisible: true,
+      upColor: '#26A69A',
+      downColor: '#EF5350',
+      borderUpColor: '#26A69A',
+      borderDownColor: '#EF5350',
+      wickUpColor: '#26A69A',
+      wickDownColor: '#EF5350',
+      borderVisible: false,
     });
 
     chartRef.current = chart;
@@ -216,9 +193,8 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
         candleSeriesRef.current = null;
       }
     };
-  }, [symbol, duration, containerSize.width, containerSize.height, durationMinutes]);
+  }, [symbol, duration, containerSize.width, containerSize.height]);
 
-  // Resize chart when container size changes
   useEffect(() => {
     if (chartRef.current && containerSize.width > 0 && containerSize.height > 0) {
       chartRef.current.applyOptions({
@@ -228,7 +204,6 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
     }
   }, [containerSize]);
 
-  // Initialize candles when chart is ready and price is available
   useEffect(() => {
     if (chartReady && candleSeriesRef.current && chartRef.current && currentPrice > 0 && initPriceRef.current === 0) {
       initPriceRef.current = currentPrice;
@@ -236,7 +211,6 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
     }
   }, [chartReady, currentPrice, duration, generateInitialCandles]);
 
-  // Update candles with real-time price
   useEffect(() => {
     if (!candleSeriesRef.current || !lastCandle || currentPrice <= 0) return;
 
@@ -259,12 +233,7 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
         };
         candleSeriesRef.current.update(newCandle);
         setLastCandle(newCandle);
-        setOhlc({
-          open: currentPrice,
-          high: currentPrice,
-          low: currentPrice,
-          close: currentPrice,
-        });
+        setOhlc({ open: currentPrice, high: currentPrice, low: currentPrice, close: currentPrice });
       } else {
         const updatedCandle: CandlestickData<Time> = {
           ...lastCandle,
@@ -283,11 +252,7 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
       }
 
       if (priceLineRef.current) {
-        try {
-          candleSeriesRef.current.removePriceLine(priceLineRef.current);
-        } catch (e) {
-          // Ignore
-        }
+        try { candleSeriesRef.current.removePriceLine(priceLineRef.current); } catch (e) {}
       }
       priceLineRef.current = candleSeriesRef.current.createPriceLine({
         price: currentPrice,
@@ -297,77 +262,72 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
         axisLabelVisible: true,
         title: '',
       });
-    } catch (e) {
-      // Ignore errors
-    }
+    } catch (e) {}
   }, [currentPrice, duration, lastCandle]);
 
   const isUp = ohlc.close >= ohlc.open;
-  const change = ohlc.close - ohlc.open;
-  const changePercent = ohlc.open > 0 ? (change / ohlc.open) * 100 : 0;
+  const priceChange = currentPrice - ohlc.open;
+  const priceChangePercent = ohlc.open > 0 ? (priceChange / ohlc.open) * 100 : 0;
 
   return (
     <div className="flex flex-col h-full w-full" style={{ backgroundColor: '#131722' }} data-testid="chart-container">
-      {/* TradingView Style Header */}
-      <div className="flex items-center gap-4 px-3 py-2 border-b border-[#2a2e39] shrink-0">
-        {/* Symbol Info */}
+      {/* TradingView Header - Top Bar */}
+      <div className="flex items-center justify-between px-2 py-1 border-b border-[#2A2E39]" style={{ backgroundColor: '#1E222D' }}>
+        <div className="flex items-center gap-3">
+          <span className="text-white font-semibold text-sm">{symbol}</span>
+          <span className="text-[#787B86] text-xs">지수</span>
+        </div>
         <div className="flex items-center gap-2">
-          <span className="text-white font-semibold text-base">{symbol}</span>
-          <span className="text-[#787b86] text-xs">• {durationMinutes}분</span>
-        </div>
-        
-        {/* OHLC Values */}
-        <div className="flex items-center gap-3 text-xs">
-          <div className="flex items-center gap-1">
-            <span className="text-[#787b86]">O</span>
-            <span className={isUp ? 'text-[#26a69a]' : 'text-[#ef5350]'}>
-              {ohlc.open.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="text-[#787b86]">H</span>
-            <span className={isUp ? 'text-[#26a69a]' : 'text-[#ef5350]'}>
-              {ohlc.high.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="text-[#787b86]">L</span>
-            <span className={isUp ? 'text-[#26a69a]' : 'text-[#ef5350]'}>
-              {ohlc.low.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="text-[#787b86]">C</span>
-            <span className={isUp ? 'text-[#26a69a]' : 'text-[#ef5350]'}>
-              {ohlc.close.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </span>
-          </div>
-        </div>
-
-        {/* Price Change */}
-        <div className="flex items-center gap-2 ml-auto">
-          <span className={`text-lg font-semibold ${isUp ? 'text-[#26a69a]' : 'text-[#ef5350]'}`}>
-            {currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          <span className={`text-base font-bold ${isUp ? 'text-[#26A69A]' : 'text-[#EF5350]'}`}>
+            ${currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </span>
-          <span className={`text-xs ${isUp ? 'text-[#26a69a]' : 'text-[#ef5350]'}`}>
-            {isUp ? '+' : ''}{change.toFixed(2)} ({isUp ? '+' : ''}{changePercent.toFixed(2)}%)
+          <span className={`text-xs ${isUp ? 'text-[#26A69A]' : 'text-[#EF5350]'}`}>
+            {isUp ? '+' : ''}{priceChange.toFixed(2)} ({isUp ? '+' : ''}{priceChangePercent.toFixed(2)}%)
+          </span>
+          <div className="ml-2 px-2 py-0.5 rounded text-xs font-medium" style={{ backgroundColor: '#2962FF', color: 'white' }}>
+            {durationMinutes}분봉
+          </div>
+        </div>
+      </div>
+
+      {/* TradingView Symbol Info Bar */}
+      <div className="flex items-center gap-2 px-2 py-1 border-b border-[#2A2E39]" style={{ backgroundColor: '#131722' }}>
+        <div className="flex items-center gap-1">
+          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#F7931A' }}></div>
+          <span className="text-[#B2B5BE] text-xs">{symbolName}</span>
+          <span className="text-[#787B86] text-xs">• {durationMinutes} •</span>
+          <span className="text-[#787B86] text-xs">{symbol === 'NDX' ? 'NASDAQ' : 'FOREX'}</span>
+        </div>
+        <div className="flex items-center gap-3 ml-4 text-xs">
+          <span className="text-[#787B86]">시</span>
+          <span className={isUp ? 'text-[#26A69A]' : 'text-[#EF5350]'}>
+            {ohlc.open.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </span>
+          <span className="text-[#787B86]">고</span>
+          <span className={isUp ? 'text-[#26A69A]' : 'text-[#EF5350]'}>
+            {ohlc.high.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </span>
+          <span className="text-[#787B86]">저</span>
+          <span className={isUp ? 'text-[#26A69A]' : 'text-[#EF5350]'}>
+            {ohlc.low.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </span>
+          <span className="text-[#787B86]">종</span>
+          <span className={isUp ? 'text-[#26A69A]' : 'text-[#EF5350]'}>
+            {ohlc.close.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </span>
+          <span className={`ml-1 ${isUp ? 'text-[#26A69A]' : 'text-[#EF5350]'}`}>
+            {isUp ? '+' : ''}{(ohlc.close - ohlc.open).toFixed(2)} ({isUp ? '+' : ''}{((ohlc.close - ohlc.open) / ohlc.open * 100).toFixed(2)}%)
           </span>
         </div>
       </div>
 
       {/* Chart Canvas */}
-      <div ref={containerRef} className="flex-1 min-h-0" />
-      
-      {/* TradingView Style Footer */}
-      <div className="flex items-center justify-between px-3 py-1 border-t border-[#2a2e39] text-[10px] text-[#787b86] shrink-0">
-        <div className="flex items-center gap-3">
-          <span>UTC+9</span>
-          <span>•</span>
-          <span>{durationMinutes}분봉</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-[#26a69a]">▲</span>
-          <span>실시간</span>
+      <div ref={containerRef} className="flex-1 min-h-0 relative">
+        {/* TradingView Logo */}
+        <div className="absolute bottom-2 left-2 z-10 flex items-center gap-1 text-[#363A45]">
+          <svg width="20" height="20" viewBox="0 0 36 28" fill="currentColor">
+            <path d="M14 22H7V6h7v16zm8 0h-7V2h7v20zm8 0h-7v-8h7v8z"/>
+          </svg>
         </div>
       </div>
     </div>
