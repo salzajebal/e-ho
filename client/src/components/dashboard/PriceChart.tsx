@@ -35,14 +35,6 @@ function generateInitialCandles(basePrice: number, count: number, intervalSecond
     price = open;
   }
   
-  if (tempCandles.length > 0) {
-    const lastCandle = tempCandles[tempCandles.length - 1];
-    lastCandle.open = basePrice;
-    lastCandle.high = basePrice;
-    lastCandle.low = basePrice;
-    lastCandle.close = basePrice;
-  }
-  
   return tempCandles;
 }
 
@@ -52,10 +44,11 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
   const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const priceRef = useRef(data.price);
   const lastBarRef = useRef<CandlestickData<Time> | null>(null);
-  const lastValidPriceRef = useRef<number | null>(null);
+  const basePriceRef = useRef<number>(0);
   const currentStartRef = useRef<number>(0);
   const [isReady, setIsReady] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [chartKey, setChartKey] = useState(0);
 
   const durationMinutes = duration / 60;
   const isUp = data.change >= 0;
@@ -65,9 +58,22 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
   }, [data.price]);
 
   useEffect(() => {
+    if (isInitialized && basePriceRef.current > 0 && data.price > 0) {
+      const pctDiff = Math.abs(data.price - basePriceRef.current) / basePriceRef.current;
+      if (pctDiff > 0.02) {
+        setIsInitialized(false);
+        lastBarRef.current = null;
+        basePriceRef.current = 0;
+        currentStartRef.current = 0;
+        setChartKey(k => k + 1);
+      }
+    }
+  }, [data.price, isInitialized]);
+
+  useEffect(() => {
     setIsInitialized(false);
     lastBarRef.current = null;
-    lastValidPriceRef.current = null;
+    basePriceRef.current = 0;
     currentStartRef.current = 0;
   }, [symbol, duration]);
 
@@ -140,7 +146,7 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
       seriesRef.current = null;
       setIsReady(false);
     };
-  }, [symbol, duration]);
+  }, [symbol, duration, chartKey]);
 
   useEffect(() => {
     if (!seriesRef.current || !isReady) return;
@@ -159,7 +165,7 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
         low: data.price,
         close: data.price
       };
-      lastValidPriceRef.current = data.price;
+      basePriceRef.current = data.price;
       currentStartRef.current = lastCandle.time as number;
       
       seriesRef.current.update(lastBarRef.current);
@@ -173,13 +179,10 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
     if (!seriesRef.current || !isReady || !isInitialized) return;
 
     const tick = setInterval(() => {
-      if (!seriesRef.current || !lastBarRef.current || !lastValidPriceRef.current) return;
+      if (!seriesRef.current || !lastBarRef.current) return;
 
       const p = priceRef.current;
       if (p <= 0) return;
-
-      const pctChange = Math.abs(p - lastValidPriceRef.current) / lastValidPriceRef.current;
-      if (pctChange > 0.05) return;
 
       const newStart = getKSTAlignedTime(duration);
 
@@ -200,8 +203,6 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
           close: p,
         };
       }
-
-      lastValidPriceRef.current = p;
 
       try { 
         seriesRef.current.update(lastBarRef.current); 
