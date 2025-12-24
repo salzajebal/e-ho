@@ -24,52 +24,53 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
   const generateInitialCandles = useCallback((basePrice: number, candleDuration: number, series: any, chart: IChartApi) => {
     if (!series || !chart || basePrice <= 0) return;
 
-    const now = new Date();
-    const kstOffset = 9 * 60 * 60 * 1000;
-    const kstNow = new Date(now.getTime() + kstOffset);
-    const currentTimestamp = Math.floor(kstNow.getTime() / 1000);
-    
-    const currentCandleTime = Math.floor(currentTimestamp / candleDuration) * candleDuration;
+    // Use UTC timestamp (lightweight-charts expects UTC)
+    const now = Math.floor(Date.now() / 1000);
+    const currentCandleTime = Math.floor(now / candleDuration) * candleDuration;
     
     const candles: CandlestickData<Time>[] = [];
-    const candleCount = 80;
+    const candleCount = 100;
+    
+    // Generate continuous candles with realistic price movement
+    let prevClose = basePrice;
     
     for (let i = candleCount - 1; i >= 0; i--) {
       const candleTime = (currentCandleTime - (i * candleDuration)) as Time;
       
-      const volatility = basePrice * 0.0004;
-      const centerPrice = basePrice + (Math.random() - 0.5) * volatility * 3;
-      const open = centerPrice + (Math.random() - 0.5) * volatility;
-      const close = centerPrice + (Math.random() - 0.5) * volatility;
-      const high = Math.max(open, close) + Math.random() * volatility * 0.8;
-      const low = Math.min(open, close) - Math.random() * volatility * 0.8;
+      // Realistic price variation
+      const volatility = basePrice * 0.0003;
+      const trend = (Math.random() - 0.5) * volatility * 2;
       
-      if (i === 0) {
-        candles.push({
-          time: candleTime,
-          open: parseFloat(open.toFixed(2)),
-          high: parseFloat(Math.max(high, basePrice).toFixed(2)),
-          low: parseFloat(Math.min(low, basePrice).toFixed(2)),
-          close: parseFloat(basePrice.toFixed(2)),
-        });
-      } else {
-        candles.push({
-          time: candleTime,
-          open: parseFloat(open.toFixed(2)),
-          high: parseFloat(high.toFixed(2)),
-          low: parseFloat(low.toFixed(2)),
-          close: parseFloat(close.toFixed(2)),
-        });
-      }
+      const open = prevClose;
+      const close = open + trend;
+      const wickSize = Math.abs(trend) * 0.5 + volatility * Math.random();
+      const high = Math.max(open, close) + wickSize;
+      const low = Math.min(open, close) - wickSize;
+      
+      candles.push({
+        time: candleTime,
+        open: parseFloat(open.toFixed(2)),
+        high: parseFloat(high.toFixed(2)),
+        low: parseFloat(low.toFixed(2)),
+        close: parseFloat(close.toFixed(2)),
+      });
+      
+      prevClose = close;
     }
     
+    // Adjust last candle to match current price
     if (candles.length > 0) {
       const lastIdx = candles.length - 1;
+      const lastOpen = candles[lastIdx].open;
+      candles[lastIdx].close = basePrice;
+      candles[lastIdx].high = Math.max(candles[lastIdx].high, basePrice);
+      candles[lastIdx].low = Math.min(candles[lastIdx].low, basePrice);
+      
       setOhlc({
-        open: candles[lastIdx].open,
+        open: lastOpen,
         high: candles[lastIdx].high,
         low: candles[lastIdx].low,
-        close: candles[lastIdx].close,
+        close: basePrice,
       });
     }
     
@@ -77,11 +78,8 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
       series.setData(candles);
       setLastCandle(candles[candles.length - 1]);
       
-      const visibleBars = 50;
-      const fromTime = candles[Math.max(0, candles.length - visibleBars)].time;
-      const toTime = candles[candles.length - 1].time;
-      
-      chart.timeScale().setVisibleRange({ from: fromTime, to: toTime });
+      // Scroll to show recent candles
+      chart.timeScale().scrollToRealTime();
     } catch (e) {
       try { chart.timeScale().fitContent(); } catch (err) {}
     }
@@ -164,7 +162,8 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
       localization: {
         locale: 'ko-KR',
         timeFormatter: (time: number) => {
-          const date = new Date(time * 1000);
+          // Convert UTC to KST (UTC+9) for display
+          const date = new Date((time + 9 * 60 * 60) * 1000);
           const hours = date.getUTCHours().toString().padStart(2, '0');
           const minutes = date.getUTCMinutes().toString().padStart(2, '0');
           return `${hours}:${minutes}`;
@@ -214,12 +213,9 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
   useEffect(() => {
     if (!candleSeriesRef.current || !lastCandle || currentPrice <= 0) return;
 
-    const now = new Date();
-    const kstOffset = 9 * 60 * 60 * 1000;
-    const kstNow = new Date(now.getTime() + kstOffset);
-    const currentTimestamp = Math.floor(kstNow.getTime() / 1000);
-    
-    const candleStartTime = Math.floor(currentTimestamp / duration) * duration;
+    // Use UTC timestamp (same as initial candle generation)
+    const now = Math.floor(Date.now() / 1000);
+    const candleStartTime = Math.floor(now / duration) * duration;
     const lastCandleTime = lastCandle.time as number;
     
     try {
