@@ -150,6 +150,7 @@ interface Announcement {
   content: string;
   isActive: boolean;
   isPinned: boolean;
+  displayDate: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -408,6 +409,7 @@ export default function Admin() {
     content: '',
     isActive: true,
     isPinned: false,
+    displayDate: new Date().toISOString().split('T')[0],
   });
 
   const [newUser, setNewUser] = useState({
@@ -1217,7 +1219,7 @@ export default function Admin() {
   });
 
   const createAnnouncementMutation = useMutation({
-    mutationFn: async (data: { title: string; content: string; isActive: boolean; isPinned: boolean }) => {
+    mutationFn: async (data: { title: string; content: string; isActive: boolean; isPinned: boolean; displayDate: string }) => {
       const res = await fetch("/api/admin/announcements", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1229,7 +1231,7 @@ export default function Admin() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/announcements"] });
       setCreateAnnouncementOpen(false);
-      setNewAnnouncement({ title: '', content: '', isActive: true, isPinned: false });
+      setNewAnnouncement({ title: '', content: '', isActive: true, isPinned: false, displayDate: new Date().toISOString().split('T')[0] });
       toast.success("공지사항이 등록되었습니다");
     },
     onError: () => {
@@ -1238,7 +1240,7 @@ export default function Admin() {
   });
 
   const updateAnnouncementMutation = useMutation({
-    mutationFn: async ({ id, ...data }: { id: number; title?: string; content?: string; isActive?: boolean; isPinned?: boolean }) => {
+    mutationFn: async ({ id, ...data }: { id: number; title?: string; content?: string; isActive?: boolean; isPinned?: boolean; displayDate?: string }) => {
       const res = await fetch(`/api/admin/announcements/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -4002,6 +4004,14 @@ export default function Admin() {
                 className="w-full min-h-[150px] px-3 py-2 bg-background border border-border rounded-md text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">게시 날짜</label>
+              <Input
+                type="date"
+                value={newAnnouncement.displayDate}
+                onChange={(e) => setNewAnnouncement(p => ({ ...p, displayDate: e.target.value }))}
+              />
+            </div>
             <div className="flex items-center gap-4">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -4058,6 +4068,14 @@ export default function Admin() {
                   className="w-full min-h-[150px] px-3 py-2 bg-background border border-border rounded-md text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">게시 날짜</label>
+                <Input
+                  type="date"
+                  value={editingAnnouncement.displayDate ? editingAnnouncement.displayDate.split('T')[0] : ''}
+                  onChange={(e) => setEditingAnnouncement(p => p ? { ...p, displayDate: e.target.value } : null)}
+                />
+              </div>
               <div className="flex items-center gap-4">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -4087,6 +4105,7 @@ export default function Admin() {
                     content: editingAnnouncement.content,
                     isPinned: editingAnnouncement.isPinned,
                     isActive: editingAnnouncement.isActive,
+                    displayDate: editingAnnouncement.displayDate,
                   })} 
                   disabled={updateAnnouncementMutation.isPending}
                 >

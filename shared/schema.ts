@@ -158,6 +158,7 @@ export const announcements = pgTable("announcements", {
   content: text("content").notNull(),
   isActive: boolean("is_active").notNull().default(true),
   isPinned: boolean("is_pinned").notNull().default(false),
+  displayDate: timestamp("display_date").defaultNow().notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

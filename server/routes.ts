@@ -1441,7 +1441,7 @@ export async function registerRoutes(
   // Create announcement (admin)
   app.post("/api/admin/announcements", requireAdmin, async (req, res) => {
     try {
-      const { title, content, isActive, isPinned } = req.body;
+      const { title, content, isActive, isPinned, displayDate } = req.body;
       if (!title || !content) {
         return res.status(400).json({ error: "제목과 내용을 입력해주세요" });
       }
@@ -1450,6 +1450,7 @@ export async function registerRoutes(
         content,
         isActive: isActive ?? true,
         isPinned: isPinned ?? false,
+        displayDate: displayDate ? new Date(displayDate) : new Date(),
       });
       res.json(announcement);
     } catch (error) {
@@ -1461,12 +1462,13 @@ export async function registerRoutes(
   app.patch("/api/admin/announcements/:id", requireAdmin, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const { title, content, isActive, isPinned } = req.body;
+      const { title, content, isActive, isPinned, displayDate } = req.body;
       const updated = await storage.updateAnnouncement(id, {
         title,
         content,
         isActive,
         isPinned,
+        displayDate: displayDate ? new Date(displayDate) : undefined,
       });
       res.json(updated);
     } catch (error) {
