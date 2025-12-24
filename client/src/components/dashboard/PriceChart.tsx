@@ -9,8 +9,10 @@ interface PriceChartProps {
   duration?: number;
 }
 
+const KST_OFFSET = 9 * 60 * 60;
+
 function generateInitialCandles(basePrice: number, count: number, intervalSeconds: number): CandlestickData<Time>[] {
-  const now = Math.floor(Date.now() / 1000);
+  const now = Math.floor(Date.now() / 1000) + KST_OFFSET;
   const alignedNow = Math.floor(now / intervalSeconds) * intervalSeconds;
   
   const volatility = 0.0005 * Math.sqrt(intervalSeconds / 60);
@@ -140,7 +142,7 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
       lastBarRef.current = { ...candles[candles.length - 1] };
       lastValidPriceRef.current = data.price;
       
-      const now = Math.floor(Date.now() / 1000);
+      const now = Math.floor(Date.now() / 1000) + KST_OFFSET;
       currentStartRef.current = Math.floor(now / duration) * duration;
     }
     
@@ -152,7 +154,7 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
     if (!seriesRef.current || !isReady || !isInitialized) return;
 
     const getAlignedTime = () => {
-      const now = Math.floor(Date.now() / 1000);
+      const now = Math.floor(Date.now() / 1000) + KST_OFFSET;
       return Math.floor(now / duration) * duration;
     };
 
