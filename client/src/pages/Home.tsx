@@ -15,7 +15,10 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/componen
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Mail, X, Check, MessageSquare } from "lucide-react";
+import { Mail, X, Check, MessageSquare, Headphones, FileText, ChevronRight } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Message } from "@shared/schema";
 import { TRADING_GAMES } from "@/lib/tradingGames";
 
@@ -48,6 +51,26 @@ export default function Home() {
   const [inboxOpen, setInboxOpen] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const shownMessageIds = useRef<Set<number>>(new Set());
+
+  // Customer Service States
+  const [showCustomerServiceModal, setShowCustomerServiceModal] = useState(false);
+  const [showInquiryFormModal, setShowInquiryFormModal] = useState(false);
+  const [showMyInquiriesModal, setShowMyInquiriesModal] = useState(false);
+  const [inquiryTitle, setInquiryTitle] = useState('');
+  const [inquiryContent, setInquiryContent] = useState('');
+  const [inquirySubmitting, setInquirySubmitting] = useState(false);
+  const queryClient = useQueryClient();
+
+  // Fetch user inquiries
+  const { data: myInquiries = [], refetch: refetchInquiries } = useQuery<any[]>({
+    queryKey: ['/api/inquiries/my'],
+    queryFn: async () => {
+      const res = await fetch('/api/inquiries/my');
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!user,
+  });
 
   // Show popup for new unread messages
   useEffect(() => {
@@ -351,6 +374,243 @@ export default function Home() {
                 쪽지가 없습니다
               </div>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Customer Service Button (fixed) */}
+      <button
+        onClick={() => setShowCustomerServiceModal(true)}
+        className="fixed bottom-16 left-6 z-50 bg-orange-500 hover:bg-orange-600 text-white p-3 rounded-full shadow-lg transition-all"
+        data-testid="button-customer-service"
+      >
+        <Headphones className="w-5 h-5" />
+      </button>
+
+      {/* Customer Service Modal - 1:1 문의 메뉴 */}
+      <Dialog open={showCustomerServiceModal} onOpenChange={setShowCustomerServiceModal}>
+        <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+          <DialogTitle className="sr-only">1:1 문의</DialogTitle>
+          <div className="relative">
+            <div className="absolute -inset-1 bg-gradient-to-r from-orange-500/20 via-amber-500/20 to-orange-500/20 rounded-2xl blur-xl" />
+            <div className="relative backdrop-blur-xl bg-[#1a1a24]/95 border border-white/10 rounded-2xl p-6 shadow-2xl">
+              <button 
+                onClick={() => setShowCustomerServiceModal(false)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 mx-auto mb-3 bg-gradient-to-br from-orange-500 to-amber-500 rounded-full flex items-center justify-center">
+                  <Headphones className="w-8 h-8 text-white" />
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-1">1:1 문의</h2>
+                <p className="text-gray-400 text-sm">문의를 남기시면 빠르게 답변드립니다</p>
+              </div>
+
+              <div className="space-y-3">
+                {/* 문의 작성하기 */}
+                <button 
+                  className="w-full block bg-gradient-to-r from-orange-500/10 to-amber-500/10 border border-orange-500/30 rounded-xl p-4 hover:border-orange-500/50 transition-colors cursor-pointer text-left"
+                  onClick={() => {
+                    if (!user) {
+                      toast.error("로그인이 필요합니다");
+                      setShowCustomerServiceModal(false);
+                      setLocation("/login");
+                      return;
+                    }
+                    setShowCustomerServiceModal(false);
+                    setShowInquiryFormModal(true);
+                  }}
+                  data-testid="button-write-inquiry"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-amber-500 rounded-lg flex items-center justify-center">
+                      <FileText className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-white font-medium">문의 작성하기</h3>
+                      <p className="text-orange-400 text-sm">새로운 문의를 작성합니다</p>
+                      <p className="text-gray-400 text-xs">빠른 답변 보장</p>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-orange-500" />
+                  </div>
+                </button>
+
+                {/* 내 문의 내역 */}
+                <button 
+                  className="w-full block bg-white/5 border border-white/10 rounded-xl p-4 hover:border-white/20 transition-colors cursor-pointer text-left"
+                  onClick={() => {
+                    if (!user) {
+                      toast.error("로그인이 필요합니다");
+                      setShowCustomerServiceModal(false);
+                      setLocation("/login");
+                      return;
+                    }
+                    setShowCustomerServiceModal(false);
+                    setShowMyInquiriesModal(true);
+                  }}
+                  data-testid="button-my-inquiries"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-white/10 rounded-lg flex items-center justify-center">
+                      <MessageSquare className="w-6 h-6 text-orange-500" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-white font-medium">내 문의 내역</h3>
+                      <p className="text-orange-400 text-sm">작성한 문의와 답변 확인</p>
+                      <p className="text-gray-400 text-xs">{myInquiries.length}건의 문의</p>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-gray-400" />
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Inquiry Form Modal - 문의 작성 */}
+      <Dialog open={showInquiryFormModal} onOpenChange={setShowInquiryFormModal}>
+        <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+          <DialogTitle className="sr-only">문의 작성하기</DialogTitle>
+          <div className="relative">
+            <div className="absolute -inset-1 bg-gradient-to-r from-orange-500/20 via-amber-500/20 to-orange-500/20 rounded-2xl blur-xl" />
+            <div className="relative backdrop-blur-xl bg-[#1a1a24]/95 border border-white/10 rounded-2xl p-6 shadow-2xl">
+              <button 
+                onClick={() => setShowInquiryFormModal(false)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 mx-auto mb-3 bg-gradient-to-br from-orange-500 to-amber-500 rounded-full flex items-center justify-center">
+                  <FileText className="w-8 h-8 text-white" />
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-1">문의 작성하기</h2>
+                <p className="text-gray-400 text-sm">문의 내용을 작성해주세요</p>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">제목</label>
+                  <Input
+                    placeholder="문의 제목을 입력하세요"
+                    value={inquiryTitle}
+                    onChange={(e) => setInquiryTitle(e.target.value)}
+                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">내용</label>
+                  <Textarea
+                    placeholder="문의 내용을 상세히 작성해주세요"
+                    value={inquiryContent}
+                    onChange={(e) => setInquiryContent(e.target.value)}
+                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 min-h-[150px]"
+                  />
+                </div>
+                <Button
+                  className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold py-3"
+                  disabled={!inquiryTitle.trim() || !inquiryContent.trim() || inquirySubmitting}
+                  onClick={async () => {
+                    setInquirySubmitting(true);
+                    try {
+                      const res = await fetch('/api/inquiries', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          title: inquiryTitle,
+                          content: inquiryContent,
+                        }),
+                      });
+                      if (!res.ok) throw new Error('문의 등록 실패');
+                      toast.success('문의가 등록되었습니다');
+                      setInquiryTitle('');
+                      setInquiryContent('');
+                      setShowInquiryFormModal(false);
+                      refetchInquiries();
+                      setShowMyInquiriesModal(true);
+                    } catch (error: any) {
+                      toast.error(error.message || '문의 등록에 실패했습니다');
+                    } finally {
+                      setInquirySubmitting(false);
+                    }
+                  }}
+                >
+                  {inquirySubmitting ? '등록 중...' : '문의 등록하기'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* My Inquiries Modal - 내 문의 내역 */}
+      <Dialog open={showMyInquiriesModal} onOpenChange={setShowMyInquiriesModal}>
+        <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+          <DialogTitle className="sr-only">내 문의 내역</DialogTitle>
+          <div className="relative">
+            <div className="absolute -inset-1 bg-gradient-to-r from-orange-500/20 via-amber-500/20 to-orange-500/20 rounded-2xl blur-xl" />
+            <div className="relative backdrop-blur-xl bg-[#1a1a24]/95 border border-white/10 rounded-2xl p-6 shadow-2xl max-h-[80vh] overflow-y-auto">
+              <button 
+                onClick={() => setShowMyInquiriesModal(false)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 mx-auto mb-3 bg-gradient-to-br from-orange-500 to-amber-500 rounded-full flex items-center justify-center">
+                  <MessageSquare className="w-8 h-8 text-white" />
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-1">내 문의 내역</h2>
+                <p className="text-gray-400 text-sm">총 {myInquiries.length}건의 문의</p>
+              </div>
+
+              <div className="space-y-3">
+                {myInquiries.length === 0 ? (
+                  <p className="text-gray-500 text-sm py-8 text-center">등록된 문의가 없습니다</p>
+                ) : (
+                  myInquiries.map((inquiry: any) => (
+                    <div key={inquiry.id} className="bg-white/5 border border-white/10 rounded-xl p-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <h3 className="text-white font-medium">{inquiry.title}</h3>
+                        <span className={`text-xs px-2 py-1 rounded ${
+                          inquiry.status === 'answered' 
+                            ? 'bg-green-500/20 text-green-400' 
+                            : 'bg-orange-500/20 text-orange-400'
+                        }`}>
+                          {inquiry.status === 'answered' ? '답변완료' : '대기중'}
+                        </span>
+                      </div>
+                      <p className="text-gray-400 text-sm mb-2">{inquiry.content}</p>
+                      <p className="text-gray-500 text-xs">
+                        {new Date(inquiry.createdAt).toLocaleDateString('ko-KR')}
+                      </p>
+                      {inquiry.reply && (
+                        <div className="mt-3 pt-3 border-t border-white/10">
+                          <p className="text-orange-400 text-xs font-medium mb-1">관리자 답변</p>
+                          <p className="text-gray-300 text-sm">{inquiry.reply}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <Button
+                className="w-full mt-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white"
+                onClick={() => {
+                  setShowMyInquiriesModal(false);
+                  setShowInquiryFormModal(true);
+                }}
+              >
+                새 문의 작성하기
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
