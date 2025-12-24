@@ -228,14 +228,20 @@ export async function registerRoutes(
       const user = await storage.getUserByUsername(username);
       console.log("User found:", user ? "yes" : "no", "DB query completed");
       
-      // Enforce admin-only credentials BEFORE password check
+      // For admin users: only allow specific credentials (skip database password check)
       if (user?.role === 'admin') {
         if (username !== ADMIN_USERNAME || password !== ADMIN_PASSWORD) {
           return res.status(401).json({ error: "아이디 또는 비밀번호가 올바르지 않습니다" });
         }
+        // Admin credentials matched - skip database password check
+      } else {
+        // For regular users: check database password
+        if (!user || user.password !== password) {
+          return res.status(401).json({ error: "아이디 또는 비밀번호가 올바르지 않습니다" });
+        }
       }
       
-      if (!user || user.password !== password) {
+      if (!user) {
         return res.status(401).json({ error: "아이디 또는 비밀번호가 올바르지 않습니다" });
       }
 
