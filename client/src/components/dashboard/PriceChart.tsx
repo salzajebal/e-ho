@@ -31,19 +31,28 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
     const candles: CandlestickData<Time>[] = [];
     const candleCount = 80;
     
-    // Generate continuous candles with realistic price movement
-    let prevClose = basePrice;
+    // Mean-reverting generator that keeps prices within tight band around basePrice
+    const maxDeviation = basePrice * 0.002; // Max 0.2% deviation from base
+    let currentPrice = basePrice;
     
     for (let i = candleCount - 1; i >= 0; i--) {
       const candleTime = (currentCandleTime - (i * candleDuration)) as Time;
       
-      // Realistic price variation
-      const volatility = basePrice * 0.0003;
-      const trend = (Math.random() - 0.5) * volatility * 2;
+      // Mean reversion: pull price back toward basePrice
+      const reversionStrength = 0.3;
+      const deviation = currentPrice - basePrice;
+      const meanReversion = -deviation * reversionStrength;
       
-      const open = prevClose;
-      const close = open + trend;
-      const wickSize = Math.abs(trend) * 0.5 + volatility * Math.random();
+      // Small random noise
+      const noise = (Math.random() - 0.5) * maxDeviation * 0.5;
+      
+      const open = currentPrice;
+      let close = open + meanReversion + noise;
+      
+      // Clamp to stay within band
+      close = Math.max(basePrice - maxDeviation, Math.min(basePrice + maxDeviation, close));
+      
+      const wickSize = Math.abs(close - open) * 0.3 + basePrice * 0.0001;
       const high = Math.max(open, close) + wickSize;
       const low = Math.min(open, close) - wickSize;
       
@@ -55,19 +64,18 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
         close: parseFloat(close.toFixed(2)),
       });
       
-      prevClose = close;
+      currentPrice = close;
     }
     
-    // Adjust last candle to match current price
+    // Set last candle to exactly match current price
     if (candles.length > 0) {
       const lastIdx = candles.length - 1;
-      const lastOpen = candles[lastIdx].open;
       candles[lastIdx].close = basePrice;
-      candles[lastIdx].high = Math.max(candles[lastIdx].high, basePrice);
-      candles[lastIdx].low = Math.min(candles[lastIdx].low, basePrice);
+      if (candles[lastIdx].high < basePrice) candles[lastIdx].high = basePrice;
+      if (candles[lastIdx].low > basePrice) candles[lastIdx].low = basePrice;
       
       setOhlc({
-        open: lastOpen,
+        open: candles[lastIdx].open,
         high: candles[lastIdx].high,
         low: candles[lastIdx].low,
         close: basePrice,
@@ -82,7 +90,7 @@ function PriceChartComponent({ symbol, duration = 60, currentPrice }: PriceChart
       const visibleBars = 35;
       const lastTime = candles[candles.length - 1].time as number;
       const fromTime = (lastTime - (visibleBars * candleDuration)) as Time;
-      const toTime = (lastTime + candleDuration * 3) as Time; // Add some padding on right
+      const toTime = (lastTime + candleDuration * 3) as Time;
       
       chart.timeScale().setVisibleRange({ from: fromTime, to: toTime });
     } catch (e) {
