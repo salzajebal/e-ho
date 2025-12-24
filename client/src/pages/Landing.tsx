@@ -1824,6 +1824,31 @@ export default function Landing() {
                     </div>
                   </div>
                 </button>
+
+                {/* 고객센터 (텔레그램) */}
+                {telegramData?.telegramLink && (
+                  <a 
+                    href={telegramData.telegramLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full block bg-gradient-to-r from-sky-500/10 to-cyan-500/10 border border-sky-500/30 rounded-xl p-4 hover:border-sky-500/50 transition-colors cursor-pointer text-left"
+                    onClick={() => setShowCustomerServiceModal(false)}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-sky-500/20 rounded-full flex items-center justify-center">
+                        <Phone className="w-6 h-6 text-sky-500" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-white font-medium">고객센터</h3>
+                        <p className="text-sky-400 text-sm">텔레그램으로 바로 문의</p>
+                        <p className="text-gray-400 text-xs">실시간 상담 가능</p>
+                      </div>
+                      <div className="text-sky-500">
+                        <ChevronRight className="w-5 h-5" />
+                      </div>
+                    </div>
+                  </a>
+                )}
               </div>
             </div>
           </div>

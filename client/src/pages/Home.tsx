@@ -72,6 +72,16 @@ export default function Home() {
     enabled: !!user,
   });
 
+  // Fetch telegram link
+  const { data: telegramData } = useQuery({
+    queryKey: ["/api/settings/telegram"],
+    queryFn: async () => {
+      const res = await fetch("/api/settings/telegram");
+      if (!res.ok) return { telegramLink: "" };
+      return res.json();
+    },
+  });
+
   // Show popup for new unread messages
   useEffect(() => {
     if (user && unreadMessages.length > 0) {
@@ -465,6 +475,30 @@ export default function Home() {
                     <ChevronRight className="w-5 h-5 text-gray-400" />
                   </div>
                 </button>
+
+                {/* 고객센터 (텔레그램) */}
+                {telegramData?.telegramLink && (
+                  <a 
+                    href={telegramData.telegramLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full block bg-gradient-to-r from-sky-500/10 to-cyan-500/10 border border-sky-500/30 rounded-xl p-4 hover:border-sky-500/50 transition-colors cursor-pointer text-left"
+                    onClick={() => setShowCustomerServiceModal(false)}
+                    data-testid="button-customer-service-telegram"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-sky-500/20 rounded-lg flex items-center justify-center">
+                        <Headphones className="w-6 h-6 text-sky-500" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-white font-medium">고객센터</h3>
+                        <p className="text-sky-400 text-sm">텔레그램으로 바로 문의</p>
+                        <p className="text-gray-400 text-xs">실시간 상담 가능</p>
+                      </div>
+                      <ChevronRight className="w-5 h-5 text-sky-500" />
+                    </div>
+                  </a>
+                )}
               </div>
             </div>
           </div>
