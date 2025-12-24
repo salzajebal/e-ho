@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth, useLogout } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
@@ -326,6 +326,67 @@ export default function Admin() {
   const [telegramLink, setTelegramLink] = useState("");
   const [companyInfo, setCompanyInfo] = useState("");
   const [prevPendingCount, setPrevPendingCount] = useState(0);
+  const [prevTransactionCount, setPrevTransactionCount] = useState(0);
+  const [prevInquiryCount, setPrevInquiryCount] = useState(0);
+  const [prevBetCount, setPrevBetCount] = useState(0);
+  const isInitialMount = useRef({ pending: true, transactions: true, inquiries: true, bets: true });
+
+  // Sound notification utility using Web Audio API
+  const playNotificationSound = useCallback((type: 'registration' | 'transaction' | 'inquiry' | 'bet') => {
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      // Different sound patterns for each event type
+      switch (type) {
+        case 'registration': // 가입 - High pitched double beep
+          oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
+          oscillator.frequency.setValueAtTime(0, audioContext.currentTime + 0.1);
+          oscillator.frequency.setValueAtTime(880, audioContext.currentTime + 0.15);
+          gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+          gainNode.gain.setValueAtTime(0, audioContext.currentTime + 0.1);
+          gainNode.gain.setValueAtTime(0.3, audioContext.currentTime + 0.15);
+          gainNode.gain.setValueAtTime(0, audioContext.currentTime + 0.25);
+          oscillator.start(audioContext.currentTime);
+          oscillator.stop(audioContext.currentTime + 0.3);
+          break;
+        case 'transaction': // 입출금 - Low pitched long tone
+          oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
+          oscillator.frequency.setValueAtTime(523, audioContext.currentTime + 0.15);
+          oscillator.frequency.setValueAtTime(659, audioContext.currentTime + 0.3);
+          gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+          oscillator.start(audioContext.currentTime);
+          oscillator.stop(audioContext.currentTime + 0.5);
+          break;
+        case 'inquiry': // 1:1 문의 - Triple short beep
+          oscillator.frequency.setValueAtTime(660, audioContext.currentTime);
+          gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+          gainNode.gain.setValueAtTime(0, audioContext.currentTime + 0.08);
+          gainNode.gain.setValueAtTime(0.3, audioContext.currentTime + 0.12);
+          gainNode.gain.setValueAtTime(0, audioContext.currentTime + 0.2);
+          gainNode.gain.setValueAtTime(0.3, audioContext.currentTime + 0.24);
+          gainNode.gain.setValueAtTime(0, audioContext.currentTime + 0.32);
+          oscillator.start(audioContext.currentTime);
+          oscillator.stop(audioContext.currentTime + 0.35);
+          break;
+        case 'bet': // 배팅 - Quick ascending tone
+          oscillator.frequency.setValueAtTime(330, audioContext.currentTime);
+          oscillator.frequency.linearRampToValueAtTime(550, audioContext.currentTime + 0.15);
+          gainNode.gain.setValueAtTime(0.25, audioContext.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+          oscillator.start(audioContext.currentTime);
+          oscillator.stop(audioContext.currentTime + 0.2);
+          break;
+      }
+    } catch (e) {
+      console.log('Sound notification failed:', e);
+    }
+  }, []);
   const [createAffiliateOpen, setCreateAffiliateOpen] = useState(false);
   const [editingAffiliate, setEditingAffiliate] = useState<AdminAffiliate | null>(null);
   const [deleteAffiliateConfirm, setDeleteAffiliateConfirm] = useState<string | null>(null);
@@ -729,22 +790,70 @@ export default function Admin() {
   // Available symbols for maintenance
   const availableSymbols = ["NDX", "GOLD"];
 
-  // Notification for new pending users
+  // Notification for new pending users (가입)
   useEffect(() => {
+    if (isInitialMount.current.pending) {
+      isInitialMount.current.pending = false;
+      setPrevPendingCount(pendingUsers.length);
+      return;
+    }
     if (pendingUsers.length > prevPendingCount) {
-      // Show notification for any new pending users (including first one)
-      toast.info(`새로운 가입 신청이 있습니다! (${pendingUsers.length}건)`, {
+      toast.info(`🔔 새로운 가입 신청이 있습니다! (${pendingUsers.length}건)`, {
         duration: 5000,
       });
-      // Play notification sound
-      try {
-        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2teleC4bT3+q0sqLRxIHQZC8z6NsGAI4p+ftoHYjCCJ+l7u7fEsACh8JXXmLmYxpPwAKJiM+a4qdi2xGAAoSDzg/T1tdYV1QQAA=');
-        audio.volume = 0.5;
-        audio.play().catch(() => {});
-      } catch (e) {}
+      playNotificationSound('registration');
     }
     setPrevPendingCount(pendingUsers.length);
-  }, [pendingUsers.length, prevPendingCount]);
+  }, [pendingUsers.length, prevPendingCount, playNotificationSound]);
+
+  // Notification for new pending transactions (입출금)
+  useEffect(() => {
+    if (isInitialMount.current.transactions) {
+      isInitialMount.current.transactions = false;
+      setPrevTransactionCount(pendingTransactions.length);
+      return;
+    }
+    if (pendingTransactions.length > prevTransactionCount) {
+      toast.info(`💰 새로운 입출금 요청이 있습니다! (${pendingTransactions.length}건)`, {
+        duration: 5000,
+      });
+      playNotificationSound('transaction');
+    }
+    setPrevTransactionCount(pendingTransactions.length);
+  }, [pendingTransactions.length, prevTransactionCount, playNotificationSound]);
+
+  // Notification for new pending inquiries (1:1 문의)
+  useEffect(() => {
+    if (isInitialMount.current.inquiries) {
+      isInitialMount.current.inquiries = false;
+      setPrevInquiryCount(pendingInquiries.length);
+      return;
+    }
+    if (pendingInquiries.length > prevInquiryCount) {
+      toast.info(`📩 새로운 1:1 문의가 있습니다! (${pendingInquiries.length}건)`, {
+        duration: 5000,
+      });
+      playNotificationSound('inquiry');
+    }
+    setPrevInquiryCount(pendingInquiries.length);
+  }, [pendingInquiries.length, prevInquiryCount, playNotificationSound]);
+
+  // Notification for new bets (배팅)
+  useEffect(() => {
+    const pendingBets = bets.filter(b => b.outcome === 'pending');
+    if (isInitialMount.current.bets) {
+      isInitialMount.current.bets = false;
+      setPrevBetCount(pendingBets.length);
+      return;
+    }
+    if (pendingBets.length > prevBetCount) {
+      toast.info(`🎯 새로운 배팅이 있습니다! (${pendingBets.length}건)`, {
+        duration: 3000,
+      });
+      playNotificationSound('bet');
+    }
+    setPrevBetCount(pendingBets.length);
+  }, [bets, prevBetCount, playNotificationSound]);
 
   const approveUser = useMutation({
     mutationFn: async (userId: string) => {
