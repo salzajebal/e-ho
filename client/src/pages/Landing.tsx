@@ -623,7 +623,8 @@ export default function Landing() {
                     }
                     setMobileMenuOpen(false);
                   }}
-                  className="text-left text-gray-300 hover:text-orange-500 py-3 border-b border-white/10"
+                  className="text-left text-gray-300 hover:text-orange-500 py-3 border-b border-white/10 w-full touch-manipulation"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   옵션거래
                 </button>
@@ -636,7 +637,8 @@ export default function Landing() {
                     }
                     setMobileMenuOpen(false);
                   }}
-                  className="text-left text-gray-300 hover:text-orange-500 py-3 border-b border-white/10"
+                  className="text-left text-gray-300 hover:text-orange-500 py-3 border-b border-white/10 w-full touch-manipulation"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   거래내역
                 </button>
@@ -655,7 +657,8 @@ export default function Landing() {
                     setShowDepositModal(true);
                     setMobileMenuOpen(false);
                   }}
-                  className="text-left text-gray-300 hover:text-orange-500 py-3 border-b border-white/10"
+                  className="text-left text-gray-300 hover:text-orange-500 py-3 border-b border-white/10 w-full touch-manipulation"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   입출금
                 </button>
@@ -664,7 +667,8 @@ export default function Landing() {
                     setShowAnnouncementsModal(true);
                     setMobileMenuOpen(false);
                   }}
-                  className="text-left text-gray-300 hover:text-orange-500 py-3 border-b border-white/10"
+                  className="text-left text-gray-300 hover:text-orange-500 py-3 border-b border-white/10 w-full touch-manipulation"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   공지사항
                 </button>
@@ -673,7 +677,8 @@ export default function Landing() {
                     setShowCustomerServiceModal(true);
                     setMobileMenuOpen(false);
                   }}
-                  className="text-left text-gray-300 hover:text-orange-500 py-3 border-b border-white/10"
+                  className="text-left text-gray-300 hover:text-orange-500 py-3 border-b border-white/10 w-full touch-manipulation"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   1:1문의
                 </button>
