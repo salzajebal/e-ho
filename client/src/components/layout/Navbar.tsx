@@ -37,7 +37,7 @@ export function Navbar({ onSelectGame, selectedGameId }: NavbarProps) {
           />
           <div className="hidden sm:flex items-center tracking-tight">
             <span className="text-foreground">INVEST</span>
-            <span className="text-orange-500 ml-1">KOREA</span>
+            <span className="text-primary ml-1">KOREA</span>
           </div>
         </Link>
         

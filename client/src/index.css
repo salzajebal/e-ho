@@ -40,39 +40,39 @@
 
 @layer base {
   :root {
-    /* Binance-inspired Dark Theme */
-    --background: 216 18% 11%;    /* #161a1e */
-    --foreground: 210 20% 98%;    /* #eaecef */
+    /* Coinone-inspired Dark Theme */
+    --background: 220 20% 7%;     /* Deep dark blue-black */
+    --foreground: 210 20% 98%;    /* Light text */
 
-    --card: 216 18% 13%;          /* Slightly lighter than bg */
+    --card: 220 18% 10%;          /* Card background */
     --card-foreground: 210 20% 98%;
 
-    --popover: 216 18% 13%;
+    --popover: 220 18% 10%;
     --popover-foreground: 210 20% 98%;
 
-    --primary: 47 96% 60%;        /* #FCD535 Binance Yellow */
-    --primary-foreground: 216 18% 11%;
+    --primary: 217 91% 60%;       /* Coinone Blue #3B82F6 */
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 215 14% 19%;     /* Dark Grey Button */
+    --secondary: 220 14% 16%;     /* Dark Grey Button */
     --secondary-foreground: 210 20% 98%;
 
-    --muted: 215 14% 25%;
-    --muted-foreground: 215 10% 55%; /* #848e9c */
+    --muted: 220 14% 20%;
+    --muted-foreground: 220 10% 55%; /* Muted text */
 
-    --accent: 215 14% 19%;
+    --accent: 220 14% 16%;
     --accent-foreground: 210 20% 98%;
 
-    --destructive: 349 76% 57%;   /* #F6465D Red */
+    --destructive: 0 72% 50%;     /* Red for destructive actions */
     --destructive-foreground: 0 0% 100%;
 
-    --border: 215 14% 19%;        /* Subtle borders */
-    --input: 215 14% 19%;
-    --ring: 47 96% 60%;
+    --border: 220 14% 16%;        /* Subtle borders */
+    --input: 220 14% 16%;
+    --ring: 217 91% 60%;
 
-    --up: 139 37% 55%;            /* #0ECB81 Green */
-    --down: 349 76% 57%;          /* #F6465D Red */
+    --up: 0 72% 55%;              /* Red for up (Korean market) #E53935 */
+    --down: 217 91% 55%;          /* Blue for down (Korean market) #3B82F6 */
 
-    --radius: 0.25rem;
+    --radius: 0.375rem;
   }
 
   * {
@@ -112,8 +112,8 @@
   color: hsl(var(--down));
 }
 .bg-up-10 {
-  background-color: hsla(139, 37%, 55%, 0.1);
+  background-color: hsla(0, 72%, 55%, 0.1);
 }
 .bg-down-10 {
-  background-color: hsla(349, 76%, 57%, 0.1);
+  background-color: hsla(217, 91%, 55%, 0.1);
 }

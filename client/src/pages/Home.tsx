@@ -391,7 +391,7 @@ export default function Home() {
       {/* Customer Service Button (fixed) */}
       <button
         onClick={() => setShowCustomerServiceModal(true)}
-        className="fixed bottom-16 left-6 z-50 bg-orange-500 hover:bg-orange-600 text-white p-3 rounded-full shadow-lg transition-all"
+        className="fixed bottom-16 left-6 z-50 bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-full shadow-lg transition-all"
         data-testid="button-customer-service"
       >
         <Headphones className="w-5 h-5" />
@@ -402,7 +402,7 @@ export default function Home() {
         <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden">
           <DialogTitle className="sr-only">1:1 문의</DialogTitle>
           <div className="relative">
-            <div className="absolute -inset-1 bg-gradient-to-r from-orange-500/20 via-amber-500/20 to-orange-500/20 rounded-2xl blur-xl" />
+            <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 via-amber-500/20 to-blue-500/20 rounded-2xl blur-xl" />
             <div className="relative backdrop-blur-xl bg-[#1a1a24]/95 border border-white/10 rounded-2xl p-6 shadow-2xl">
               <button 
                 onClick={() => setShowCustomerServiceModal(false)}
@@ -412,7 +412,7 @@ export default function Home() {
               </button>
 
               <div className="text-center mb-6">
-                <div className="w-16 h-16 mx-auto mb-3 bg-gradient-to-br from-orange-500 to-amber-500 rounded-full flex items-center justify-center">
+                <div className="w-16 h-16 mx-auto mb-3 bg-gradient-to-br from-blue-500 to-amber-500 rounded-full flex items-center justify-center">
                   <Headphones className="w-8 h-8 text-white" />
                 </div>
                 <h2 className="text-2xl font-bold text-white mb-1">1:1 문의</h2>
@@ -422,7 +422,7 @@ export default function Home() {
               <div className="space-y-3">
                 {/* 문의 작성하기 */}
                 <button 
-                  className="w-full block bg-gradient-to-r from-orange-500/10 to-amber-500/10 border border-orange-500/30 rounded-xl p-4 hover:border-orange-500/50 transition-colors cursor-pointer text-left"
+                  className="w-full block bg-gradient-to-r from-blue-500/10 to-amber-500/10 border border-blue-500/30 rounded-xl p-4 hover:border-blue-500/50 transition-colors cursor-pointer text-left"
                   onClick={() => {
                     if (!user) {
                       toast.error("로그인이 필요합니다");
@@ -436,15 +436,15 @@ export default function Home() {
                   data-testid="button-write-inquiry"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-amber-500 rounded-lg flex items-center justify-center">
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-amber-500 rounded-lg flex items-center justify-center">
                       <FileText className="w-6 h-6 text-white" />
                     </div>
                     <div className="flex-1">
                       <h3 className="text-white font-medium">문의 작성하기</h3>
-                      <p className="text-orange-400 text-sm">새로운 문의를 작성합니다</p>
+                      <p className="text-blue-400 text-sm">새로운 문의를 작성합니다</p>
                       <p className="text-gray-400 text-xs">빠른 답변 보장</p>
                     </div>
-                    <ChevronRight className="w-5 h-5 text-orange-500" />
+                    <ChevronRight className="w-5 h-5 text-blue-500" />
                   </div>
                 </button>
 
@@ -465,11 +465,11 @@ export default function Home() {
                 >
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-white/10 rounded-lg flex items-center justify-center">
-                      <MessageSquare className="w-6 h-6 text-orange-500" />
+                      <MessageSquare className="w-6 h-6 text-blue-500" />
                     </div>
                     <div className="flex-1">
                       <h3 className="text-white font-medium">내 문의 내역</h3>
-                      <p className="text-orange-400 text-sm">작성한 문의와 답변 확인</p>
+                      <p className="text-blue-400 text-sm">작성한 문의와 답변 확인</p>
                       <p className="text-gray-400 text-xs">{myInquiries.length}건의 문의</p>
                     </div>
                     <ChevronRight className="w-5 h-5 text-gray-400" />
@@ -510,7 +510,7 @@ export default function Home() {
         <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden">
           <DialogTitle className="sr-only">문의 작성하기</DialogTitle>
           <div className="relative">
-            <div className="absolute -inset-1 bg-gradient-to-r from-orange-500/20 via-amber-500/20 to-orange-500/20 rounded-2xl blur-xl" />
+            <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 via-amber-500/20 to-blue-500/20 rounded-2xl blur-xl" />
             <div className="relative backdrop-blur-xl bg-[#1a1a24]/95 border border-white/10 rounded-2xl p-6 shadow-2xl">
               <button 
                 onClick={() => setShowInquiryFormModal(false)}
@@ -520,7 +520,7 @@ export default function Home() {
               </button>
 
               <div className="text-center mb-6">
-                <div className="w-16 h-16 mx-auto mb-3 bg-gradient-to-br from-orange-500 to-amber-500 rounded-full flex items-center justify-center">
+                <div className="w-16 h-16 mx-auto mb-3 bg-gradient-to-br from-blue-500 to-amber-500 rounded-full flex items-center justify-center">
                   <FileText className="w-8 h-8 text-white" />
                 </div>
                 <h2 className="text-2xl font-bold text-white mb-1">문의 작성하기</h2>
@@ -547,7 +547,7 @@ export default function Home() {
                   />
                 </div>
                 <Button
-                  className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold py-3"
+                  className="w-full bg-gradient-to-r from-blue-500 to-amber-500 hover:from-blue-600 hover:to-amber-600 text-white font-semibold py-3"
                   disabled={!inquiryTitle.trim() || !inquiryContent.trim() || inquirySubmitting}
                   onClick={async () => {
                     setInquirySubmitting(true);
@@ -587,7 +587,7 @@ export default function Home() {
         <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden">
           <DialogTitle className="sr-only">내 문의 내역</DialogTitle>
           <div className="relative">
-            <div className="absolute -inset-1 bg-gradient-to-r from-orange-500/20 via-amber-500/20 to-orange-500/20 rounded-2xl blur-xl" />
+            <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 via-amber-500/20 to-blue-500/20 rounded-2xl blur-xl" />
             <div className="relative backdrop-blur-xl bg-[#1a1a24]/95 border border-white/10 rounded-2xl p-6 shadow-2xl max-h-[80vh] overflow-y-auto">
               <button 
                 onClick={() => setShowMyInquiriesModal(false)}
@@ -597,7 +597,7 @@ export default function Home() {
               </button>
 
               <div className="text-center mb-6">
-                <div className="w-16 h-16 mx-auto mb-3 bg-gradient-to-br from-orange-500 to-amber-500 rounded-full flex items-center justify-center">
+                <div className="w-16 h-16 mx-auto mb-3 bg-gradient-to-br from-blue-500 to-amber-500 rounded-full flex items-center justify-center">
                   <MessageSquare className="w-8 h-8 text-white" />
                 </div>
                 <h2 className="text-2xl font-bold text-white mb-1">내 문의 내역</h2>
@@ -615,7 +615,7 @@ export default function Home() {
                         <span className={`text-xs px-2 py-1 rounded ${
                           inquiry.status === 'answered' 
                             ? 'bg-green-500/20 text-green-400' 
-                            : 'bg-orange-500/20 text-orange-400'
+                            : 'bg-blue-500/20 text-blue-400'
                         }`}>
                           {inquiry.status === 'answered' ? '답변완료' : '대기중'}
                         </span>
@@ -626,7 +626,7 @@ export default function Home() {
                       </p>
                       {inquiry.reply && (
                         <div className="mt-3 pt-3 border-t border-white/10">
-                          <p className="text-orange-400 text-xs font-medium mb-1">관리자 답변</p>
+                          <p className="text-blue-400 text-xs font-medium mb-1">관리자 답변</p>
                           <p className="text-gray-300 text-sm">{inquiry.reply}</p>
                         </div>
                       )}
@@ -636,7 +636,7 @@ export default function Home() {
               </div>
 
               <Button
-                className="w-full mt-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white"
+                className="w-full mt-4 bg-gradient-to-r from-blue-500 to-amber-500 hover:from-blue-600 hover:to-amber-600 text-white"
                 onClick={() => {
                   setShowMyInquiriesModal(false);
                   setShowInquiryFormModal(true);

@@ -78,7 +78,7 @@ export function PositionsPanel({ positions, onClosePosition }: PositionsPanelPro
                   </td>
                   <td className="px-2 font-mono text-muted-foreground">{pos.entryPrice.toLocaleString()}</td>
                   <td className="px-2 font-mono text-foreground">{pos.markPrice.toLocaleString()}</td>
-                  <td className="px-2 font-mono text-orange-500">{pos.liquidationPrice.toLocaleString()}</td>
+                  <td className="px-2 font-mono text-blue-500">{pos.liquidationPrice.toLocaleString()}</td>
                   <td className="px-2 font-mono text-foreground">{(1.5).toFixed(2)}%</td>
                   <td className="px-2 font-mono text-foreground">{pos.margin.toLocaleString()}</td>
                   <td className="px-2 text-right">
