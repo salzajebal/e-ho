@@ -222,7 +222,7 @@ export async function registerRoutes(
 
       // Admin login restriction: only allow specific credentials (from environment)
       const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin";
-      const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "wnsgud911!!";
+      const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
       
       console.log("Querying database for user...");
       const user = await storage.getUserByUsername(username);
