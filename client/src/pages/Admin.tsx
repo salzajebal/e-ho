@@ -229,11 +229,11 @@ function AdminLogin() {
         <div className="text-center mb-8">
           <img 
             src="/logo.png" 
-            alt="Invest Korea Logo" 
+            alt="Coinone Logo" 
             className="w-16 h-16 rounded-xl object-cover mx-auto mb-4"
           />
           <h1 className="text-3xl font-bold text-white mb-2">
-            <span className="text-white">INVEST</span>
+            <span className="text-white"></span>
             <span className="text-orange-500 ml-1">KOREA</span>
             <span className="text-white ml-2">관리자</span>
           </h1>
@@ -1502,11 +1502,11 @@ export default function Admin() {
         <div className="flex items-center gap-2">
           <img 
             src="/logo.png" 
-            alt="Invest Korea Logo" 
+            alt="Coinone Logo" 
             className="w-7 h-7 rounded-lg object-cover"
           />
           <span className="font-bold text-sm">
-            <span className="text-white">INVEST</span>
+            <span className="text-white"></span>
             <span className="text-orange-500 ml-1">KOREA</span>
           </span>
           <span className="text-xs text-muted-foreground">관리자</span>
@@ -1554,12 +1554,12 @@ export default function Admin() {
           <div className="flex items-center gap-2">
             <img 
               src="/logo.png" 
-              alt="Invest Korea Logo" 
+              alt="Coinone Logo" 
               className="w-8 h-8 rounded-lg object-cover"
             />
             <div>
               <span className="font-bold text-lg">
-                <span className="text-white">INVEST</span>
+                <span className="text-white"></span>
                 <span className="text-orange-500 ml-1">KOREA</span>
               </span>
             </div>

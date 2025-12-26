@@ -32,12 +32,11 @@ export function Navbar({ onSelectGame, selectedGameId }: NavbarProps) {
         <Link href="/" className="flex items-center gap-2 font-bold text-lg lg:text-xl hover:opacity-90 transition-opacity shrink-0">
           <img 
             src="/logo.png" 
-            alt="Invest Korea Logo" 
+            alt="Coinone Logo" 
             className="w-7 h-7 lg:w-8 lg:h-8 rounded-lg object-cover"
           />
           <div className="hidden sm:flex items-center tracking-tight">
-            <span className="text-foreground">INVEST</span>
-            <span className="text-primary ml-1">KOREA</span>
+            <span className="text-primary font-bold">COINONE</span>
           </div>
         </Link>
         

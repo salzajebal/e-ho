@@ -410,13 +410,12 @@ export default function Landing() {
               <div className="flex items-center gap-2 md:gap-3">
                 <img 
                   src="/logo.png" 
-                  alt="Invest Korea Logo" 
+                  alt="Coinone Logo" 
                   className="w-8 h-8 md:w-10 md:h-10 rounded-lg object-cover"
                 />
                 <div className="flex flex-col">
-                  <span className="text-lg md:text-xl font-bold tracking-wide">
-                    <span className="text-white">INVEST</span>
-                    <span className="text-blue-500 ml-1">KOREA</span>
+                  <span className="text-lg md:text-xl font-bold tracking-wide text-blue-500">
+                    COINONE
                   </span>
                   <span className="hidden sm:block text-[10px] text-gray-400 tracking-widest uppercase">Premium Trading</span>
                 </div>
@@ -747,12 +746,11 @@ export default function Landing() {
           <div className="mb-8 flex flex-col items-center">
             <img 
               src="/logo.png" 
-              alt="Invest Korea Logo" 
+              alt="Coinone Logo" 
               className="w-24 h-24 rounded-2xl object-cover mb-4"
             />
-            <h1 className="text-5xl md:text-7xl font-bold mb-2 tracking-wide">
-              <span className="text-white">INVEST</span>
-              <span className="text-blue-500 ml-3">KOREA</span>
+            <h1 className="text-5xl md:text-7xl font-bold mb-2 tracking-wide text-blue-500">
+              COINONE
             </h1>
           </div>
           
@@ -1062,11 +1060,11 @@ export default function Landing() {
         <section className="py-20 px-4">
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="text-3xl md:text-4xl font-bold mb-4" data-testid="text-cta-title">
-              INVEST KOREA에 가입하고<br />지금 바로 시작해보세요
+              COINONE에 가입하고<br />지금 바로 시작해보세요
             </h2>
             <p className="text-gray-400 text-lg mb-10">
               당신의 첫 옵션 거래,<br />
-              믿을 수 있는 INVEST KOREA에서 시작하세요!
+              믿을 수 있는 COINONE에서 시작하세요!
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
@@ -1100,12 +1098,11 @@ export default function Landing() {
               <div className="flex items-center gap-3 mb-4">
                 <img 
                   src="/logo.png" 
-                  alt="Invest Korea Logo" 
+                  alt="Coinone Logo" 
                   className="w-10 h-10 rounded-lg object-cover"
                 />
-                <h3 className="text-xl font-bold">
-                  <span className="text-white">INVEST</span>
-                  <span className="text-blue-500 ml-1">KOREA</span>
+                <h3 className="text-xl font-bold text-blue-500">
+                  COINONE
                 </h3>
               </div>
               <p className="text-gray-500 text-sm">
@@ -1147,7 +1144,7 @@ export default function Landing() {
           
           <div className="border-t border-white/5 pt-8 text-center text-gray-600 text-sm space-y-2">
             <p className="text-gray-500">대표이사 김동호 외2인</p>
-            <p>© 2024 INVEST KOREA Trade International, Inc. All rights reserved.</p>
+            <p>© 2024 COINONE Trade International, Inc. All rights reserved.</p>
           </div>
         </div>
       </footer>
@@ -1170,7 +1167,7 @@ export default function Landing() {
                 <div className="flex items-center justify-center gap-2 mb-4">
                   <img 
                     src="/logo.png" 
-                    alt="Invest Korea Logo" 
+                    alt="Coinone Logo" 
                     className="w-12 h-12 rounded-lg object-cover"
                   />
                 </div>
@@ -1261,7 +1258,7 @@ export default function Landing() {
                 <div className="flex items-center justify-center gap-2 mb-3">
                   <img 
                     src="/logo.png" 
-                    alt="Invest Korea Logo" 
+                    alt="Coinone Logo" 
                     className="w-10 h-10 rounded-lg object-cover"
                   />
                 </div>

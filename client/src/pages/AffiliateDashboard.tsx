@@ -176,13 +176,13 @@ function AffiliateLogin({ onLogin }: { onLogin: () => void }) {
           <CardHeader className="text-center">
             <img
               src="/logo.png"
-              alt="Invest Korea Logo"
+              alt="Coinone Logo"
               className="w-20 h-20 mx-auto rounded-xl mb-4 object-contain bg-black"
               onError={(e) => { e.currentTarget.style.display = 'none'; }}
             />
             <CardTitle className="text-2xl">총판 로그인</CardTitle>
             <p className="text-muted-foreground text-sm">
-              INVEST KOREA 총판 관리 시스템
+              COINONE 총판 관리 시스템
             </p>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -457,11 +457,11 @@ export default function AffiliateDashboard() {
           <div className="flex items-center gap-2">
             <img
               src="/logo.png"
-              alt="Invest Korea Logo"
+              alt="Coinone Logo"
               className="w-10 h-10 rounded-lg object-contain bg-black"
             />
             <div>
-              <p className="font-bold text-sm">INVEST KOREA</p>
+              <p className="font-bold text-sm">COINONE</p>
               <p className="text-xs text-muted-foreground">총판 대시보드</p>
             </div>
           </div>
