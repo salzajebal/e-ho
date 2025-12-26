@@ -234,7 +234,7 @@ function AdminLogin() {
           />
           <h1 className="text-3xl font-bold text-white mb-2">
             <span className="text-white"></span>
-            <span className="text-orange-500 ml-1">KOREA</span>
+            <span className="text-blue-500 font-bold">COINONE</span>
             <span className="text-white ml-2">관리자</span>
           </h1>
           <p className="text-gray-400 text-sm">관리자 계정으로 로그인하세요</p>
@@ -1507,7 +1507,7 @@ export default function Admin() {
           />
           <span className="font-bold text-sm">
             <span className="text-white"></span>
-            <span className="text-orange-500 ml-1">KOREA</span>
+            <span className="text-blue-500 font-bold">COINONE</span>
           </span>
           <span className="text-xs text-muted-foreground">관리자</span>
         </div>
@@ -1560,7 +1560,7 @@ export default function Admin() {
             <div>
               <span className="font-bold text-lg">
                 <span className="text-white"></span>
-                <span className="text-orange-500 ml-1">KOREA</span>
+                <span className="text-blue-500 font-bold">COINONE</span>
               </span>
             </div>
           </div>
