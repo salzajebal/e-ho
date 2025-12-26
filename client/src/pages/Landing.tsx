@@ -34,6 +34,13 @@ const KOREAN_BANKS = [
   "산림조합", "저축은행",
 ];
 
+const KOREAN_REGIONS = [
+  "서울특별시", "부산광역시", "대구광역시", "인천광역시", "광주광역시",
+  "대전광역시", "울산광역시", "세종특별자치시",
+  "경기도", "강원도", "충청북도", "충청남도",
+  "전라북도", "전라남도", "경상북도", "경상남도", "제주특별자치도",
+];
+
 function isWithinOperatingHours(): boolean {
   const now = new Date();
   const kstOffset = 9 * 60;
@@ -185,6 +192,8 @@ export default function Landing() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [residentNumber, setResidentNumber] = useState("");
+  const [region, setRegion] = useState("");
   const [bankName, setBankName] = useState("");
   const [accountHolder, setAccountHolder] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
@@ -335,6 +344,15 @@ export default function Landing() {
       toast.error("올바른 휴대폰 번호를 입력해주세요");
       return;
     }
+    const cleanResidentNumber = residentNumber.replace(/-/g, '');
+    if (!cleanResidentNumber || cleanResidentNumber.length !== 13) {
+      toast.error("주민번호 13자리를 정확히 입력해주세요");
+      return;
+    }
+    if (!region) {
+      toast.error("지역을 선택해주세요");
+      return;
+    }
     if (!bankName) {
       toast.error("은행을 선택해주세요");
       return;
@@ -357,7 +375,9 @@ export default function Landing() {
       username: regUsername, 
       password: regPassword, 
       name, 
-      phone, 
+      phone,
+      residentNumber: cleanResidentNumber,
+      region,
       bankName, 
       accountHolder, 
       accountNumber,
@@ -370,6 +390,8 @@ export default function Landing() {
         setConfirmPassword("");
         setName("");
         setPhone("");
+        setResidentNumber("");
+        setRegion("");
         setBankName("");
         setAccountHolder("");
         setAccountNumber("");
@@ -1335,6 +1357,41 @@ export default function Landing() {
                     data-testid="input-reg-phone"
                     required
                   />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-300 font-medium">주민번호 (로얄조회)</label>
+                    <Input
+                      type="text"
+                      value={residentNumber}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^0-9-]/g, '');
+                        if (value.length <= 14) {
+                          setResidentNumber(value);
+                        }
+                      }}
+                      placeholder="000000-0000000"
+                      className="h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-blue-500/50 text-sm"
+                      data-testid="input-reg-resident-number"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-300 font-medium">지역 (신고지역)</label>
+                    <Select value={region} onValueChange={setRegion}>
+                      <SelectTrigger className="h-10 bg-white/5 border-white/10 text-white text-sm">
+                        <SelectValue placeholder="지역 선택" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-gray-900 border-white/20 max-h-60 overflow-y-auto">
+                        {KOREAN_REGIONS.map((reg) => (
+                          <SelectItem key={reg} value={reg} className="text-white hover:bg-white/10">
+                            {reg}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 <div className="pt-2 border-t border-white/10">
