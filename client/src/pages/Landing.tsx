@@ -80,7 +80,8 @@ function useLandingMarketData() {
         
         const response = await fetch('/api/market/prices', {
           signal: controller.signal,
-          cache: 'no-store'
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
         });
         clearTimeout(timeoutId);
         
@@ -88,7 +89,7 @@ function useLandingMarketData() {
         
         const result = await response.json();
         
-        if (!result.fallback && result.prices) {
+        if (result.prices && !result.fallback) {
           setMarkets(prev => prev.map(m => {
             const apiPrice = result.prices.find((p: any) => p.symbol === m.symbol);
             if (apiPrice) {

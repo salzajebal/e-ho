@@ -33,19 +33,25 @@ export function useMarketData() {
         const response = await fetch('/api/market/prices', {
           signal: controller.signal,
           cache: 'no-store',
-          headers: { 'Cache-Control': 'no-cache' }
+          headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
         });
         clearTimeout(timeoutId);
         
-        if (!response.ok) return;
+        if (!response.ok) {
+          console.warn('Market API response not ok:', response.status);
+          return;
+        }
         
         const result = await response.json();
         
-        if (result.fallback || !result.prices) return;
+        if (result.fallback || !result.prices) {
+          console.warn('Market API returned fallback or no prices');
+          return;
+        }
 
         updateCounter.current++;
         
-        setData(result.prices.map((apiPrice: any) => {
+        const newData = result.prices.map((apiPrice: any) => {
           lastApiPrices.current[apiPrice.symbol] = {
             price: apiPrice.price,
             change: apiPrice.change,
@@ -66,9 +72,11 @@ export function useMarketData() {
             volume: 0,
             category: '암호화폐' as const,
           };
-        }));
+        });
+        
+        setData(newData);
       } catch (error) {
-        // Silent fail - keep last prices
+        console.warn('Market API fetch error:', error);
       }
     };
 
