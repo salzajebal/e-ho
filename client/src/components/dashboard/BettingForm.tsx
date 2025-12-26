@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { TrendingUp, TrendingDown, Clock, Hash, Timer, History, CheckCircle, AlertCircle } from "lucide-react";
+import { TrendingUp, TrendingDown, Clock, Hash, Timer, History, AlertCircle } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { TRADING_GAMES } from "@/lib/tradingGames";
@@ -171,7 +171,7 @@ interface AllGamesState {
 }
 
 export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormProps) {
-  const [amount, setAmount] = useState<string>("10000");
+  const [amount, setAmount] = useState<string>("");
   const [currentRound, setCurrentRound] = useState(calculateRoundNumber(game.duration));
   const [timeRemaining, setTimeRemaining] = useState(getRoundTimeRemaining(game.duration));
   const [gameResults, setGameResults] = useState<GameResult[]>([]);
@@ -322,26 +322,33 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
   const handleBetClick = (direction: 'long' | 'short') => {
     if (validateBet(direction)) {
       const numAmount = parseFloat(amount);
-      onBet(direction, numAmount);
       
-      // Show confirmation popup
+      // Show confirmation popup before placing bet
       setBetConfirmation({
         show: true,
         direction,
         amount: numAmount,
         price: currentPrice,
       });
-      
-      // Auto close after 2 seconds
-      setTimeout(() => {
-        setBetConfirmation(prev => ({ ...prev, show: false }));
-      }, 2000);
     }
   };
 
-  const handleQuickAmount = (percent: number) => {
-    const quickAmount = Math.floor(availableBalance * percent);
-    setAmount(quickAmount.toString());
+  const confirmBet = () => {
+    onBet(betConfirmation.direction, betConfirmation.amount);
+    setBetConfirmation(prev => ({ ...prev, show: false }));
+    toast.success(`${betConfirmation.direction === 'long' ? '매수' : '매도'} 주문이 접수되었습니다.`);
+  };
+
+  const handleAmountFocus = () => {
+    setAmount("");
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+  };
+
+  const handleCopy = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
   };
 
   return (
@@ -408,23 +415,16 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
               type="number" 
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
+              onFocus={handleAmountFocus}
+              onPaste={handlePaste}
+              onCopy={handleCopy}
               className="font-mono text-base lg:text-lg text-right pr-10 h-10 lg:h-12 bg-input border-border focus-visible:ring-primary"
               data-testid="input-bet-amount"
               min="1000"
               step="1000"
+              placeholder="금액 입력"
             />
             <span className="absolute right-3 top-2.5 lg:top-3.5 text-sm text-muted-foreground">원</span>
-          </div>
-          <div className="grid grid-cols-4 gap-1.5 lg:gap-2">
-            {[0.1, 0.25, 0.5, 1].map((percent) => (
-              <button
-                key={percent}
-                onClick={() => handleQuickAmount(percent)}
-                className="py-1 lg:py-1.5 text-xs rounded bg-muted/30 text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
-              >
-                {percent * 100}%
-              </button>
-            ))}
           </div>
         </div>
 
@@ -448,21 +448,19 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
         <div className="grid grid-cols-2 gap-2 lg:gap-3 pt-1 lg:pt-2">
           <Button 
             onClick={() => handleBetClick('long')}
-            className="h-11 lg:h-14 text-xs lg:text-sm font-bold text-white flex items-center justify-center gap-1 bg-up hover:bg-up/90"
+            className="h-11 lg:h-14 text-base lg:text-lg font-bold text-white flex items-center justify-center gap-2 bg-up hover:bg-up/90"
             data-testid="button-long"
           >
-            <TrendingUp className="w-4 h-4 shrink-0" />
-            <span>LONG</span>
-            <span className="text-white/80 font-normal">(매수)</span>
+            <TrendingUp className="w-5 h-5 shrink-0" />
+            <span>매수</span>
           </Button>
           <Button 
             onClick={() => handleBetClick('short')}
-            className="h-11 lg:h-14 text-xs lg:text-sm font-bold text-white flex items-center justify-center gap-1 bg-down hover:bg-down/90"
+            className="h-11 lg:h-14 text-base lg:text-lg font-bold text-white flex items-center justify-center gap-2 bg-down hover:bg-down/90"
             data-testid="button-short"
           >
-            <TrendingDown className="w-4 h-4 shrink-0" />
-            <span>SHORT</span>
-            <span className="text-white/80 font-normal">(매도)</span>
+            <TrendingDown className="w-5 h-5 shrink-0" />
+            <span>매도</span>
           </Button>
         </div>
 
@@ -519,7 +517,7 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
         <DialogContent className="bg-card border-border max-w-sm">
           <DialogHeader>
             <DialogTitle className="flex items-center justify-center gap-2 text-center">
-              <CheckCircle className={cn(
+              <AlertCircle className={cn(
                 "w-8 h-8",
                 betConfirmation.direction === 'long' ? "text-up" : "text-down"
               )} />
@@ -535,15 +533,15 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
               ) : (
                 <TrendingDown className="w-5 h-5" />
               )}
-              {betConfirmation.direction === 'long' ? 'LONG (매수)' : 'SHORT (매도)'}
+              {betConfirmation.direction === 'long' ? '매수' : '매도'}
             </div>
             
             <div className="space-y-2">
               <p className="text-2xl font-bold text-foreground">
                 {betConfirmation.amount.toLocaleString()}원
               </p>
-              <p className="text-sm text-muted-foreground">
-                베팅이 완료되었습니다
+              <p className="text-base text-foreground font-medium">
+                주문하시겠습니까?
               </p>
             </div>
             
@@ -560,6 +558,25 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
                 <span className="text-muted-foreground">예상수익</span>
                 <span className="text-up font-mono font-bold">+{(betConfirmation.amount * MULTIPLIER).toLocaleString()}원</span>
               </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <Button 
+                onClick={() => setBetConfirmation(prev => ({ ...prev, show: false }))}
+                variant="outline"
+                className="w-full"
+              >
+                취소
+              </Button>
+              <Button 
+                onClick={confirmBet}
+                className={cn(
+                  "w-full text-white",
+                  betConfirmation.direction === 'long' ? "bg-up hover:bg-up/90" : "bg-down hover:bg-down/90"
+                )}
+              >
+                확인
+              </Button>
             </div>
           </div>
         </DialogContent>
