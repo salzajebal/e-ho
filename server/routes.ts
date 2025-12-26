@@ -9,6 +9,7 @@ import { broadcastToAdmins, broadcastToUser, onlineUsers } from "./index";
 import { parse as parseCookie } from "cookie";
 import { unsign } from "cookie-signature";
 import { calculateRoundNumber, getRoundEndTime, getRoundTimeRemaining } from "@shared/rounds";
+import WebSocket from "ws";
 
 const SessionStore = MemoryStore(session);
 
@@ -1869,116 +1870,111 @@ export async function registerRoutes(
     }
   });
 
-  // ==================== REAL-TIME MARKET DATA (Binance API) ====================
+  // ==================== REAL-TIME MARKET DATA (Binance WebSocket) ====================
   
-  // Cache for market data - keeps last successful data for fallback
-  let marketDataCache: { data: any; timestamp: number } | null = null;
-  const CACHE_DURATION = 500; // 500ms for real-time updates
-  const CACHE_MAX_AGE = 60000; // Return cached data up to 60 seconds old on API failure
+  // Real-time price storage from WebSocket
+  const liveMarketData: Record<string, {
+    symbol: string;
+    price: number;
+    change: number;
+    changePercent: number;
+    high: number;
+    low: number;
+    timestamp: number;
+  }> = {};
 
-  // Binance symbol mapping
-  const BINANCE_SYMBOLS: Record<string, string> = {
-    'BTC': 'BTCUSDT',
-    'ETH': 'ETHUSDT',
+  // Default fallback prices
+  const DEFAULT_PRICES: Record<string, any> = {
+    'BTC': { symbol: 'BTC', price: 88700, change: 0, changePercent: 0, high: 89500, low: 87000, timestamp: Date.now() },
+    'ETH': { symbol: 'ETH', price: 2960, change: 0, changePercent: 0, high: 3000, low: 2900, timestamp: Date.now() },
   };
 
-  // Default fallback prices (realistic values) when no cache available
-  const DEFAULT_PRICES = [
-    { symbol: 'BTC', price: 88700, change: 0, changePercent: 0, high: 89500, low: 87000, timestamp: Date.now() },
-    { symbol: 'ETH', price: 2960, change: 0, changePercent: 0, high: 3000, low: 2900, timestamp: Date.now() },
-  ];
+  // Symbol mapping
+  const SYMBOL_MAP: Record<string, string> = {
+    'btcusdt': 'BTC',
+    'ethusdt': 'ETH',
+  };
 
-  // Fetch quote from Binance API with timeout
-  async function fetchBinanceQuote(binanceSymbol: string): Promise<any> {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
-      
-      const url = `https://api.binance.com/api/v3/ticker/24hr?symbol=${binanceSymbol}`;
-      const response = await fetch(url, { signal: controller.signal });
-      clearTimeout(timeoutId);
-      
-      if (!response.ok) {
-        throw new Error(`Binance API error: ${response.status}`);
+  // Binance WebSocket connection
+  function connectBinanceWebSocket() {
+    const streams = ['btcusdt@ticker', 'ethusdt@ticker'];
+    const wsUrl = `wss://stream.binance.com:9443/stream?streams=${streams.join('/')}`;
+    
+    console.log('Connecting to Binance WebSocket...');
+    const ws = new WebSocket(wsUrl);
+    
+    ws.on('open', () => {
+      console.log('Binance WebSocket connected - receiving real-time prices');
+    });
+    
+    ws.on('message', (data: Buffer) => {
+      try {
+        const message = JSON.parse(data.toString());
+        const ticker = message.data;
+        
+        if (ticker && ticker.s) {
+          const symbol = SYMBOL_MAP[ticker.s.toLowerCase()];
+          if (symbol) {
+            liveMarketData[symbol] = {
+              symbol,
+              price: parseFloat(parseFloat(ticker.c).toFixed(2)),
+              change: parseFloat(parseFloat(ticker.p).toFixed(2)),
+              changePercent: parseFloat(parseFloat(ticker.P).toFixed(2)),
+              high: parseFloat(parseFloat(ticker.h).toFixed(2)),
+              low: parseFloat(parseFloat(ticker.l).toFixed(2)),
+              timestamp: Date.now(),
+            };
+          }
+        }
+      } catch (err) {
+        console.error('WebSocket message parse error:', err);
       }
-      
-      const data = await response.json();
-      
-      return {
-        price: parseFloat(data.lastPrice),
-        previousClose: parseFloat(data.prevClosePrice),
-        high: parseFloat(data.highPrice),
-        low: parseFloat(data.lowPrice),
-        volume: parseFloat(data.volume),
-        priceChange: parseFloat(data.priceChange),
-        priceChangePercent: parseFloat(data.priceChangePercent),
-      };
-    } catch (error) {
-      console.error(`Binance fetch error for ${binanceSymbol}:`, error);
-      return null;
-    }
+    });
+    
+    ws.on('error', (error: Error) => {
+      console.error('Binance WebSocket error:', error.message);
+    });
+    
+    ws.on('close', () => {
+      console.log('Binance WebSocket disconnected, reconnecting in 3 seconds...');
+      setTimeout(connectBinanceWebSocket, 3000);
+    });
+    
+    return ws;
   }
 
+  // Start WebSocket connection
+  connectBinanceWebSocket();
+
+  // API endpoint - returns WebSocket data
   app.get("/api/market/prices", async (req, res) => {
     try {
-      // Return cached data if fresh (within 500ms)
-      if (marketDataCache && (Date.now() - marketDataCache.timestamp) < CACHE_DURATION) {
-        return res.json(marketDataCache.data);
+      const prices = [];
+      
+      // Get BTC price
+      if (liveMarketData['BTC'] && liveMarketData['BTC'].price > 0) {
+        prices.push(liveMarketData['BTC']);
+      } else {
+        prices.push({ ...DEFAULT_PRICES['BTC'], timestamp: Date.now() });
       }
-
-      const symbols = Object.keys(BINANCE_SYMBOLS);
-      const pricePromises = symbols.map(async (symbol) => {
-        const binanceSymbol = BINANCE_SYMBOLS[symbol];
-        try {
-          const quote = await fetchBinanceQuote(binanceSymbol);
-          
-          if (!quote || quote.price === 0) {
-            return null;
-          }
-          
-          return {
-            symbol,
-            price: parseFloat(quote.price.toFixed(2)),
-            change: parseFloat(quote.priceChange.toFixed(2)),
-            changePercent: parseFloat(quote.priceChangePercent.toFixed(2)),
-            high: parseFloat(quote.high.toFixed(2)),
-            low: parseFloat(quote.low.toFixed(2)),
-            timestamp: Date.now(),
-          };
-        } catch (err) {
-          console.error(`Failed to fetch ${symbol}:`, err);
-          return null;
-        }
-      });
-
-      const results = await Promise.all(pricePromises);
-      const validResults = results.filter(r => r !== null);
-
-      if (validResults.length === 0) {
-        // Return cached data if available (up to 60 seconds old)
-        if (marketDataCache && (Date.now() - marketDataCache.timestamp) < CACHE_MAX_AGE) {
-          console.log('Binance API failed, returning cached data');
-          return res.json({ ...marketDataCache.data, cached: true });
-        }
-        // Return default prices as last resort
-        console.log('Binance API failed, returning default prices');
-        return res.json({ prices: DEFAULT_PRICES, timestamp: Date.now(), cached: true });
+      
+      // Get ETH price
+      if (liveMarketData['ETH'] && liveMarketData['ETH'].price > 0) {
+        prices.push(liveMarketData['ETH']);
+      } else {
+        prices.push({ ...DEFAULT_PRICES['ETH'], timestamp: Date.now() });
       }
-
-      // Update cache with fresh data
-      marketDataCache = {
-        data: { prices: validResults, timestamp: Date.now() },
-        timestamp: Date.now(),
-      };
-
-      res.json(marketDataCache.data);
+      
+      res.json({ prices, timestamp: Date.now() });
     } catch (error) {
       console.error("Market data error:", error);
-      // Return cached data or defaults on any error
-      if (marketDataCache && (Date.now() - marketDataCache.timestamp) < CACHE_MAX_AGE) {
-        return res.json({ ...marketDataCache.data, cached: true });
-      }
-      res.json({ prices: DEFAULT_PRICES, timestamp: Date.now(), cached: true });
+      res.json({ 
+        prices: [
+          { ...DEFAULT_PRICES['BTC'], timestamp: Date.now() },
+          { ...DEFAULT_PRICES['ETH'], timestamp: Date.now() }
+        ], 
+        timestamp: Date.now() 
+      });
     }
   });
 
@@ -1986,40 +1982,20 @@ export async function registerRoutes(
   app.get("/api/market/price/:symbol", async (req, res) => {
     try {
       const { symbol } = req.params;
-      const binanceSymbol = BINANCE_SYMBOLS[symbol];
       
-      if (!binanceSymbol) {
+      if (!['BTC', 'ETH'].includes(symbol)) {
         return res.status(400).json({ error: "Unknown symbol" });
       }
 
-      const quote = await fetchBinanceQuote(binanceSymbol);
+      if (liveMarketData[symbol] && liveMarketData[symbol].price > 0) {
+        return res.json(liveMarketData[symbol]);
+      }
       
-      if (!quote || quote.price === 0) {
-        // Return default price for this symbol
-        const defaultPrice = DEFAULT_PRICES.find(p => p.symbol === symbol);
-        if (defaultPrice) {
-          return res.json({ ...defaultPrice, cached: true });
-        }
-        return res.json({ symbol, price: 0, change: 0, changePercent: 0, high: 0, low: 0, timestamp: Date.now(), cached: true });
-      }
-
-      res.json({
-        symbol,
-        price: parseFloat(quote.price.toFixed(2)),
-        change: parseFloat(quote.priceChange.toFixed(2)),
-        changePercent: parseFloat(quote.priceChangePercent.toFixed(2)),
-        high: parseFloat(quote.high.toFixed(2)),
-        low: parseFloat(quote.low.toFixed(2)),
-        timestamp: Date.now(),
-      });
+      // Return default price
+      res.json({ ...DEFAULT_PRICES[symbol], timestamp: Date.now() });
     } catch (error) {
-      // Return default price on error
       const { symbol } = req.params;
-      const defaultPrice = DEFAULT_PRICES.find(p => p.symbol === symbol);
-      if (defaultPrice) {
-        return res.json({ ...defaultPrice, cached: true });
-      }
-      res.json({ symbol, price: 0, change: 0, changePercent: 0, high: 0, low: 0, timestamp: Date.now(), cached: true });
+      res.json({ ...DEFAULT_PRICES[symbol] || DEFAULT_PRICES['BTC'], timestamp: Date.now() });
     }
   });
 
