@@ -1871,9 +1871,9 @@ export async function registerRoutes(
 
   // ==================== REAL-TIME MARKET DATA (Binance API) ====================
   
-  // Cache for market data (refresh every 1 second for real-time updates)
+  // Cache for market data (refresh every 500ms for real-time updates)
   let marketDataCache: { data: any; timestamp: number } | null = null;
-  const CACHE_DURATION = 1000; // 1 second for real-time updates
+  const CACHE_DURATION = 500; // 500ms for real-time updates
 
   // Binance symbol mapping
   const BINANCE_SYMBOLS: Record<string, string> = {

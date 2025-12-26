@@ -36,10 +36,23 @@ export function useMarketData() {
   const lastApiPrices = useRef<Record<string, { price: number; change: number; changePercent: number; high: number; low: number }>>({});
 
   useEffect(() => {
-    // Fetch real prices from API
+    // Fetch real prices from API with timeout
     const fetchRealPrices = async () => {
       try {
-        const response = await fetch('/api/market/prices');
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        
+        const response = await fetch('/api/market/prices', {
+          signal: controller.signal,
+          cache: 'no-store'
+        });
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+          setApiAvailable(false);
+          return false;
+        }
+        
         const result = await response.json();
         
         if (result.fallback || !result.prices) {
@@ -52,7 +65,6 @@ export function useMarketData() {
         setData(prev => prev.map(item => {
           const apiPrice = result.prices.find((p: any) => p.symbol === item.symbol);
           if (apiPrice) {
-            // Store API prices as the authoritative source
             lastApiPrices.current[item.symbol] = {
               price: apiPrice.price,
               change: apiPrice.change,
@@ -73,85 +85,23 @@ export function useMarketData() {
         }));
         return true;
       } catch (error) {
-        console.log('Falling back to simulation mode');
         setApiAvailable(false);
         return false;
       }
     };
 
-    // No micro-simulation - use exact API prices for 100% sync with server
-    const syncWithApi = () => {
-      if (!apiAvailable) return;
-      
-      setData(prev => prev.map(item => {
-        const apiData = lastApiPrices.current[item.symbol];
-        if (!apiData) return item;
-        
-        // Use exact API price without any modification
-        return {
-          ...item,
-          price: apiData.price,
-          change: apiData.change,
-          changePercent: apiData.changePercent,
-          high: apiData.high,
-          low: apiData.low,
-        };
-      }));
-    };
+    // Initial API fetch with multiple retries
+    fetchRealPrices();
+    setTimeout(fetchRealPrices, 300);
+    setTimeout(fetchRealPrices, 800);
 
-    // Fallback simulation only when API is not available
-    const fallbackSimulate = () => {
-      if (apiAvailable) return;
-      
-      setData(prev => prev.map(item => {
-        const basePrice = BASE_PRICES[item.symbol] || item.price;
-        const maxDev = MAX_DEVIATION[item.symbol] || 3;
-        const smallChange = (Math.random() - 0.5) * 0.3;
-        let newPrice = item.price + smallChange;
-        
-        const deviation = newPrice - basePrice;
-        if (Math.abs(deviation) > maxDev) {
-          newPrice = newPrice - deviation * 0.1;
-        }
-        newPrice = Math.max(basePrice - maxDev, Math.min(basePrice + maxDev, newPrice));
-        
-        const change = newPrice - basePrice;
-        const changePercent = (change / basePrice) * 100;
-        
-        return {
-          ...item,
-          price: parseFloat(newPrice.toFixed(2)),
-          change: parseFloat(change.toFixed(2)),
-          changePercent: parseFloat(changePercent.toFixed(2)),
-        };
-      }));
-    };
-
-    // Initial API fetch with retry
-    fetchRealPrices().then(success => {
-      if (!success) {
-        // Retry after 1 second if first attempt fails
-        setTimeout(fetchRealPrices, 1000);
-      }
-    });
-
-    // Fetch from API every 2 seconds for more real-time updates
-    const apiInterval = setInterval(fetchRealPrices, 2000);
-    
-    // Sync prices (every 500ms) - exact API prices, no random variation
-    const simInterval = setInterval(() => {
-      if (apiAvailable) {
-        syncWithApi();
-      } else {
-        fallbackSimulate();
-      }
-    }, 500);
+    // Fetch from API every 1 second for real-time updates
+    const apiInterval = setInterval(fetchRealPrices, 1000);
 
     return () => {
       clearInterval(apiInterval);
-      clearInterval(simInterval);
     };
-  }, [apiAvailable]);
+  }, []);
 
   return data;
 }

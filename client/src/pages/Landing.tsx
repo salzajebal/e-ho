@@ -72,23 +72,31 @@ function useLandingMarketData() {
   const lastApiPrices = useRef<Record<string, { price: number; changePercent: number }>>({});
 
   useEffect(() => {
-    // Fetch real prices from API
+    // Fetch real prices from API with timeout
     const fetchRealPrices = async () => {
       try {
-        const response = await fetch('/api/market/prices');
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        
+        const response = await fetch('/api/market/prices', {
+          signal: controller.signal,
+          cache: 'no-store'
+        });
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) return;
+        
         const result = await response.json();
         
         if (!result.fallback && result.prices) {
           setMarkets(prev => prev.map(m => {
             const apiPrice = result.prices.find((p: any) => p.symbol === m.symbol);
             if (apiPrice) {
-              // Store as authoritative price
               lastApiPrices.current[m.symbol] = {
                 price: apiPrice.price,
                 changePercent: apiPrice.changePercent,
               };
               
-              // Initialize history if empty
               if (historyRef.current[m.symbol].length === 0) {
                 const history: number[] = [];
                 let price = apiPrice.price * 0.998;
@@ -112,43 +120,20 @@ function useLandingMarketData() {
           }));
         }
       } catch (error) {
-        console.log('Using fallback prices');
+        // Silent fail - keep last known prices
       }
     };
 
-    // Initial fetch with retry
-    fetchRealPrices().then(() => {
-      // Retry after 500ms if still have zero prices
-      setTimeout(fetchRealPrices, 500);
-    });
+    // Initial fetch with multiple retries
+    fetchRealPrices();
+    setTimeout(fetchRealPrices, 300);
+    setTimeout(fetchRealPrices, 800);
 
-    // Fetch from API every 3 seconds for more real-time updates
-    const apiInterval = setInterval(fetchRealPrices, 3000);
-
-    // Micro-simulation for smooth UI (stays close to API price)
-    const simInterval = setInterval(() => {
-      setMarkets(prev => prev.map(m => {
-        const apiData = lastApiPrices.current[m.symbol];
-        if (!apiData || apiData.price === 0) return m;
-        
-        // Very small variation around API price (0.01% max)
-        const microChange = apiData.price * 0.0001 * (Math.random() - 0.5);
-        const newPrice = apiData.price + microChange;
-        
-        historyRef.current[m.symbol] = [...historyRef.current[m.symbol].slice(-19), newPrice];
-        
-        return {
-          ...m,
-          price: parseFloat(newPrice.toFixed(2)),
-          changePercent: apiData.changePercent,
-          priceHistory: [...historyRef.current[m.symbol]]
-        };
-      }));
-    }, 1000);
+    // Fetch from API every 1 second for real-time updates
+    const apiInterval = setInterval(fetchRealPrices, 1000);
 
     return () => {
       clearInterval(apiInterval);
-      clearInterval(simInterval);
     };
   }, []);
 
