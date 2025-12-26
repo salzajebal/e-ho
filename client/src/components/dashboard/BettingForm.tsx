@@ -52,26 +52,12 @@ const isWeekday = (): boolean => {
   return dayOfWeek >= 1 && dayOfWeek <= 5;
 };
 
-// Check if symbol is allowed for current day
-// Weekdays (Mon-Fri): NDX, GOLD all allowed
-// Weekends (Sat-Sun): GOLD only
+// BTC and ETH are available 24/7
 const isSymbolAllowedToday = (symbol: string): { allowed: boolean; message: string } => {
-  const weekday = isWeekday();
-  
-  // GOLD is allowed every day
-  if (symbol === 'GOLD') {
+  if (symbol === 'BTC' || symbol === 'ETH') {
     return { allowed: true, message: '' };
   }
-  
-  // NDX is only allowed on weekdays
-  if (!weekday && symbol === 'NDX') {
-    return {
-      allowed: false,
-      message: `나스닥(NDX) 거래는 평일(월요일~금요일)에만 가능합니다.\n\n주말에는 금(GOLD) 거래만 가능합니다.`
-    };
-  }
-  
-  return { allowed: true, message: '' };
+  return { allowed: false, message: '비트코인(BTC)과 이더리움(ETH)만 거래 가능합니다.' };
 };
 
 // Calculate current round number based on KST time (seconds precision)

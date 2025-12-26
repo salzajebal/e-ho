@@ -1,13 +1,14 @@
-# 명인FX - Binary Options Trading Platform
+# COINONE - Cryptocurrency Trading Platform
 
 ## Overview
 
-This is a real-time binary options trading platform styled after Binance's interface. Users can place time-limited bets (1-5 minutes) on price movements (long/short) for various assets including cryptocurrencies, forex, commodities, and indices. The platform features live market data via Binance WebSocket, interactive candlestick charts using lightweight-charts, and a demo account system with virtual balance.
+This is a real-time cryptocurrency trading platform styled after Coinone's interface. Users can place 2-minute bets on price movements (long/short) for Bitcoin (BTC) and Ethereum (ETH). The platform features live market data via Binance REST API, interactive candlestick charts using lightweight-charts, and an account system with virtual balance.
 
 ## Trading Rules
 - **Operating Hours**: 9AM - 6PM KST (Korean Standard Time)
-- **NDX (NASDAQ 100)**: Weekdays only (Monday - Friday)
-- **GOLD**: Available every day (including weekends and holidays)
+- **Bitcoin (BTC)**: Available 24/7
+- **Ethereum (ETH)**: Available 24/7
+- **Trading Duration**: 2 minutes only
 - **New User Balance**: Starts at 0원 (deposit required)
 
 ## User Preferences

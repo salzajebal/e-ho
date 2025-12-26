@@ -11,7 +11,7 @@ interface Game {
 
 interface MarketOverviewProps {
   data: MarketData[];
-  games: Game[];
+  games: readonly Game[];
   onSelectGame: (gameId: string) => void;
   selectedGameId: string;
 }

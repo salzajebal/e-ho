@@ -20,9 +20,9 @@ import { useLogin, useRegister, useAuth, useLogout } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-const NASDAQ_STOCKS = [
-  { symbol: "NDX", name: "NASDAQ 100" },
-  { symbol: "GOLD", name: "GOLD" },
+const CRYPTO_ASSETS = [
+  { symbol: "BTC", name: "Bitcoin" },
+  { symbol: "ETH", name: "Ethereum" },
 ];
 
 const KOREAN_BANKS = [
@@ -53,13 +53,13 @@ interface LandingMarketData {
 
 function useLandingMarketData() {
   const [markets, setMarkets] = useState<LandingMarketData[]>([
-    { symbol: "NDX", name: "NASDAQ 100", price: 0, changePercent: 0, priceHistory: [] },
-    { symbol: "GOLD", name: "GOLD", price: 0, changePercent: 0, priceHistory: [] },
+    { symbol: "BTC", name: "Bitcoin", price: 0, changePercent: 0, priceHistory: [] },
+    { symbol: "ETH", name: "Ethereum", price: 0, changePercent: 0, priceHistory: [] },
   ]);
   
   const historyRef = useRef<Record<string, number[]>>({
-    "NDX": [],
-    "GOLD": [],
+    "BTC": [],
+    "ETH": [],
   });
   
   const lastApiPrices = useRef<Record<string, { price: number; changePercent: number }>>({});
@@ -429,7 +429,7 @@ export default function Landing() {
                   옵션거래 <ChevronDown className="w-3 h-3" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="bg-[#161b22] border-white/10">
-                  {NASDAQ_STOCKS.map((stock) => (
+                  {CRYPTO_ASSETS.map((stock) => (
                     <DropdownMenuItem 
                       key={stock.symbol}
                       className="text-gray-300 hover:text-blue-500 hover:bg-white/5 cursor-pointer"
@@ -1111,10 +1111,10 @@ export default function Landing() {
               </p>
             </div>
             <div>
-              <h4 className="font-semibold mb-4 text-gray-300">옵션거래</h4>
+              <h4 className="font-semibold mb-4 text-gray-300">암호화폐 거래</h4>
               <ul className="space-y-2 text-gray-500 text-sm">
-                <li><Link href="/trade" className="hover:text-blue-500 transition-colors" data-testid="link-trade-nasdaq">NASDAQ 100</Link></li>
-                <li><Link href="/trade" className="hover:text-blue-500 transition-colors" data-testid="link-trade-sp500">S&P 500</Link></li>
+                <li><Link href="/trade" className="hover:text-blue-500 transition-colors" data-testid="link-trade-btc">Bitcoin (BTC)</Link></li>
+                <li><Link href="/trade" className="hover:text-blue-500 transition-colors" data-testid="link-trade-eth">Ethereum (ETH)</Link></li>
               </ul>
             </div>
             <div>

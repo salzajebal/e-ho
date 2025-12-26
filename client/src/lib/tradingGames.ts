@@ -1,11 +1,7 @@
-// 6 fixed trading games: symbol + duration combinations
+// 2 fixed trading games: BTC and ETH with 2 minute duration
 export const TRADING_GAMES = [
-  { id: 'NDX-60', symbol: 'NDX', duration: 60, label: 'NASDAQ 1분' },
-  { id: 'NDX-180', symbol: 'NDX', duration: 180, label: 'NASDAQ 3분' },
-  { id: 'NDX-300', symbol: 'NDX', duration: 300, label: 'NASDAQ 5분' },
-  { id: 'GOLD-60', symbol: 'GOLD', duration: 60, label: 'GOLD 1분' },
-  { id: 'GOLD-180', symbol: 'GOLD', duration: 180, label: 'GOLD 3분' },
-  { id: 'GOLD-300', symbol: 'GOLD', duration: 300, label: 'GOLD 5분' },
+  { id: 'BTC-120', symbol: 'BTC', duration: 120, label: '비트코인 2분' },
+  { id: 'ETH-120', symbol: 'ETH', duration: 120, label: '이더리움 2분' },
 ] as const;
 
 export type TradingGame = typeof TRADING_GAMES[number];

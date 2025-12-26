@@ -163,13 +163,8 @@ const KOREAN_BANKS = [
 ];
 
 const SYMBOL_NAMES: Record<string, string> = {
-  'NDX': 'NASDAQ 100',
-  'GOLD': 'GOLD',
-  'BTCUSDT': 'BTC/USDT',
-  'ETHUSDT': 'ETH/USDT',
-  'USDKRW': 'USD/KRW',
-  'OIL': 'Oil',
-  'HSI': 'Hang Seng',
+  'BTC': 'Bitcoin',
+  'ETH': 'Ethereum',
 };
 
 function AdminLogin() {
@@ -433,10 +428,10 @@ export default function Admin() {
 
   // Forced betting states
   const [forcedBetUserId, setForcedBetUserId] = useState("");
-  const [forcedBetSymbol, setForcedBetSymbol] = useState("NDX");
+  const [forcedBetSymbol, setForcedBetSymbol] = useState("BTC");
   const [forcedBetDirection, setForcedBetDirection] = useState<"long" | "short">("long");
   const [forcedBetAmount, setForcedBetAmount] = useState("");
-  const [forcedBetDuration, setForcedBetDuration] = useState(60);
+  const [forcedBetDuration, setForcedBetDuration] = useState(120);
   const [isPlacingForcedBet, setIsPlacingForcedBet] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -790,7 +785,7 @@ export default function Admin() {
   });
 
   // Available symbols for maintenance
-  const availableSymbols = ["NDX", "GOLD"];
+  const availableSymbols = ["BTC", "ETH"];
 
   // Notification for new pending users (가입)
   useEffect(() => {
@@ -2994,8 +2989,8 @@ export default function Admin() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-card border-border">
-                      <SelectItem value="NDX">NDX (NASDAQ 100)</SelectItem>
-                      <SelectItem value="GOLD">GOLD (금)</SelectItem>
+                      <SelectItem value="BTC">BTC (비트코인)</SelectItem>
+                      <SelectItem value="ETH">ETH (이더리움)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -3102,10 +3097,10 @@ export default function Admin() {
 
                       toast.success('강제 배팅이 성공적으로 등록되었습니다');
                       setForcedBetUserId('');
-                      setForcedBetSymbol('NDX');
+                      setForcedBetSymbol('BTC');
                       setForcedBetDirection('long');
                       setForcedBetAmount('');
-                      setForcedBetDuration(60);
+                      setForcedBetDuration(120);
                       refetchBets();
                       refetchUsers();
                     } catch (error: any) {

@@ -9,24 +9,24 @@ export interface MarketData {
   high: number;
   low: number;
   volume: number;
-  category: '나스닥' | '지수';
+  category: '암호화폐';
 }
 
 // Realistic base prices (anchor points) - prices will fluctuate within small range of these
 const BASE_PRICES: Record<string, number> = {
-  'NDX': 21547,
-  'GOLD': 2650,
+  'BTC': 95000,
+  'ETH': 3400,
 };
 
 // Maximum deviation from base price (in points)
 const MAX_DEVIATION: Record<string, number> = {
-  'NDX': 5,      // Index: ±5 points
-  'GOLD': 2,     // Gold: ±2 points
+  'BTC': 500,      // Bitcoin: ±500 points
+  'ETH': 50,       // Ethereum: ±50 points
 };
 
 export const INITIAL_MARKET_DATA: MarketData[] = [
-  { symbol: 'NDX', name: 'NASDAQ 100', price: 21547.80, change: -110.50, changePercent: -0.51, high: 21660.00, low: 21520.00, volume: 920000, category: '지수' },
-  { symbol: 'GOLD', name: 'GOLD', price: 2650.30, change: 12.50, changePercent: 0.47, high: 2660.00, low: 2640.00, volume: 450000, category: '지수' },
+  { symbol: 'BTC', name: 'Bitcoin', price: 95000.00, change: 0, changePercent: 0, high: 96000.00, low: 94000.00, volume: 0, category: '암호화폐' },
+  { symbol: 'ETH', name: 'Ethereum', price: 3400.00, change: 0, changePercent: 0, high: 3500.00, low: 3300.00, volume: 0, category: '암호화폐' },
 ];
 
 // Hook to manage real-time data with API integration

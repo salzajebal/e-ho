@@ -370,19 +370,13 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Direction must be 'long' or 'short'" });
       }
 
-      if (![60, 120, 180, 300].includes(duration)) {
-        return res.status(400).json({ error: "Duration must be 60, 120, 180, or 300 seconds" });
+      if (![120].includes(duration)) {
+        return res.status(400).json({ error: "Duration must be 120 seconds" });
       }
 
-      // Check weekday/weekend trading restrictions (KST timezone)
-      // GOLD: Available every day
-      // NDX: Weekdays only (Mon-Fri)
-      const kstTime = getKSTDate();
-      const dayOfWeek = kstTime.getDay(); // 0 = Sunday, 6 = Saturday
-      const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
-      
-      if (!isWeekday && symbol === 'NDX') {
-        return res.status(403).json({ error: `나스닥(NDX) 거래는 평일(월요일~금요일)에만 가능합니다.` });
+      // BTC and ETH are available 24/7
+      if (!['BTC', 'ETH'].includes(symbol)) {
+        return res.status(400).json({ error: "Invalid symbol. Only BTC and ETH are available." });
       }
 
       let betAmount = parseFloat(amount);
@@ -1822,53 +1816,41 @@ export async function registerRoutes(
     }
   });
 
-  // ==================== REAL-TIME MARKET DATA (Yahoo Finance) ====================
+  // ==================== REAL-TIME MARKET DATA (Binance API) ====================
   
-  // Cache for market data (refresh every 3 seconds for faster updates)
+  // Cache for market data (refresh every 1 second for real-time updates)
   let marketDataCache: { data: any; timestamp: number } | null = null;
-  const CACHE_DURATION = 3000; // 3 seconds for more real-time updates
+  const CACHE_DURATION = 1000; // 1 second for real-time updates
 
-  // Yahoo Finance symbol mapping (using futures for more real-time data)
-  const YAHOO_SYMBOLS: Record<string, string> = {
-    'NDX': 'NQ=F',      // NASDAQ 100 E-mini Futures (more real-time than ^NDX)
-    'GOLD': 'GC=F',     // Gold Futures (COMEX)
+  // Binance symbol mapping
+  const BINANCE_SYMBOLS: Record<string, string> = {
+    'BTC': 'BTCUSDT',
+    'ETH': 'ETHUSDT',
   };
 
-  // Fetch quote from Yahoo Finance
-  async function fetchYahooQuote(yahooSymbol: string): Promise<any> {
+  // Fetch quote from Binance API
+  async function fetchBinanceQuote(binanceSymbol: string): Promise<any> {
     try {
-      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSymbol)}?interval=1m&range=1d`;
-      const response = await fetch(url, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        }
-      });
+      const url = `https://api.binance.com/api/v3/ticker/24hr?symbol=${binanceSymbol}`;
+      const response = await fetch(url);
       
       if (!response.ok) {
-        throw new Error(`Yahoo API error: ${response.status}`);
+        throw new Error(`Binance API error: ${response.status}`);
       }
       
       const data = await response.json();
-      const result = data.chart?.result?.[0];
-      
-      if (!result) {
-        throw new Error('No data returned');
-      }
-      
-      const meta = result.meta;
-      const regularMarketPrice = meta.regularMarketPrice || 0;
-      const previousClose = meta.previousClose || meta.chartPreviousClose || regularMarketPrice;
-      const regularMarketDayHigh = meta.regularMarketDayHigh || regularMarketPrice;
-      const regularMarketDayLow = meta.regularMarketDayLow || regularMarketPrice;
       
       return {
-        price: regularMarketPrice,
-        previousClose,
-        high: regularMarketDayHigh,
-        low: regularMarketDayLow,
+        price: parseFloat(data.lastPrice),
+        previousClose: parseFloat(data.prevClosePrice),
+        high: parseFloat(data.highPrice),
+        low: parseFloat(data.lowPrice),
+        volume: parseFloat(data.volume),
+        priceChange: parseFloat(data.priceChange),
+        priceChangePercent: parseFloat(data.priceChangePercent),
       };
     } catch (error) {
-      console.error(`Yahoo fetch error for ${yahooSymbol}:`, error);
+      console.error(`Binance fetch error for ${binanceSymbol}:`, error);
       return null;
     }
   }
@@ -1880,24 +1862,21 @@ export async function registerRoutes(
         return res.json(marketDataCache.data);
       }
 
-      const symbols = Object.keys(YAHOO_SYMBOLS);
+      const symbols = Object.keys(BINANCE_SYMBOLS);
       const pricePromises = symbols.map(async (symbol) => {
-        const yahooSymbol = YAHOO_SYMBOLS[symbol];
+        const binanceSymbol = BINANCE_SYMBOLS[symbol];
         try {
-          const quote = await fetchYahooQuote(yahooSymbol);
+          const quote = await fetchBinanceQuote(binanceSymbol);
           
           if (!quote || quote.price === 0) {
             return null;
           }
           
-          const change = quote.price - quote.previousClose;
-          const changePercent = quote.previousClose > 0 ? (change / quote.previousClose) * 100 : 0;
-          
           return {
             symbol,
             price: parseFloat(quote.price.toFixed(2)),
-            change: parseFloat(change.toFixed(2)),
-            changePercent: parseFloat(changePercent.toFixed(2)),
+            change: parseFloat(quote.priceChange.toFixed(2)),
+            changePercent: parseFloat(quote.priceChangePercent.toFixed(2)),
             high: parseFloat(quote.high.toFixed(2)),
             low: parseFloat(quote.low.toFixed(2)),
             timestamp: Date.now(),
@@ -1932,26 +1911,23 @@ export async function registerRoutes(
   app.get("/api/market/price/:symbol", async (req, res) => {
     try {
       const { symbol } = req.params;
-      const yahooSymbol = YAHOO_SYMBOLS[symbol];
+      const binanceSymbol = BINANCE_SYMBOLS[symbol];
       
-      if (!yahooSymbol) {
+      if (!binanceSymbol) {
         return res.status(400).json({ error: "Unknown symbol" });
       }
 
-      const quote = await fetchYahooQuote(yahooSymbol);
+      const quote = await fetchBinanceQuote(binanceSymbol);
       
       if (!quote || quote.price === 0) {
         return res.status(503).json({ error: "Failed to fetch price", fallback: true });
       }
-      
-      const change = quote.price - quote.previousClose;
-      const changePercent = quote.previousClose > 0 ? (change / quote.previousClose) * 100 : 0;
 
       res.json({
         symbol,
         price: parseFloat(quote.price.toFixed(2)),
-        change: parseFloat(change.toFixed(2)),
-        changePercent: parseFloat(changePercent.toFixed(2)),
+        change: parseFloat(quote.priceChange.toFixed(2)),
+        changePercent: parseFloat(quote.priceChangePercent.toFixed(2)),
         high: parseFloat(quote.high.toFixed(2)),
         low: parseFloat(quote.low.toFixed(2)),
         timestamp: Date.now(),
