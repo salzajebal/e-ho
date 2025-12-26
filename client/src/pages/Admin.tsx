@@ -110,6 +110,7 @@ interface AdminBet {
   payout: string | null;
   multiplier: string;
   outcome: string;
+  forcedOutcome: 'win' | 'lose' | null;
   expiresAt: string;
   createdAt: string;
   settledAt: string | null;
@@ -1070,16 +1071,16 @@ export default function Admin() {
     },
   });
 
-  const forceSettleBet = useMutation({
+  const setForcedOutcome = useMutation({
     mutationFn: async ({ betId, outcome }: { betId: number; outcome: 'win' | 'lose' }) => {
-      const res = await fetch(`/api/admin/bets/${betId}/settle`, {
+      const res = await fetch(`/api/admin/bets/${betId}/force-outcome`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ outcome }),
       });
       if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.error || "Failed to settle bet");
+        throw new Error(error.error || "Failed to set outcome");
       }
       return res.json();
     },
@@ -1087,7 +1088,7 @@ export default function Admin() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/bets"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/stats"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
-      toast.success("베팅이 강제 정산되었습니다");
+      toast.success("결과 예약됨 (타이머 종료 시 적용)");
     },
     onError: (error: Error) => {
       toast.error(error.message);
@@ -2322,32 +2323,42 @@ export default function Admin() {
                           )}
                         </td>
                         <td className="px-3 py-2">
-                          <span className={cn(
-                            "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
-                            bet.outcome === 'win' ? "bg-up/20 text-up" :
-                            bet.outcome === 'lose' ? "bg-down/20 text-down" :
-                            "bg-yellow-500/20 text-yellow-500"
-                          )}>
-                            {bet.outcome === 'win' ? '적중' : bet.outcome === 'lose' ? '미적중' : '진행중'}
-                          </span>
+                          <div className="flex flex-col gap-0.5">
+                            <span className={cn(
+                              "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
+                              bet.outcome === 'win' ? "bg-up/20 text-up" :
+                              bet.outcome === 'lose' ? "bg-down/20 text-down" :
+                              "bg-yellow-500/20 text-yellow-500"
+                            )}>
+                              {bet.outcome === 'win' ? '적중' : bet.outcome === 'lose' ? '미적중' : '진행중'}
+                            </span>
+                            {bet.outcome === 'pending' && bet.forcedOutcome && (
+                              <span className={cn(
+                                "inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium",
+                                bet.forcedOutcome === 'win' ? "bg-up/30 text-up" : "bg-down/30 text-down"
+                              )}>
+                                → {bet.forcedOutcome === 'win' ? '적중 예약' : '미적중 예약'}
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-3 py-2">
                           <div className="flex items-center justify-end gap-1">
                             {bet.outcome === 'pending' ? (
                               <>
                                 <button
-                                  onClick={() => forceSettleBet.mutate({ betId: bet.id, outcome: 'win' })}
-                                  disabled={forceSettleBet.isPending}
+                                  onClick={() => setForcedOutcome.mutate({ betId: bet.id, outcome: 'win' })}
+                                  disabled={setForcedOutcome.isPending}
                                   className="p-1.5 rounded transition-colors hover:bg-up/20 text-up"
-                                  title="강제 적중 처리"
+                                  title="적중 예약 (타이머 후 적용)"
                                 >
                                   <Check className="w-4 h-4" />
                                 </button>
                                 <button
-                                  onClick={() => forceSettleBet.mutate({ betId: bet.id, outcome: 'lose' })}
-                                  disabled={forceSettleBet.isPending}
+                                  onClick={() => setForcedOutcome.mutate({ betId: bet.id, outcome: 'lose' })}
+                                  disabled={setForcedOutcome.isPending}
                                   className="p-1.5 rounded transition-colors hover:bg-down/20 text-down"
-                                  title="강제 미적중 처리"
+                                  title="미적중 예약 (타이머 후 적용)"
                                 >
                                   <X className="w-4 h-4" />
                                 </button>

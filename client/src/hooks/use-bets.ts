@@ -8,6 +8,7 @@ export interface Bet {
   direction: 'long' | 'short';
   amount: string;
   duration: number;
+  roundNumber: number | null;
   strikePrice: string;
   closePrice: string | null;
   payout: string | null;

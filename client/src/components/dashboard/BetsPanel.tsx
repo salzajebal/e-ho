@@ -131,6 +131,11 @@ function BetRow({ bet, currentPrice, onExpire }: { bet: Bet; currentPrice: numbe
           )}>
             {bet.direction.toUpperCase()}
           </span>
+          {bet.outcome === 'pending' && bet.roundNumber != null && (
+            <span className="text-xs px-1.5 py-0.5 rounded shrink-0 bg-primary/20 text-primary font-mono">
+              {bet.roundNumber}회차
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <span>진입가: {strikePrice.toLocaleString()}</span>
