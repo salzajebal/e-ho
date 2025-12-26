@@ -1870,132 +1870,147 @@ export async function registerRoutes(
     }
   });
 
-  // ==================== REAL-TIME MARKET DATA (Binance WebSocket) ====================
+  // ==================== 바이낸스 실시간 시세 (WebSocket) ====================
   
-  // Real-time price storage from WebSocket
-  const liveMarketData: Record<string, {
-    symbol: string;
-    price: number;
-    change: number;
-    changePercent: number;
-    high: number;
-    low: number;
-    timestamp: number;
-  }> = {};
-
-  // Default fallback prices
-  const DEFAULT_PRICES: Record<string, any> = {
-    'BTC': { symbol: 'BTC', price: 88700, change: 0, changePercent: 0, high: 89500, low: 87000, timestamp: Date.now() },
-    'ETH': { symbol: 'ETH', price: 2960, change: 0, changePercent: 0, high: 3000, low: 2900, timestamp: Date.now() },
+  // 실시간 가격 저장소
+  const binancePrices: { [key: string]: { price: number; change: number; changePercent: number; high: number; low: number; volume: number; updatedAt: number } } = {
+    BTC: { price: 0, change: 0, changePercent: 0, high: 0, low: 0, volume: 0, updatedAt: 0 },
+    ETH: { price: 0, change: 0, changePercent: 0, high: 0, low: 0, volume: 0, updatedAt: 0 }
   };
 
-  // Symbol mapping
-  const SYMBOL_MAP: Record<string, string> = {
-    'btcusdt': 'BTC',
-    'ethusdt': 'ETH',
-  };
+  // 바이낸스 WebSocket 연결
+  let binanceWs: WebSocket | null = null;
+  let reconnectTimer: NodeJS.Timeout | null = null;
 
-  // Binance WebSocket connection
-  function connectBinanceWebSocket() {
-    const streams = ['btcusdt@ticker', 'ethusdt@ticker'];
-    const wsUrl = `wss://stream.binance.com:9443/stream?streams=${streams.join('/')}`;
+  function startBinanceWebSocket() {
+    if (binanceWs) {
+      try { binanceWs.close(); } catch (e) {}
+    }
+    if (reconnectTimer) {
+      clearTimeout(reconnectTimer);
+      reconnectTimer = null;
+    }
+
+    const wsUrl = 'wss://stream.binance.com:9443/ws';
+    console.log('[Binance] WebSocket 연결 시작...');
     
-    console.log('Connecting to Binance WebSocket...');
-    const ws = new WebSocket(wsUrl);
-    
-    ws.on('open', () => {
-      console.log('Binance WebSocket connected - receiving real-time prices');
+    binanceWs = new WebSocket(wsUrl);
+
+    binanceWs.on('open', () => {
+      console.log('[Binance] WebSocket 연결됨');
+      
+      // BTC, ETH 실시간 티커 구독
+      const subscribeMsg = JSON.stringify({
+        method: 'SUBSCRIBE',
+        params: ['btcusdt@ticker', 'ethusdt@ticker'],
+        id: 1
+      });
+      binanceWs!.send(subscribeMsg);
     });
-    
-    ws.on('message', (data: Buffer) => {
+
+    binanceWs.on('message', (data: Buffer) => {
       try {
-        const message = JSON.parse(data.toString());
-        const ticker = message.data;
+        const msg = JSON.parse(data.toString());
         
-        if (ticker && ticker.s) {
-          const symbol = SYMBOL_MAP[ticker.s.toLowerCase()];
+        // 티커 데이터 처리
+        if (msg.e === '24hrTicker') {
+          const symbol = msg.s === 'BTCUSDT' ? 'BTC' : msg.s === 'ETHUSDT' ? 'ETH' : null;
           if (symbol) {
-            liveMarketData[symbol] = {
-              symbol,
-              price: parseFloat(parseFloat(ticker.c).toFixed(2)),
-              change: parseFloat(parseFloat(ticker.p).toFixed(2)),
-              changePercent: parseFloat(parseFloat(ticker.P).toFixed(2)),
-              high: parseFloat(parseFloat(ticker.h).toFixed(2)),
-              low: parseFloat(parseFloat(ticker.l).toFixed(2)),
-              timestamp: Date.now(),
+            binancePrices[symbol] = {
+              price: parseFloat(msg.c),
+              change: parseFloat(msg.p),
+              changePercent: parseFloat(msg.P),
+              high: parseFloat(msg.h),
+              low: parseFloat(msg.l),
+              volume: parseFloat(msg.v),
+              updatedAt: Date.now()
             };
           }
         }
-      } catch (err) {
-        console.error('WebSocket message parse error:', err);
+      } catch (e) {
+        // 파싱 에러 무시 (구독 응답 등)
       }
     });
-    
-    ws.on('error', (error: Error) => {
-      console.error('Binance WebSocket error:', error.message);
+
+    binanceWs.on('error', (err) => {
+      console.error('[Binance] WebSocket 에러:', err.message);
     });
-    
-    ws.on('close', () => {
-      console.log('Binance WebSocket disconnected, reconnecting in 3 seconds...');
-      setTimeout(connectBinanceWebSocket, 3000);
+
+    binanceWs.on('close', () => {
+      console.log('[Binance] WebSocket 연결 종료, 3초 후 재연결...');
+      reconnectTimer = setTimeout(startBinanceWebSocket, 3000);
     });
-    
-    return ws;
   }
 
-  // Start WebSocket connection
-  connectBinanceWebSocket();
+  // 서버 시작 시 WebSocket 연결
+  startBinanceWebSocket();
 
-  // API endpoint - returns WebSocket data
-  app.get("/api/market/prices", async (req, res) => {
-    try {
-      const prices = [];
-      
-      // Get BTC price
-      if (liveMarketData['BTC'] && liveMarketData['BTC'].price > 0) {
-        prices.push(liveMarketData['BTC']);
+  // 가격 조회 API
+  app.get("/api/market/prices", (req, res) => {
+    const now = Date.now();
+    const prices = [];
+
+    for (const symbol of ['BTC', 'ETH']) {
+      const data = binancePrices[symbol];
+      if (data.price > 0 && (now - data.updatedAt) < 30000) {
+        prices.push({
+          symbol,
+          price: Math.round(data.price * 100) / 100,
+          change: Math.round(data.change * 100) / 100,
+          changePercent: Math.round(data.changePercent * 100) / 100,
+          high: Math.round(data.high * 100) / 100,
+          low: Math.round(data.low * 100) / 100,
+          timestamp: data.updatedAt
+        });
       } else {
-        prices.push({ ...DEFAULT_PRICES['BTC'], timestamp: Date.now() });
+        // 데이터 없거나 오래된 경우 기본값
+        prices.push({
+          symbol,
+          price: symbol === 'BTC' ? 95000 : 3400,
+          change: 0,
+          changePercent: 0,
+          high: symbol === 'BTC' ? 96000 : 3450,
+          low: symbol === 'BTC' ? 94000 : 3350,
+          timestamp: now
+        });
       }
-      
-      // Get ETH price
-      if (liveMarketData['ETH'] && liveMarketData['ETH'].price > 0) {
-        prices.push(liveMarketData['ETH']);
-      } else {
-        prices.push({ ...DEFAULT_PRICES['ETH'], timestamp: Date.now() });
-      }
-      
-      res.json({ prices, timestamp: Date.now() });
-    } catch (error) {
-      console.error("Market data error:", error);
-      res.json({ 
-        prices: [
-          { ...DEFAULT_PRICES['BTC'], timestamp: Date.now() },
-          { ...DEFAULT_PRICES['ETH'], timestamp: Date.now() }
-        ], 
-        timestamp: Date.now() 
-      });
     }
+
+    res.json({ prices, timestamp: now });
   });
 
-  // Single symbol price endpoint
-  app.get("/api/market/price/:symbol", async (req, res) => {
-    try {
-      const { symbol } = req.params;
-      
-      if (!['BTC', 'ETH'].includes(symbol)) {
-        return res.status(400).json({ error: "Unknown symbol" });
-      }
+  // 개별 심볼 가격 조회
+  app.get("/api/market/price/:symbol", (req, res) => {
+    const { symbol } = req.params;
+    const upperSymbol = symbol.toUpperCase();
+    
+    if (!['BTC', 'ETH'].includes(upperSymbol)) {
+      return res.status(400).json({ error: "지원하지 않는 심볼입니다" });
+    }
 
-      if (liveMarketData[symbol] && liveMarketData[symbol].price > 0) {
-        return res.json(liveMarketData[symbol]);
-      }
-      
-      // Return default price
-      res.json({ ...DEFAULT_PRICES[symbol], timestamp: Date.now() });
-    } catch (error) {
-      const { symbol } = req.params;
-      res.json({ ...DEFAULT_PRICES[symbol] || DEFAULT_PRICES['BTC'], timestamp: Date.now() });
+    const now = Date.now();
+    const data = binancePrices[upperSymbol];
+    
+    if (data.price > 0 && (now - data.updatedAt) < 30000) {
+      res.json({
+        symbol: upperSymbol,
+        price: Math.round(data.price * 100) / 100,
+        change: Math.round(data.change * 100) / 100,
+        changePercent: Math.round(data.changePercent * 100) / 100,
+        high: Math.round(data.high * 100) / 100,
+        low: Math.round(data.low * 100) / 100,
+        timestamp: data.updatedAt
+      });
+    } else {
+      res.json({
+        symbol: upperSymbol,
+        price: upperSymbol === 'BTC' ? 95000 : 3400,
+        change: 0,
+        changePercent: 0,
+        high: upperSymbol === 'BTC' ? 96000 : 3450,
+        low: upperSymbol === 'BTC' ? 94000 : 3350,
+        timestamp: now
+      });
     }
   });
 
