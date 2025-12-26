@@ -60,8 +60,8 @@ interface LandingMarketData {
 
 function useLandingMarketData() {
   const [markets, setMarkets] = useState<LandingMarketData[]>([
-    { symbol: "BTC", name: "Bitcoin", price: 0, changePercent: 0, priceHistory: [] },
-    { symbol: "ETH", name: "Ethereum", price: 0, changePercent: 0, priceHistory: [] },
+    { symbol: "BTC", name: "Bitcoin", price: 88700, changePercent: 0, priceHistory: [] },
+    { symbol: "ETH", name: "Ethereum", price: 2960, changePercent: 0, priceHistory: [] },
   ]);
   
   const historyRef = useRef<Record<string, number[]>>({
