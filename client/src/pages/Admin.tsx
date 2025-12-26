@@ -228,7 +228,7 @@ function AdminLogin() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <img 
-            src="/logo.png?v=2" 
+            src="/logo.png?v=3" 
             alt="Coinone Logo" 
             className="w-16 h-16 rounded-xl object-cover mx-auto mb-4"
           />
@@ -1501,7 +1501,7 @@ export default function Admin() {
       <div className="lg:hidden flex items-center justify-between p-3 bg-card border-b border-border sticky top-0 z-50">
         <div className="flex items-center gap-2">
           <img 
-            src="/logo.png?v=2" 
+            src="/logo.png?v=3" 
             alt="Coinone Logo" 
             className="w-7 h-7 rounded-lg object-cover"
           />
@@ -1553,7 +1553,7 @@ export default function Admin() {
         <div className="p-4 border-b border-border">
           <div className="flex items-center gap-2">
             <img 
-              src="/logo.png?v=2" 
+              src="/logo.png?v=3" 
               alt="Coinone Logo" 
               className="w-8 h-8 rounded-lg object-cover"
             />

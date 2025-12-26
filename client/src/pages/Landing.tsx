@@ -409,7 +409,7 @@ export default function Landing() {
             <Link href="/" data-testid="link-logo">
               <div className="flex items-center gap-2 md:gap-3">
                 <img 
-                  src="/logo.png?v=2" 
+                  src="/logo.png?v=3" 
                   alt="Coinone Logo" 
                   className="w-8 h-8 md:w-10 md:h-10 rounded-lg object-cover"
                 />
@@ -745,7 +745,7 @@ export default function Landing() {
         <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
           <div className="mb-8 flex flex-col items-center">
             <img 
-              src="/logo.png?v=2" 
+              src="/logo.png?v=3" 
               alt="Coinone Logo" 
               className="w-24 h-24 rounded-2xl object-cover mb-4"
             />
@@ -1097,7 +1097,7 @@ export default function Landing() {
             <div>
               <div className="flex items-center gap-3 mb-4">
                 <img 
-                  src="/logo.png?v=2" 
+                  src="/logo.png?v=3" 
                   alt="Coinone Logo" 
                   className="w-10 h-10 rounded-lg object-cover"
                 />
@@ -1166,7 +1166,7 @@ export default function Landing() {
               <div className="text-center mb-6">
                 <div className="flex items-center justify-center gap-2 mb-4">
                   <img 
-                    src="/logo.png?v=2" 
+                    src="/logo.png?v=3" 
                     alt="Coinone Logo" 
                     className="w-12 h-12 rounded-lg object-cover"
                   />
@@ -1257,7 +1257,7 @@ export default function Landing() {
               <div className="text-center mb-4">
                 <div className="flex items-center justify-center gap-2 mb-3">
                   <img 
-                    src="/logo.png?v=2" 
+                    src="/logo.png?v=3" 
                     alt="Coinone Logo" 
                     className="w-10 h-10 rounded-lg object-cover"
                   />
