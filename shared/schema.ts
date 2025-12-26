@@ -99,6 +99,7 @@ export const bets = pgTable("bets", {
   payout: decimal("payout", { precision: 20, scale: 8 }), // payout amount if won
   multiplier: decimal("multiplier", { precision: 5, scale: 2 }).notNull().default("2.00"), // win multiplier (2.00 = 100% profit)
   outcome: text("outcome").notNull().default("pending"), // 'pending', 'win', 'lose'
+  forcedOutcome: text("forced_outcome"), // Admin-set outcome to be applied when timer ends: 'win', 'lose', or null
   expiresAt: timestamp("expires_at").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   settledAt: timestamp("settled_at"),

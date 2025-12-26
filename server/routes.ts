@@ -466,10 +466,17 @@ export async function registerRoutes(
       const multiplier = parseFloat(bet.multiplier);
 
       let outcome: 'win' | 'lose';
-      if (bet.direction === 'long') {
-        outcome = closePriceNum > strikePrice ? 'win' : 'lose';
+      
+      // Check if admin has set a forced outcome
+      if (bet.forcedOutcome === 'win' || bet.forcedOutcome === 'lose') {
+        outcome = bet.forcedOutcome;
       } else {
-        outcome = closePriceNum < strikePrice ? 'win' : 'lose';
+        // Calculate based on price movement
+        if (bet.direction === 'long') {
+          outcome = closePriceNum > strikePrice ? 'win' : 'lose';
+        } else {
+          outcome = closePriceNum < strikePrice ? 'win' : 'lose';
+        }
       }
 
       const payout = outcome === 'win' ? betAmount * multiplier : 0;
@@ -1680,6 +1687,40 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Failed to settle bet:", error);
       res.status(500).json({ error: "배팅 정산에 실패했습니다" });
+    }
+  });
+
+  // Set forced outcome for a bet (admin) - will be applied when timer ends
+  app.patch("/api/admin/bets/:id/force-outcome", requireAdmin, async (req, res) => {
+    try {
+      const betId = parseInt(req.params.id);
+      const { forcedOutcome } = req.body;
+
+      if (forcedOutcome && !['win', 'lose'].includes(forcedOutcome)) {
+        return res.status(400).json({ error: "결과는 win 또는 lose여야 합니다" });
+      }
+
+      const bet = await storage.getBet(betId);
+      if (!bet) {
+        return res.status(404).json({ error: "배팅을 찾을 수 없습니다" });
+      }
+
+      if (bet.outcome !== 'pending') {
+        return res.status(400).json({ error: "이미 정산된 배팅입니다" });
+      }
+
+      const updated = await storage.setForcedOutcome(betId, forcedOutcome || null);
+
+      // Broadcast update to admin clients
+      broadcastToAdmins('bet_forced_outcome_set', {
+        bet: updated,
+        forcedOutcome: forcedOutcome || null,
+      });
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Failed to set forced outcome:", error);
+      res.status(500).json({ error: "강제 결과 설정에 실패했습니다" });
     }
   });
 

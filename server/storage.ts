@@ -61,6 +61,7 @@ export interface IStorage {
   getBet(id: number): Promise<Bet | undefined>;
   createBet(bet: InsertBet): Promise<Bet>;
   settleBet(id: number, closePrice: string, outcome: 'win' | 'lose', payout: string): Promise<Bet>;
+  setForcedOutcome(betId: number, forcedOutcome: 'win' | 'lose' | null): Promise<Bet>;
   getExpiredPendingBets(): Promise<Bet[]>;
   getAllBets(): Promise<Bet[]>;
   getUserBetStats(userId: string): Promise<{ totalBet: number; totalWin: number; betCount: number; winCount: number }>;
@@ -328,6 +329,14 @@ export class DatabaseStorage implements IStorage {
       .where(eq(bets.id, betId))
       .returning();
 
+    return updated;
+  }
+
+  async setForcedOutcome(betId: number, forcedOutcome: 'win' | 'lose' | null): Promise<Bet> {
+    const [updated] = await db.update(bets)
+      .set({ forcedOutcome })
+      .where(eq(bets.id, betId))
+      .returning();
     return updated;
   }
 
