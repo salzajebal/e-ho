@@ -109,11 +109,14 @@ function useLandingMarketData() {
       }
     };
 
-    // Initial fetch
-    fetchRealPrices();
+    // Initial fetch with retry
+    fetchRealPrices().then(() => {
+      // Retry after 500ms if still have zero prices
+      setTimeout(fetchRealPrices, 500);
+    });
 
-    // Fetch from API every 15 seconds
-    const apiInterval = setInterval(fetchRealPrices, 15000);
+    // Fetch from API every 3 seconds for more real-time updates
+    const apiInterval = setInterval(fetchRealPrices, 3000);
 
     // Micro-simulation for smooth UI (stays close to API price)
     const simInterval = setInterval(() => {

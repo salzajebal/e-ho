@@ -12,10 +12,10 @@ export interface MarketData {
   category: '암호화폐';
 }
 
-// Realistic base prices (anchor points) - prices will fluctuate within small range of these
+// Realistic base prices (anchor points) - updated to match current market prices
 const BASE_PRICES: Record<string, number> = {
-  'BTC': 95000,
-  'ETH': 3400,
+  'BTC': 89000,
+  'ETH': 2980,
 };
 
 // Maximum deviation from base price (in points)
@@ -25,8 +25,8 @@ const MAX_DEVIATION: Record<string, number> = {
 };
 
 export const INITIAL_MARKET_DATA: MarketData[] = [
-  { symbol: 'BTC', name: 'Bitcoin', price: 95000.00, change: 0, changePercent: 0, high: 96000.00, low: 94000.00, volume: 0, category: '암호화폐' },
-  { symbol: 'ETH', name: 'Ethereum', price: 3400.00, change: 0, changePercent: 0, high: 3500.00, low: 3300.00, volume: 0, category: '암호화폐' },
+  { symbol: 'BTC', name: 'Bitcoin', price: 89000.00, change: 0, changePercent: 0, high: 90000.00, low: 87000.00, volume: 0, category: '암호화폐' },
+  { symbol: 'ETH', name: 'Ethereum', price: 2980.00, change: 0, changePercent: 0, high: 3050.00, low: 2900.00, volume: 0, category: '암호화폐' },
 ];
 
 // Hook to manage real-time data with API integration
@@ -127,11 +127,16 @@ export function useMarketData() {
       }));
     };
 
-    // Initial API fetch
-    fetchRealPrices();
+    // Initial API fetch with retry
+    fetchRealPrices().then(success => {
+      if (!success) {
+        // Retry after 1 second if first attempt fails
+        setTimeout(fetchRealPrices, 1000);
+      }
+    });
 
-    // Fetch from API every 3 seconds for more real-time updates
-    const apiInterval = setInterval(fetchRealPrices, 3000);
+    // Fetch from API every 2 seconds for more real-time updates
+    const apiInterval = setInterval(fetchRealPrices, 2000);
     
     // Sync prices (every 500ms) - exact API prices, no random variation
     const simInterval = setInterval(() => {
