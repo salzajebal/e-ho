@@ -32,8 +32,8 @@ export const INITIAL_MARKET_DATA: MarketData[] = [
 // Hook to manage real-time data with API integration
 export function useMarketData() {
   const [data, setData] = useState<MarketData[]>(INITIAL_MARKET_DATA);
-  const [apiAvailable, setApiAvailable] = useState(true);
   const lastApiPrices = useRef<Record<string, { price: number; change: number; changePercent: number; high: number; low: number }>>({});
+  const updateCounter = useRef(0);
 
   useEffect(() => {
     // Fetch real prices from API with timeout
@@ -44,59 +44,51 @@ export function useMarketData() {
         
         const response = await fetch('/api/market/prices', {
           signal: controller.signal,
-          cache: 'no-store'
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache' }
         });
         clearTimeout(timeoutId);
         
-        if (!response.ok) {
-          setApiAvailable(false);
-          return false;
-        }
+        if (!response.ok) return;
         
         const result = await response.json();
         
-        if (result.fallback || !result.prices) {
-          setApiAvailable(false);
-          return false;
-        }
+        if (result.fallback || !result.prices) return;
 
-        setApiAvailable(true);
+        updateCounter.current++;
         
-        setData(prev => prev.map(item => {
-          const apiPrice = result.prices.find((p: any) => p.symbol === item.symbol);
-          if (apiPrice) {
-            lastApiPrices.current[item.symbol] = {
-              price: apiPrice.price,
-              change: apiPrice.change,
-              changePercent: apiPrice.changePercent,
-              high: apiPrice.high,
-              low: apiPrice.low,
-            };
-            return {
-              ...item,
-              price: apiPrice.price,
-              change: apiPrice.change,
-              changePercent: apiPrice.changePercent,
-              high: apiPrice.high || item.high,
-              low: apiPrice.low || item.low,
-            };
-          }
-          return item;
+        setData(result.prices.map((apiPrice: any) => {
+          lastApiPrices.current[apiPrice.symbol] = {
+            price: apiPrice.price,
+            change: apiPrice.change,
+            changePercent: apiPrice.changePercent,
+            high: apiPrice.high,
+            low: apiPrice.low,
+          };
+          
+          const existing = INITIAL_MARKET_DATA.find(m => m.symbol === apiPrice.symbol);
+          return {
+            symbol: apiPrice.symbol,
+            name: existing?.name || apiPrice.symbol,
+            price: apiPrice.price,
+            change: apiPrice.change,
+            changePercent: apiPrice.changePercent,
+            high: apiPrice.high,
+            low: apiPrice.low,
+            volume: 0,
+            category: '암호화폐' as const,
+          };
         }));
-        return true;
       } catch (error) {
-        setApiAvailable(false);
-        return false;
+        // Silent fail - keep last prices
       }
     };
 
-    // Initial API fetch with multiple retries
+    // Initial API fetch
     fetchRealPrices();
-    setTimeout(fetchRealPrices, 300);
-    setTimeout(fetchRealPrices, 800);
 
-    // Fetch from API every 1 second for real-time updates
-    const apiInterval = setInterval(fetchRealPrices, 1000);
+    // Fetch from API every 500ms for real-time updates
+    const apiInterval = setInterval(fetchRealPrices, 500);
 
     return () => {
       clearInterval(apiInterval);

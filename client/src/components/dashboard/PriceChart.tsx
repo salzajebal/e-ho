@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, memo } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createChart, ColorType, CandlestickData, Time, CandlestickSeries } from "lightweight-charts";
 import type { IChartApi, ISeriesApi } from "lightweight-charts";
 import { MarketData } from "@/lib/marketData";
@@ -54,7 +54,9 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
   const isUp = data.change >= 0;
 
   useEffect(() => {
-    priceRef.current = data.price;
+    if (data.price > 0) {
+      priceRef.current = data.price;
+    }
   }, [data.price]);
 
   useEffect(() => {
@@ -215,7 +217,7 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
       try { 
         seriesRef.current.update(lastBarRef.current); 
       } catch {}
-    }, 200);
+    }, 100);
 
     return () => clearInterval(tick);
   }, [duration, isReady, isInitialized]);
@@ -256,4 +258,4 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
   );
 }
 
-export const PriceChart = memo(PriceChartComponent);
+export const PriceChart = PriceChartComponent;
