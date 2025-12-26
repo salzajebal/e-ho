@@ -1878,9 +1878,11 @@ export async function registerRoutes(
     ETH: { price: 0, change: 0, changePercent: 0, high: 0, low: 0, volume: 0, updatedAt: 0 }
   };
 
-  // 바이낸스 WebSocket 연결
+  // WebSocket 연결 상태
   let binanceWs: WebSocket | null = null;
   let reconnectTimer: NodeJS.Timeout | null = null;
+  let isConnected = false;
+  let messageCount = 0;
 
   function startBinanceWebSocket() {
     if (binanceWs) {
@@ -1892,12 +1894,16 @@ export async function registerRoutes(
     }
 
     const wsUrl = 'wss://stream.binance.com:9443/ws';
-    console.log('[Binance] WebSocket 연결 시작...');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('🔗 [Binance] WebSocket 연결 시작...');
+    console.log('📡 URL:', wsUrl);
     
     binanceWs = new WebSocket(wsUrl);
 
     binanceWs.on('open', () => {
-      console.log('[Binance] WebSocket 연결됨');
+      isConnected = true;
+      messageCount = 0;
+      console.log('✅ [Binance] WebSocket 연결 성공!');
       
       // BTC, ETH 실시간 티커 구독
       const subscribeMsg = JSON.stringify({
@@ -1906,16 +1912,23 @@ export async function registerRoutes(
         id: 1
       });
       binanceWs!.send(subscribeMsg);
+      console.log('📨 [Binance] 구독 요청 전송: btcusdt@ticker, ethusdt@ticker');
     });
 
     binanceWs.on('message', (data: Buffer) => {
       try {
         const msg = JSON.parse(data.toString());
         
+        // 구독 응답 로그
+        if (msg.result === null && msg.id === 1) {
+          console.log('✅ [Binance] 구독 완료! 실시간 데이터 수신 시작');
+        }
+        
         // 티커 데이터 처리
         if (msg.e === '24hrTicker') {
           const symbol = msg.s === 'BTCUSDT' ? 'BTC' : msg.s === 'ETHUSDT' ? 'ETH' : null;
           if (symbol) {
+            messageCount++;
             binancePrices[symbol] = {
               price: parseFloat(msg.c),
               change: parseFloat(msg.p),
@@ -1925,25 +1938,35 @@ export async function registerRoutes(
               volume: parseFloat(msg.v),
               updatedAt: Date.now()
             };
+            
+            // 처음 10개 메시지만 로그
+            if (messageCount <= 10) {
+              console.log(`💹 [Binance] ${symbol}: $${binancePrices[symbol].price.toFixed(2)} (${binancePrices[symbol].changePercent > 0 ? '+' : ''}${binancePrices[symbol].changePercent.toFixed(2)}%)`);
+            } else if (messageCount === 11) {
+              console.log('📊 [Binance] 실시간 데이터 수신 중... (로그 생략)');
+            }
           }
         }
       } catch (e) {
-        // 파싱 에러 무시 (구독 응답 등)
+        // 파싱 에러 무시
       }
     });
 
     binanceWs.on('error', (err) => {
-      console.error('[Binance] WebSocket 에러:', err.message);
+      isConnected = false;
+      console.error('❌ [Binance] WebSocket 에러:', err.message);
     });
 
     binanceWs.on('close', () => {
-      console.log('[Binance] WebSocket 연결 종료, 3초 후 재연결...');
+      isConnected = false;
+      console.log('⚠️ [Binance] WebSocket 연결 종료, 3초 후 재연결...');
       reconnectTimer = setTimeout(startBinanceWebSocket, 3000);
     });
   }
 
   // 서버 시작 시 WebSocket 연결
   startBinanceWebSocket();
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
   // 가격 조회 API
   app.get("/api/market/prices", (req, res) => {
