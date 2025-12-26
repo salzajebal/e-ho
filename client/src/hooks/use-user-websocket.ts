@@ -4,6 +4,8 @@ import { toast } from "sonner";
 
 interface WebSocketOptions {
   onNewMessage?: () => void;
+  onInquiryReplied?: () => void;
+  onTransactionProcessed?: () => void;
 }
 
 export function useUserWebSocket(isAuthenticated: boolean, options?: WebSocketOptions) {
@@ -53,6 +55,33 @@ export function useUserWebSocket(isAuthenticated: boolean, options?: WebSocketOp
               },
               duration: 10000,
             });
+          }
+          
+          if (data.event === 'inquiry_replied') {
+            queryClient.invalidateQueries({ queryKey: ["/api/inquiries/my"] });
+            
+            toast.success("문의 답변이 등록되었습니다", {
+              description: "내 문의 내역에서 확인하세요",
+              duration: 5000,
+            });
+            
+            optionsRef.current?.onInquiryReplied?.();
+          }
+          
+          if (data.event === 'transaction_processed') {
+            queryClient.invalidateQueries({ queryKey: ["/api/inquiries/my"] });
+            queryClient.invalidateQueries({ queryKey: ["/api/user/balance"] });
+            
+            const status = data.data?.status;
+            const type = data.data?.type;
+            const statusText = status === 'approved' ? '승인' : '거절';
+            const typeText = type === 'deposit' ? '입금' : '출금';
+            
+            toast.success(`${typeText} 신청이 ${statusText}되었습니다`, {
+              duration: 5000,
+            });
+            
+            optionsRef.current?.onTransactionProcessed?.();
           }
         } catch (err) {
           console.error('Failed to parse WebSocket message:', err);
