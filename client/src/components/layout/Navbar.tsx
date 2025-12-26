@@ -31,7 +31,7 @@ export function Navbar({ onSelectGame, selectedGameId }: NavbarProps) {
       <div className="flex items-center gap-2 lg:gap-6 flex-1 min-w-0">
         <Link href="/" className="flex items-center gap-2 font-bold text-lg lg:text-xl hover:opacity-90 transition-opacity shrink-0">
           <img 
-            src="/logo.png?v=3" 
+            src="/coinone-logo.png" 
             alt="Coinone Logo" 
             className="w-7 h-7 lg:w-8 lg:h-8 rounded-lg object-cover"
           />
