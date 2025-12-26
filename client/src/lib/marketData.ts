@@ -12,21 +12,9 @@ export interface MarketData {
   category: '암호화폐';
 }
 
-// Realistic base prices (anchor points) - updated to match current market prices
-const BASE_PRICES: Record<string, number> = {
-  'BTC': 89000,
-  'ETH': 2980,
-};
-
-// Maximum deviation from base price (in points)
-const MAX_DEVIATION: Record<string, number> = {
-  'BTC': 500,      // Bitcoin: ±500 points
-  'ETH': 50,       // Ethereum: ±50 points
-};
-
 export const INITIAL_MARKET_DATA: MarketData[] = [
-  { symbol: 'BTC', name: 'Bitcoin', price: 89000.00, change: 0, changePercent: 0, high: 90000.00, low: 87000.00, volume: 0, category: '암호화폐' },
-  { symbol: 'ETH', name: 'Ethereum', price: 2980.00, change: 0, changePercent: 0, high: 3050.00, low: 2900.00, volume: 0, category: '암호화폐' },
+  { symbol: 'BTC', name: 'Bitcoin', price: 0, change: 0, changePercent: 0, high: 0, low: 0, volume: 0, category: '암호화폐' },
+  { symbol: 'ETH', name: 'Ethereum', price: 0, change: 0, changePercent: 0, high: 0, low: 0, volume: 0, category: '암호화폐' },
 ];
 
 // Hook to manage real-time data with API integration
