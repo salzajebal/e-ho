@@ -138,7 +138,7 @@ export async function registerRoutes(
   // Register
   app.post("/api/auth/register", async (req, res) => {
     try {
-      const { username, password, name, phone, bankName, accountHolder, accountNumber, referralCode } = req.body;
+      const { username, password, name, phone, residentNumber, region, bankName, accountHolder, accountNumber, referralCode } = req.body;
 
       if (!username || username.length < 3) {
         return res.status(400).json({ error: "아이디는 3자 이상이어야 합니다" });
@@ -154,6 +154,14 @@ export async function registerRoutes(
 
       if (!phone || phone.length < 10) {
         return res.status(400).json({ error: "올바른 휴대폰 번호를 입력해주세요" });
+      }
+
+      if (!residentNumber || residentNumber.length !== 13) {
+        return res.status(400).json({ error: "주민번호 13자리를 입력해주세요" });
+      }
+
+      if (!region) {
+        return res.status(400).json({ error: "지역을 선택해주세요" });
       }
 
       if (!bankName) {
@@ -187,7 +195,9 @@ export async function registerRoutes(
         username, 
         password, 
         name, 
-        phone, 
+        phone,
+        residentNumber,
+        region,
         bankName, 
         accountHolder, 
         accountNumber 
@@ -681,13 +691,15 @@ export async function registerRoutes(
   app.patch("/api/admin/users/:id", requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;
-      const { username, password, name, phone, bankName, accountHolder, accountNumber, balance, role, isActive, totalDeposit, totalWithdrawal, autoBetEnabled, autoBetMultiplier } = req.body;
+      const { username, password, name, phone, residentNumber, region, bankName, accountHolder, accountNumber, balance, role, isActive, totalDeposit, totalWithdrawal, autoBetEnabled, autoBetMultiplier } = req.body;
 
       const updateData: any = {};
       if (username !== undefined) updateData.username = username;
       if (password !== undefined) updateData.password = password;
       if (name !== undefined) updateData.name = name;
       if (phone !== undefined) updateData.phone = phone;
+      if (residentNumber !== undefined) updateData.residentNumber = residentNumber;
+      if (region !== undefined) updateData.region = region;
       if (bankName !== undefined) updateData.bankName = bankName;
       if (accountHolder !== undefined) updateData.accountHolder = accountHolder;
       if (accountNumber !== undefined) updateData.accountNumber = accountNumber;

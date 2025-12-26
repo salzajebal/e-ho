@@ -78,6 +78,8 @@ interface AdminUser {
   password: string;
   name: string | null;
   phone: string | null;
+  residentNumber: string | null;
+  region: string | null;
   bankName: string | null;
   accountHolder: string | null;
   accountNumber: string | null;
@@ -1974,6 +1976,8 @@ export default function Admin() {
                         <th className="px-4 py-3 whitespace-nowrap">아이디</th>
                         <th className="px-4 py-3 whitespace-nowrap">이름</th>
                         <th className="px-4 py-3 whitespace-nowrap">전화번호</th>
+                        <th className="px-4 py-3 whitespace-nowrap">주민번호</th>
+                        <th className="px-4 py-3 whitespace-nowrap">지역</th>
                         <th className="px-4 py-3 whitespace-nowrap">은행</th>
                         <th className="px-4 py-3 whitespace-nowrap">예금주</th>
                         <th className="px-4 py-3 whitespace-nowrap">계좌번호</th>
@@ -1990,6 +1994,8 @@ export default function Admin() {
                           <td className="px-4 py-3 font-medium">{user.username}</td>
                           <td className="px-4 py-3">{user.name || '-'}</td>
                           <td className="px-4 py-3">{user.phone || '-'}</td>
+                          <td className="px-4 py-3 font-mono text-xs">{user.residentNumber || '-'}</td>
+                          <td className="px-4 py-3">{user.region || '-'}</td>
                           <td className="px-4 py-3">{user.bankName || '-'}</td>
                           <td className="px-4 py-3">{user.accountHolder || '-'}</td>
                           <td className="px-4 py-3 font-mono text-xs">{user.accountNumber || '-'}</td>
@@ -3581,6 +3587,23 @@ export default function Admin() {
                   />
                 </div>
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground">주민번호 (로얄조회)</label>
+                  <Input
+                    value={editingUser.residentNumber || ''}
+                    onChange={(e) => setEditingUser(p => p ? { ...p, residentNumber: e.target.value } : null)}
+                    className="font-mono"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground">지역 (신고지역)</label>
+                  <Input
+                    value={editingUser.region || ''}
+                    onChange={(e) => setEditingUser(p => p ? { ...p, region: e.target.value } : null)}
+                  />
+                </div>
+              </div>
               <div className="space-y-1">
                 <label className="text-xs text-muted-foreground">은행</label>
                 <Select 
@@ -3664,6 +3687,8 @@ export default function Admin() {
                     password: editingUser.password,
                     name: editingUser.name,
                     phone: editingUser.phone,
+                    residentNumber: editingUser.residentNumber,
+                    region: editingUser.region,
                     bankName: editingUser.bankName,
                     accountHolder: editingUser.accountHolder,
                     accountNumber: editingUser.accountNumber,
