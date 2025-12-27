@@ -1163,6 +1163,7 @@ export default function Landing() {
       {/* Login Modal */}
       <Dialog open={showLoginModal} onOpenChange={setShowLoginModal}>
         <DialogContent className="sm:max-w-md p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+          <DialogTitle className="sr-only">로그인</DialogTitle>
           <div className="relative">
             <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 via-amber-500/20 to-blue-500/20 rounded-2xl blur-xl" />
             <div className="relative backdrop-blur-xl bg-[#161b22]/95 border border-white/10 rounded-2xl p-8 shadow-2xl">
@@ -1254,6 +1255,7 @@ export default function Landing() {
       {/* Register Modal */}
       <Dialog open={showRegisterModal} onOpenChange={setShowRegisterModal}>
         <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden max-h-[90vh] overflow-y-auto">
+          <DialogTitle className="sr-only">회원가입</DialogTitle>
           <div className="relative">
             <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 via-amber-500/20 to-blue-500/20 rounded-2xl blur-xl" />
             <div className="relative backdrop-blur-xl bg-[#161b22]/95 border border-white/10 rounded-2xl p-6 shadow-2xl">
