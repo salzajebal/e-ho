@@ -11,8 +11,8 @@ export interface MarketData {
 }
 
 export const INITIAL_MARKET_DATA: MarketData[] = [
-  { symbol: 'BTC', name: 'Bitcoin', price: 95000.00, change: 0, changePercent: 0, high: 96000.00, low: 94000.00, volume: 0, category: '암호화폐' },
-  { symbol: 'ETH', name: 'Ethereum', price: 3400.00, change: 0, changePercent: 0, high: 3500.00, low: 3300.00, volume: 0, category: '암호화폐' },
+  { symbol: 'BTC', name: 'Bitcoin', price: 87500.00, change: 0, changePercent: 0, high: 89500.00, low: 86500.00, volume: 0, category: '암호화폐' },
+  { symbol: 'ETH', name: 'Ethereum', price: 2930.00, change: 0, changePercent: 0, high: 3000.00, low: 2890.00, volume: 0, category: '암호화폐' },
 ];
 
 export function generatePriceUpdate(currentPrice: number): number {

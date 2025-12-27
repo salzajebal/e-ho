@@ -1989,11 +1989,11 @@ export async function registerRoutes(
         // 데이터 없거나 오래된 경우 기본값
         prices.push({
           symbol,
-          price: symbol === 'BTC' ? 95000 : 3400,
+          price: symbol === 'BTC' ? 87500 : 2930,
           change: 0,
           changePercent: 0,
-          high: symbol === 'BTC' ? 96000 : 3450,
-          low: symbol === 'BTC' ? 94000 : 3350,
+          high: symbol === 'BTC' ? 89500 : 3000,
+          low: symbol === 'BTC' ? 86500 : 2890,
           timestamp: now
         });
       }
@@ -2027,11 +2027,11 @@ export async function registerRoutes(
     } else {
       res.json({
         symbol: upperSymbol,
-        price: upperSymbol === 'BTC' ? 95000 : 3400,
+        price: upperSymbol === 'BTC' ? 87500 : 2930,
         change: 0,
         changePercent: 0,
-        high: upperSymbol === 'BTC' ? 96000 : 3450,
-        low: upperSymbol === 'BTC' ? 94000 : 3350,
+        high: upperSymbol === 'BTC' ? 89500 : 3000,
+        low: upperSymbol === 'BTC' ? 86500 : 2890,
         timestamp: now
       });
     }
