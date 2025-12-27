@@ -160,30 +160,32 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
 
   useEffect(() => {
     if (!seriesRef.current || !isReady) return;
-    if (isInitialized) return;
     if (data.price <= 0) return;
-
-    const candles = generateInitialCandles(data.price, 50, duration);
-    seriesRef.current.setData(candles);
     
-    if (candles.length > 0) {
-      const lastCandle = candles[candles.length - 1];
-      lastBarRef.current = { 
-        time: lastCandle.time,
-        open: data.price,
-        high: data.price,
-        low: data.price,
-        close: data.price
-      };
-      basePriceRef.current = data.price;
-      currentStartRef.current = lastCandle.time as number;
+    // Only initialize if not yet initialized (basePriceRef.current === 0)
+    if (basePriceRef.current === 0) {
+      const candles = generateInitialCandles(data.price, 50, duration);
+      seriesRef.current.setData(candles);
       
-      seriesRef.current.update(lastBarRef.current);
+      if (candles.length > 0) {
+        const lastCandle = candles[candles.length - 1];
+        lastBarRef.current = { 
+          time: lastCandle.time,
+          open: data.price,
+          high: data.price,
+          low: data.price,
+          close: data.price
+        };
+        basePriceRef.current = data.price;
+        currentStartRef.current = lastCandle.time as number;
+        
+        seriesRef.current.update(lastBarRef.current);
+      }
+      
+      chartRef.current?.timeScale().fitContent();
+      setIsInitialized(true);
     }
-    
-    chartRef.current?.timeScale().fitContent();
-    setIsInitialized(true);
-  }, [data.price, isReady, isInitialized, duration]);
+  }, [data.price, isReady, duration]);
 
   useEffect(() => {
     if (!seriesRef.current || !isReady || !isInitialized) return;
