@@ -89,10 +89,10 @@ export function useUserWebSocket(isAuthenticated: boolean, options?: WebSocketOp
       };
 
       ws.onclose = (event) => {
-        console.log('User WebSocket disconnected:', event.code);
         wsRef.current = null;
         
-        if (isAuthenticated && reconnectAttemptsRef.current < maxReconnectAttempts) {
+        // Only retry for unexpected disconnections (not auth failures)
+        if (isAuthenticated && event.code !== 4001 && event.code !== 4003 && reconnectAttemptsRef.current < maxReconnectAttempts) {
           const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 30000);
           reconnectTimeoutRef.current = setTimeout(() => {
             reconnectAttemptsRef.current++;
@@ -101,8 +101,8 @@ export function useUserWebSocket(isAuthenticated: boolean, options?: WebSocketOp
         }
       };
 
-      ws.onerror = (error) => {
-        console.error('User WebSocket error:', error);
+      ws.onerror = () => {
+        // Silent error handling - WebSocket errors are expected when not authenticated
       };
 
     } catch (err) {
