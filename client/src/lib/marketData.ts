@@ -13,8 +13,8 @@ export interface MarketData {
 }
 
 export const INITIAL_MARKET_DATA: MarketData[] = [
-  { symbol: 'BTC', name: 'Bitcoin', price: 0, change: 0, changePercent: 0, high: 0, low: 0, volume: 0, category: '암호화폐' },
-  { symbol: 'ETH', name: 'Ethereum', price: 0, change: 0, changePercent: 0, high: 0, low: 0, volume: 0, category: '암호화폐' },
+  { symbol: 'BTC', name: 'Bitcoin', price: 87500, change: 0, changePercent: 0, high: 89000, low: 86500, volume: 0, category: '암호화폐' },
+  { symbol: 'ETH', name: 'Ethereum', price: 2930, change: 0, changePercent: 0, high: 2980, low: 2890, volume: 0, category: '암호화폐' },
 ];
 
 // Hook to manage real-time data with API integration
