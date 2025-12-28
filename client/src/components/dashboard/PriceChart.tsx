@@ -16,10 +16,64 @@ function getKSTAlignedTime(intervalSeconds: number): number {
   return Math.floor(now / intervalSeconds) * intervalSeconds;
 }
 
-function generateInitialCandles(basePrice: number, count: number, intervalSeconds: number): CandlestickData<Time>[] {
+// Binance에서 실제 과거 캔들 데이터 가져오기
+async function fetchBinanceKlines(symbol: string, intervalSeconds: number, limit: number = 100): Promise<CandlestickData<Time>[]> {
+  try {
+    // 초 단위를 Binance interval 형식으로 변환
+    let interval = '1m';
+    if (intervalSeconds === 60) interval = '1m';
+    else if (intervalSeconds === 120) interval = '1m'; // 2분봉은 1분 데이터로 합성
+    else if (intervalSeconds === 180) interval = '3m';
+    else if (intervalSeconds === 300) interval = '5m';
+    else if (intervalSeconds === 900) interval = '15m';
+    else if (intervalSeconds === 1800) interval = '30m';
+    else if (intervalSeconds === 3600) interval = '1h';
+    
+    const binanceSymbol = symbol === 'BTC' ? 'BTCUSDT' : symbol === 'ETH' ? 'ETHUSDT' : `${symbol}USDT`;
+    const url = `https://api.binance.com/api/v3/klines?symbol=${binanceSymbol}&interval=${interval}&limit=${limit}`;
+    
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Failed to fetch klines');
+    
+    const data = await response.json();
+    
+    // Binance kline 형식: [openTime, open, high, low, close, volume, closeTime, ...]
+    const candles: CandlestickData<Time>[] = data.map((kline: any[]) => ({
+      time: (Math.floor(kline[0] / 1000) + KST_OFFSET) as Time,
+      open: parseFloat(kline[1]),
+      high: parseFloat(kline[2]),
+      low: parseFloat(kline[3]),
+      close: parseFloat(kline[4]),
+    }));
+    
+    // 2분봉인 경우 1분 데이터를 합성
+    if (intervalSeconds === 120 && candles.length > 1) {
+      const merged: CandlestickData<Time>[] = [];
+      for (let i = 0; i < candles.length - 1; i += 2) {
+        const first = candles[i];
+        const second = candles[i + 1] || first;
+        merged.push({
+          time: first.time,
+          open: first.open,
+          high: Math.max(first.high, second.high),
+          low: Math.min(first.low, second.low),
+          close: second.close,
+        });
+      }
+      return merged;
+    }
+    
+    return candles;
+  } catch (error) {
+    console.warn('[PriceChart] Failed to fetch Binance klines:', error);
+    return [];
+  }
+}
+
+// 폴백용 랜덤 캔들 생성 (Binance 호출 실패 시)
+function generateFallbackCandles(basePrice: number, count: number, intervalSeconds: number): CandlestickData<Time>[] {
   const alignedNow = getKSTAlignedTime(intervalSeconds);
-  
-  const volatility = 0.00005;
+  const volatility = 0.002; // 더 현실적인 변동성
   
   let price = basePrice;
   const tempCandles: CandlestickData<Time>[] = [];
@@ -29,8 +83,8 @@ function generateInitialCandles(basePrice: number, count: number, intervalSecond
     const change = price * volatility * (Math.random() - 0.5) * 2;
     const open = price - change;
     const close = price;
-    const high = Math.max(open, close) + Math.abs(change) * 0.3;
-    const low = Math.min(open, close) - Math.abs(change) * 0.3;
+    const high = Math.max(open, close) * (1 + Math.random() * 0.001);
+    const low = Math.min(open, close) * (1 - Math.random() * 0.001);
     tempCandles.unshift({ time, open, high, low, close });
     price = open;
   }
@@ -89,18 +143,7 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
     }
   }, [data.price, duration, isInitialized]);
 
-  useEffect(() => {
-    if (isInitialized && basePriceRef.current > 0 && data.price > 0) {
-      const pctDiff = Math.abs(data.price - basePriceRef.current) / basePriceRef.current;
-      if (pctDiff > 0.02) {
-        setIsInitialized(false);
-        lastBarRef.current = null;
-        basePriceRef.current = 0;
-        currentStartRef.current = 0;
-        setChartKey(k => k + 1);
-      }
-    }
-  }, [data.price, isInitialized]);
+  // 2% 임계값 리셋 로직 제거 - 실제 Binance 데이터 사용 시 불필요
 
   useEffect(() => {
     setIsInitialized(false);
@@ -190,32 +233,35 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
 
   useEffect(() => {
     if (!seriesRef.current || !isReady) return;
-    if (data.price <= 0) return;
+    if (basePriceRef.current !== 0) return; // 이미 초기화됨
     
-    // Only initialize if not yet initialized (basePriceRef.current === 0)
-    if (basePriceRef.current === 0) {
-      const candles = generateInitialCandles(data.price, 50, duration);
-      seriesRef.current.setData(candles);
+    // Binance에서 실제 과거 캔들 데이터 가져오기
+    const initializeChart = async () => {
+      if (!seriesRef.current) return;
       
-      if (candles.length > 0) {
-        const lastCandle = candles[candles.length - 1];
-        lastBarRef.current = { 
-          time: lastCandle.time,
-          open: data.price,
-          high: data.price,
-          low: data.price,
-          close: data.price
-        };
-        basePriceRef.current = data.price;
-        currentStartRef.current = lastCandle.time as number;
-        
-        seriesRef.current.update(lastBarRef.current);
+      let candles = await fetchBinanceKlines(symbol, duration, 100);
+      
+      // Binance 호출 실패 시 폴백 데이터 사용
+      if (candles.length === 0 && data.price > 0) {
+        candles = generateFallbackCandles(data.price, 50, duration);
       }
       
-      chartRef.current?.timeScale().fitContent();
-      setIsInitialized(true);
-    }
-  }, [data.price, isReady, duration]);
+      if (candles.length > 0 && seriesRef.current) {
+        seriesRef.current.setData(candles);
+        
+        const lastCandle = candles[candles.length - 1];
+        lastBarRef.current = { ...lastCandle };
+        basePriceRef.current = lastCandle.close;
+        currentStartRef.current = lastCandle.time as number;
+        
+        chartRef.current?.timeScale().fitContent();
+        setIsInitialized(true);
+        console.log(`[PriceChart] ${symbol} 차트 초기화 완료: ${candles.length}개 캔들`);
+      }
+    };
+    
+    initializeChart();
+  }, [symbol, isReady, duration, data.price]);
 
   useEffect(() => {
     if (!seriesRef.current || !isReady || !isInitialized) return;
