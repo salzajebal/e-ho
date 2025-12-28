@@ -2147,7 +2147,13 @@ export default function Admin() {
                           </span>
                         </td>
                         <td className="px-2 lg:px-3 py-1.5 lg:py-2 font-medium">
-                          {user.username}
+                          <button
+                            onClick={() => setEditingUser(user)}
+                            className="text-primary hover:text-primary/80 hover:underline font-medium"
+                            title="클릭하여 회원 정보 보기"
+                          >
+                            {user.username}
+                          </button>
                           {user.role === 'admin' && (
                             <span className="ml-1 text-[10px] lg:text-xs bg-primary/20 text-primary px-1 rounded">관리자</span>
                           )}
