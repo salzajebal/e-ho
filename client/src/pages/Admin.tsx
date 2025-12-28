@@ -3688,16 +3688,31 @@ export default function Admin() {
               <div className="border-t border-border pt-4">
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-sm font-medium">접속 정보</p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setLoginHistoryUser(editingUser)}
-                    className="h-7 text-xs"
-                    data-testid="button-view-login-history"
-                  >
-                    <Globe className="w-3 h-3 mr-1" />
-                    IP 이력 조회
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setLoginHistoryUser(editingUser)}
+                      className="h-7 text-xs"
+                      data-testid="button-view-login-history"
+                    >
+                      <Globe className="w-3 h-3 mr-1" />
+                      IP 이력
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => {
+                        forceLogoutMutation.mutate(editingUser.id);
+                      }}
+                      disabled={forceLogoutMutation.isPending}
+                      className="h-7 text-xs"
+                      data-testid="button-force-logout-dialog"
+                    >
+                      <LogOut className="w-3 h-3 mr-1" />
+                      강제 로그아웃
+                    </Button>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
