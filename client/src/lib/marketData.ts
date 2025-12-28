@@ -17,18 +17,80 @@ export const INITIAL_MARKET_DATA: MarketData[] = [
   { symbol: 'ETH', name: 'Ethereum', price: 2930, change: 0, changePercent: 0, high: 2980, low: 2890, volume: 0, category: '암호화폐' },
 ];
 
+// 직접 Binance API에서 가격 가져오기 (프로덕션 환경에서 서버 우회)
+async function fetchBinancePricesDirect(): Promise<{ btc: any; eth: any } | null> {
+  try {
+    const [btcRes, ethRes] = await Promise.all([
+      fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT'),
+      fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=ETHUSDT')
+    ]);
+    
+    if (btcRes.ok && ethRes.ok) {
+      const btc = await btcRes.json();
+      const eth = await ethRes.json();
+      return { btc, eth };
+    }
+    return null;
+  } catch (error) {
+    console.warn('[Binance Direct] API fetch error:', error);
+    return null;
+  }
+}
+
 // Hook to manage real-time data with API integration
 export function useMarketData() {
   const [data, setData] = useState<MarketData[]>(INITIAL_MARKET_DATA);
   const lastApiPrices = useRef<Record<string, { price: number; change: number; changePercent: number; high: number; low: number }>>({});
   const updateCounter = useRef(0);
+  const useDirectBinance = useRef(false);
 
   useEffect(() => {
-    // Fetch real prices from API with timeout
-    const fetchRealPrices = async () => {
+    // 직접 Binance API 호출 (프로덕션 환경 우회용)
+    const fetchFromBinanceDirect = async () => {
+      const binanceData = await fetchBinancePricesDirect();
+      if (binanceData) {
+        updateCounter.current++;
+        
+        const newData: MarketData[] = [
+          {
+            symbol: 'BTC',
+            name: 'Bitcoin',
+            price: parseFloat(binanceData.btc.lastPrice),
+            change: parseFloat(binanceData.btc.priceChange),
+            changePercent: parseFloat(binanceData.btc.priceChangePercent),
+            high: parseFloat(binanceData.btc.highPrice),
+            low: parseFloat(binanceData.btc.lowPrice),
+            volume: parseFloat(binanceData.btc.volume),
+            category: '암호화폐',
+          },
+          {
+            symbol: 'ETH',
+            name: 'Ethereum',
+            price: parseFloat(binanceData.eth.lastPrice),
+            change: parseFloat(binanceData.eth.priceChange),
+            changePercent: parseFloat(binanceData.eth.priceChangePercent),
+            high: parseFloat(binanceData.eth.highPrice),
+            low: parseFloat(binanceData.eth.lowPrice),
+            volume: parseFloat(binanceData.eth.volume),
+            category: '암호화폐',
+          }
+        ];
+        
+        if (updateCounter.current <= 3 || updateCounter.current % 30 === 0) {
+          console.log('[MarketData Direct] BTC: $' + newData[0].price.toFixed(2) + ', ETH: $' + newData[1].price.toFixed(2));
+        }
+        
+        setData(newData);
+        return true;
+      }
+      return false;
+    };
+
+    // 서버 API에서 가격 가져오기
+    const fetchFromServerApi = async () => {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        const timeoutId = setTimeout(() => controller.abort(), 3000);
         
         const response = await fetch('/api/market/prices', {
           signal: controller.signal,
@@ -37,23 +99,12 @@ export function useMarketData() {
         });
         clearTimeout(timeoutId);
         
-        if (!response.ok) {
-          console.warn('Market API response not ok:', response.status);
-          return;
-        }
+        if (!response.ok) return false;
         
         const result = await response.json();
         
-        if (!result.prices || result.prices.length === 0) {
-          console.warn('Market API returned no prices');
-          return;
-        }
-        
-        // Skip if fallback data (no real-time connection yet) - but only if fallback is explicitly true
-        // Allow data through if fallback field is missing (old API) or false
-        if (result.fallback === true) {
-          console.warn('Market API returned fallback data, waiting for live connection...');
-          return;
+        if (!result.prices || result.prices.length === 0 || result.fallback === true) {
+          return false;
         }
 
         updateCounter.current++;
@@ -81,13 +132,35 @@ export function useMarketData() {
           };
         });
         
-        if (updateCounter.current % 10 === 1) {
-          console.log('[MarketData] Updated prices:', newData.map((d: MarketData) => `${d.symbol}: $${d.price}`).join(', '));
+        if (updateCounter.current <= 3 || updateCounter.current % 30 === 0) {
+          console.log('[MarketData Server] Updated prices:', newData.map((d: MarketData) => `${d.symbol}: $${d.price}`).join(', '));
         }
         
         setData(newData);
+        return true;
       } catch (error) {
-        console.warn('Market API fetch error:', error);
+        return false;
+      }
+    };
+
+    // 메인 가격 가져오기 함수: 서버 API 먼저 시도, 실패하면 직접 Binance 호출
+    const fetchRealPrices = async () => {
+      // 이미 직접 호출 모드면 계속 직접 호출
+      if (useDirectBinance.current) {
+        await fetchFromBinanceDirect();
+        return;
+      }
+      
+      // 서버 API 먼저 시도
+      const serverSuccess = await fetchFromServerApi();
+      
+      if (!serverSuccess) {
+        // 서버 실패 시 직접 Binance 호출
+        const directSuccess = await fetchFromBinanceDirect();
+        if (directSuccess) {
+          console.log('[MarketData] 서버 API 실패, Binance 직접 호출 모드로 전환');
+          useDirectBinance.current = true;
+        }
       }
     };
 
