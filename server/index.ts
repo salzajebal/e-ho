@@ -235,6 +235,9 @@ app.use((req, res, next) => {
         console.log(`User WebSocket connected: userId=${userId}, IP=${clientIp}`);
         ws.send(JSON.stringify({ event: 'connected', data: { message: 'User WebSocket connected' } }));
         
+        // Notify admins of user connection
+        broadcastToAdmins('user_connected', { userId, ip: clientIp });
+        
         ws.on('close', () => {
           console.log(`User WebSocket disconnected: userId=${userId}`);
           const clients = userWsClients.get(userId);
@@ -244,6 +247,8 @@ app.use((req, res, next) => {
               userWsClients.delete(userId);
               // Remove from online users when all connections closed
               onlineUsers.delete(userId);
+              // Notify admins of user disconnection
+              broadcastToAdmins('user_disconnected', { userId });
             }
           }
         });

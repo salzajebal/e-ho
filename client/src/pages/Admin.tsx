@@ -619,6 +619,8 @@ export default function Admin() {
               style: { background: '#f59e0b', color: 'white', fontWeight: 'bold' },
             });
           }
+        } else if (msg.event === 'user_connected' || msg.event === 'user_disconnected') {
+          refetchOnlineUsers();
         }
       } catch (e) {
         console.error('WebSocket parse error:', e);
