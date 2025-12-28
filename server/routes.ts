@@ -2047,15 +2047,12 @@ export async function registerRoutes(
     }
   }
 
-  // 서버 시작 시 WebSocket 연결 시도 및 REST API 폴백 준비
+  // 서버 시작 시 REST API 즉시 시작 (항상 가격 데이터 확보)
+  console.log('🚀 [Binance] 서버 시작 - REST API 즉시 시작');
+  startRestApiPolling();
+  
+  // WebSocket 연결도 시도 (성공하면 REST API 폴링 중지됨)
   startBinanceWebSocket();
-  // WebSocket 연결이 5초 내에 되지 않으면 REST API 폴백 시작
-  setTimeout(() => {
-    if (!isConnected && !restApiTimer) {
-      console.log('⚠️ [Binance] WebSocket 연결 지연, REST API 폴백 시작...');
-      startRestApiPolling();
-    }
-  }, 5000);
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
   // WebSocket 상태 확인 API (디버깅용)
