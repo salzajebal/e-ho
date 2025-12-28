@@ -5,7 +5,7 @@
 This is a real-time cryptocurrency trading platform styled after Coinone's interface. Users can place 2-minute bets on price movements (long/short) for Bitcoin (BTC) and Ethereum (ETH). The platform features live market data via Binance REST API, interactive candlestick charts using lightweight-charts, and an account system with virtual balance.
 
 ## Trading Rules
-- **Operating Hours**: 9AM - 6PM KST (Korean Standard Time)
+- **Operating Hours**: 24/7 (No time restrictions)
 - **Bitcoin (BTC)**: Available 24/7
 - **Ethereum (ETH)**: Available 24/7
 - **Trading Duration**: 2 minutes only

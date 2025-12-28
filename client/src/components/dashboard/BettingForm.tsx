@@ -38,28 +38,6 @@ const getKSTDate = (): Date => {
   return new Date(now.getTime() + (utcOffset + kstOffset) * 60 * 1000);
 };
 
-// Check if current time is within operating hours (9AM-6PM KST)
-const isWithinOperatingHours = () => {
-  const kstTime = getKSTDate();
-  const hours = kstTime.getHours();
-  return hours >= 9 && hours < 18;
-};
-
-// Check if today is a weekday (Mon-Fri) in KST
-const isWeekday = (): boolean => {
-  const kstTime = getKSTDate();
-  const dayOfWeek = kstTime.getDay(); // 0 = Sunday, 6 = Saturday
-  return dayOfWeek >= 1 && dayOfWeek <= 5;
-};
-
-// BTC and ETH are available 24/7
-const isSymbolAllowedToday = (symbol: string): { allowed: boolean; message: string } => {
-  if (symbol === 'BTC' || symbol === 'ETH') {
-    return { allowed: true, message: '' };
-  }
-  return { allowed: false, message: '비트코인(BTC)과 이더리움(ETH)만 거래 가능합니다.' };
-};
-
 // Calculate current round number based on KST time (seconds precision)
 const calculateRoundNumber = (durationSeconds: number): number => {
   const kstTime = getKSTDate();
@@ -277,29 +255,6 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
   const isBettingLocked = timeRemaining <= 3;
 
   const validateBet = (direction: 'long' | 'short') => {
-    // Check if symbol is allowed for current day (weekday/weekend restriction)
-    const symbolCheck = isSymbolAllowedToday(game.symbol);
-    if (!symbolCheck.allowed) {
-      setTimeAlert({ show: true, message: symbolCheck.message });
-      return false;
-    }
-
-    // Check operating hours
-    if (!isWithinOperatingHours()) {
-      const kstTime = getKSTDate();
-      const currentHour = kstTime.getHours();
-      let message = "";
-      
-      if (currentHour < 9) {
-        message = `현재 거래 가능 시간이 아닙니다.\n\n운영시간: 오전 9시 ~ 오후 6시 (한국시간)\n\n오전 9시에 다시 방문해주세요!`;
-      } else {
-        message = `현재 거래 가능 시간이 아닙니다.\n\n운영시간: 오전 9시 ~ 오후 6시 (한국시간)\n\n내일 오전 9시에 다시 방문해주세요!`;
-      }
-      
-      setTimeAlert({ show: true, message });
-      return false;
-    }
-
     const numAmount = parseFloat(amount);
     if (isNaN(numAmount) || numAmount <= 0) {
       toast.error("유효한 금액을 입력해주세요.");
