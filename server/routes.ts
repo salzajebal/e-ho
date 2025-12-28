@@ -1968,10 +1968,27 @@ export async function registerRoutes(
   startBinanceWebSocket();
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
+  // WebSocket 상태 확인 API (디버깅용)
+  app.get("/api/market/status", (req, res) => {
+    const now = Date.now();
+    res.json({
+      connected: isConnected,
+      messageCount,
+      btcUpdatedAt: binancePrices.BTC.updatedAt,
+      btcAge: now - binancePrices.BTC.updatedAt,
+      ethUpdatedAt: binancePrices.ETH.updatedAt,
+      ethAge: now - binancePrices.ETH.updatedAt,
+      btcPrice: binancePrices.BTC.price,
+      ethPrice: binancePrices.ETH.price,
+      timestamp: now
+    });
+  });
+
   // 가격 조회 API
   app.get("/api/market/prices", (req, res) => {
     const now = Date.now();
     const prices = [];
+    let hasFallback = false;
 
     for (const symbol of ['BTC', 'ETH']) {
       const data = binancePrices[symbol];
@@ -1986,6 +2003,7 @@ export async function registerRoutes(
           timestamp: data.updatedAt
         });
       } else {
+        hasFallback = true;
         // 데이터 없거나 오래된 경우 기본값
         prices.push({
           symbol,
@@ -1999,7 +2017,7 @@ export async function registerRoutes(
       }
     }
 
-    res.json({ prices, timestamp: now });
+    res.json({ prices, timestamp: now, fallback: hasFallback, connected: isConnected });
   });
 
   // 개별 심볼 가격 조회
