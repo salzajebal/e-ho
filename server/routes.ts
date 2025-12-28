@@ -1870,7 +1870,7 @@ export async function registerRoutes(
     }
   });
 
-  // ==================== 바이낸스 실시간 시세 (WebSocket) ====================
+  // ==================== 바이낸스 실시간 시세 (WebSocket + REST API 폴백) ====================
   
   // 실시간 가격 저장소
   const binancePrices: { [key: string]: { price: number; change: number; changePercent: number; high: number; low: number; volume: number; updatedAt: number } } = {
@@ -1881,8 +1881,69 @@ export async function registerRoutes(
   // WebSocket 연결 상태
   let binanceWs: WebSocket | null = null;
   let reconnectTimer: NodeJS.Timeout | null = null;
+  let restApiTimer: NodeJS.Timeout | null = null;
   let isConnected = false;
   let messageCount = 0;
+  let usingRestApi = false;
+
+  // REST API 폴백 - WebSocket이 안될 때 사용
+  async function fetchPricesFromRestApi() {
+    try {
+      const [btcRes, ethRes] = await Promise.all([
+        fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT'),
+        fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=ETHUSDT')
+      ]);
+      
+      if (btcRes.ok && ethRes.ok) {
+        const btcData = await btcRes.json();
+        const ethData = await ethRes.json();
+        
+        binancePrices.BTC = {
+          price: parseFloat(btcData.lastPrice),
+          change: parseFloat(btcData.priceChange),
+          changePercent: parseFloat(btcData.priceChangePercent),
+          high: parseFloat(btcData.highPrice),
+          low: parseFloat(btcData.lowPrice),
+          volume: parseFloat(btcData.volume),
+          updatedAt: Date.now()
+        };
+        
+        binancePrices.ETH = {
+          price: parseFloat(ethData.lastPrice),
+          change: parseFloat(ethData.priceChange),
+          changePercent: parseFloat(ethData.priceChangePercent),
+          high: parseFloat(ethData.highPrice),
+          low: parseFloat(ethData.lowPrice),
+          volume: parseFloat(ethData.volume),
+          updatedAt: Date.now()
+        };
+        
+        if (!usingRestApi) {
+          usingRestApi = true;
+          console.log('📡 [Binance] REST API 폴백 모드로 전환');
+        }
+        
+        messageCount++;
+        if (messageCount <= 5 || messageCount % 60 === 0) {
+          console.log(`📊 [Binance REST] BTC: $${binancePrices.BTC.price.toFixed(2)}, ETH: $${binancePrices.ETH.price.toFixed(2)}`);
+        }
+      }
+    } catch (err) {
+      console.error('❌ [Binance REST] API 호출 실패:', err);
+    }
+  }
+
+  // REST API 폴링 시작 (1초마다)
+  function startRestApiPolling() {
+    if (restApiTimer) {
+      clearInterval(restApiTimer);
+    }
+    // 즉시 한번 호출
+    fetchPricesFromRestApi();
+    // 1초마다 폴링
+    restApiTimer = setInterval(fetchPricesFromRestApi, 1000);
+    console.log('🔄 [Binance] REST API 폴링 시작 (1초 간격)');
+  }
 
   function startBinanceWebSocket() {
     if (binanceWs) {
@@ -1898,74 +1959,103 @@ export async function registerRoutes(
     console.log('🔗 [Binance] WebSocket 연결 시작...');
     console.log('📡 URL:', wsUrl);
     
-    binanceWs = new WebSocket(wsUrl);
+    try {
+      binanceWs = new WebSocket(wsUrl);
 
-    binanceWs.on('open', () => {
-      isConnected = true;
-      messageCount = 0;
-      console.log('✅ [Binance] WebSocket 연결 성공!');
-      
-      // BTC, ETH 실시간 티커 구독
-      const subscribeMsg = JSON.stringify({
-        method: 'SUBSCRIBE',
-        params: ['btcusdt@ticker', 'ethusdt@ticker'],
-        id: 1
-      });
-      binanceWs!.send(subscribeMsg);
-      console.log('📨 [Binance] 구독 요청 전송: btcusdt@ticker, ethusdt@ticker');
-    });
-
-    binanceWs.on('message', (data: Buffer) => {
-      try {
-        const msg = JSON.parse(data.toString());
+      binanceWs.on('open', () => {
+        isConnected = true;
+        usingRestApi = false;
+        messageCount = 0;
+        console.log('✅ [Binance] WebSocket 연결 성공!');
         
-        // 구독 응답 로그
-        if (msg.result === null && msg.id === 1) {
-          console.log('✅ [Binance] 구독 완료! 실시간 데이터 수신 시작');
+        // REST API 폴링 중지 (WebSocket이 작동하면)
+        if (restApiTimer) {
+          clearInterval(restApiTimer);
+          restApiTimer = null;
+          console.log('🛑 [Binance] REST API 폴링 중지 (WebSocket 활성화)');
         }
         
-        // 티커 데이터 처리
-        if (msg.e === '24hrTicker') {
-          const symbol = msg.s === 'BTCUSDT' ? 'BTC' : msg.s === 'ETHUSDT' ? 'ETH' : null;
-          if (symbol) {
-            messageCount++;
-            binancePrices[symbol] = {
-              price: parseFloat(msg.c),
-              change: parseFloat(msg.p),
-              changePercent: parseFloat(msg.P),
-              high: parseFloat(msg.h),
-              low: parseFloat(msg.l),
-              volume: parseFloat(msg.v),
-              updatedAt: Date.now()
-            };
-            
-            // 처음 10개 메시지만 로그
-            if (messageCount <= 10) {
-              console.log(`💹 [Binance] ${symbol}: $${binancePrices[symbol].price.toFixed(2)} (${binancePrices[symbol].changePercent > 0 ? '+' : ''}${binancePrices[symbol].changePercent.toFixed(2)}%)`);
-            } else if (messageCount === 11) {
-              console.log('📊 [Binance] 실시간 데이터 수신 중... (로그 생략)');
+        // BTC, ETH 실시간 티커 구독
+        const subscribeMsg = JSON.stringify({
+          method: 'SUBSCRIBE',
+          params: ['btcusdt@ticker', 'ethusdt@ticker'],
+          id: 1
+        });
+        binanceWs!.send(subscribeMsg);
+        console.log('📨 [Binance] 구독 요청 전송: btcusdt@ticker, ethusdt@ticker');
+      });
+
+      binanceWs.on('message', (data: Buffer) => {
+        try {
+          const msg = JSON.parse(data.toString());
+          
+          // 구독 응답 로그
+          if (msg.result === null && msg.id === 1) {
+            console.log('✅ [Binance] 구독 완료! 실시간 데이터 수신 시작');
+          }
+          
+          // 티커 데이터 처리
+          if (msg.e === '24hrTicker') {
+            const symbol = msg.s === 'BTCUSDT' ? 'BTC' : msg.s === 'ETHUSDT' ? 'ETH' : null;
+            if (symbol) {
+              messageCount++;
+              binancePrices[symbol] = {
+                price: parseFloat(msg.c),
+                change: parseFloat(msg.p),
+                changePercent: parseFloat(msg.P),
+                high: parseFloat(msg.h),
+                low: parseFloat(msg.l),
+                volume: parseFloat(msg.v),
+                updatedAt: Date.now()
+              };
+              
+              // 처음 10개 메시지만 로그
+              if (messageCount <= 10) {
+                console.log(`💹 [Binance] ${symbol}: $${binancePrices[symbol].price.toFixed(2)} (${binancePrices[symbol].changePercent > 0 ? '+' : ''}${binancePrices[symbol].changePercent.toFixed(2)}%)`);
+              } else if (messageCount === 11) {
+                console.log('📊 [Binance] 실시간 데이터 수신 중... (로그 생략)');
+              }
             }
           }
+        } catch (e) {
+          // 파싱 에러 무시
         }
-      } catch (e) {
-        // 파싱 에러 무시
-      }
-    });
+      });
 
-    binanceWs.on('error', (err) => {
-      isConnected = false;
-      console.error('❌ [Binance] WebSocket 에러:', err.message);
-    });
+      binanceWs.on('error', (err) => {
+        isConnected = false;
+        console.error('❌ [Binance] WebSocket 에러:', err.message);
+        // WebSocket 에러 시 REST API 폴백
+        if (!restApiTimer) {
+          startRestApiPolling();
+        }
+      });
 
-    binanceWs.on('close', () => {
-      isConnected = false;
-      console.log('⚠️ [Binance] WebSocket 연결 종료, 3초 후 재연결...');
-      reconnectTimer = setTimeout(startBinanceWebSocket, 3000);
-    });
+      binanceWs.on('close', () => {
+        isConnected = false;
+        console.log('⚠️ [Binance] WebSocket 연결 종료, REST API 폴백 및 3초 후 재연결...');
+        // REST API 폴백 시작
+        if (!restApiTimer) {
+          startRestApiPolling();
+        }
+        reconnectTimer = setTimeout(startBinanceWebSocket, 3000);
+      });
+    } catch (err) {
+      console.error('❌ [Binance] WebSocket 생성 실패:', err);
+      // WebSocket 생성 실패 시 REST API로 폴백
+      startRestApiPolling();
+    }
   }
 
-  // 서버 시작 시 WebSocket 연결
+  // 서버 시작 시 WebSocket 연결 시도 및 REST API 폴백 준비
   startBinanceWebSocket();
+  // WebSocket 연결이 5초 내에 되지 않으면 REST API 폴백 시작
+  setTimeout(() => {
+    if (!isConnected && !restApiTimer) {
+      console.log('⚠️ [Binance] WebSocket 연결 지연, REST API 폴백 시작...');
+      startRestApiPolling();
+    }
+  }, 5000);
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
   // WebSocket 상태 확인 API (디버깅용)
@@ -1973,6 +2063,7 @@ export async function registerRoutes(
     const now = Date.now();
     res.json({
       connected: isConnected,
+      usingRestApi,
       messageCount,
       btcUpdatedAt: binancePrices.BTC.updatedAt,
       btcAge: now - binancePrices.BTC.updatedAt,
