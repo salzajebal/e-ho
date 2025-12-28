@@ -39,6 +39,8 @@ import {
   ZapOff,
   ChevronDown,
   Calendar,
+  Plus,
+  Minus,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -321,6 +323,7 @@ export default function Admin() {
   const [messageTitle, setMessageTitle] = useState("");
   const [messageContent, setMessageContent] = useState("");
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
+  const [balanceAdjustAmount, setBalanceAdjustAmount] = useState("");
   const [createUserOpen, setCreateUserOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
@@ -3714,25 +3717,73 @@ export default function Admin() {
               </div>
               <div className="border-t border-border pt-4">
                 <p className="text-sm font-medium mb-3">금액 정보</p>
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-xs text-muted-foreground">보유머니</label>
-                    <Input
-                      type="number"
-                      value={editingUser.balance}
-                      onChange={(e) => setEditingUser(p => p ? { ...p, balance: e.target.value } : null)}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs text-muted-foreground">총입금</label>
-                    <div className="p-2 bg-muted/50 rounded-md border border-border text-sm font-mono">
-                      {formatMoney(editingUser.totalDeposit)}
+                <div className="space-y-3">
+                  <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-xs text-muted-foreground">현재 보유머니</label>
+                      <span className="text-lg font-bold text-primary font-mono">{formatMoney(editingUser.balance)}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        value={balanceAdjustAmount}
+                        onChange={(e) => setBalanceAdjustAmount(e.target.value)}
+                        placeholder="조정 금액 입력"
+                        className="flex-1"
+                      />
+                      <button
+                        onClick={() => {
+                          const amount = parseFloat(balanceAdjustAmount);
+                          if (!isNaN(amount) && amount > 0) {
+                            const current = parseFloat(editingUser.balance) || 0;
+                            setEditingUser(p => p ? { ...p, balance: String(current + amount) } : null);
+                            setBalanceAdjustAmount("");
+                          }
+                        }}
+                        className="px-3 py-2 bg-up text-white rounded-md hover:bg-up/90 text-sm font-medium flex items-center gap-1"
+                      >
+                        <Plus className="w-4 h-4" />
+                        추가
+                      </button>
+                      <button
+                        onClick={() => {
+                          const amount = parseFloat(balanceAdjustAmount);
+                          if (!isNaN(amount) && amount > 0) {
+                            const current = parseFloat(editingUser.balance) || 0;
+                            setEditingUser(p => p ? { ...p, balance: String(Math.max(0, current - amount)) } : null);
+                            setBalanceAdjustAmount("");
+                          }
+                        }}
+                        className="px-3 py-2 bg-down text-white rounded-md hover:bg-down/90 text-sm font-medium flex items-center gap-1"
+                      >
+                        <Minus className="w-4 h-4" />
+                        차감
+                      </button>
+                    </div>
+                    <div className="flex gap-1 mt-2">
+                      {[10000, 50000, 100000, 500000, 1000000].map((amt) => (
+                        <button
+                          key={amt}
+                          onClick={() => setBalanceAdjustAmount(String(amt))}
+                          className="px-2 py-1 text-[10px] bg-muted hover:bg-muted/80 rounded text-muted-foreground"
+                        >
+                          {(amt / 10000).toLocaleString()}만
+                        </button>
+                      ))}
                     </div>
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-xs text-muted-foreground">총출금</label>
-                    <div className="p-2 bg-muted/50 rounded-md border border-border text-sm font-mono">
-                      {formatMoney(editingUser.totalWithdrawal)}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs text-muted-foreground">총입금</label>
+                      <div className="p-2 bg-muted/50 rounded-md border border-border text-sm font-mono">
+                        {formatMoney(editingUser.totalDeposit)}
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs text-muted-foreground">총출금</label>
+                      <div className="p-2 bg-muted/50 rounded-md border border-border text-sm font-mono">
+                        {formatMoney(editingUser.totalWithdrawal)}
+                      </div>
                     </div>
                   </div>
                 </div>
