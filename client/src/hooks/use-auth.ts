@@ -13,7 +13,7 @@ export function useAuth() {
   return useQuery<AuthUser | null>({
     queryKey: ["/api/auth/me"],
     queryFn: async () => {
-      const res = await fetch("/api/auth/me");
+      const res = await fetch("/api/auth/me", { credentials: "include" });
       if (!res.ok) return null;
       return res.json();
     },
@@ -30,6 +30,7 @@ export function useLogin() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
+        credentials: "include",
       });
       if (!res.ok) {
         const error = await res.json();
@@ -69,6 +70,7 @@ export function useRegister() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
+        credentials: "include",
       });
       if (!res.ok) {
         const error = await res.json();
@@ -98,7 +100,7 @@ export function useLogout() {
 
   return useMutation({
     mutationFn: async () => {
-      const res = await fetch("/api/auth/logout", { method: "POST" });
+      const res = await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
       if (!res.ok) throw new Error("로그아웃에 실패했습니다");
       return res.json();
     },
