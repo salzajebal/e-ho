@@ -143,6 +143,18 @@ export async function initializeDatabase(): Promise<void> {
     `);
     console.log('Affiliate settlements table ready');
 
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS login_history (
+        id SERIAL PRIMARY KEY,
+        user_id VARCHAR NOT NULL REFERENCES users(id),
+        username TEXT NOT NULL,
+        ip TEXT NOT NULL,
+        user_agent TEXT,
+        login_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )
+    `);
+    console.log('Login history table ready');
+
     // Ensure all admin users are approved (migration for existing data)
     await client.query(`
       UPDATE users SET approval_status = 'approved' WHERE role = 'admin' AND approval_status != 'approved'

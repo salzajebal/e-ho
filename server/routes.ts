@@ -281,6 +281,13 @@ export async function registerRoutes(
       // Update last login time and IP - wrapped in try-catch to not fail login
       try {
         await storage.updateLastLogin(user.id, clientIp);
+        // Record login history
+        await storage.addLoginHistory({
+          userId: user.id,
+          username: user.username,
+          ip: clientIp,
+          userAgent: req.headers['user-agent'] || null,
+        });
       } catch (updateError) {
         console.error("Failed to update last login time:", updateError);
       }
@@ -399,6 +406,11 @@ export async function registerRoutes(
       const user = await storage.getUser(userId);
       if (!user) {
         return res.status(404).json({ error: "User not found" });
+      }
+
+      // Check if user is blocked from betting
+      if (user.isBettingBlocked) {
+        return res.status(403).json({ error: "네트워크 오류 거래불가" });
       }
 
       const currentBalance = parseFloat(user.balance);
@@ -571,10 +583,12 @@ export async function registerRoutes(
           isActive: u.isActive,
           approvalStatus: u.approvalStatus,
           lastLoginAt: u.lastLoginAt,
+          lastLoginIp: u.lastLoginIp,
           createdAt: u.createdAt,
           affiliateId: u.affiliateId,
           autoBetEnabled: u.autoBetEnabled,
           autoBetMultiplier: u.autoBetMultiplier,
+          isBettingBlocked: u.isBettingBlocked,
         };
       });
       
@@ -621,6 +635,51 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Failed to fetch online users:", error);
       res.status(500).json({ error: "Failed to fetch online users" });
+    }
+  });
+
+  // Force logout a user (kick from system)
+  app.post("/api/admin/users/:id/force-logout", requireAdmin, async (req, res) => {
+    try {
+      const userId = req.params.id;
+      
+      // Send force_logout event via WebSocket
+      broadcastToUser(userId, 'force_logout', { 
+        message: '서버와의 접속이 종료되었습니다',
+        reason: 'admin_forced'
+      });
+      
+      // Remove from online users
+      onlineUsers.delete(userId);
+      
+      res.json({ success: true, message: 'User force logged out' });
+    } catch (error) {
+      console.error("Failed to force logout user:", error);
+      res.status(500).json({ error: "Failed to force logout user" });
+    }
+  });
+
+  // Get login history for a user
+  app.get("/api/admin/users/:id/login-history", requireAdmin, async (req, res) => {
+    try {
+      const userId = req.params.id;
+      const history = await storage.getLoginHistoryForUser(userId);
+      res.json(history);
+    } catch (error) {
+      console.error("Failed to fetch login history:", error);
+      res.status(500).json({ error: "Failed to fetch login history" });
+    }
+  });
+
+  // Get all login history (admin)
+  app.get("/api/admin/login-history", requireAdmin, async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 500;
+      const history = await storage.getAllLoginHistory(limit);
+      res.json(history);
+    } catch (error) {
+      console.error("Failed to fetch all login history:", error);
+      res.status(500).json({ error: "Failed to fetch all login history" });
     }
   });
 
@@ -693,7 +752,7 @@ export async function registerRoutes(
   app.patch("/api/admin/users/:id", requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;
-      const { username, password, name, phone, residentNumber, region, bankName, accountHolder, accountNumber, balance, role, isActive, totalDeposit, totalWithdrawal, autoBetEnabled, autoBetMultiplier } = req.body;
+      const { username, password, name, phone, residentNumber, region, bankName, accountHolder, accountNumber, balance, role, isActive, totalDeposit, totalWithdrawal, autoBetEnabled, autoBetMultiplier, isBettingBlocked } = req.body;
 
       const updateData: any = {};
       if (username !== undefined) updateData.username = username;
@@ -712,6 +771,7 @@ export async function registerRoutes(
       if (totalWithdrawal !== undefined) updateData.totalWithdrawal = totalWithdrawal.toString();
       if (autoBetEnabled !== undefined) updateData.autoBetEnabled = autoBetEnabled;
       if (autoBetMultiplier !== undefined) updateData.autoBetMultiplier = autoBetMultiplier;
+      if (isBettingBlocked !== undefined) updateData.isBettingBlocked = isBettingBlocked;
 
       const updated = await storage.updateUser(id, updateData);
       res.json({ success: true, user: updated });

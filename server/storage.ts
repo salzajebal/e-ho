@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Bet, type InsertBet, type Setting, type Message, type InsertMessage, type Affiliate, type InsertAffiliate, type AffiliateCommission, type AffiliateSettlement, type InsertAffiliateSettlement, type Announcement, type InsertAnnouncement, type BlockedIp, type InsertBlockedIp, type MaintenanceSymbol, type InsertMaintenanceSymbol, type TransactionRequest, type InsertTransactionRequest, type Inquiry, type InsertInquiry, type RoundResult, type InsertRoundResult, users, bets, settings, messages, affiliates, affiliateCommissions, affiliateSettlements, announcements, blockedIps, maintenanceSymbols, transactionRequests, inquiries, roundResults } from "@shared/schema";
+import { type User, type InsertUser, type Bet, type InsertBet, type Setting, type Message, type InsertMessage, type Affiliate, type InsertAffiliate, type AffiliateCommission, type AffiliateSettlement, type InsertAffiliateSettlement, type Announcement, type InsertAnnouncement, type BlockedIp, type InsertBlockedIp, type MaintenanceSymbol, type InsertMaintenanceSymbol, type TransactionRequest, type InsertTransactionRequest, type Inquiry, type InsertInquiry, type RoundResult, type InsertRoundResult, type LoginHistory, type InsertLoginHistory, users, bets, settings, messages, affiliates, affiliateCommissions, affiliateSettlements, announcements, blockedIps, maintenanceSymbols, transactionRequests, inquiries, roundResults, loginHistory } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, lt, sql, gte } from "drizzle-orm";
 
@@ -146,6 +146,11 @@ export interface IStorage {
   getRoundResults(symbol: string, duration: number, limit?: number): Promise<RoundResult[]>;
   getRoundResult(symbol: string, duration: number, roundNumber: number, roundDate: string): Promise<RoundResult | undefined>;
   upsertRoundResult(result: InsertRoundResult): Promise<RoundResult>;
+
+  // Login history methods (로그인 기록)
+  addLoginHistory(entry: InsertLoginHistory): Promise<LoginHistory>;
+  getLoginHistoryForUser(userId: string): Promise<LoginHistory[]>;
+  getAllLoginHistory(limit?: number): Promise<LoginHistory[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -915,6 +920,25 @@ export class DatabaseStorage implements IStorage {
       return updated;
     }
     return this.createRoundResult(result);
+  }
+
+  // Login history methods (로그인 기록)
+  async addLoginHistory(entry: InsertLoginHistory): Promise<LoginHistory> {
+    const [created] = await db.insert(loginHistory).values(entry).returning();
+    return created;
+  }
+
+  async getLoginHistoryForUser(userId: string): Promise<LoginHistory[]> {
+    return await db.select().from(loginHistory)
+      .where(eq(loginHistory.userId, userId))
+      .orderBy(desc(loginHistory.loginAt))
+      .limit(100);
+  }
+
+  async getAllLoginHistory(limit: number = 500): Promise<LoginHistory[]> {
+    return await db.select().from(loginHistory)
+      .orderBy(desc(loginHistory.loginAt))
+      .limit(limit);
   }
 }
 

@@ -94,8 +94,10 @@ interface AdminUser {
   isActive: boolean;
   autoBetEnabled: boolean;
   autoBetMultiplier: number;
+  isBettingBlocked: boolean;
   approvalStatus: string;
   lastLoginAt: string | null;
+  lastLoginIp: string | null;
   createdAt: string;
 }
 
@@ -322,6 +324,7 @@ export default function Admin() {
   const [createUserOpen, setCreateUserOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
+  const [loginHistoryUser, setLoginHistoryUser] = useState<AdminUser | null>(null);
   const [telegramLink, setTelegramLink] = useState("");
   const [companyInfo, setCompanyInfo] = useState("");
   const [prevPendingCount, setPrevPendingCount] = useState(0);
@@ -650,6 +653,28 @@ export default function Admin() {
     currentIp: string;
     isOnline: boolean;
   }
+
+  // Login history
+  interface LoginHistoryEntry {
+    id: number;
+    userId: string;
+    username: string;
+    ip: string;
+    userAgent: string | null;
+    loginAt: string;
+  }
+
+  const { data: loginHistory = [] } = useQuery<LoginHistoryEntry[]>({
+    queryKey: ["/api/admin/users", loginHistoryUser?.id, "login-history"],
+    queryFn: async () => {
+      if (!loginHistoryUser) return [];
+      const res = await fetch(`/api/admin/users/${loginHistoryUser.id}/login-history`);
+      if (!res.ok) throw new Error("Failed to fetch login history");
+      return res.json();
+    },
+    enabled: !!loginHistoryUser,
+  });
+
   const { data: onlineUsers = [], refetch: refetchOnlineUsers } = useQuery<OnlineUser[]>({
     queryKey: ["/api/admin/online-users"],
     queryFn: async () => {
@@ -1273,6 +1298,21 @@ export default function Admin() {
     },
   });
 
+  const forceLogoutMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const res = await fetch(`/api/admin/users/${userId}/force-logout`, { method: "POST" });
+      if (!res.ok) throw new Error("Failed to force logout");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/online-users"] });
+      toast.success("강제 로그아웃 처리되었습니다");
+    },
+    onError: () => {
+      toast.error("강제 로그아웃에 실패했습니다");
+    },
+  });
+
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast.success("클립보드에 복사되었습니다");
@@ -1298,6 +1338,10 @@ export default function Admin() {
 
   const toggleAutoBet = (user: AdminUser) => {
     updateUser.mutate({ id: user.id, autoBetEnabled: !user.autoBetEnabled });
+  };
+
+  const toggleBettingBlock = (user: AdminUser) => {
+    updateUser.mutate({ id: user.id, isBettingBlocked: !user.isBettingBlocked });
   };
 
   const formatDate = (dateStr: string | null) => {
@@ -1907,6 +1951,7 @@ export default function Admin() {
                       <th className="px-4 py-3 font-medium">접속 IP</th>
                       <th className="px-4 py-3 font-medium">접속 시간</th>
                       <th className="px-4 py-3 font-medium text-right">현재 잔고</th>
+                      <th className="px-4 py-3 font-medium text-center">관리</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
@@ -1931,11 +1976,24 @@ export default function Admin() {
                         <td className="px-4 py-3 text-right font-medium text-up">
                           {formatMoney(parseFloat(user.balance || '0'))}
                         </td>
+                        <td className="px-4 py-3 text-center">
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => forceLogoutMutation.mutate(user.id)}
+                            disabled={forceLogoutMutation.isPending}
+                            className="h-7 text-xs"
+                            data-testid={`button-force-logout-${user.id}`}
+                          >
+                            <LogOut className="w-3 h-3 mr-1" />
+                            강제 로그아웃
+                          </Button>
+                        </td>
                       </tr>
                     ))}
                     {onlineUsers.length === 0 && (
                       <tr>
-                        <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                        <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
                           <WifiOff className="w-8 h-8 mx-auto mb-2 opacity-50" />
                           현재 접속 중인 회원이 없습니다
                         </td>
@@ -2075,6 +2133,7 @@ export default function Admin() {
                       <th className="px-3 py-2 whitespace-nowrap">총출금</th>
                       <th className="px-3 py-2 whitespace-nowrap">수익률</th>
                       <th className="px-3 py-2 whitespace-nowrap">자동배팅</th>
+                      <th className="px-3 py-2 whitespace-nowrap">베팅금지</th>
                       <th className="px-3 py-2 whitespace-nowrap">최근로그인</th>
                       <th className="px-3 py-2 whitespace-nowrap">가입일</th>
                       <th className="px-3 py-2 whitespace-nowrap text-right">관리</th>
@@ -2144,6 +2203,21 @@ export default function Admin() {
                           >
                             {user.autoBetEnabled ? <Zap className="w-3 h-3" /> : <ZapOff className="w-3 h-3" />}
                             {user.autoBetEnabled ? `ON (x${user.autoBetMultiplier || 10})` : 'OFF'}
+                          </button>
+                        </td>
+                        <td className="px-3 py-2">
+                          <button
+                            onClick={() => toggleBettingBlock(user)}
+                            className={cn(
+                              "inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors",
+                              user.isBettingBlocked 
+                                ? "bg-down/20 text-down hover:bg-down/30" 
+                                : "bg-muted text-muted-foreground hover:bg-muted/80"
+                            )}
+                            data-testid={`button-betting-block-${user.id}`}
+                          >
+                            <Ban className="w-3 h-3" />
+                            {user.isBettingBlocked ? '금지' : '허용'}
                           </button>
                         </td>
                         <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">
@@ -3635,6 +3709,36 @@ export default function Admin() {
                 </div>
               </div>
               <div className="border-t border-border pt-4">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm font-medium">접속 정보</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setLoginHistoryUser(editingUser)}
+                    className="h-7 text-xs"
+                    data-testid="button-view-login-history"
+                  >
+                    <Globe className="w-3 h-3 mr-1" />
+                    IP 이력 조회
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground">마지막 로그인 IP</label>
+                    <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-md">
+                      <Globe className="w-4 h-4 text-muted-foreground" />
+                      <span className="font-mono text-sm">{editingUser.lastLoginIp || '-'}</span>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground">마지막 로그인 시간</label>
+                    <div className="p-2 bg-muted/50 rounded-md text-sm">
+                      {editingUser.lastLoginAt ? formatDate(editingUser.lastLoginAt) : '-'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="border-t border-border pt-4">
                 <p className="text-sm font-medium mb-3">금액 정보</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
@@ -3775,6 +3879,48 @@ export default function Admin() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Login History Dialog */}
+      <Dialog open={!!loginHistoryUser} onOpenChange={() => setLoginHistoryUser(null)}>
+        <DialogContent className="bg-card border-border max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>로그인 IP 이력 - {loginHistoryUser?.username}</DialogTitle>
+          </DialogHeader>
+          <div className="mt-4">
+            {loginHistory.length === 0 ? (
+              <div className="text-center text-muted-foreground py-8">
+                로그인 기록이 없습니다
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50 text-left">
+                    <tr>
+                      <th className="px-3 py-2 font-medium">IP 주소</th>
+                      <th className="px-3 py-2 font-medium">접속 시간</th>
+                      <th className="px-3 py-2 font-medium">브라우저 정보</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {loginHistory.map((entry) => (
+                      <tr key={entry.id} className="hover:bg-muted/30">
+                        <td className="px-3 py-2 font-mono text-xs">{entry.ip}</td>
+                        <td className="px-3 py-2 text-xs">{formatDate(entry.loginAt)}</td>
+                        <td className="px-3 py-2 text-xs text-muted-foreground max-w-[200px] truncate" title={entry.userAgent || ''}>
+                          {entry.userAgent || '-'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+          <div className="flex justify-end pt-4">
+            <Button variant="outline" onClick={() => setLoginHistoryUser(null)}>닫기</Button>
+          </div>
         </DialogContent>
       </Dialog>
 

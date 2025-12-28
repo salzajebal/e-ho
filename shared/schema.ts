@@ -55,6 +55,7 @@ export const users = pgTable("users", {
   lastLoginIp: text("last_login_ip"),
   autoBetEnabled: boolean("auto_bet_enabled").notNull().default(false),
   autoBetMultiplier: integer("auto_bet_multiplier").notNull().default(10),
+  isBettingBlocked: boolean("is_betting_blocked").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -321,6 +322,24 @@ export const insertRoundResultSchema = createInsertSchema(roundResults).omit({
 
 export type InsertRoundResult = z.infer<typeof insertRoundResultSchema>;
 export type RoundResult = typeof roundResults.$inferSelect;
+
+// Login history table (로그인 기록)
+export const loginHistory = pgTable("login_history", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  username: text("username").notNull(),
+  ip: text("ip").notNull(),
+  userAgent: text("user_agent"),
+  loginAt: timestamp("login_at").defaultNow().notNull(),
+});
+
+export const insertLoginHistorySchema = createInsertSchema(loginHistory).omit({
+  id: true,
+  loginAt: true,
+});
+
+export type InsertLoginHistory = z.infer<typeof insertLoginHistorySchema>;
+export type LoginHistory = typeof loginHistory.$inferSelect;
 
 // Korean banks list
 export const KOREAN_BANKS = [

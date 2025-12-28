@@ -43,6 +43,13 @@ export function useBetHistory() {
   });
 }
 
+class BetBlockedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'BetBlockedError';
+  }
+}
+
 export function useCreateBet() {
   const queryClient = useQueryClient();
 
@@ -62,6 +69,9 @@ export function useCreateBet() {
       });
       if (!res.ok) {
         const error = await res.json();
+        if (res.status === 403 && error.error === "네트워크 오류 거래불가") {
+          throw new BetBlockedError(error.error);
+        }
         throw new Error(error.error || "Failed to place bet");
       }
       return res.json();
@@ -73,7 +83,11 @@ export function useCreateBet() {
       toast.success(`거래 체결되었습니다`);
     },
     onError: (error: Error) => {
-      toast.error(error.message);
+      if (error instanceof BetBlockedError) {
+        alert("네트워크 오류 거래불가");
+      } else {
+        toast.error(error.message);
+      }
     },
   });
 }

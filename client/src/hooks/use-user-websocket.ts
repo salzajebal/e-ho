@@ -83,6 +83,19 @@ export function useUserWebSocket(isAuthenticated: boolean, options?: WebSocketOp
             
             optionsRef.current?.onTransactionProcessed?.();
           }
+          
+          // Handle force logout from admin
+          if (data.event === 'force_logout') {
+            // Close WebSocket connection
+            ws.close();
+            
+            // Clear session by calling logout endpoint
+            fetch('/api/auth/logout', { method: 'POST' }).finally(() => {
+              // Show alert and redirect to login page
+              alert('서버와의 접속이 종료되었습니다');
+              window.location.href = '/login';
+            });
+          }
         } catch (err) {
           console.error('Failed to parse WebSocket message:', err);
         }
