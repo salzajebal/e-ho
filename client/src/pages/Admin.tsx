@@ -987,6 +987,7 @@ export default function Admin() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
+        credentials: "include",
       });
       if (!res.ok) {
         const error = await res.json();
@@ -1016,6 +1017,7 @@ export default function Admin() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
+        credentials: "include",
       });
       if (!res.ok) throw new Error("Failed to update user");
       return res.json();
@@ -1033,7 +1035,7 @@ export default function Admin() {
 
   const deleteUser = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/admin/users/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/admin/users/${id}`, { method: "DELETE", credentials: "include" });
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.error || "Failed to delete user");
