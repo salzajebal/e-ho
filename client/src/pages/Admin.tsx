@@ -2130,8 +2130,6 @@ export default function Admin() {
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">총입금</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">총출금</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">수익률</th>
-                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">자동배팅</th>
-                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">베팅금지</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">최근로그인</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">가입일</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap text-right">관리</th>
@@ -2189,35 +2187,6 @@ export default function Admin() {
                             {parseFloat(user.profitRate) >= 0 ? '+' : ''}{user.profitRate}%
                           </span>
                         </td>
-                        <td className="px-2 lg:px-3 py-1.5 lg:py-2">
-                          <button
-                            onClick={() => toggleAutoBet(user)}
-                            className={cn(
-                              "inline-flex items-center gap-1 px-1.5 lg:px-2 py-0.5 lg:py-1 rounded text-[10px] lg:text-xs font-medium transition-colors",
-                              user.autoBetEnabled 
-                                ? "bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500/30" 
-                                : "bg-muted text-muted-foreground hover:bg-muted/80"
-                            )}
-                          >
-                            {user.autoBetEnabled ? <Zap className="w-3 h-3" /> : <ZapOff className="w-3 h-3" />}
-                            {user.autoBetEnabled ? `ON (x${user.autoBetMultiplier || 10})` : 'OFF'}
-                          </button>
-                        </td>
-                        <td className="px-2 lg:px-3 py-1.5 lg:py-2">
-                          <button
-                            onClick={() => toggleBettingBlock(user)}
-                            className={cn(
-                              "inline-flex items-center gap-1 px-1.5 lg:px-2 py-0.5 lg:py-1 rounded text-[10px] lg:text-xs font-medium transition-colors",
-                              user.isBettingBlocked 
-                                ? "bg-down/20 text-down hover:bg-down/30" 
-                                : "bg-muted text-muted-foreground hover:bg-muted/80"
-                            )}
-                            data-testid={`button-betting-block-${user.id}`}
-                          >
-                            <Ban className="w-3 h-3" />
-                            {user.isBettingBlocked ? '금지' : '허용'}
-                          </button>
-                        </td>
                         <td className="px-2 lg:px-3 py-1.5 lg:py-2 text-[10px] lg:text-xs text-muted-foreground whitespace-nowrap">
                           {formatDate(user.lastLoginAt)}
                         </td>
@@ -2228,10 +2197,11 @@ export default function Admin() {
                           <div className="flex items-center justify-end gap-1">
                             <button
                               onClick={() => setEditingUser(user)}
-                              className="p-1.5 rounded hover:bg-muted/50 text-muted-foreground hover:text-foreground"
+                              className="inline-flex items-center gap-1 px-2 lg:px-3 py-1 lg:py-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 text-[10px] lg:text-xs font-medium transition-colors"
                               title="수정"
                             >
-                              <Edit2 className="w-4 h-4" />
+                              <Edit2 className="w-3 h-3" />
+                              <span className="hidden lg:inline">수정</span>
                             </button>
                             <button
                               onClick={() => toggleFreeze(user)}
@@ -3780,6 +3750,71 @@ export default function Admin() {
                   </div>
                 </div>
               </div>
+              <div className="border-t border-border pt-4">
+                <p className="text-sm font-medium mb-3">베팅 설정</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-yellow-500" />
+                      <div>
+                        <p className="text-sm font-medium">자동배팅</p>
+                        <p className="text-xs text-muted-foreground">자동 베팅 활성화</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setEditingUser(p => p ? { ...p, autoBetEnabled: !p.autoBetEnabled } : null)}
+                      className={cn(
+                        "relative w-11 h-6 rounded-full transition-colors",
+                        editingUser.autoBetEnabled ? "bg-yellow-500" : "bg-muted"
+                      )}
+                    >
+                      <span className={cn(
+                        "absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform shadow",
+                        editingUser.autoBetEnabled && "translate-x-5"
+                      )} />
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Ban className="w-4 h-4 text-down" />
+                      <div>
+                        <p className="text-sm font-medium">베팅금지</p>
+                        <p className="text-xs text-muted-foreground">베팅 차단</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setEditingUser(p => p ? { ...p, isBettingBlocked: !p.isBettingBlocked } : null)}
+                      className={cn(
+                        "relative w-11 h-6 rounded-full transition-colors",
+                        editingUser.isBettingBlocked ? "bg-down" : "bg-muted"
+                      )}
+                    >
+                      <span className={cn(
+                        "absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform shadow",
+                        editingUser.isBettingBlocked && "translate-x-5"
+                      )} />
+                    </button>
+                  </div>
+                </div>
+                {editingUser.autoBetEnabled && (
+                  <div className="mt-3 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                    <label className="text-xs text-yellow-500 font-medium">자동배팅 배수</label>
+                    <Select 
+                      value={String(editingUser.autoBetMultiplier || 10)} 
+                      onValueChange={(v) => setEditingUser(p => p ? { ...p, autoBetMultiplier: parseInt(v) } : null)}
+                    >
+                      <SelectTrigger className="mt-1 bg-background/50 border-yellow-500/30">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-card border-border">
+                        {[2, 5, 10, 20, 50, 100].map((m) => (
+                          <SelectItem key={m} value={String(m)}>x{m} 배</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
               <div className="flex justify-end gap-2 pt-4">
                 <Button variant="outline" onClick={() => setEditingUser(null)}>취소</Button>
                 <Button 
@@ -3798,6 +3833,9 @@ export default function Admin() {
                     totalDeposit: editingUser.totalDeposit,
                     totalWithdrawal: editingUser.totalWithdrawal,
                     role: editingUser.role,
+                    autoBetEnabled: editingUser.autoBetEnabled,
+                    autoBetMultiplier: editingUser.autoBetMultiplier,
+                    isBettingBlocked: editingUser.isBettingBlocked,
                   })} 
                   disabled={updateUser.isPending}
                 >
