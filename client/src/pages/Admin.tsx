@@ -1380,6 +1380,18 @@ export default function Admin() {
         대시보드
       </button>
       <button
+        onClick={() => { setActiveTab('users'); setMobileMenuOpen(false); }}
+        className={cn(
+          "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+          activeTab === 'users'
+            ? "bg-primary/10 text-primary"
+            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+        )}
+      >
+        <Users className="w-4 h-4" />
+        회원 관리
+      </button>
+      <button
         onClick={() => { setActiveTab('approvals'); setMobileMenuOpen(false); }}
         className={cn(
           "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors relative",
@@ -1429,18 +1441,6 @@ export default function Admin() {
             {pendingInquiries.length}
           </span>
         )}
-      </button>
-      <button
-        onClick={() => { setActiveTab('users'); setMobileMenuOpen(false); }}
-        className={cn(
-          "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
-          activeTab === 'users'
-            ? "bg-primary/10 text-primary"
-            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-        )}
-      >
-        <Users className="w-4 h-4" />
-        회원 관리
       </button>
       <button
         onClick={() => { setActiveTab('bets'); setMobileMenuOpen(false); }}
