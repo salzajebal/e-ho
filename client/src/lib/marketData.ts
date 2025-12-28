@@ -74,6 +74,10 @@ export function useMarketData() {
           };
         });
         
+        if (updateCounter.current % 10 === 1) {
+          console.log('[MarketData] Updated prices:', newData.map(d => `${d.symbol}: $${d.price}`).join(', '));
+        }
+        
         setData(newData);
       } catch (error) {
         console.warn('Market API fetch error:', error);
