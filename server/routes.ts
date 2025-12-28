@@ -1,5 +1,6 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
+import https from "https";
 import { storage } from "./storage";
 import { insertBetSchema, loginSchema } from "@shared/schema";
 import { z } from "zod";
@@ -10,7 +11,6 @@ import { parse as parseCookie } from "cookie";
 import { unsign } from "cookie-signature";
 import { calculateRoundNumber, getRoundEndTime, getRoundTimeRemaining } from "@shared/rounds";
 import WebSocket from "ws";
-import fetch from "node-fetch";
 
 const SessionStore = MemoryStore(session);
 
@@ -1887,18 +1887,33 @@ export async function registerRoutes(
   let messageCount = 0;
   let usingRestApi = false;
 
-  // REST API 폴백 - WebSocket이 안될 때 사용
+  // REST API 폴백 - https 모듈 사용
+  function fetchBinancePrice(symbol: string): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const url = `https://api.binance.com/api/v3/ticker/24hr?symbol=${symbol}USDT`;
+      
+      https.get(url, (res) => {
+        let data = '';
+        res.on('data', (chunk) => { data += chunk; });
+        res.on('end', () => {
+          try {
+            resolve(JSON.parse(data));
+          } catch (e) {
+            reject(e);
+          }
+        });
+      }).on('error', reject);
+    });
+  }
+
   async function fetchPricesFromRestApi() {
     try {
-      const [btcRes, ethRes] = await Promise.all([
-        fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT'),
-        fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=ETHUSDT')
+      const [btcData, ethData] = await Promise.all([
+        fetchBinancePrice('BTC'),
+        fetchBinancePrice('ETH')
       ]);
       
-      if (btcRes.ok && ethRes.ok) {
-        const btcData = await btcRes.json() as any;
-        const ethData = await ethRes.json() as any;
-        
+      if (btcData && btcData.lastPrice && ethData && ethData.lastPrice) {
         binancePrices.BTC = {
           price: parseFloat(btcData.lastPrice),
           change: parseFloat(btcData.priceChange),
@@ -1928,6 +1943,8 @@ export async function registerRoutes(
         if (messageCount <= 5 || messageCount % 60 === 0) {
           console.log(`📊 [Binance REST] BTC: $${binancePrices.BTC.price.toFixed(2)}, ETH: $${binancePrices.ETH.price.toFixed(2)}`);
         }
+      } else {
+        console.error('❌ [Binance REST] 응답 데이터 형식 오류:', { btcData, ethData });
       }
     } catch (err) {
       console.error('❌ [Binance REST] API 호출 실패:', err);
