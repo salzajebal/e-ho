@@ -3629,21 +3629,21 @@ export default function Admin() {
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-xs text-muted-foreground">주민번호 (로얄조회)</label>
-                  <Input
-                    value={editingUser.residentNumber || ''}
-                    onChange={(e) => setEditingUser(p => p ? { ...p, residentNumber: e.target.value } : null)}
-                    className="font-mono"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs text-muted-foreground">지역 (신고지역)</label>
-                  <Input
-                    value={editingUser.region || ''}
-                    onChange={(e) => setEditingUser(p => p ? { ...p, region: e.target.value } : null)}
-                  />
+              <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                <p className="text-xs text-blue-400 font-medium mb-2">가입 시 입력 정보</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground">주민번호</label>
+                    <div className="p-2 bg-background/50 rounded-md border border-border">
+                      <span className="font-mono text-sm">{editingUser.residentNumber || '-'}</span>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground">지역</label>
+                    <div className="p-2 bg-background/50 rounded-md border border-border">
+                      <span className="text-sm">{editingUser.region || '-'}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
               <div className="space-y-1">
