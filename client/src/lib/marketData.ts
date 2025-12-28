@@ -44,8 +44,15 @@ export function useMarketData() {
         
         const result = await response.json();
         
-        if (result.fallback || !result.prices) {
-          console.warn('Market API returned fallback or no prices');
+        if (!result.prices || result.prices.length === 0) {
+          console.warn('Market API returned no prices');
+          return;
+        }
+        
+        // Skip if fallback data (no real-time connection yet) - but only if fallback is explicitly true
+        // Allow data through if fallback field is missing (old API) or false
+        if (result.fallback === true) {
+          console.warn('Market API returned fallback data, waiting for live connection...');
           return;
         }
 
@@ -75,7 +82,7 @@ export function useMarketData() {
         });
         
         if (updateCounter.current % 10 === 1) {
-          console.log('[MarketData] Updated prices:', newData.map(d => `${d.symbol}: $${d.price}`).join(', '));
+          console.log('[MarketData] Updated prices:', newData.map((d: MarketData) => `${d.symbol}: $${d.price}`).join(', '));
         }
         
         setData(newData);
