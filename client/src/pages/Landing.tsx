@@ -1087,15 +1087,14 @@ export default function Landing() {
               >
                 로그인
               </Button>
-              <Link href="/register">
-                <Button 
-                  size="lg" 
-                  className="bg-blue-500 hover:bg-blue-600 text-white font-bold px-10 py-6 text-lg rounded-lg"
-                  data-testid="button-register-cta"
-                >
-                  회원가입
-                </Button>
-              </Link>
+              <Button 
+                size="lg" 
+                className="bg-blue-500 hover:bg-blue-600 text-white font-bold px-10 py-6 text-lg rounded-lg"
+                data-testid="button-register-cta"
+                onClick={() => setShowRegisterModal(true)}
+              >
+                회원가입
+              </Button>
             </div>
           </div>
         </section>
