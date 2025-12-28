@@ -774,16 +774,6 @@ export async function registerRoutes(
       if (isBettingBlocked !== undefined) updateData.isBettingBlocked = isBettingBlocked;
 
       const updated = await storage.updateUser(id, updateData);
-      
-      // Notify user of balance/status changes via WebSocket
-      if (balance !== undefined || isActive !== undefined || isBettingBlocked !== undefined) {
-        broadcastToUser(id, 'user_updated', {
-          balance: updated?.balance,
-          isActive: updated?.isActive,
-          isBettingBlocked: updated?.isBettingBlocked,
-        });
-      }
-      
       res.json({ success: true, user: updated });
     } catch (error) {
       res.status(500).json({ error: "Failed to update user" });
@@ -877,9 +867,6 @@ export async function registerRoutes(
           await storage.updateUserBalance(bet.userId, newBalance);
         }
       }
-      
-      // Notify user of bet update
-      broadcastToUser(bet.userId, 'bet_updated', { bet: updated });
 
       res.json({ success: true, bet: updated });
     } catch (error) {
@@ -1687,10 +1674,6 @@ export async function registerRoutes(
         newAmount,
         user: user ? { id: user.id, username: user.username, name: user.name } : null,
       });
-      
-      // Notify user of bet update
-      broadcastToUser(bet.userId, 'bet_updated', { bet: updatedBet });
-      broadcastToUser(bet.userId, 'user_updated', { balance: user?.balance });
 
       res.json(updatedBet);
     } catch (error) {

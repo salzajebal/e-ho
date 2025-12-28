@@ -64,12 +64,6 @@ export function useUserWebSocket(isAuthenticated: boolean, options?: WebSocketOp
             optionsRef.current?.onInquiryReplied?.();
           }
           
-          // Handle user data updates from admin (balance, status changes)
-          if (data.event === 'user_updated') {
-            queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
-            queryClient.invalidateQueries({ queryKey: ["/api/user/balance"] });
-          }
-          
           if (data.event === 'transaction_processed') {
             queryClient.invalidateQueries({ queryKey: ["/api/inquiries/my"] });
             queryClient.invalidateQueries({ queryKey: ["/api/user/balance"] });
