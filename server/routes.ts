@@ -10,6 +10,7 @@ import { parse as parseCookie } from "cookie";
 import { unsign } from "cookie-signature";
 import { calculateRoundNumber, getRoundEndTime, getRoundTimeRemaining } from "@shared/rounds";
 import WebSocket from "ws";
+import fetch from "node-fetch";
 
 const SessionStore = MemoryStore(session);
 
@@ -1895,8 +1896,8 @@ export async function registerRoutes(
       ]);
       
       if (btcRes.ok && ethRes.ok) {
-        const btcData = await btcRes.json();
-        const ethData = await ethRes.json();
+        const btcData = await btcRes.json() as any;
+        const ethData = await ethRes.json() as any;
         
         binancePrices.BTC = {
           price: parseFloat(btcData.lastPrice),
