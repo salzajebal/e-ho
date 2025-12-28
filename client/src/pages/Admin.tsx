@@ -1826,30 +1826,30 @@ export default function Admin() {
                 <p className="text-lg lg:text-2xl font-bold mt-1">{stats?.totalUsers || 0}명</p>
                 <p className="text-[10px] lg:text-xs text-muted-foreground mt-1">활성: {stats?.activeUsers || 0}명</p>
               </div>
-              <div className="bg-card border border-border rounded-lg p-4">
-                <div className="flex items-center gap-2">
-                  <Wifi className="w-4 h-4 text-up" />
-                  <p className="text-sm text-muted-foreground">현재 접속자</p>
+              <div className="bg-card border border-border rounded-lg p-3 lg:p-4">
+                <div className="flex items-center gap-1 lg:gap-2">
+                  <Wifi className="w-3 lg:w-4 h-3 lg:h-4 text-up" />
+                  <p className="text-xs lg:text-sm text-muted-foreground">접속자</p>
                 </div>
-                <p className="text-2xl font-bold mt-1 text-up">{onlineUsers.length}명</p>
-                <p className="text-xs text-muted-foreground mt-1">실시간</p>
+                <p className="text-lg lg:text-2xl font-bold mt-1 text-up">{onlineUsers.length}명</p>
+                <p className="text-[10px] lg:text-xs text-muted-foreground mt-1">실시간</p>
               </div>
-              <div className="bg-card border border-border rounded-lg p-4">
-                <p className="text-sm text-muted-foreground">총 베팅수</p>
-                <p className="text-2xl font-bold mt-1">{stats?.totalBets || 0}건</p>
-                <p className="text-xs text-muted-foreground mt-1">진행 중: {stats?.pendingBets || 0}건</p>
+              <div className="bg-card border border-border rounded-lg p-3 lg:p-4">
+                <p className="text-xs lg:text-sm text-muted-foreground">총 베팅수</p>
+                <p className="text-lg lg:text-2xl font-bold mt-1">{stats?.totalBets || 0}건</p>
+                <p className="text-[10px] lg:text-xs text-muted-foreground mt-1">진행: {stats?.pendingBets || 0}건</p>
               </div>
-              <div className="bg-card border border-border rounded-lg p-4">
-                <p className="text-sm text-muted-foreground">승/패</p>
-                <p className="text-2xl font-bold mt-1">
+              <div className="bg-card border border-border rounded-lg p-3 lg:p-4">
+                <p className="text-xs lg:text-sm text-muted-foreground">승/패</p>
+                <p className="text-lg lg:text-2xl font-bold mt-1">
                   <span className="text-up">{stats?.wonBets || 0}</span>
-                  <span className="text-muted-foreground mx-1">/</span>
+                  <span className="text-muted-foreground mx-0.5 lg:mx-1">/</span>
                   <span className="text-down">{stats?.lostBets || 0}</span>
                 </p>
               </div>
-              <div className="bg-card border border-border rounded-lg p-4">
-                <p className="text-sm text-muted-foreground">총 수익</p>
-                <p className={cn("text-2xl font-bold mt-1", (stats?.profit || 0) >= 0 ? "text-up" : "text-down")}>
+              <div className="bg-card border border-border rounded-lg p-3 lg:p-4">
+                <p className="text-xs lg:text-sm text-muted-foreground">총 수익</p>
+                <p className={cn("text-lg lg:text-2xl font-bold mt-1", (stats?.profit || 0) >= 0 ? "text-up" : "text-down")}>
                   {formatMoney(stats?.profit || 0)}
                 </p>
               </div>
@@ -1857,71 +1857,70 @@ export default function Admin() {
 
             {/* Daily Stats - 날짜별 수익 (한국시간 기준) */}
             <div className="bg-card border border-border rounded-lg overflow-hidden">
-              <div className="p-4 border-b border-border flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-5 h-5 text-primary" />
-                  <h2 className="font-semibold">날짜별 수익 현황</h2>
-                  <span className="text-xs text-muted-foreground">(한국시간 기준, 최근 30일)</span>
+              <div className="p-2 lg:p-4 border-b border-border flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-1 lg:gap-2">
+                  <Calendar className="w-4 lg:w-5 h-4 lg:h-5 text-primary" />
+                  <h2 className="text-sm lg:text-base font-semibold">날짜별 수익</h2>
+                  <span className="text-[10px] lg:text-xs text-muted-foreground hidden sm:inline">(최근 30일)</span>
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => refetchDailyStats()} data-testid="button-refresh-daily-stats">
-                  <RefreshCw className="w-4 h-4" />
+                <Button variant="ghost" size="sm" onClick={() => refetchDailyStats()} data-testid="button-refresh-daily-stats" className="h-7 lg:h-8">
+                  <RefreshCw className="w-3 lg:w-4 h-3 lg:h-4" />
                 </Button>
               </div>
-              <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
-                <table className="w-full text-sm">
+              <div className="overflow-x-auto max-h-[300px] lg:max-h-[400px] overflow-y-auto">
+                <table className="w-full text-xs lg:text-sm">
                   <thead className="bg-muted/50 text-left sticky top-0">
                     <tr>
-                      <th className="px-4 py-3 font-medium">날짜</th>
-                      <th className="px-4 py-3 font-medium text-right">베팅 건수</th>
-                      <th className="px-4 py-3 font-medium text-right">승/패</th>
-                      <th className="px-4 py-3 font-medium text-right">총 베팅금액</th>
-                      <th className="px-4 py-3 font-medium text-right">총 지급금액</th>
-                      <th className="px-4 py-3 font-medium text-right">수익</th>
+                      <th className="px-2 lg:px-4 py-2 lg:py-3 font-medium">날짜</th>
+                      <th className="px-2 lg:px-4 py-2 lg:py-3 font-medium text-right">건수</th>
+                      <th className="px-2 lg:px-4 py-2 lg:py-3 font-medium text-right">승/패</th>
+                      <th className="px-2 lg:px-4 py-2 lg:py-3 font-medium text-right">베팅액</th>
+                      <th className="px-2 lg:px-4 py-2 lg:py-3 font-medium text-right">지급액</th>
+                      <th className="px-2 lg:px-4 py-2 lg:py-3 font-medium text-right">수익</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
                     {dailyStats.map((day) => (
                       <tr key={day.date} className="hover:bg-muted/30" data-testid={`row-daily-stats-${day.date}`}>
-                        <td className="px-4 py-3 font-medium">
+                        <td className="px-2 lg:px-4 py-2 lg:py-3 font-medium whitespace-nowrap">
                           {new Date(day.date + 'T00:00:00').toLocaleDateString('ko-KR', { 
-                            year: 'numeric', 
                             month: '2-digit', 
                             day: '2-digit',
                             weekday: 'short'
                           })}
                         </td>
-                        <td className="px-4 py-3 text-right">{day.betCount}건</td>
-                        <td className="px-4 py-3 text-right">
+                        <td className="px-2 lg:px-4 py-2 lg:py-3 text-right">{day.betCount}</td>
+                        <td className="px-2 lg:px-4 py-2 lg:py-3 text-right whitespace-nowrap">
                           <span className="text-up">{day.winCount}</span>
-                          <span className="text-muted-foreground mx-1">/</span>
+                          <span className="text-muted-foreground mx-0.5">/</span>
                           <span className="text-down">{day.loseCount}</span>
                         </td>
-                        <td className="px-4 py-3 text-right">{formatMoney(day.totalBetAmount)}</td>
-                        <td className="px-4 py-3 text-right text-down">{formatMoney(day.totalPayoutAmount)}</td>
-                        <td className={cn("px-4 py-3 text-right font-bold", day.houseProfitLoss >= 0 ? "text-up" : "text-down")}>
+                        <td className="px-2 lg:px-4 py-2 lg:py-3 text-right whitespace-nowrap">{formatMoney(day.totalBetAmount)}</td>
+                        <td className="px-2 lg:px-4 py-2 lg:py-3 text-right text-down whitespace-nowrap">{formatMoney(day.totalPayoutAmount)}</td>
+                        <td className={cn("px-2 lg:px-4 py-2 lg:py-3 text-right font-bold whitespace-nowrap", day.houseProfitLoss >= 0 ? "text-up" : "text-down")}>
                           {day.houseProfitLoss >= 0 ? '+' : ''}{formatMoney(day.houseProfitLoss)}
                         </td>
                       </tr>
                     ))}
                     {dailyStats.length === 0 && (
                       <tr>
-                        <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                        <td colSpan={6} className="px-2 lg:px-4 py-6 lg:py-8 text-center text-muted-foreground">
                           아직 정산된 베팅 기록이 없습니다
                         </td>
                       </tr>
                     )}
                     {dailyStats.length > 0 && (
                       <tr className="bg-muted/30 font-bold">
-                        <td className="px-4 py-3">합계</td>
-                        <td className="px-4 py-3 text-right">{dailyStats.reduce((sum, d) => sum + d.betCount, 0)}건</td>
-                        <td className="px-4 py-3 text-right">
+                        <td className="px-2 lg:px-4 py-2 lg:py-3">합계</td>
+                        <td className="px-2 lg:px-4 py-2 lg:py-3 text-right">{dailyStats.reduce((sum, d) => sum + d.betCount, 0)}</td>
+                        <td className="px-2 lg:px-4 py-2 lg:py-3 text-right whitespace-nowrap">
                           <span className="text-up">{dailyStats.reduce((sum, d) => sum + d.winCount, 0)}</span>
-                          <span className="text-muted-foreground mx-1">/</span>
+                          <span className="text-muted-foreground mx-0.5">/</span>
                           <span className="text-down">{dailyStats.reduce((sum, d) => sum + d.loseCount, 0)}</span>
                         </td>
-                        <td className="px-4 py-3 text-right">{formatMoney(dailyStats.reduce((sum, d) => sum + d.totalBetAmount, 0))}</td>
-                        <td className="px-4 py-3 text-right text-down">{formatMoney(dailyStats.reduce((sum, d) => sum + d.totalPayoutAmount, 0))}</td>
-                        <td className={cn("px-4 py-3 text-right", dailyStats.reduce((sum, d) => sum + d.houseProfitLoss, 0) >= 0 ? "text-up" : "text-down")}>
+                        <td className="px-2 lg:px-4 py-2 lg:py-3 text-right whitespace-nowrap">{formatMoney(dailyStats.reduce((sum, d) => sum + d.totalBetAmount, 0))}</td>
+                        <td className="px-2 lg:px-4 py-2 lg:py-3 text-right text-down whitespace-nowrap">{formatMoney(dailyStats.reduce((sum, d) => sum + d.totalPayoutAmount, 0))}</td>
+                        <td className={cn("px-2 lg:px-4 py-2 lg:py-3 text-right whitespace-nowrap", dailyStats.reduce((sum, d) => sum + d.houseProfitLoss, 0) >= 0 ? "text-up" : "text-down")}>
                           {dailyStats.reduce((sum, d) => sum + d.houseProfitLoss, 0) >= 0 ? '+' : ''}{formatMoney(dailyStats.reduce((sum, d) => sum + d.houseProfitLoss, 0))}
                         </td>
                       </tr>
@@ -1933,70 +1932,67 @@ export default function Admin() {
 
             {/* Real-time Online Users List */}
             <div className="bg-card border border-border rounded-lg overflow-hidden">
-              <div className="p-4 border-b border-border flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Wifi className="w-5 h-5 text-up" />
-                  <h2 className="font-semibold">실시간 접속 현황</h2>
-                  <span className="text-xs bg-up/20 text-up px-2 py-0.5 rounded-full" data-testid="text-online-count">{onlineUsers.length}명 접속 중</span>
+              <div className="p-2 lg:p-4 border-b border-border flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-1 lg:gap-2">
+                  <Wifi className="w-4 lg:w-5 h-4 lg:h-5 text-up" />
+                  <h2 className="text-sm lg:text-base font-semibold">실시간 접속</h2>
+                  <span className="text-[10px] lg:text-xs bg-up/20 text-up px-1.5 lg:px-2 py-0.5 rounded-full" data-testid="text-online-count">{onlineUsers.length}명</span>
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => refetchOnlineUsers()} data-testid="button-refresh-online-users">
-                  <RefreshCw className="w-4 h-4" />
+                <Button variant="ghost" size="sm" onClick={() => refetchOnlineUsers()} data-testid="button-refresh-online-users" className="h-7 lg:h-8">
+                  <RefreshCw className="w-3 lg:w-4 h-3 lg:h-4" />
                 </Button>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-xs lg:text-sm">
                   <thead className="bg-muted/50 text-left">
                     <tr>
-                      <th className="px-4 py-3 font-medium text-center">상태</th>
-                      <th className="px-4 py-3 font-medium">아이디</th>
-                      <th className="px-4 py-3 font-medium">회원명</th>
-                      <th className="px-4 py-3 font-medium">접속 IP</th>
-                      <th className="px-4 py-3 font-medium">접속 시간</th>
-                      <th className="px-4 py-3 font-medium text-right">현재 잔고</th>
-                      <th className="px-4 py-3 font-medium text-center">관리</th>
+                      <th className="px-2 lg:px-4 py-2 lg:py-3 font-medium text-center">상태</th>
+                      <th className="px-2 lg:px-4 py-2 lg:py-3 font-medium">아이디</th>
+                      <th className="px-2 lg:px-4 py-2 lg:py-3 font-medium">회원명</th>
+                      <th className="px-2 lg:px-4 py-2 lg:py-3 font-medium">IP</th>
+                      <th className="px-2 lg:px-4 py-2 lg:py-3 font-medium">접속시간</th>
+                      <th className="px-2 lg:px-4 py-2 lg:py-3 font-medium text-right">잔고</th>
+                      <th className="px-2 lg:px-4 py-2 lg:py-3 font-medium text-center">관리</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
                     {onlineUsers.map((user) => (
                       <tr key={user.id} className="hover:bg-muted/30" data-testid={`row-online-user-${user.id}`}>
-                        <td className="px-4 py-3 text-center">
-                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-up/20">
-                            <span className="w-2 h-2 rounded-full bg-up animate-pulse"></span>
+                        <td className="px-2 lg:px-4 py-2 lg:py-3 text-center">
+                          <span className="inline-flex items-center justify-center w-5 lg:w-6 h-5 lg:h-6 rounded-full bg-up/20">
+                            <span className="w-1.5 lg:w-2 h-1.5 lg:h-2 rounded-full bg-up animate-pulse"></span>
                           </span>
                         </td>
-                        <td className="px-4 py-3 font-medium">{user.username}</td>
-                        <td className="px-4 py-3">{user.name || '-'}</td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-1.5">
-                            <Globe className="w-3.5 h-3.5 text-muted-foreground" />
-                            <span className="font-mono text-xs">{user.currentIp || user.lastLoginIp || '-'}</span>
-                          </div>
+                        <td className="px-2 lg:px-4 py-2 lg:py-3 font-medium">{user.username}</td>
+                        <td className="px-2 lg:px-4 py-2 lg:py-3">{user.name || '-'}</td>
+                        <td className="px-2 lg:px-4 py-2 lg:py-3">
+                          <span className="font-mono text-[10px] lg:text-xs">{user.currentIp || user.lastLoginIp || '-'}</span>
                         </td>
-                        <td className="px-4 py-3 text-muted-foreground text-xs">
+                        <td className="px-2 lg:px-4 py-2 lg:py-3 text-muted-foreground text-[10px] lg:text-xs whitespace-nowrap">
                           {user.connectedAt ? formatDate(user.connectedAt) : (user.lastLoginAt ? formatDate(user.lastLoginAt) : '-')}
                         </td>
-                        <td className="px-4 py-3 text-right font-medium text-up">
+                        <td className="px-2 lg:px-4 py-2 lg:py-3 text-right font-medium text-up whitespace-nowrap">
                           {formatMoney(parseFloat(user.balance || '0'))}
                         </td>
-                        <td className="px-4 py-3 text-center">
+                        <td className="px-2 lg:px-4 py-2 lg:py-3 text-center">
                           <Button
                             variant="destructive"
                             size="sm"
                             onClick={() => forceLogoutMutation.mutate(user.id)}
                             disabled={forceLogoutMutation.isPending}
-                            className="h-7 text-xs"
+                            className="h-6 lg:h-7 text-[10px] lg:text-xs px-1.5 lg:px-2"
                             data-testid={`button-force-logout-${user.id}`}
                           >
-                            <LogOut className="w-3 h-3 mr-1" />
-                            강제 로그아웃
+                            <LogOut className="w-3 h-3 lg:mr-1" />
+                            <span className="hidden lg:inline">로그아웃</span>
                           </Button>
                         </td>
                       </tr>
                     ))}
                     {onlineUsers.length === 0 && (
                       <tr>
-                        <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
-                          <WifiOff className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                        <td colSpan={7} className="px-2 lg:px-4 py-6 lg:py-8 text-center text-muted-foreground">
+                          <WifiOff className="w-6 lg:w-8 h-6 lg:h-8 mx-auto mb-2 opacity-50" />
                           현재 접속 중인 회원이 없습니다
                         </td>
                       </tr>
@@ -2104,63 +2100,63 @@ export default function Admin() {
         )}
 
         {activeTab === 'users' && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold">회원 관리</h1>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => refetchUsers()}>
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  새로고침
+          <div className="space-y-3 lg:space-y-4">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <h1 className="text-lg lg:text-2xl font-bold">회원 관리</h1>
+              <div className="flex gap-1 lg:gap-2">
+                <Button variant="outline" size="sm" onClick={() => refetchUsers()} className="h-8 px-2 lg:px-3">
+                  <RefreshCw className="w-4 h-4 lg:mr-2" />
+                  <span className="hidden lg:inline">새로고침</span>
                 </Button>
-                <Button size="sm" onClick={() => setCreateUserOpen(true)}>
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  회원 생성
+                <Button size="sm" onClick={() => setCreateUserOpen(true)} className="h-8 px-2 lg:px-3">
+                  <UserPlus className="w-4 h-4 lg:mr-2" />
+                  <span className="hidden lg:inline">회원 생성</span>
                 </Button>
               </div>
             </div>
 
             <div className="bg-card border border-border rounded-lg overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-xs lg:text-sm">
                   <thead className="bg-muted/30">
                     <tr className="text-left text-muted-foreground">
-                      <th className="px-3 py-2 whitespace-nowrap">상태</th>
-                      <th className="px-3 py-2 whitespace-nowrap">아이디</th>
-                      <th className="px-3 py-2 whitespace-nowrap">비밀번호</th>
-                      <th className="px-3 py-2 whitespace-nowrap">이름</th>
-                      <th className="px-3 py-2 whitespace-nowrap">총판</th>
-                      <th className="px-3 py-2 whitespace-nowrap">보유머니</th>
-                      <th className="px-3 py-2 whitespace-nowrap">총베팅</th>
-                      <th className="px-3 py-2 whitespace-nowrap">총입금</th>
-                      <th className="px-3 py-2 whitespace-nowrap">총출금</th>
-                      <th className="px-3 py-2 whitespace-nowrap">수익률</th>
-                      <th className="px-3 py-2 whitespace-nowrap">자동배팅</th>
-                      <th className="px-3 py-2 whitespace-nowrap">베팅금지</th>
-                      <th className="px-3 py-2 whitespace-nowrap">최근로그인</th>
-                      <th className="px-3 py-2 whitespace-nowrap">가입일</th>
-                      <th className="px-3 py-2 whitespace-nowrap text-right">관리</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">상태</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">아이디</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">비밀번호</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">이름</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">총판</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">보유머니</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">총베팅</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">총입금</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">총출금</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">수익률</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">자동배팅</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">베팅금지</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">최근로그인</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">가입일</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap text-right">관리</th>
                     </tr>
                   </thead>
                   <tbody>
                     {users.map((user) => (
                       <tr key={user.id} className="border-t border-border/50 hover:bg-muted/10">
-                        <td className="px-3 py-2">
+                        <td className="px-2 lg:px-3 py-1.5 lg:py-2">
                           <span className={cn(
-                            "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
+                            "inline-flex items-center px-1.5 lg:px-2 py-0.5 rounded text-[10px] lg:text-xs font-medium",
                             user.isActive ? "bg-up/20 text-up" : "bg-down/20 text-down"
                           )}>
                             {user.isActive ? '활성' : '동결'}
                           </span>
                         </td>
-                        <td className="px-3 py-2 font-medium">
+                        <td className="px-2 lg:px-3 py-1.5 lg:py-2 font-medium">
                           {user.username}
                           {user.role === 'admin' && (
-                            <span className="ml-1 text-xs bg-primary/20 text-primary px-1 rounded">관리자</span>
+                            <span className="ml-1 text-[10px] lg:text-xs bg-primary/20 text-primary px-1 rounded">관리자</span>
                           )}
                         </td>
-                        <td className="px-3 py-2">
+                        <td className="px-2 lg:px-3 py-1.5 lg:py-2">
                           <div className="flex items-center gap-1">
-                            <span className="font-mono text-xs">
+                            <span className="font-mono text-[10px] lg:text-xs">
                               {showPasswords[user.id] ? user.password : '••••••'}
                             </span>
                             <button
@@ -2171,21 +2167,21 @@ export default function Admin() {
                             </button>
                           </div>
                         </td>
-                        <td className="px-3 py-2">{user.name || '-'}</td>
-                        <td className="px-3 py-2">
+                        <td className="px-2 lg:px-3 py-1.5 lg:py-2">{user.name || '-'}</td>
+                        <td className="px-2 lg:px-3 py-1.5 lg:py-2">
                           {user.affiliateId ? (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-500/20 text-purple-400">
+                            <span className="inline-flex items-center px-1.5 lg:px-2 py-0.5 rounded text-[10px] lg:text-xs font-medium bg-purple-500/20 text-purple-400">
                               {affiliatesList.find(a => a.id === user.affiliateId)?.displayName || '알 수 없음'}
                             </span>
                           ) : (
                             <span className="text-muted-foreground">-</span>
                           )}
                         </td>
-                        <td className="px-3 py-2 font-mono">{formatMoney(user.balance)}</td>
-                        <td className="px-3 py-2 font-mono">{formatMoney(user.totalBet)}</td>
-                        <td className="px-3 py-2 font-mono">{formatMoney(user.totalDeposit)}</td>
-                        <td className="px-3 py-2 font-mono">{formatMoney(user.totalWithdrawal)}</td>
-                        <td className="px-3 py-2">
+                        <td className="px-2 lg:px-3 py-1.5 lg:py-2 font-mono">{formatMoney(user.balance)}</td>
+                        <td className="px-2 lg:px-3 py-1.5 lg:py-2 font-mono">{formatMoney(user.totalBet)}</td>
+                        <td className="px-2 lg:px-3 py-1.5 lg:py-2 font-mono">{formatMoney(user.totalDeposit)}</td>
+                        <td className="px-2 lg:px-3 py-1.5 lg:py-2 font-mono">{formatMoney(user.totalWithdrawal)}</td>
+                        <td className="px-2 lg:px-3 py-1.5 lg:py-2">
                           <span className={cn(
                             "font-medium",
                             parseFloat(user.profitRate) >= 0 ? "text-up" : "text-down"
@@ -2193,11 +2189,11 @@ export default function Admin() {
                             {parseFloat(user.profitRate) >= 0 ? '+' : ''}{user.profitRate}%
                           </span>
                         </td>
-                        <td className="px-3 py-2">
+                        <td className="px-2 lg:px-3 py-1.5 lg:py-2">
                           <button
                             onClick={() => toggleAutoBet(user)}
                             className={cn(
-                              "inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors",
+                              "inline-flex items-center gap-1 px-1.5 lg:px-2 py-0.5 lg:py-1 rounded text-[10px] lg:text-xs font-medium transition-colors",
                               user.autoBetEnabled 
                                 ? "bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500/30" 
                                 : "bg-muted text-muted-foreground hover:bg-muted/80"
@@ -2207,11 +2203,11 @@ export default function Admin() {
                             {user.autoBetEnabled ? `ON (x${user.autoBetMultiplier || 10})` : 'OFF'}
                           </button>
                         </td>
-                        <td className="px-3 py-2">
+                        <td className="px-2 lg:px-3 py-1.5 lg:py-2">
                           <button
                             onClick={() => toggleBettingBlock(user)}
                             className={cn(
-                              "inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors",
+                              "inline-flex items-center gap-1 px-1.5 lg:px-2 py-0.5 lg:py-1 rounded text-[10px] lg:text-xs font-medium transition-colors",
                               user.isBettingBlocked 
                                 ? "bg-down/20 text-down hover:bg-down/30" 
                                 : "bg-muted text-muted-foreground hover:bg-muted/80"
@@ -2222,13 +2218,13 @@ export default function Admin() {
                             {user.isBettingBlocked ? '금지' : '허용'}
                           </button>
                         </td>
-                        <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">
+                        <td className="px-2 lg:px-3 py-1.5 lg:py-2 text-[10px] lg:text-xs text-muted-foreground whitespace-nowrap">
                           {formatDate(user.lastLoginAt)}
                         </td>
-                        <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">
+                        <td className="px-2 lg:px-3 py-1.5 lg:py-2 text-[10px] lg:text-xs text-muted-foreground whitespace-nowrap">
                           {formatDate(user.createdAt)}
                         </td>
-                        <td className="px-3 py-2">
+                        <td className="px-2 lg:px-3 py-1.5 lg:py-2">
                           <div className="flex items-center justify-end gap-1">
                             <button
                               onClick={() => setEditingUser(user)}
@@ -2267,61 +2263,61 @@ export default function Admin() {
         )}
 
         {activeTab === 'bets' && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <div className="flex items-center gap-4">
-                <h1 className="text-2xl font-bold">실시간 베팅 관리</h1>
+          <div className="space-y-3 lg:space-y-4">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2 lg:gap-4">
+              <div className="flex items-center gap-2 lg:gap-4">
+                <h1 className="text-lg lg:text-2xl font-bold">실시간 베팅 관리</h1>
                 <div className={cn(
-                  "flex items-center gap-1.5 px-2 py-1 rounded-full text-xs",
+                  "flex items-center gap-1 lg:gap-1.5 px-1.5 lg:px-2 py-0.5 lg:py-1 rounded-full text-[10px] lg:text-xs",
                   wsConnected ? "bg-up/20 text-up" : "bg-down/20 text-down"
                 )}>
                   <div className={cn(
-                    "w-2 h-2 rounded-full",
+                    "w-1.5 lg:w-2 h-1.5 lg:h-2 rounded-full",
                     wsConnected ? "bg-up animate-pulse" : "bg-down"
                   )} />
-                  {wsConnected ? '실시간 연결됨' : '연결 끊김'}
+                  {wsConnected ? '연결됨' : '끊김'}
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 lg:gap-2 flex-wrap">
                 <div className="flex items-center bg-muted/50 rounded-md p-0.5">
                   {(['pending', 'all', 'win', 'lose'] as const).map((filter) => (
                     <button
                       key={filter}
                       onClick={() => setBetFilter(filter)}
                       className={cn(
-                        "px-3 py-1.5 text-xs font-medium rounded-md transition-colors",
+                        "px-2 lg:px-3 py-1 lg:py-1.5 text-[10px] lg:text-xs font-medium rounded-md transition-colors",
                         betFilter === filter 
                           ? "bg-primary text-primary-foreground" 
                           : "text-muted-foreground hover:text-foreground"
                       )}
                     >
-                      {filter === 'pending' ? `진행중 (${bets.filter(b => b.outcome === 'pending').length})` :
+                      {filter === 'pending' ? `진행(${bets.filter(b => b.outcome === 'pending').length})` :
                        filter === 'all' ? '전체' :
                        filter === 'win' ? '적중' : '미적중'}
                     </button>
                   ))}
                 </div>
-                <Button variant="outline" size="sm" onClick={() => refetchBets()}>
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  새로고침
+                <Button variant="outline" size="sm" onClick={() => refetchBets()} className="h-8 px-2 lg:px-3">
+                  <RefreshCw className="w-4 h-4 lg:mr-2" />
+                  <span className="hidden lg:inline">새로고침</span>
                 </Button>
               </div>
             </div>
 
             <div className="bg-card border border-border rounded-lg overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-xs lg:text-sm">
                   <thead className="bg-muted/30">
                     <tr className="text-left text-muted-foreground">
-                      <th className="px-3 py-2 whitespace-nowrap">종목</th>
-                      <th className="px-3 py-2 whitespace-nowrap">회차</th>
-                      <th className="px-3 py-2 whitespace-nowrap">회원</th>
-                      <th className="px-3 py-2 whitespace-nowrap">방향</th>
-                      <th className="px-3 py-2 whitespace-nowrap">배팅금액</th>
-                      <th className="px-3 py-2 whitespace-nowrap">배당</th>
-                      <th className="px-3 py-2 whitespace-nowrap">남은시간</th>
-                      <th className="px-3 py-2 whitespace-nowrap">상태</th>
-                      <th className="px-3 py-2 whitespace-nowrap text-right">관리</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">종목</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">회차</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">회원</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">방향</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">배팅금액</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">배당</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">남은시간</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">상태</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap text-right">관리</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -2330,43 +2326,43 @@ export default function Admin() {
                         "border-t border-border/50 hover:bg-muted/10",
                         bet.outcome === 'pending' && "bg-yellow-500/5"
                       )}>
-                        <td className="px-3 py-2 font-medium">
+                        <td className="px-2 lg:px-3 py-1.5 lg:py-2 font-medium">
                           {SYMBOL_NAMES[bet.symbol] || bet.symbol}
                         </td>
-                        <td className="px-3 py-2">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-500/20 text-yellow-500">
+                        <td className="px-2 lg:px-3 py-1.5 lg:py-2">
+                          <span className="inline-flex items-center px-1.5 lg:px-2 py-0.5 rounded text-[10px] lg:text-xs font-medium bg-yellow-500/20 text-yellow-500">
                             {bet.roundNumber || '-'}회차
                           </span>
                         </td>
-                        <td className="px-3 py-2">{bet.username}</td>
-                        <td className="px-3 py-2">
+                        <td className="px-2 lg:px-3 py-1.5 lg:py-2">{bet.username}</td>
+                        <td className="px-2 lg:px-3 py-1.5 lg:py-2">
                           <span className={cn(
-                            "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
+                            "inline-flex items-center px-1.5 lg:px-2 py-0.5 rounded text-[10px] lg:text-xs font-medium",
                             bet.direction === 'long' ? "bg-up/20 text-up" : "bg-down/20 text-down"
                           )}>
                             {bet.direction === 'long' ? 'LONG' : 'SHORT'}
                           </span>
                         </td>
-                        <td className="px-3 py-2">
+                        <td className="px-2 lg:px-3 py-1.5 lg:py-2">
                           {editingBetId === bet.id ? (
                             <div className="flex items-center gap-1">
                               <Input
                                 type="number"
                                 value={editingBetAmount}
                                 onChange={(e) => setEditingBetAmount(e.target.value)}
-                                className="w-24 h-7 text-xs"
+                                className="w-20 lg:w-24 h-6 lg:h-7 text-[10px] lg:text-xs"
                                 autoFocus
                               />
                               <button
                                 onClick={() => updateBetAmount.mutate({ betId: bet.id, amount: editingBetAmount })}
                                 disabled={updateBetAmount.isPending}
-                                className="p-1 rounded bg-up/20 hover:bg-up/30 text-up"
+                                className="p-0.5 lg:p-1 rounded bg-up/20 hover:bg-up/30 text-up"
                               >
                                 <Check className="w-3 h-3" />
                               </button>
                               <button
                                 onClick={() => { setEditingBetId(null); setEditingBetAmount(""); }}
-                                className="p-1 rounded bg-down/20 hover:bg-down/30 text-down"
+                                className="p-0.5 lg:p-1 rounded bg-down/20 hover:bg-down/30 text-down"
                               >
                                 <X className="w-3 h-3" />
                               </button>
@@ -2389,11 +2385,11 @@ export default function Admin() {
                             </div>
                           )}
                         </td>
-                        <td className="px-3 py-2 font-mono">x{bet.multiplier}</td>
-                        <td className="px-3 py-2">
+                        <td className="px-2 lg:px-3 py-1.5 lg:py-2 font-mono">x{bet.multiplier}</td>
+                        <td className="px-2 lg:px-3 py-1.5 lg:py-2">
                           {bet.outcome === 'pending' ? (
                             <span className={cn(
-                              "font-mono text-xs px-2 py-0.5 rounded",
+                              "font-mono text-[10px] lg:text-xs px-1.5 lg:px-2 py-0.5 rounded",
                               new Date(bet.expiresAt).getTime() - currentTime <= 10000 
                                 ? "bg-down/20 text-down animate-pulse" 
                                 : "bg-yellow-500/20 text-yellow-500"
@@ -2401,13 +2397,13 @@ export default function Admin() {
                               {getTimeRemaining(bet.expiresAt)}
                             </span>
                           ) : (
-                            <span className="text-xs text-muted-foreground">-</span>
+                            <span className="text-[10px] lg:text-xs text-muted-foreground">-</span>
                           )}
                         </td>
-                        <td className="px-3 py-2">
+                        <td className="px-2 lg:px-3 py-1.5 lg:py-2">
                           <div className="flex flex-col gap-0.5">
                             <span className={cn(
-                              "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
+                              "inline-flex items-center px-1.5 lg:px-2 py-0.5 rounded text-[10px] lg:text-xs font-medium",
                               bet.outcome === 'win' ? "bg-up/20 text-up" :
                               bet.outcome === 'lose' ? "bg-down/20 text-down" :
                               "bg-yellow-500/20 text-yellow-500"
@@ -2416,15 +2412,15 @@ export default function Admin() {
                             </span>
                             {bet.outcome === 'pending' && bet.forcedOutcome && (
                               <span className={cn(
-                                "inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium",
+                                "inline-flex items-center px-1.5 lg:px-2 py-0.5 rounded text-[10px] font-medium",
                                 bet.forcedOutcome === 'win' ? "bg-up/30 text-up" : "bg-down/30 text-down"
                               )}>
-                                → {bet.forcedOutcome === 'win' ? '적중 예약' : '미적중 예약'}
+                                → {bet.forcedOutcome === 'win' ? '적중' : '미적중'}
                               </span>
                             )}
                           </div>
                         </td>
-                        <td className="px-3 py-2">
+                        <td className="px-2 lg:px-3 py-1.5 lg:py-2">
                           <div className="flex items-center justify-end gap-1">
                             {bet.outcome === 'pending' ? (
                               <>
