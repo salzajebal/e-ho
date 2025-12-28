@@ -55,9 +55,39 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
 
   useEffect(() => {
     if (data.price > 0) {
+      const oldPrice = priceRef.current;
       priceRef.current = data.price;
+      
+      // 가격 변동 시 즉시 차트 업데이트
+      if (seriesRef.current && lastBarRef.current && isInitialized) {
+        const newStart = getKSTAlignedTime(duration);
+        
+        if (newStart > currentStartRef.current) {
+          // 새로운 캔들 시작
+          currentStartRef.current = newStart;
+          lastBarRef.current = { 
+            time: newStart as Time, 
+            open: data.price, 
+            high: data.price, 
+            low: data.price, 
+            close: data.price 
+          };
+        } else {
+          // 현재 캔들 업데이트
+          lastBarRef.current = {
+            ...lastBarRef.current,
+            high: Math.max(lastBarRef.current.high, data.price),
+            low: Math.min(lastBarRef.current.low, data.price),
+            close: data.price,
+          };
+        }
+        
+        try { 
+          seriesRef.current.update(lastBarRef.current); 
+        } catch {}
+      }
     }
-  }, [data.price]);
+  }, [data.price, duration, isInitialized]);
 
   useEffect(() => {
     if (isInitialized && basePriceRef.current > 0 && data.price > 0) {
