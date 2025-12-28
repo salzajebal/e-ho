@@ -60,11 +60,7 @@ export function useUserWebSocket(isAuthenticated: boolean, options?: WebSocketOp
           if (data.event === 'inquiry_replied') {
             queryClient.invalidateQueries({ queryKey: ["/api/inquiries/my"] });
             
-            toast.success("문의 답변이 등록되었습니다", {
-              description: "내 문의 내역에서 확인하세요",
-              duration: 5000,
-            });
-            
+            // Trigger callback to show floating notification in Home component
             optionsRef.current?.onInquiryReplied?.();
           }
           

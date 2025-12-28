@@ -30,10 +30,25 @@ export default function Home() {
   const selectedGame = TRADING_GAMES.find(g => g.id === selectedGameId) || TRADING_GAMES[0];
   
   const { data: user } = useAuth();
+
+  // Messages - declare before WebSocket to ensure setters exist
+  const [messagePopup, setMessagePopup] = useState<Message | null>(null);
+  const [inboxOpen, setInboxOpen] = useState(false);
+  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
+  const shownMessageIds = useRef<Set<number>>(new Set());
+
+  // Customer Service States - declare before WebSocket
+  const [showCustomerServiceModal, setShowCustomerServiceModal] = useState(false);
+  const [showInquiryFormModal, setShowInquiryFormModal] = useState(false);
+  const [showMyInquiriesModal, setShowMyInquiriesModal] = useState(false);
+  const [showInquiryNotification, setShowInquiryNotification] = useState(false);
   
   // Real-time WebSocket for message notifications
   useUserWebSocket(!!user, {
     onNewMessage: () => setInboxOpen(true),
+    onInquiryReplied: () => {
+      setShowInquiryNotification(true);
+    },
   });
   
   const { data: activeBets = [] } = useBets();
@@ -42,20 +57,11 @@ export default function Home() {
   const settleBet = useSettleBet();
   const { data: balanceData } = useUserBalance();
 
-  // Messages
+  // Messages queries
   const { data: unreadMessages = [] } = useUnreadMessages();
   const { data: allMessages = [] } = useMessages();
   const markMessageRead = useMarkMessageRead();
   const markAllRead = useMarkAllMessagesRead();
-  const [messagePopup, setMessagePopup] = useState<Message | null>(null);
-  const [inboxOpen, setInboxOpen] = useState(false);
-  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
-  const shownMessageIds = useRef<Set<number>>(new Set());
-
-  // Customer Service States
-  const [showCustomerServiceModal, setShowCustomerServiceModal] = useState(false);
-  const [showInquiryFormModal, setShowInquiryFormModal] = useState(false);
-  const [showMyInquiriesModal, setShowMyInquiriesModal] = useState(false);
   const [inquiryTitle, setInquiryTitle] = useState('');
   const [inquiryContent, setInquiryContent] = useState('');
   const [inquirySubmitting, setInquirySubmitting] = useState(false);
@@ -648,6 +654,39 @@ export default function Home() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Left-bottom inquiry notification */}
+      {showInquiryNotification && (
+        <div
+          className="fixed bottom-4 left-4 z-50 animate-in slide-in-from-left-5 fade-in duration-300"
+          data-testid="notification-inquiry-reply"
+        >
+          <button
+            onClick={() => {
+              setShowInquiryNotification(false);
+              setShowMyInquiriesModal(true);
+            }}
+            className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg shadow-lg hover:from-blue-700 hover:to-blue-600 transition-all cursor-pointer"
+          >
+            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+              <MessageSquare className="w-5 h-5" />
+            </div>
+            <div className="text-left">
+              <p className="font-medium text-sm">1:1 문의 답변 완료</p>
+              <p className="text-xs text-blue-200">클릭하여 답변을 확인하세요</p>
+            </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowInquiryNotification(false);
+              }}
+              className="ml-2 p-1 hover:bg-white/20 rounded"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </button>
+        </div>
+      )}
     </div>
   );
 }
