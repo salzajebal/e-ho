@@ -3714,7 +3714,7 @@ export default function Admin() {
               </div>
               <div className="border-t border-border pt-4">
                 <p className="text-sm font-medium mb-3">금액 정보</p>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-3">
                   <div className="space-y-1">
                     <label className="text-xs text-muted-foreground">보유머니</label>
                     <Input
@@ -3725,22 +3725,18 @@ export default function Admin() {
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs text-muted-foreground">총입금</label>
-                    <Input
-                      type="number"
-                      value={editingUser.totalDeposit}
-                      onChange={(e) => setEditingUser(p => p ? { ...p, totalDeposit: e.target.value } : null)}
-                    />
+                    <div className="p-2 bg-muted/50 rounded-md border border-border text-sm font-mono">
+                      {formatMoney(editingUser.totalDeposit)}
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground">총출금</label>
+                    <div className="p-2 bg-muted/50 rounded-md border border-border text-sm font-mono">
+                      {formatMoney(editingUser.totalWithdrawal)}
+                    </div>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3 mt-3">
-                  <div className="space-y-1">
-                    <label className="text-xs text-muted-foreground">총출금</label>
-                    <Input
-                      type="number"
-                      value={editingUser.totalWithdrawal}
-                      onChange={(e) => setEditingUser(p => p ? { ...p, totalWithdrawal: e.target.value } : null)}
-                    />
-                  </div>
                   <div className="space-y-1">
                     <label className="text-xs text-muted-foreground">권한</label>
                     <Select 
