@@ -454,7 +454,7 @@ export default function Landing() {
                 className="text-gray-300 hover:text-blue-500 transition-colors text-sm font-medium" 
                 data-testid="nav-deposit-withdraw"
               >
-                입출금
+                입금/출금신청
               </button>
               <button 
                 onClick={() => setShowAnnouncementsModal(true)}
@@ -638,7 +638,7 @@ export default function Landing() {
                   className="text-left text-gray-300 hover:text-blue-500 py-3 border-b border-white/10 w-full touch-manipulation"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
-                  입출금
+                  입금/출금신청
                 </button>
                 <button 
                   onClick={() => {
