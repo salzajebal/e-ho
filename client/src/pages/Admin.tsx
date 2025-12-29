@@ -395,6 +395,34 @@ export default function Admin() {
       console.log('Sound notification failed:', e);
     }
   }, []);
+
+  // Voice notification using Web Speech API (TTS)
+  const speakNotification = useCallback((message: string) => {
+    try {
+      if ('speechSynthesis' in window) {
+        // Cancel any ongoing speech
+        window.speechSynthesis.cancel();
+        
+        const utterance = new SpeechSynthesisUtterance(message);
+        utterance.lang = 'ko-KR';
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
+        
+        // Try to find Korean voice
+        const voices = window.speechSynthesis.getVoices();
+        const koreanVoice = voices.find(voice => voice.lang.includes('ko'));
+        if (koreanVoice) {
+          utterance.voice = koreanVoice;
+        }
+        
+        window.speechSynthesis.speak(utterance);
+      }
+    } catch (e) {
+      console.log('Voice notification failed:', e);
+    }
+  }, []);
+
   const [createAffiliateOpen, setCreateAffiliateOpen] = useState(false);
   const [editingAffiliate, setEditingAffiliate] = useState<AdminAffiliate | null>(null);
   const [deleteAffiliateConfirm, setDeleteAffiliateConfirm] = useState<string | null>(null);
@@ -839,9 +867,10 @@ export default function Admin() {
         duration: 5000,
       });
       playNotificationSound('registration');
+      speakNotification('가입신청이 접수되었습니다');
     }
     setPrevPendingCount(pendingUsers.length);
-  }, [pendingUsers.length, prevPendingCount, playNotificationSound]);
+  }, [pendingUsers.length, prevPendingCount, playNotificationSound, speakNotification]);
 
   // Notification for new pending transactions (입출금)
   useEffect(() => {
@@ -851,13 +880,21 @@ export default function Admin() {
       return;
     }
     if (pendingTransactions.length > prevTransactionCount) {
+      // Check if it's deposit or withdrawal
+      const newDeposits = transactions.filter(t => t.type === 'deposit' && t.status === 'pending').length;
+      const newWithdrawals = transactions.filter(t => t.type === 'withdrawal' && t.status === 'pending').length;
       toast.info(`💰 새로운 입출금 요청이 있습니다! (${pendingTransactions.length}건)`, {
         duration: 5000,
       });
       playNotificationSound('transaction');
+      if (newDeposits > 0) {
+        speakNotification('입금신청이 접수되었습니다');
+      } else if (newWithdrawals > 0) {
+        speakNotification('출금신청이 접수되었습니다');
+      }
     }
     setPrevTransactionCount(pendingTransactions.length);
-  }, [pendingTransactions.length, prevTransactionCount, playNotificationSound]);
+  }, [pendingTransactions.length, prevTransactionCount, playNotificationSound, speakNotification, transactions]);
 
   // Notification for new pending inquiries (1:1 문의)
   useEffect(() => {
@@ -871,9 +908,10 @@ export default function Admin() {
         duration: 5000,
       });
       playNotificationSound('inquiry');
+      speakNotification('문의가 접수되었습니다');
     }
     setPrevInquiryCount(pendingInquiries.length);
-  }, [pendingInquiries.length, prevInquiryCount, playNotificationSound]);
+  }, [pendingInquiries.length, prevInquiryCount, playNotificationSound, speakNotification]);
 
   // Notification for new bets (배팅)
   useEffect(() => {
