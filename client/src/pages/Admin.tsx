@@ -898,8 +898,8 @@ export default function Admin() {
     }
     if (pendingTransactions.length > prevTransactionCount) {
       // Check if it's deposit or withdrawal
-      const newDeposits = transactions.filter(t => t.type === 'deposit' && t.status === 'pending').length;
-      const newWithdrawals = transactions.filter(t => t.type === 'withdrawal' && t.status === 'pending').length;
+      const newDeposits = pendingDeposits.length;
+      const newWithdrawals = pendingWithdrawals.length;
       toast.info(`💰 새로운 입출금 요청이 있습니다! (${pendingTransactions.length}건)`, {
         duration: 5000,
       });
@@ -911,7 +911,7 @@ export default function Admin() {
       }
     }
     setPrevTransactionCount(pendingTransactions.length);
-  }, [pendingTransactions.length, prevTransactionCount, playNotificationSound, speakNotification, transactions]);
+  }, [pendingTransactions.length, prevTransactionCount, playNotificationSound, speakNotification, pendingDeposits.length, pendingWithdrawals.length]);
 
   // Notification for new pending inquiries (1:1 문의)
   useEffect(() => {
