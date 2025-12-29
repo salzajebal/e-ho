@@ -128,7 +128,7 @@ export interface IStorage {
   getTransactionRequestsForUser(userId: string): Promise<TransactionRequest[]>;
   getPendingTransactionRequests(): Promise<TransactionRequest[]>;
   getAllTransactionRequests(): Promise<TransactionRequest[]>;
-  processTransactionRequest(id: number, status: 'approved' | 'rejected', processedBy: string, adminNote?: string): Promise<TransactionRequest>;
+  processTransactionRequest(id: number, status: 'approved' | 'rejected' | 'hold', processedBy: string, adminNote?: string): Promise<TransactionRequest>;
 
   // Daily stats methods (날짜별 수익)
   getDailyStats(days?: number): Promise<DailyStats[]>;
@@ -770,7 +770,7 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(transactionRequests.createdAt));
   }
 
-  async processTransactionRequest(id: number, status: 'approved' | 'rejected', processedBy: string, adminNote?: string): Promise<TransactionRequest> {
+  async processTransactionRequest(id: number, status: 'approved' | 'rejected' | 'hold', processedBy: string, adminNote?: string): Promise<TransactionRequest> {
     const [updated] = await db.update(transactionRequests)
       .set({
         status,

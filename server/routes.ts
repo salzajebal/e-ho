@@ -1902,12 +1902,24 @@ export async function registerRoutes(
     try {
       const telegramLink = await storage.getSetting("telegram_link");
       const companyInfo = await storage.getSetting("company_info");
+      const depositNotice = await storage.getSetting("deposit_notice");
       res.json({ 
         telegram_link: telegramLink || "",
-        company_info: companyInfo || "" 
+        company_info: companyInfo || "",
+        deposit_notice: depositNotice || ""
       });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch settings" });
+    }
+  });
+
+  // Get public setting (deposit notice for users)
+  app.get("/api/settings/deposit-notice", async (req, res) => {
+    try {
+      const depositNotice = await storage.getSetting("deposit_notice");
+      res.json({ depositNotice: depositNotice || "" });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch setting" });
     }
   });
 

@@ -41,6 +41,7 @@ import {
   Calendar,
   Plus,
   Minus,
+  ArrowUpRight,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -330,6 +331,8 @@ export default function Admin() {
   const [loginHistoryUser, setLoginHistoryUser] = useState<AdminUser | null>(null);
   const [telegramLink, setTelegramLink] = useState("");
   const [companyInfo, setCompanyInfo] = useState("");
+  const [depositNotice, setDepositNotice] = useState("");
+  const [alertIntervalRef, setAlertIntervalRef] = useState<NodeJS.Timeout | null>(null);
   const [prevPendingCount, setPrevPendingCount] = useState(0);
   const [prevTransactionCount, setPrevTransactionCount] = useState(0);
   const [prevInquiryCount, setPrevInquiryCount] = useState(0);
@@ -967,7 +970,45 @@ export default function Admin() {
     if (settingsData?.company_info !== undefined) {
       setCompanyInfo(settingsData.company_info);
     }
+    if (settingsData?.deposit_notice !== undefined) {
+      setDepositNotice(settingsData.deposit_notice);
+    }
   }, [settingsData]);
+
+  // Repeating alert for pending transactions
+  useEffect(() => {
+    const pendingCount = pendingDeposits.length + pendingWithdrawals.length;
+    
+    if (pendingCount > 0 && auth?.role === 'admin') {
+      // Clear existing interval
+      if (alertIntervalRef) {
+        clearInterval(alertIntervalRef);
+      }
+      
+      // Set up repeating alert every 30 seconds
+      const interval = setInterval(() => {
+        if (pendingDeposits.length > 0) {
+          toast.warning(`⏰ 미처리 입금 ${pendingDeposits.length}건이 있습니다!`, {
+            duration: 5000,
+          });
+          playNotificationSound('transaction');
+        }
+        if (pendingWithdrawals.length > 0) {
+          toast.warning(`⏰ 미처리 출금 ${pendingWithdrawals.length}건이 있습니다!`, {
+            duration: 5000,
+          });
+        }
+      }, 30000); // 30 seconds
+      
+      setAlertIntervalRef(interval);
+      
+      return () => clearInterval(interval);
+    } else if (pendingCount === 0 && alertIntervalRef) {
+      // Clear interval when no pending requests
+      clearInterval(alertIntervalRef);
+      setAlertIntervalRef(null);
+    }
+  }, [pendingDeposits.length, pendingWithdrawals.length, auth?.role]);
 
   const updateSetting = useMutation({
     mutationFn: async ({ key, value }: { key: string; value: string }) => {
@@ -1668,19 +1709,36 @@ export default function Admin() {
             )}
           </button>
           <button
-            onClick={() => setActiveTab('transactions')}
+            onClick={() => setActiveTab('deposits')}
             className={cn(
               "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors relative",
-              activeTab === 'transactions'
+              activeTab === 'deposits'
                 ? "bg-primary/10 text-primary"
                 : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
             )}
           >
             <Wallet className="w-4 h-4" />
-            입출금 관리
-            {pendingTransactions.length > 0 && (
+            입금 신청
+            {pendingDeposits.length > 0 && (
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-green-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center animate-pulse">
+                {pendingDeposits.length}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab('withdrawals')}
+            className={cn(
+              "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors relative",
+              activeTab === 'withdrawals'
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+            )}
+          >
+            <ArrowUpRight className="w-4 h-4" />
+            출금 신청
+            {pendingWithdrawals.length > 0 && (
               <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-orange-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center animate-pulse">
-                {pendingTransactions.length}
+                {pendingWithdrawals.length}
               </span>
             )}
           </button>
@@ -2635,6 +2693,41 @@ export default function Admin() {
                 )}
               </div>
             </div>
+
+            <div className="bg-card border border-border rounded-lg p-6">
+              <h2 className="text-lg font-semibold mb-4">입금 안내 설정</h2>
+              
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-muted-foreground">입금 안내 멘트</label>
+                  <div className="flex gap-3">
+                    <textarea
+                      value={depositNotice}
+                      onChange={(e) => setDepositNotice(e.target.value)}
+                      placeholder="입금 신청 후 아래 계좌로 입금해 주시면 빠르게 처리해 드립니다.&#10;&#10;예: 국민은행 123-456-7890 홍길동"
+                      className="flex-1 min-h-[100px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                    <Button
+                      onClick={() => updateSetting.mutate({ key: 'deposit_notice', value: depositNotice })}
+                      disabled={updateSetting.isPending}
+                      className="self-start"
+                    >
+                      {updateSetting.isPending ? '저장 중...' : '저장'}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    사용자가 입금 신청 시 표시될 안내 멘트입니다. 회사 계좌 정보를 포함해 주세요.
+                  </p>
+                </div>
+
+                {depositNotice && (
+                  <div className="pt-4 border-t border-border">
+                    <p className="text-sm text-muted-foreground mb-2">현재 설정된 안내:</p>
+                    <p className="text-foreground whitespace-pre-wrap">{depositNotice}</p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
 
@@ -3308,9 +3401,9 @@ export default function Admin() {
                             request.status === 'pending' && "bg-yellow-500/20 text-yellow-500",
                             request.status === 'approved' && "bg-green-500/20 text-green-500",
                             request.status === 'rejected' && "bg-red-500/20 text-red-500",
-                            request.status === 'hold' && "bg-gray-500/20 text-gray-500"
+                            (request.status as string) === 'hold' && "bg-gray-500/20 text-gray-500"
                           )}>
-                            {request.status === 'pending' ? '대기' : request.status === 'approved' ? '승인' : request.status === 'hold' ? '보류' : '거절'}
+                            {request.status === 'pending' ? '대기' : request.status === 'approved' ? '승인' : (request.status as string) === 'hold' ? '보류' : '거절'}
                           </span>
                         </td>
                         <td className="px-2 lg:px-4 py-3 text-xs text-muted-foreground">
@@ -3421,9 +3514,9 @@ export default function Admin() {
                             request.status === 'pending' && "bg-yellow-500/20 text-yellow-500",
                             request.status === 'approved' && "bg-green-500/20 text-green-500",
                             request.status === 'rejected' && "bg-red-500/20 text-red-500",
-                            request.status === 'hold' && "bg-gray-500/20 text-gray-500"
+                            (request.status as string) === 'hold' && "bg-gray-500/20 text-gray-500"
                           )}>
-                            {request.status === 'pending' ? '대기' : request.status === 'approved' ? '승인' : request.status === 'hold' ? '보류' : '거절'}
+                            {request.status === 'pending' ? '대기' : request.status === 'approved' ? '승인' : (request.status as string) === 'hold' ? '보류' : '거절'}
                           </span>
                         </td>
                         <td className="px-2 lg:px-4 py-3 text-xs text-muted-foreground">

@@ -233,6 +233,16 @@ export default function Landing() {
     },
   });
 
+  // Fetch deposit notice
+  const { data: depositNoticeData } = useQuery({
+    queryKey: ["/api/settings/deposit-notice"],
+    queryFn: async () => {
+      const res = await fetch("/api/settings/deposit-notice");
+      if (!res.ok) return { depositNotice: "" };
+      return res.json();
+    },
+  });
+
   // Fetch public announcements
   const { data: announcements = [] } = useQuery<{id: number; title: string; content: string; isPinned: boolean; createdAt: string}[]>({
     queryKey: ["/api/announcements"],
@@ -1625,8 +1635,8 @@ export default function Landing() {
 
                 {transactionType === 'deposit' && (
                   <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
-                    <p className="text-blue-400 text-sm">
-                      입금 신청 후 고객센터에서 입금 계좌 정보를 안내해드립니다.
+                    <p className="text-blue-400 text-sm whitespace-pre-wrap">
+                      {depositNoticeData?.depositNotice || '입금 신청 후 고객센터에서 입금 계좌 정보를 안내해드립니다.'}
                     </p>
                   </div>
                 )}
