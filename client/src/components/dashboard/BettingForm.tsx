@@ -133,6 +133,7 @@ interface BetConfirmation {
   direction: 'long' | 'short';
   amount: number;
   price: number;
+  round: number;
 }
 
 interface TimeAlert {
@@ -153,7 +154,7 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
   const [currentRound, setCurrentRound] = useState(calculateRoundNumber(game.duration));
   const [timeRemaining, setTimeRemaining] = useState(getRoundTimeRemaining(game.duration));
   const [gameResults, setGameResults] = useState<GameResult[]>([]);
-  const [betConfirmation, setBetConfirmation] = useState<BetConfirmation>({ show: false, direction: 'long', amount: 0, price: 0 });
+  const [betConfirmation, setBetConfirmation] = useState<BetConfirmation>({ show: false, direction: 'long', amount: 0, price: 0, round: 0 });
   const [timeAlert, setTimeAlert] = useState<TimeAlert>({ show: false, message: '' });
   const allGamesStateRef = useRef<AllGamesState>({});
   const lastPriceRef = useRef<number>(currentPrice);
@@ -284,6 +285,7 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
         direction,
         amount: numAmount,
         price: currentPrice,
+        round: currentRound,
       });
     }
   };
@@ -494,6 +496,10 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
               <div className="flex justify-between">
                 <span className="text-muted-foreground">종목</span>
                 <span className="text-foreground font-medium">{game.label}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">회차</span>
+                <span className="text-primary font-bold">{betConfirmation.round}회차</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">진입가</span>
