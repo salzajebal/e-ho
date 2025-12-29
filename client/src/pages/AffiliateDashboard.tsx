@@ -657,8 +657,8 @@ export default function AffiliateDashboard() {
                         <th className="px-4 py-3 font-medium">아이디</th>
                         <th className="px-4 py-3 font-medium">이름</th>
                         <th className="px-4 py-3 font-medium text-right">보유잔고</th>
-                        <th className="px-4 py-3 font-medium text-center">베팅수</th>
-                        <th className="px-4 py-3 font-medium text-right">총배팅액</th>
+                        <th className="px-4 py-3 font-medium text-center">거래수</th>
+                        <th className="px-4 py-3 font-medium text-right">총거래액</th>
                         <th className="px-4 py-3 font-medium">가입일</th>
                       </tr>
                     </thead>
@@ -723,8 +723,8 @@ export default function AffiliateDashboard() {
                         <th className="px-4 py-3 font-medium">아이디</th>
                         <th className="px-4 py-3 font-medium">이름</th>
                         <th className="px-4 py-3 font-medium text-right">보유잔고</th>
-                        <th className="px-4 py-3 font-medium text-center">베팅수</th>
-                        <th className="px-4 py-3 font-medium text-right">총배팅액</th>
+                        <th className="px-4 py-3 font-medium text-center">거래수</th>
+                        <th className="px-4 py-3 font-medium text-right">총거래액</th>
                         <th className="px-4 py-3 font-medium text-right">총수익</th>
                         <th className="px-4 py-3 font-medium">최근로그인</th>
                         <th className="px-4 py-3 font-medium">가입일</th>
@@ -782,7 +782,7 @@ export default function AffiliateDashboard() {
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Target className="w-5 h-5" />
-                  실시간 배팅 내역
+                  실시간 거래 내역
                   <span className="text-sm font-normal text-muted-foreground">(최근 100건)</span>
                 </CardTitle>
               </CardHeader>
@@ -799,7 +799,7 @@ export default function AffiliateDashboard() {
                         <th className="px-4 py-3 font-medium">시간</th>
                         <th className="px-4 py-3 font-medium">결과</th>
                         <th className="px-4 py-3 font-medium text-right">수익금</th>
-                        <th className="px-4 py-3 font-medium">배팅시간</th>
+                        <th className="px-4 py-3 font-medium">거래시간</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
@@ -862,7 +862,7 @@ export default function AffiliateDashboard() {
                       {affiliateBets.length === 0 && (
                         <tr>
                           <td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">
-                            배팅 내역이 없습니다
+                            거래 내역이 없습니다
                           </td>
                         </tr>
                       )}
@@ -996,7 +996,7 @@ export default function AffiliateDashboard() {
                     <thead className="bg-muted/50 text-left">
                       <tr>
                         <th className="px-4 py-3 font-medium">일시</th>
-                        <th className="px-4 py-3 font-medium text-right">베팅금액</th>
+                        <th className="px-4 py-3 font-medium text-right">거래금액</th>
                         <th className="px-4 py-3 font-medium text-right">수수료</th>
                         <th className="px-4 py-3 font-medium text-center">상태</th>
                       </tr>
@@ -1130,7 +1130,7 @@ export default function AffiliateDashboard() {
                     <thead className="bg-muted/50 text-left">
                       <tr>
                         <th className="px-4 py-3 font-medium">발생일</th>
-                        <th className="px-4 py-3 font-medium text-right">베팅금액</th>
+                        <th className="px-4 py-3 font-medium text-right">거래금액</th>
                         <th className="px-4 py-3 font-medium text-right">수수료</th>
                         <th className="px-4 py-3 font-medium text-center">상태</th>
                         <th className="px-4 py-3 font-medium">정산일</th>
@@ -1380,7 +1380,7 @@ export default function AffiliateDashboard() {
                             <th className="px-3 py-2 text-left font-medium">발생일</th>
                             <th className="px-3 py-2 text-left font-medium">회원</th>
                             <th className="px-3 py-2 text-left font-medium">종목</th>
-                            <th className="px-3 py-2 text-right font-medium">베팅금액</th>
+                            <th className="px-3 py-2 text-right font-medium">거래금액</th>
                             <th className="px-3 py-2 text-right font-medium">수수료</th>
                             <th className="px-3 py-2 text-center font-medium">상태</th>
                           </tr>

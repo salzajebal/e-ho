@@ -239,7 +239,7 @@ export function BetsPanel({ bets, currentPrices, onBetExpire }: BetsPanelProps) 
           activeBets.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-32 text-muted-foreground text-sm">
               <Clock className="w-8 h-8 mb-2 opacity-50" />
-              <span>진행 중인 베팅이 없습니다.</span>
+              <span>진행 중인 거래가 없습니다.</span>
             </div>
           ) : (
             <div>
@@ -258,14 +258,14 @@ export function BetsPanel({ bets, currentPrices, onBetExpire }: BetsPanelProps) 
           todayBets.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-32 text-muted-foreground text-sm">
               <Calendar className="w-8 h-8 mb-2 opacity-50" />
-              <span>오늘 완료된 베팅이 없습니다.</span>
+              <span>오늘 완료된 거래가 없습니다.</span>
             </div>
           ) : (
             <div>
               <div className="p-3 border-b border-border bg-muted/20">
                 <div className="grid grid-cols-3 gap-2 text-center text-xs">
                   <div>
-                    <div className="text-muted-foreground">총 베팅</div>
+                    <div className="text-muted-foreground">총 거래</div>
                     <div className="font-bold text-foreground">{todayBets.length}건</div>
                   </div>
                   <div>
@@ -299,7 +299,7 @@ export function BetsPanel({ bets, currentPrices, onBetExpire }: BetsPanelProps) 
           settledBets.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-32 text-muted-foreground text-sm">
               <Trophy className="w-8 h-8 mb-2 opacity-50" />
-              <span>베팅 내역이 없습니다.</span>
+              <span>거래 내역이 없습니다.</span>
             </div>
           ) : (
             <div>

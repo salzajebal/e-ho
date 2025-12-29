@@ -606,7 +606,7 @@ export default function Admin() {
         } else if (msg.event === 'bet_placed' || msg.event === 'bet_updated' || msg.event === 'bet_settled') {
           refetchBets();
           if (msg.event === 'bet_placed') {
-            toast.info(`새 베팅: ${msg.data.user?.username || 'Unknown'} - ${formatMoney(msg.data.bet.amount)}`);
+            toast.info(`새 거래: ${msg.data.user?.username || 'Unknown'} - ${formatMoney(msg.data.bet.amount)}`);
           }
         } else if (msg.event === 'transaction_request') {
           refetchTransactions();
@@ -884,7 +884,7 @@ export default function Admin() {
       return;
     }
     if (pendingBets.length > prevBetCount) {
-      toast.info(`🎯 새로운 배팅이 있습니다! (${pendingBets.length}건)`, {
+      toast.info(`🎯 새로운 거래가 있습니다! (${pendingBets.length}건)`, {
         duration: 3000,
       });
       playNotificationSound('bet');
@@ -1117,7 +1117,7 @@ export default function Admin() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/bets"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/stats"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
-      toast.success("베팅 결과가 변경되었습니다");
+      toast.success("거래 결과가 변경되었습니다");
     },
     onError: () => {
       toast.error("변경에 실패했습니다");
@@ -1143,7 +1143,7 @@ export default function Admin() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
       setEditingBetId(null);
       setEditingBetAmount("");
-      toast.success("베팅 금액이 수정되었습니다");
+      toast.success("거래 금액이 수정되었습니다");
     },
     onError: (error: Error) => {
       toast.error(error.message);
@@ -1516,7 +1516,7 @@ export default function Admin() {
         )}
       >
         <Target className="w-4 h-4" />
-        베팅 관리
+        거래 관리
       </button>
       <button
         onClick={() => { setActiveTab('messages'); setMobileMenuOpen(false); }}
@@ -1589,7 +1589,7 @@ export default function Admin() {
         data-testid="tab-forced-bet"
       >
         <Zap className="w-4 h-4" />
-        강제 배팅
+        강제 거래
       </button>
       <button
         onClick={() => { setActiveTab('settings'); setMobileMenuOpen(false); }}
@@ -1781,7 +1781,7 @@ export default function Admin() {
             )}
           >
             <Target className="w-4 h-4" />
-            베팅 관리
+            거래 관리
           </button>
           <button
             onClick={() => setActiveTab('messages')}
@@ -1854,7 +1854,7 @@ export default function Admin() {
             data-testid="tab-forced-bet"
           >
             <Zap className="w-4 h-4" />
-            강제 배팅
+            강제 거래
           </button>
           <button
             onClick={() => setActiveTab('settings')}
@@ -1919,7 +1919,7 @@ export default function Admin() {
                 <p className="text-[10px] lg:text-xs text-muted-foreground mt-1">실시간</p>
               </div>
               <div className="bg-card border border-border rounded-lg p-3 lg:p-4">
-                <p className="text-xs lg:text-sm text-muted-foreground">총 베팅수</p>
+                <p className="text-xs lg:text-sm text-muted-foreground">총 거래수</p>
                 <p className="text-lg lg:text-2xl font-bold mt-1">{stats?.totalBets || 0}건</p>
                 <p className="text-[10px] lg:text-xs text-muted-foreground mt-1">진행: {stats?.pendingBets || 0}건</p>
               </div>
@@ -1958,7 +1958,7 @@ export default function Admin() {
                       <th className="px-2 lg:px-4 py-2 lg:py-3 font-medium">날짜</th>
                       <th className="px-2 lg:px-4 py-2 lg:py-3 font-medium text-right">건수</th>
                       <th className="px-2 lg:px-4 py-2 lg:py-3 font-medium text-right">승/패</th>
-                      <th className="px-2 lg:px-4 py-2 lg:py-3 font-medium text-right">베팅액</th>
+                      <th className="px-2 lg:px-4 py-2 lg:py-3 font-medium text-right">거래액</th>
                       <th className="px-2 lg:px-4 py-2 lg:py-3 font-medium text-right">지급액</th>
                       <th className="px-2 lg:px-4 py-2 lg:py-3 font-medium text-right">수익</th>
                     </tr>
@@ -1989,7 +1989,7 @@ export default function Admin() {
                     {dailyStats.length === 0 && (
                       <tr>
                         <td colSpan={6} className="px-2 lg:px-4 py-6 lg:py-8 text-center text-muted-foreground">
-                          아직 정산된 베팅 기록이 없습니다
+                          아직 정산된 거래 기록이 없습니다
                         </td>
                       </tr>
                     )}
@@ -2210,7 +2210,7 @@ export default function Admin() {
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">이름</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">총판</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">보유머니</th>
-                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">총베팅</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">총거래</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">총입금</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">총출금</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">수익률</th>
@@ -2326,7 +2326,7 @@ export default function Admin() {
           <div className="space-y-3 lg:space-y-4">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2 lg:gap-4">
               <div className="flex items-center gap-2 lg:gap-4">
-                <h1 className="text-lg lg:text-2xl font-bold">실시간 베팅 관리</h1>
+                <h1 className="text-lg lg:text-2xl font-bold">실시간 거래 관리</h1>
                 <div className={cn(
                   "flex items-center gap-1 lg:gap-1.5 px-1.5 lg:px-2 py-0.5 lg:py-1 rounded-full text-[10px] lg:text-xs",
                   wsConnected ? "bg-up/20 text-up" : "bg-down/20 text-down"
@@ -2373,7 +2373,7 @@ export default function Admin() {
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">회차</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">회원</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">방향</th>
-                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">배팅금액</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">거래금액</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">배당</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">남은시간</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">상태</th>
@@ -2538,7 +2538,7 @@ export default function Admin() {
                     {filteredBets.length === 0 && (
                       <tr>
                         <td colSpan={8} className="px-3 py-8 text-center text-muted-foreground">
-                          {betFilter === 'pending' ? '진행중인 베팅이 없습니다' : '베팅 기록이 없습니다'}
+                          {betFilter === 'pending' ? '진행중인 거래가 없습니다' : '거래 기록이 없습니다'}
                         </td>
                       </tr>
                     )}
@@ -3135,13 +3135,13 @@ export default function Admin() {
         {activeTab === 'forced-bet' && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold">강제 배팅</h1>
+              <h1 className="text-2xl font-bold">강제 거래</h1>
             </div>
 
             <div className="bg-card border border-border rounded-lg p-6">
               <h3 className="font-medium mb-4 flex items-center gap-2">
                 <Zap className="w-4 h-4 text-yellow-500" />
-                회원 대신 배팅하기
+                회원 대신 거래하기
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -3212,18 +3212,18 @@ export default function Admin() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm text-muted-foreground">배팅 금액 (₩) *</label>
+                  <label className="text-sm text-muted-foreground">거래 금액 (₩) *</label>
                   <Input
                     type="number"
                     value={forcedBetAmount}
                     onChange={(e) => setForcedBetAmount(e.target.value)}
-                    placeholder="배팅 금액 입력"
+                    placeholder="거래 금액 입력"
                     data-testid="input-forced-bet-amount"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm text-muted-foreground">배팅 시간 *</label>
+                  <label className="text-sm text-muted-foreground">거래 시간 *</label>
                   <Select
                     value={forcedBetDuration.toString()}
                     onValueChange={(v) => setForcedBetDuration(parseInt(v))}
@@ -3276,10 +3276,10 @@ export default function Admin() {
 
                       if (!res.ok) {
                         const err = await res.json();
-                        throw new Error(err.error || '강제 배팅 실패');
+                        throw new Error(err.error || '강제 거래 실패');
                       }
 
-                      toast.success('강제 배팅이 성공적으로 등록되었습니다');
+                      toast.success('강제 거래가 성공적으로 등록되었습니다');
                       setForcedBetUserId('');
                       setForcedBetSymbol('BTC');
                       setForcedBetDirection('long');
@@ -3288,17 +3288,17 @@ export default function Admin() {
                       refetchBets();
                       refetchUsers();
                     } catch (error: any) {
-                      toast.error(error.message || '강제 배팅 실패');
+                      toast.error(error.message || '강제 거래 실패');
                     } finally {
                       setIsPlacingForcedBet(false);
                     }
                   }}
                   data-testid="button-place-forced-bet"
                 >
-                  {isPlacingForcedBet ? '배팅 중...' : (
+                  {isPlacingForcedBet ? '거래 중...' : (
                     <>
                       <Zap className="w-4 h-4 mr-2" />
-                      강제 배팅 실행
+                      강제 거래 실행
                     </>
                   )}
                 </Button>
@@ -3308,11 +3308,11 @@ export default function Admin() {
             <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-4">
               <h3 className="font-medium text-orange-500 mb-2 flex items-center gap-2">
                 <Zap className="w-4 h-4" />
-                강제 배팅 안내
+                강제 거래 안내
               </h3>
               <p className="text-sm text-muted-foreground">
-                선택한 회원의 잔고에서 배팅 금액이 차감됩니다. 회원이 충분한 잔고를 보유하고 있는지 확인하세요.
-                강제 배팅은 일반 배팅과 동일하게 정산됩니다.
+                선택한 회원의 잔고에서 거래 금액이 차감됩니다. 회원이 충분한 잔고를 보유하고 있는지 확인하세요.
+                강제 거래는 일반 거래와 동일하게 정산됩니다.
               </p>
             </div>
           </div>
@@ -3967,14 +3967,14 @@ export default function Admin() {
                 </div>
               </div>
               <div className="border-t border-border pt-4">
-                <p className="text-sm font-medium mb-3">베팅 설정</p>
+                <p className="text-sm font-medium mb-3">거래 설정</p>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                     <div className="flex items-center gap-2">
                       <Zap className="w-4 h-4 text-yellow-500" />
                       <div>
-                        <p className="text-sm font-medium">자동배팅</p>
-                        <p className="text-xs text-muted-foreground">자동 베팅 활성화</p>
+                        <p className="text-sm font-medium">자동거래</p>
+                        <p className="text-xs text-muted-foreground">자동 거래 활성화</p>
                       </div>
                     </div>
                     <button
@@ -3994,8 +3994,8 @@ export default function Admin() {
                     <div className="flex items-center gap-2">
                       <Ban className="w-4 h-4 text-down" />
                       <div>
-                        <p className="text-sm font-medium">베팅금지</p>
-                        <p className="text-xs text-muted-foreground">베팅 차단</p>
+                        <p className="text-sm font-medium">거래금지</p>
+                        <p className="text-xs text-muted-foreground">거래 차단</p>
                       </div>
                     </div>
                     <button
@@ -4014,7 +4014,7 @@ export default function Admin() {
                 </div>
                 {editingUser.autoBetEnabled && (
                   <div className="mt-3 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-                    <label className="text-xs text-yellow-500 font-medium">자동배팅 배수</label>
+                    <label className="text-xs text-yellow-500 font-medium">자동거래 배수</label>
                     <Select 
                       value={String(editingUser.autoBetMultiplier || 10)} 
                       onValueChange={(v) => setEditingUser(p => p ? { ...p, autoBetMultiplier: parseInt(v) } : null)}
