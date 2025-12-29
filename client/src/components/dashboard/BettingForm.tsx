@@ -28,7 +28,7 @@ interface GameResult {
   time: string;
 }
 
-const MULTIPLIER = 2.00;
+const MULTIPLIER = 1.95;
 
 // Get KST Date
 const getKSTDate = (): Date => {
@@ -310,7 +310,7 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
     <div className="flex flex-col lg:h-full bg-card w-full">
       <div className="flex items-center justify-between px-3 lg:px-4 h-10 border-b border-border bg-muted/20 shrink-0">
         <h2 className="text-sm font-semibold text-foreground">주문</h2>
-        <span className="text-xs text-muted-foreground">배당률: {MULTIPLIER}x</span>
+        <span className="text-xs text-muted-foreground">배당률: {(MULTIPLIER * 100).toFixed(0)}%</span>
       </div>
 
       <div className="p-3 lg:p-4 space-y-3 lg:space-y-5 lg:flex-1 lg:overflow-y-auto">
@@ -329,7 +329,7 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
             <div className="flex items-center justify-center gap-1.5 bg-yellow-500/20 rounded py-2 px-2">
               <Hash className="w-3.5 h-3.5 text-yellow-500 shrink-0" />
               <span className="text-sm font-bold text-yellow-500 whitespace-nowrap">
-                {currentRound}<span className="text-yellow-500/70 font-normal">/{maxRounds}</span>
+                {currentRound}회차
               </span>
             </div>
             <div className={cn(
@@ -383,16 +383,6 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
           </div>
         </div>
 
-        <div className="bg-muted/20 rounded-lg p-2 lg:p-3 space-y-1 lg:space-y-2">
-          <div className="flex justify-between text-xs">
-            <span className="text-muted-foreground">주문금액</span>
-            <span className="text-foreground font-mono">{betAmount.toLocaleString()}원</span>
-          </div>
-          <div className="flex justify-between text-xs">
-            <span className="text-muted-foreground">예상 수익</span>
-            <span className="text-up font-mono font-semibold">+{Math.floor(potentialWin).toLocaleString()}원</span>
-          </div>
-        </div>
 
         {isBettingLocked && (
           <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-2 text-center">
@@ -424,7 +414,7 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-1.5">
               <History className="w-3.5 h-3.5 text-muted-foreground" />
-              <span className="text-xs font-medium text-muted-foreground">오늘 게임결과</span>
+              <span className="text-xs font-medium text-muted-foreground">거래결과</span>
             </div>
             <span className="text-xs text-muted-foreground">{gameResults.length}회</span>
           </div>
@@ -502,16 +492,12 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
             
             <div className="bg-muted/30 rounded-lg p-3 space-y-1 text-sm">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">게임</span>
+                <span className="text-muted-foreground">종목</span>
                 <span className="text-foreground font-medium">{game.label}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">진입가</span>
                 <span className="text-foreground font-mono">{betConfirmation.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">예상수익</span>
-                <span className="text-up font-mono font-bold">+{(betConfirmation.amount * MULTIPLIER).toLocaleString()}원</span>
               </div>
             </div>
 

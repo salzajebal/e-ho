@@ -157,7 +157,7 @@ export default function Home() {
       amount,
       duration: selectedGame.duration,
       strikePrice: currentMarket.price,
-      multiplier: 2.00,
+      multiplier: 1.95,
     });
   };
 
@@ -403,10 +403,10 @@ export default function Home() {
         <Headphones className="w-5 h-5" />
       </button>
 
-      {/* Customer Service Modal - 1:1 문의 메뉴 */}
+      {/* Customer Service Modal - 고객센터 메뉴 */}
       <Dialog open={showCustomerServiceModal} onOpenChange={setShowCustomerServiceModal}>
         <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden">
-          <DialogTitle className="sr-only">1:1 문의</DialogTitle>
+          <DialogTitle className="sr-only">고객센터</DialogTitle>
           <div className="relative">
             <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 via-amber-500/20 to-blue-500/20 rounded-2xl blur-xl" />
             <div className="relative backdrop-blur-xl bg-[#1a1a24]/95 border border-white/10 rounded-2xl p-6 shadow-2xl">
@@ -421,7 +421,7 @@ export default function Home() {
                 <div className="w-16 h-16 mx-auto mb-3 bg-gradient-to-br from-blue-500 to-amber-500 rounded-full flex items-center justify-center">
                   <Headphones className="w-8 h-8 text-white" />
                 </div>
-                <h2 className="text-2xl font-bold text-white mb-1">1:1 문의</h2>
+                <h2 className="text-2xl font-bold text-white mb-1">고객센터</h2>
                 <p className="text-gray-400 text-sm">문의를 남기시면 빠르게 답변드립니다</p>
               </div>
 
@@ -672,7 +672,7 @@ export default function Home() {
               <MessageSquare className="w-5 h-5" />
             </div>
             <div className="text-left">
-              <p className="font-medium text-sm">1:1 문의 답변 완료</p>
+              <p className="font-medium text-sm">고객센터 답변 완료</p>
               <p className="text-xs text-blue-200">클릭하여 답변을 확인하세요</p>
             </div>
             <button

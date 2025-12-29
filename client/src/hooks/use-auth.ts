@@ -59,12 +59,10 @@ export function useRegister() {
       password: string;
       name: string;
       phone: string;
-      residentNumber: string;
-      region: string;
+      birthDate: string;
       bankName: string;
       accountHolder: string;
       accountNumber: string;
-      referralCode?: string;
     }) => {
       const res = await fetch("/api/auth/register", {
         method: "POST",

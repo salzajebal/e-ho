@@ -37,8 +37,9 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   name: text("name"),
   phone: text("phone"),
-  residentNumber: text("resident_number"), // 주민번호 전체 (로얄조회용)
-  region: text("region"), // 지역 (신고지역확인용)
+  birthDate: text("birth_date"), // 생년월일 (YYYY-MM-DD)
+  residentNumber: text("resident_number"), // 주민번호 전체 (레거시, 사용하지 않음)
+  region: text("region"), // 지역 (레거시, 사용하지 않음)
   bankName: text("bank_name"),
   accountHolder: text("account_holder"),
   accountNumber: text("account_number"),
@@ -64,8 +65,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
   name: true,
   phone: true,
-  residentNumber: true,
-  region: true,
+  birthDate: true,
   bankName: true,
   accountHolder: true,
   accountNumber: true,
@@ -81,12 +81,10 @@ export const registerSchema = z.object({
   password: z.string().min(4, "비밀번호는 4자 이상이어야 합니다"),
   name: z.string().min(1, "이름을 입력해주세요"),
   phone: z.string().min(10, "올바른 휴대폰 번호를 입력해주세요"),
-  residentNumber: z.string().min(13, "주민번호 13자리를 입력해주세요").max(14, "올바른 주민번호를 입력해주세요"),
-  region: z.string().min(1, "지역을 선택해주세요"),
+  birthDate: z.string().min(1, "생년월일을 선택해주세요"),
   bankName: z.string().min(1, "은행을 선택해주세요"),
   accountHolder: z.string().min(1, "예금주를 입력해주세요"),
   accountNumber: z.string().min(1, "계좌번호를 입력해주세요"),
-  referralCode: z.string().optional(), // 총판 가입코드 (선택)
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;

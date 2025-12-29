@@ -14,11 +14,15 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Shield, Zap, Headphones, TrendingUp, Lock, Award, X, ChevronDown, ChevronRight, Phone, Mail, MessageCircle, History, Wallet, Menu, Bell, FileText, Check } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Shield, Zap, Headphones, TrendingUp, Lock, Award, X, ChevronDown, ChevronRight, Phone, Mail, MessageCircle, History, Wallet, Menu, Bell, FileText, Check, Calendar as CalendarIcon } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useLogin, useRegister, useAuth, useLogout } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
 
 const CRYPTO_ASSETS = [
   { symbol: "BTC", name: "Bitcoin" },
@@ -34,12 +38,6 @@ const KOREAN_BANKS = [
   "산림조합", "저축은행",
 ];
 
-const KOREAN_REGIONS = [
-  "서울특별시", "부산광역시", "대구광역시", "인천광역시", "광주광역시",
-  "대전광역시", "울산광역시", "세종특별자치시",
-  "경기도", "강원도", "충청북도", "충청남도",
-  "전라북도", "전라남도", "경상북도", "경상남도", "제주특별자치도",
-];
 
 function isWithinOperatingHours(): boolean {
   const now = new Date();
@@ -178,14 +176,10 @@ export default function Landing() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [residentNumber, setResidentNumber] = useState("");
-  const [region, setRegion] = useState("");
+  const [birthDate, setBirthDate] = useState<Date | undefined>(undefined);
   const [bankName, setBankName] = useState("");
   const [accountHolder, setAccountHolder] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
-  const [referralCode, setReferralCode] = useState("");
-  const [referralValid, setReferralValid] = useState<boolean | null>(null);
-  const [referralName, setReferralName] = useState("");
   
   // Inquiry form state
   const [showInquiryFormModal, setShowInquiryFormModal] = useState(false);
@@ -330,13 +324,8 @@ export default function Landing() {
       toast.error("올바른 휴대폰 번호를 입력해주세요");
       return;
     }
-    const cleanResidentNumber = residentNumber.replace(/-/g, '');
-    if (!cleanResidentNumber || cleanResidentNumber.length !== 13) {
-      toast.error("주민번호 13자리를 정확히 입력해주세요");
-      return;
-    }
-    if (!region) {
-      toast.error("지역을 선택해주세요");
+    if (!birthDate) {
+      toast.error("생년월일을 선택해주세요");
       return;
     }
     if (!bankName) {
@@ -351,23 +340,18 @@ export default function Landing() {
       toast.error("계좌번호를 입력해주세요");
       return;
     }
-
-    if (referralCode && referralValid === false) {
-      toast.error("올바른 가입코드를 입력해주세요");
-      return;
-    }
+    
+    const birthDateStr = birthDate.toISOString().split('T')[0];
     
     register.mutate({ 
       username: regUsername, 
       password: regPassword, 
       name, 
       phone,
-      residentNumber: cleanResidentNumber,
-      region,
+      birthDate: birthDateStr,
       bankName, 
       accountHolder, 
       accountNumber,
-      referralCode: referralCode || undefined
     }, {
       onSuccess: () => {
         setShowRegisterModal(false);
@@ -376,38 +360,12 @@ export default function Landing() {
         setConfirmPassword("");
         setName("");
         setPhone("");
-        setResidentNumber("");
-        setRegion("");
+        setBirthDate(undefined);
         setBankName("");
         setAccountHolder("");
         setAccountNumber("");
-        setReferralCode("");
-        setReferralValid(null);
-        setReferralName("");
       }
     });
-  };
-
-  const validateReferralCode = async (code: string) => {
-    if (!code) {
-      setReferralValid(null);
-      setReferralName("");
-      return;
-    }
-    try {
-      const res = await fetch(`/api/referral/${encodeURIComponent(code)}`);
-      if (res.ok) {
-        const data = await res.json();
-        setReferralValid(true);
-        setReferralName(data.displayName);
-      } else {
-        setReferralValid(false);
-        setReferralName("");
-      }
-    } catch {
-      setReferralValid(false);
-      setReferralName("");
-    }
   };
 
   return (
@@ -500,7 +458,7 @@ export default function Landing() {
                 className="text-gray-300 hover:text-blue-500 transition-colors text-sm font-medium" 
                 data-testid="nav-customer-service"
               >
-                1:1문의
+                고객센터
               </button>
             </nav>
           </div>
@@ -690,7 +648,7 @@ export default function Landing() {
                   className="text-left text-gray-300 hover:text-blue-500 py-3 border-b border-white/10 w-full touch-manipulation"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
-                  1:1문의
+                  고객센터
                 </button>
                 
                 <div className="mt-4 flex flex-col gap-2">
@@ -1147,7 +1105,7 @@ export default function Landing() {
               <h4 className="font-semibold mb-4 text-gray-300">고객센터</h4>
               <ul className="space-y-2 text-gray-500 text-sm">
                 <li><button onClick={() => setShowAnnouncementsModal(true)} className="hover:text-blue-500 transition-colors" data-testid="link-notice">공지사항</button></li>
-                <li><button onClick={() => setShowCustomerServiceModal(true)} className="hover:text-blue-500 transition-colors" data-testid="link-inquiry">1:1문의</button></li>
+                <li><button onClick={() => setShowCustomerServiceModal(true)} className="hover:text-blue-500 transition-colors" data-testid="link-inquiry">고객센터</button></li>
               </ul>
             </div>
           </div>
@@ -1244,7 +1202,7 @@ export default function Landing() {
                 <span>|</span>
                 <span>24시간 운영</span>
                 <span>|</span>
-                <span>2.0x 배당</span>
+                <span>195% 배당</span>
               </div>
             </div>
           </div>
@@ -1346,39 +1304,35 @@ export default function Landing() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-xs text-gray-300 font-medium">주민번호 (로얄조회)</label>
-                    <Input
-                      type="text"
-                      value={residentNumber}
-                      onChange={(e) => {
-                        const value = e.target.value.replace(/[^0-9-]/g, '');
-                        if (value.length <= 14) {
-                          setResidentNumber(value);
-                        }
-                      }}
-                      placeholder="000000-0000000"
-                      className="h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-blue-500/50 text-sm"
-                      data-testid="input-reg-resident-number"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs text-gray-300 font-medium">지역 (신고지역)</label>
-                    <Select value={region} onValueChange={setRegion}>
-                      <SelectTrigger className="h-10 bg-white/5 border-white/10 text-white text-sm">
-                        <SelectValue placeholder="지역 선택" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-gray-900 border-white/20 max-h-60 overflow-y-auto">
-                        {KOREAN_REGIONS.map((reg) => (
-                          <SelectItem key={reg} value={reg} className="text-white hover:bg-white/10">
-                            {reg}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-gray-300 font-medium">생년월일</label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full h-10 bg-white/5 border-white/10 text-white justify-start text-left font-normal text-sm",
+                          !birthDate && "text-gray-500"
+                        )}
+                        data-testid="input-reg-birth-date"
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {birthDate ? format(birthDate, "yyyy년 MM월 dd일") : "생년월일 선택"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 bg-gray-900 border-white/20" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={birthDate}
+                        onSelect={setBirthDate}
+                        defaultMonth={new Date(1990, 0)}
+                        fromYear={1950}
+                        toYear={new Date().getFullYear()}
+                        captionLayout="dropdown"
+                        className="bg-gray-900 text-white"
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
 
                 <div className="pt-2 border-t border-white/10">
@@ -1426,44 +1380,6 @@ export default function Landing() {
                           required
                         />
                       </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-white/10">
-                  <p className="text-xs text-gray-400 mb-2">가입코드 (선택)</p>
-                  <div className="space-y-1">
-                    <label className="text-xs text-gray-300 font-medium">추천인 코드</label>
-                    <div className="relative">
-                      <Input
-                        type="text"
-                        value={referralCode}
-                        onChange={(e) => {
-                          const code = e.target.value.toUpperCase();
-                          setReferralCode(code);
-                          if (code.length >= 6) {
-                            validateReferralCode(code);
-                          } else {
-                            setReferralValid(null);
-                            setReferralName("");
-                          }
-                        }}
-                        placeholder="가입코드를 입력하세요 (선택)"
-                        className={`h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-blue-500/50 text-sm uppercase ${
-                          referralValid === true ? 'border-green-500' : referralValid === false ? 'border-red-500' : ''
-                        }`}
-                        data-testid="input-reg-referral-code"
-                      />
-                      {referralValid === true && (
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-green-500 text-xs">
-                          {referralName}
-                        </span>
-                      )}
-                      {referralValid === false && (
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-red-500 text-xs">
-                          잘못된 코드
-                        </span>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -1794,10 +1710,10 @@ export default function Landing() {
         </DialogContent>
       </Dialog>
 
-      {/* Customer Service Modal - 1:1 문의 메뉴 */}
+      {/* Customer Service Modal - 고객센터 메뉴 */}
       <Dialog open={showCustomerServiceModal} onOpenChange={setShowCustomerServiceModal}>
         <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden">
-          <DialogTitle className="sr-only">1:1 문의</DialogTitle>
+          <DialogTitle className="sr-only">고객센터</DialogTitle>
           <div className="relative">
             <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 via-amber-500/20 to-blue-500/20 rounded-2xl blur-xl" />
             <div className="relative backdrop-blur-xl bg-[#161b22]/95 border border-white/10 rounded-2xl p-6 shadow-2xl">
@@ -1812,7 +1728,7 @@ export default function Landing() {
                 <div className="flex items-center justify-center gap-2 mb-3">
                   <Headphones className="w-8 h-8 text-blue-500" />
                 </div>
-                <h2 className="text-2xl font-bold text-white mb-1">1:1 문의</h2>
+                <h2 className="text-2xl font-bold text-white mb-1">고객센터</h2>
                 <p className="text-gray-400 text-sm">문의를 남기시면 빠르게 답변드립니다</p>
               </div>
 

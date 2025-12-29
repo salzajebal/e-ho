@@ -140,7 +140,7 @@ export async function registerRoutes(
   // Register
   app.post("/api/auth/register", async (req, res) => {
     try {
-      const { username, password, name, phone, residentNumber, region, bankName, accountHolder, accountNumber, referralCode } = req.body;
+      const { username, password, name, phone, birthDate, bankName, accountHolder, accountNumber } = req.body;
 
       if (!username || username.length < 3) {
         return res.status(400).json({ error: "아이디는 3자 이상이어야 합니다" });
@@ -158,12 +158,8 @@ export async function registerRoutes(
         return res.status(400).json({ error: "올바른 휴대폰 번호를 입력해주세요" });
       }
 
-      if (!residentNumber || residentNumber.length !== 13) {
-        return res.status(400).json({ error: "주민번호 13자리를 입력해주세요" });
-      }
-
-      if (!region) {
-        return res.status(400).json({ error: "지역을 선택해주세요" });
+      if (!birthDate) {
+        return res.status(400).json({ error: "생년월일을 선택해주세요" });
       }
 
       if (!bankName) {
@@ -183,32 +179,16 @@ export async function registerRoutes(
         return res.status(400).json({ error: "이미 사용 중인 아이디입니다" });
       }
 
-      // Check if referral code is valid (if provided)
-      let affiliateId: string | null = null;
-      if (referralCode) {
-        const affiliate = await storage.getAffiliateByReferralCode(referralCode);
-        if (!affiliate || !affiliate.isActive) {
-          return res.status(400).json({ error: "유효하지 않은 가입코드입니다" });
-        }
-        affiliateId = affiliate.id;
-      }
-
       const user = await storage.createUser({ 
         username, 
         password, 
         name, 
         phone,
-        residentNumber,
-        region,
+        birthDate,
         bankName, 
         accountHolder, 
         accountNumber 
       });
-
-      // Link user to affiliate if referral code was provided
-      if (affiliateId) {
-        await storage.updateUser(user.id, { affiliateId });
-      }
 
       // Don't auto-login - user needs admin approval first
       res.json({
@@ -2460,7 +2440,7 @@ export async function registerRoutes(
       const id = parseInt(req.params.id);
       const { status, adminNote, sendMessage } = req.body;
       
-      if (!status || !['approved', 'rejected'].includes(status)) {
+      if (!status || !['approved', 'rejected', 'hold'].includes(status)) {
         return res.status(400).json({ error: "유효하지 않은 상태입니다" });
       }
 
@@ -2469,8 +2449,14 @@ export async function registerRoutes(
         return res.status(404).json({ error: "요청을 찾을 수 없습니다" });
       }
 
-      if (request.status !== 'pending') {
+      if (request.status !== 'pending' && request.status !== 'hold') {
         return res.status(400).json({ error: "이미 처리된 요청입니다" });
+      }
+
+      // For hold status, just update the status without balance changes
+      if (status === 'hold') {
+        const updated = await storage.processTransactionRequest(id, status, req.session.userId!, adminNote);
+        return res.json({ success: true, request: updated });
       }
 
       // Process the transaction
