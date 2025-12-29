@@ -316,6 +316,23 @@ export default function Admin() {
   const logout = useLogout();
   const queryClient = useQueryClient();
 
+  // Prevent browser back button from leaving admin page
+  useEffect(() => {
+    // Replace current history state to prevent going back to previous page
+    window.history.pushState(null, '', window.location.href);
+    
+    const handlePopState = (e: PopStateEvent) => {
+      // Push the state again to prevent leaving
+      window.history.pushState(null, '', window.location.href);
+    };
+    
+    window.addEventListener('popstate', handlePopState);
+    
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
+
   const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'bets' | 'settings' | 'approvals' | 'messages' | 'affiliates' | 'announcements' | 'blocked-ips' | 'maintenance' | 'forced-bet' | 'deposits' | 'withdrawals' | 'inquiries'>('users');
   const [inquiryReplyId, setInquiryReplyId] = useState<number | null>(null);
   const [inquiryReplyContent, setInquiryReplyContent] = useState("");
