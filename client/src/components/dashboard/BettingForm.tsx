@@ -310,7 +310,7 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
     <div className="flex flex-col lg:h-full bg-card w-full">
       <div className="flex items-center justify-between px-3 lg:px-4 h-10 border-b border-border bg-muted/20 shrink-0">
         <h2 className="text-sm font-semibold text-foreground">주문</h2>
-        <span className="text-xs text-muted-foreground">배당률: {(MULTIPLIER * 100).toFixed(0)}%</span>
+        <span className="text-xs text-muted-foreground">배당률: {MULTIPLIER}배</span>
       </div>
 
       <div className="p-3 lg:p-4 space-y-3 lg:space-y-5 lg:flex-1 lg:overflow-y-auto">
