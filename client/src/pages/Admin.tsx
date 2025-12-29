@@ -2111,35 +2111,48 @@ export default function Admin() {
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead className="bg-muted/30">
-                      <tr className="text-left text-muted-foreground">
-                        <th className="px-4 py-3 whitespace-nowrap">아이디</th>
-                        <th className="px-4 py-3 whitespace-nowrap">이름</th>
-                        <th className="px-4 py-3 whitespace-nowrap">전화번호</th>
-                        <th className="px-4 py-3 whitespace-nowrap">주민번호</th>
-                        <th className="px-4 py-3 whitespace-nowrap">지역</th>
-                        <th className="px-4 py-3 whitespace-nowrap">은행</th>
-                        <th className="px-4 py-3 whitespace-nowrap">예금주</th>
-                        <th className="px-4 py-3 whitespace-nowrap">계좌번호</th>
-                        <th className="px-4 py-3 whitespace-nowrap">총판코드</th>
-                        <th className="px-4 py-3 whitespace-nowrap">신청일</th>
-                        <th className="px-4 py-3 whitespace-nowrap text-right">승인/거절</th>
+                    <thead className="bg-muted/50 border-b border-border">
+                      <tr>
+                        <th className="px-2 lg:px-4 py-3 text-center font-medium">처리</th>
+                        <th className="px-2 lg:px-4 py-3 text-left font-medium">아이디</th>
+                        <th className="px-2 lg:px-4 py-3 text-left font-medium">이름</th>
+                        <th className="px-2 lg:px-4 py-3 text-left font-medium">전화번호</th>
+                        <th className="px-2 lg:px-4 py-3 text-left font-medium">주민번호</th>
+                        <th className="px-2 lg:px-4 py-3 text-left font-medium">지역</th>
+                        <th className="px-2 lg:px-4 py-3 text-left font-medium">은행</th>
+                        <th className="px-2 lg:px-4 py-3 text-left font-medium">예금주</th>
+                        <th className="px-2 lg:px-4 py-3 text-left font-medium">계좌번호</th>
+                        <th className="px-2 lg:px-4 py-3 text-left font-medium">총판코드</th>
+                        <th className="px-2 lg:px-4 py-3 text-left font-medium">신청일</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-border">
                       {pendingUsers.map((user) => {
                         const affiliate = user.affiliateId ? affiliatesList.find(a => a.id === user.affiliateId) : null;
                         return (
-                        <tr key={user.id} className="border-t border-border/50 hover:bg-muted/10">
-                          <td className="px-4 py-3 font-medium">{user.username}</td>
-                          <td className="px-4 py-3">{user.name || '-'}</td>
-                          <td className="px-4 py-3">{user.phone || '-'}</td>
-                          <td className="px-4 py-3 font-mono text-xs">{user.residentNumber || '-'}</td>
-                          <td className="px-4 py-3">{user.region || '-'}</td>
-                          <td className="px-4 py-3">{user.bankName || '-'}</td>
-                          <td className="px-4 py-3">{user.accountHolder || '-'}</td>
-                          <td className="px-4 py-3 font-mono text-xs">{user.accountNumber || '-'}</td>
-                          <td className="px-4 py-3">
+                        <tr key={user.id} className="hover:bg-muted/30 bg-yellow-500/5">
+                          <td className="px-2 lg:px-4 py-3">
+                            <div className="flex gap-1">
+                              <Button size="sm" className="h-7 px-2 bg-up hover:bg-up/90 text-xs" onClick={() => approveUser.mutate(user.id)} disabled={approveUser.isPending}>
+                                승인
+                              </Button>
+                              <Button size="sm" variant="outline" className="h-7 px-2 border-red-500/50 text-red-500 hover:bg-red-500/10 text-xs" onClick={() => rejectUser.mutate(user.id)} disabled={rejectUser.isPending}>
+                                거절
+                              </Button>
+                              <Button size="sm" variant="outline" className="h-7 px-2 border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10 text-xs" onClick={() => toast.info('가입 신청이 보류 처리되었습니다')}>
+                                보류
+                              </Button>
+                            </div>
+                          </td>
+                          <td className="px-2 lg:px-4 py-3 font-medium">{user.username}</td>
+                          <td className="px-2 lg:px-4 py-3">{user.name || '-'}</td>
+                          <td className="px-2 lg:px-4 py-3">{user.phone || '-'}</td>
+                          <td className="px-2 lg:px-4 py-3 font-mono text-xs">{user.residentNumber || '-'}</td>
+                          <td className="px-2 lg:px-4 py-3">{user.region || '-'}</td>
+                          <td className="px-2 lg:px-4 py-3">{user.bankName || '-'}</td>
+                          <td className="px-2 lg:px-4 py-3">{user.accountHolder || '-'}</td>
+                          <td className="px-2 lg:px-4 py-3 font-mono text-xs">{user.accountNumber || '-'}</td>
+                          <td className="px-2 lg:px-4 py-3">
                             {affiliate ? (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-primary/10 text-primary text-xs">
                                 <Share2 className="w-3 h-3" />
@@ -2149,29 +2162,7 @@ export default function Admin() {
                               <span className="text-muted-foreground">-</span>
                             )}
                           </td>
-                          <td className="px-4 py-3 text-muted-foreground">{formatDate(user.createdAt)}</td>
-                          <td className="px-4 py-3 text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              <Button
-                                size="sm"
-                                className="bg-green-600 hover:bg-green-700 text-white"
-                                onClick={() => approveUser.mutate(user.id)}
-                                disabled={approveUser.isPending}
-                              >
-                                <Check className="w-4 h-4 mr-1" />
-                                승인
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => rejectUser.mutate(user.id)}
-                                disabled={rejectUser.isPending}
-                              >
-                                <X className="w-4 h-4 mr-1" />
-                                거절
-                              </Button>
-                            </div>
-                          </td>
+                          <td className="px-2 lg:px-4 py-3 text-xs text-muted-foreground">{formatDate(user.createdAt)}</td>
                         </tr>
                       );
                       })}
