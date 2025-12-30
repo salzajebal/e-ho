@@ -3982,12 +3982,24 @@ export default function Admin() {
                         className="flex-1"
                       />
                       <button
-                        onClick={() => {
+                        onClick={async () => {
                           const amount = parseFloat(balanceAdjustAmount);
                           if (!isNaN(amount) && amount > 0) {
-                            const current = parseFloat(editingUser.balance) || 0;
-                            setEditingUser(p => p ? { ...p, balance: String(current + amount) } : null);
-                            setBalanceAdjustAmount("");
+                            try {
+                              const res = await fetch(`/api/admin/users/${editingUser.id}/adjust-balance`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ amount: amount }),
+                              });
+                              const data = await res.json();
+                              if (!res.ok) throw new Error(data.error || "잔고 조정 실패");
+                              setEditingUser(p => p ? { ...p, balance: String(data.newBalance) } : null);
+                              setBalanceAdjustAmount("");
+                              toast.success(`${amount.toLocaleString()}원이 추가되었습니다 (현재: ${data.newBalance.toLocaleString()}원)`);
+                              refetchUsers();
+                            } catch (error: any) {
+                              toast.error(error.message || "잔고 추가에 실패했습니다");
+                            }
                           }
                         }}
                         className="px-3 py-2 bg-up text-white rounded-md hover:bg-up/90 text-sm font-medium flex items-center gap-1"
@@ -3996,12 +4008,24 @@ export default function Admin() {
                         추가
                       </button>
                       <button
-                        onClick={() => {
+                        onClick={async () => {
                           const amount = parseFloat(balanceAdjustAmount);
                           if (!isNaN(amount) && amount > 0) {
-                            const current = parseFloat(editingUser.balance) || 0;
-                            setEditingUser(p => p ? { ...p, balance: String(Math.max(0, current - amount)) } : null);
-                            setBalanceAdjustAmount("");
+                            try {
+                              const res = await fetch(`/api/admin/users/${editingUser.id}/adjust-balance`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ amount: -amount }),
+                              });
+                              const data = await res.json();
+                              if (!res.ok) throw new Error(data.error || "잔고 조정 실패");
+                              setEditingUser(p => p ? { ...p, balance: String(data.newBalance) } : null);
+                              setBalanceAdjustAmount("");
+                              toast.success(`${amount.toLocaleString()}원이 차감되었습니다 (현재: ${data.newBalance.toLocaleString()}원)`);
+                              refetchUsers();
+                            } catch (error: any) {
+                              toast.error(error.message || "잔고 차감에 실패했습니다");
+                            }
                           }
                         }}
                         className="px-3 py-2 bg-down text-white rounded-md hover:bg-down/90 text-sm font-medium flex items-center gap-1"
