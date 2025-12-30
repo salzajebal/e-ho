@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuth, useLogout } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -192,7 +191,8 @@ function AdminLogin() {
     setIsLoading(true);
     
     try {
-      const res = await fetch("/api/auth/login", {
+      // Use separate admin auth API
+      const res = await fetch("/api/admin/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
@@ -203,13 +203,6 @@ function AdminLogin() {
       
       if (!res.ok) {
         setLoginErrorMessage(data.error || "아이디 또는 비밀번호가 일치하지 않습니다");
-        setIsLoading(false);
-        return;
-      }
-      
-      if (data.role !== 'admin') {
-        setLoginErrorMessage("관리자 권한이 없습니다");
-        await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
         setIsLoading(false);
         return;
       }
@@ -313,10 +306,31 @@ function AdminLogin() {
 }
 
 export default function Admin() {
-  const { data: auth, isLoading: authLoading } = useAuth();
+  // Use separate admin auth API (not shared with user session)
+  const { data: auth, isLoading: authLoading } = useQuery<{ id: string; username: string; role: string } | null>({
+    queryKey: ["/api/admin/auth/me"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/auth/me", { credentials: "include" });
+      if (!res.ok) return null;
+      return res.json();
+    },
+    staleTime: 5000,
+  });
+  
   const [, setLocation] = useLocation();
-  const logout = useLogout();
   const queryClient = useQueryClient();
+  
+  // Admin logout - only clears admin session
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/admin/auth/logout", { method: "POST", credentials: "include" });
+      queryClient.setQueryData(["/api/admin/auth/me"], null);
+      toast.success("로그아웃되었습니다");
+      window.location.reload();
+    } catch (error) {
+      toast.error("로그아웃에 실패했습니다");
+    }
+  };
 
   // Prevent browser back button from leaving admin page
   useEffect(() => {
@@ -1723,7 +1737,7 @@ export default function Admin() {
                 variant="ghost"
                 size="sm"
                 className="w-full justify-start gap-2 text-muted-foreground"
-                onClick={() => { logout.mutate(); setMobileMenuOpen(false); }}
+                onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
               >
                 <LogOut className="w-4 h-4" />
                 로그아웃
@@ -1958,7 +1972,7 @@ export default function Admin() {
             variant="ghost"
             size="sm"
             className="w-full justify-start gap-2 text-muted-foreground"
-            onClick={() => logout.mutate()}
+            onClick={() => handleLogout()}
           >
             <LogOut className="w-4 h-4" />
             로그아웃

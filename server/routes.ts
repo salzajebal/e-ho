@@ -25,6 +25,7 @@ const getKSTDate = (): Date => {
 declare module "express-session" {
   interface SessionData {
     userId?: string;
+    adminUserId?: string;
   }
 }
 
@@ -120,10 +121,11 @@ export async function registerRoutes(
   };
 
   const requireAdmin = async (req: Request, res: Response, next: NextFunction) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ error: "로그인이 필요합니다" });
+    // Use separate admin session
+    if (!req.session.adminUserId) {
+      return res.status(401).json({ error: "관리자 로그인이 필요합니다" });
     }
-    const user = await storage.getUser(req.session.userId);
+    const user = await storage.getUser(req.session.adminUserId);
     if (!user || user.role !== "admin") {
       return res.status(403).json({ error: "관리자 권한이 필요합니다" });
     }
@@ -304,6 +306,82 @@ export async function registerRoutes(
 
       const user = await storage.getUser(req.session.userId);
       if (!user) {
+        return res.json(null);
+      }
+
+      res.json({
+        id: user.id,
+        username: user.username,
+        balance: user.balance,
+        role: user.role,
+      });
+    } catch (error) {
+      res.json(null);
+    }
+  });
+
+  // ==================== ADMIN AUTH ROUTES (Separate Session) ====================
+  
+  // Admin Login - uses separate adminUserId session
+  app.post("/api/admin/auth/login", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+
+      if (!username || !password) {
+        return res.status(400).json({ error: "아이디와 비밀번호를 입력해주세요" });
+      }
+
+      // Admin login restriction: fixed credentials
+      const ADMIN_USERNAME = "admin";
+      const ADMIN_PASSWORD = "admin123";
+      
+      const user = await storage.getUserByUsername(username);
+      
+      // Only allow admin role users
+      if (!user || user.role !== 'admin') {
+        return res.status(401).json({ error: "관리자 계정이 아닙니다" });
+      }
+
+      // Check admin credentials
+      if (username !== ADMIN_USERNAME || password !== ADMIN_PASSWORD) {
+        return res.status(401).json({ error: "아이디 또는 비밀번호가 올바르지 않습니다" });
+      }
+
+      // Set admin session (separate from user session)
+      req.session.adminUserId = user.id;
+
+      res.json({
+        id: user.id,
+        username: user.username,
+        balance: user.balance,
+        role: user.role,
+      });
+    } catch (error) {
+      console.error("Admin login error:", error);
+      res.status(500).json({ error: "로그인에 실패했습니다" });
+    }
+  });
+
+  // Admin Logout - only clears admin session
+  app.post("/api/admin/auth/logout", (req, res) => {
+    delete req.session.adminUserId;
+    req.session.save((err) => {
+      if (err) {
+        return res.status(500).json({ error: "로그아웃에 실패했습니다" });
+      }
+      res.json({ success: true });
+    });
+  });
+
+  // Get current admin user
+  app.get("/api/admin/auth/me", async (req, res) => {
+    try {
+      if (!req.session.adminUserId) {
+        return res.json(null);
+      }
+
+      const user = await storage.getUser(req.session.adminUserId);
+      if (!user || user.role !== 'admin') {
         return res.json(null);
       }
 
