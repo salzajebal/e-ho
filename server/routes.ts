@@ -2291,6 +2291,80 @@ export async function registerRoutes(
   startBinanceWebSocket();
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
+  // ==================== AUTO-SETTLEMENT FOR EXPIRED BETS ====================
+  async function settleExpiredBets() {
+    try {
+      const expiredBets = await storage.getExpiredPendingBets();
+      
+      for (const bet of expiredBets) {
+        try {
+          const symbol = bet.symbol.toUpperCase();
+          const currentPrice = binancePrices[symbol]?.price;
+          
+          if (!currentPrice || currentPrice <= 0) {
+            continue;
+          }
+          
+          const strikePrice = parseFloat(bet.strikePrice);
+          const betAmount = parseFloat(bet.amount);
+          const multiplier = parseFloat(bet.multiplier);
+          
+          let outcome: 'win' | 'lose';
+          
+          // Check if admin has set a forced outcome
+          if (bet.forcedOutcome === 'win' || bet.forcedOutcome === 'lose') {
+            outcome = bet.forcedOutcome;
+          } else {
+            // Calculate based on price movement
+            if (bet.direction === 'long') {
+              outcome = currentPrice > strikePrice ? 'win' : 'lose';
+            } else {
+              outcome = currentPrice < strikePrice ? 'win' : 'lose';
+            }
+          }
+          
+          const payout = outcome === 'win' ? betAmount * multiplier : 0;
+          await storage.settleBet(bet.id, currentPrice.toString(), outcome, payout.toString());
+          
+          if (outcome === 'win') {
+            const user = await storage.getUser(bet.userId);
+            if (user) {
+              const currentBalance = parseFloat(user.balance);
+              const newBalance = (currentBalance + payout).toString();
+              await storage.updateUserBalance(bet.userId, newBalance);
+            }
+          }
+          
+          // Broadcast settlement to admin clients
+          broadcastToAdmins('bet_settled', {
+            betId: bet.id,
+            outcome,
+            closePrice: currentPrice.toString(),
+            payout: payout.toString(),
+          });
+          
+          // Broadcast to user
+          broadcastToUser(bet.userId, 'bet_settled', {
+            betId: bet.id,
+            outcome,
+            closePrice: currentPrice.toString(),
+            payout: payout.toString(),
+          });
+          
+          console.log(`⚡ [Auto-Settle] Bet #${bet.id} settled: ${outcome} at $${currentPrice.toFixed(2)}`);
+        } catch (settleError) {
+          console.error(`❌ [Auto-Settle] Failed to settle bet #${bet.id}:`, settleError);
+        }
+      }
+    } catch (error) {
+      console.error('❌ [Auto-Settle] Error fetching expired bets:', error);
+    }
+  }
+  
+  // Run auto-settlement every 2 seconds
+  setInterval(settleExpiredBets, 2000);
+  console.log('🔄 [Auto-Settle] 자동 정산 시작 (2초 간격)');
+
   // WebSocket 상태 확인 API (디버깅용)
   app.get("/api/market/status", (req, res) => {
     const now = Date.now();

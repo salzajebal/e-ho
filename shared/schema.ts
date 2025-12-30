@@ -67,6 +67,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   name: true,
   phone: true,
   birthDate: true,
+  region: true,
   bankName: true,
   accountHolder: true,
   accountNumber: true,
