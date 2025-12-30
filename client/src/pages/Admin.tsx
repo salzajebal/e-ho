@@ -509,7 +509,7 @@ export default function Admin() {
   const [forcedBetSymbol, setForcedBetSymbol] = useState("BTC");
   const [forcedBetDirection, setForcedBetDirection] = useState<"long" | "short">("long");
   const [forcedBetAmount, setForcedBetAmount] = useState("");
-  const [forcedBetDuration, setForcedBetDuration] = useState(120);
+  const [forcedBetUserSearch, setForcedBetUserSearch] = useState("");
   const [isPlacingForcedBet, setIsPlacingForcedBet] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -3396,72 +3396,79 @@ export default function Admin() {
             <div className="bg-card border border-border rounded-lg p-6">
               <h3 className="font-medium mb-4 flex items-center gap-2">
                 <Zap className="w-4 h-4 text-yellow-500" />
-                회원 대신 거래하기
+                회원 대신 거래하기 (2분 게임)
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm text-muted-foreground">회원 선택 *</label>
-                  <Select
-                    value={forcedBetUserId}
-                    onValueChange={setForcedBetUserId}
-                  >
-                    <SelectTrigger className="w-full" data-testid="select-forced-bet-user">
-                      <SelectValue placeholder="회원을 선택하세요" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-card border-border max-h-60">
-                      {users.filter(u => u.role !== 'admin').map((user) => (
-                        <SelectItem key={user.id} value={user.id}>
-                          {user.username} ({user.name || '이름없음'}) - ₩{parseFloat(user.balance).toLocaleString()}
-                        </SelectItem>
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-sm text-muted-foreground">회원 검색 및 선택 *</label>
+                  <Input
+                    type="text"
+                    value={forcedBetUserSearch}
+                    onChange={(e) => setForcedBetUserSearch(e.target.value)}
+                    placeholder="아이디 또는 이름으로 검색..."
+                    className="mb-2"
+                  />
+                  <div className="max-h-48 overflow-y-auto border border-border rounded-lg bg-muted/20">
+                    {users
+                      .filter(u => u.role !== 'admin')
+                      .filter(u => 
+                        forcedBetUserSearch === '' ||
+                        u.username.toLowerCase().includes(forcedBetUserSearch.toLowerCase()) ||
+                        (u.name && u.name.toLowerCase().includes(forcedBetUserSearch.toLowerCase()))
+                      )
+                      .map((user) => (
+                        <div
+                          key={user.id}
+                          className={cn(
+                            "px-3 py-2 cursor-pointer hover:bg-muted/50 transition-colors border-b border-border last:border-b-0",
+                            forcedBetUserId === user.id && "bg-primary/20 hover:bg-primary/30"
+                          )}
+                          onClick={() => setForcedBetUserId(user.id)}
+                        >
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <span className="font-medium">{user.username}</span>
+                              <span className="text-muted-foreground text-sm ml-2">({user.name || '이름없음'})</span>
+                            </div>
+                            <span className="text-sm font-mono">₩{parseFloat(user.balance).toLocaleString()}</span>
+                          </div>
+                        </div>
                       ))}
-                    </SelectContent>
-                  </Select>
+                    {users.filter(u => u.role !== 'admin').filter(u => 
+                      forcedBetUserSearch === '' ||
+                      u.username.toLowerCase().includes(forcedBetUserSearch.toLowerCase()) ||
+                      (u.name && u.name.toLowerCase().includes(forcedBetUserSearch.toLowerCase()))
+                    ).length === 0 && (
+                      <div className="px-3 py-4 text-center text-muted-foreground text-sm">
+                        검색 결과가 없습니다
+                      </div>
+                    )}
+                  </div>
+                  {forcedBetUserId && (
+                    <div className="text-sm text-primary mt-1">
+                      선택됨: {users.find(u => u.id === forcedBetUserId)?.username}
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-sm text-muted-foreground">종목 *</label>
-                  <Select
-                    value={forcedBetSymbol}
-                    onValueChange={setForcedBetSymbol}
-                  >
-                    <SelectTrigger className="w-full" data-testid="select-forced-bet-symbol">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-card border-border">
-                      <SelectItem value="BTC">BTC (비트코인)</SelectItem>
-                      <SelectItem value="ETH">ETH (이더리움)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm text-muted-foreground">방향 *</label>
                   <div className="flex gap-2">
                     <Button
                       type="button"
-                      variant={forcedBetDirection === 'long' ? 'default' : 'outline'}
-                      className={cn(
-                        "flex-1",
-                        forcedBetDirection === 'long' && "bg-up hover:bg-up/90"
-                      )}
-                      onClick={() => setForcedBetDirection('long')}
-                      data-testid="button-forced-bet-long"
+                      variant={forcedBetSymbol === 'BTC' ? 'default' : 'outline'}
+                      className={cn("flex-1", forcedBetSymbol === 'BTC' && "bg-orange-500 hover:bg-orange-600")}
+                      onClick={() => setForcedBetSymbol('BTC')}
                     >
-                      <TrendingUp className="w-4 h-4 mr-1" />
-                      롱 (상승)
+                      BTC (비트코인)
                     </Button>
                     <Button
                       type="button"
-                      variant={forcedBetDirection === 'short' ? 'default' : 'outline'}
-                      className={cn(
-                        "flex-1",
-                        forcedBetDirection === 'short' && "bg-down hover:bg-down/90"
-                      )}
-                      onClick={() => setForcedBetDirection('short')}
-                      data-testid="button-forced-bet-short"
+                      variant={forcedBetSymbol === 'ETH' ? 'default' : 'outline'}
+                      className={cn("flex-1", forcedBetSymbol === 'ETH' && "bg-blue-500 hover:bg-blue-600")}
+                      onClick={() => setForcedBetSymbol('ETH')}
                     >
-                      <TrendingUp className="w-4 h-4 mr-1 rotate-180" />
-                      숏 (하락)
+                      ETH (이더리움)
                     </Button>
                   </div>
                 </div>
@@ -3477,22 +3484,36 @@ export default function Admin() {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm text-muted-foreground">거래 시간 *</label>
-                  <Select
-                    value={forcedBetDuration.toString()}
-                    onValueChange={(v) => setForcedBetDuration(parseInt(v))}
-                  >
-                    <SelectTrigger className="w-full" data-testid="select-forced-bet-duration">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-card border-border">
-                      <SelectItem value="60">1분</SelectItem>
-                      <SelectItem value="120">2분</SelectItem>
-                      <SelectItem value="180">3분</SelectItem>
-                      <SelectItem value="300">5분</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-sm text-muted-foreground">방향 *</label>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant={forcedBetDirection === 'long' ? 'default' : 'outline'}
+                      className={cn(
+                        "flex-1 h-12",
+                        forcedBetDirection === 'long' && "bg-up hover:bg-up/90"
+                      )}
+                      onClick={() => setForcedBetDirection('long')}
+                      data-testid="button-forced-bet-long"
+                    >
+                      <TrendingUp className="w-5 h-5 mr-2" />
+                      롱 (상승)
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={forcedBetDirection === 'short' ? 'default' : 'outline'}
+                      className={cn(
+                        "flex-1 h-12",
+                        forcedBetDirection === 'short' && "bg-down hover:bg-down/90"
+                      )}
+                      onClick={() => setForcedBetDirection('short')}
+                      data-testid="button-forced-bet-short"
+                    >
+                      <TrendingUp className="w-5 h-5 mr-2 rotate-180" />
+                      숏 (하락)
+                    </Button>
+                  </div>
                 </div>
               </div>
 
@@ -3523,7 +3544,7 @@ export default function Admin() {
                           symbol: forcedBetSymbol,
                           direction: forcedBetDirection,
                           amount: parseFloat(forcedBetAmount),
-                          duration: forcedBetDuration,
+                          duration: 120,
                           strikePrice: symbolPrice.price,
                           multiplier: 1.95,
                         }),
@@ -3539,7 +3560,7 @@ export default function Admin() {
                       setForcedBetSymbol('BTC');
                       setForcedBetDirection('long');
                       setForcedBetAmount('');
-                      setForcedBetDuration(120);
+                      setForcedBetUserSearch('');
                       refetchBets();
                       refetchUsers();
                     } catch (error: any) {
