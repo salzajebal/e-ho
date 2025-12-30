@@ -11,6 +11,7 @@ import {
   BarChart3,
   LogOut,
   TrendingUp,
+  TrendingDown,
   Edit2,
   Trash2,
   RefreshCw,
@@ -98,6 +99,7 @@ interface AdminUser {
   autoBetEnabled: boolean;
   autoBetMultiplier: number;
   isBettingBlocked: boolean;
+  forcedBetDirection: 'win' | 'lose' | null;
   approvalStatus: string;
   lastLoginAt: string | null;
   lastLoginIp: string | null;
@@ -4123,6 +4125,105 @@ export default function Admin() {
                     </button>
                   </div>
                 </div>
+                
+                {/* 강제 결과 설정 */}
+                <div className="mt-4 p-3 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-purple-500" />
+                      <p className="text-sm font-medium">강제 결과 설정</p>
+                    </div>
+                    {editingUser.forcedBetDirection && (
+                      <span className={cn(
+                        "px-2 py-0.5 rounded text-xs font-bold",
+                        editingUser.forcedBetDirection === 'win' 
+                          ? "bg-up/30 text-up" 
+                          : "bg-down/30 text-down"
+                      )}>
+                        {editingUser.forcedBetDirection === 'win' ? '적중 설정중' : '미적중 설정중'}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-3">다음 거래 결과를 미리 설정합니다 (1회성)</p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={async () => {
+                        try {
+                          const res = await fetch(`/api/admin/users/${editingUser.id}/forced-bet-direction`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ direction: 'win' }),
+                          });
+                          const data = await res.json();
+                          if (!res.ok) throw new Error(data.error);
+                          setEditingUser(p => p ? { ...p, forcedBetDirection: 'win' } : null);
+                          toast.success("적중으로 설정되었습니다");
+                          refetchUsers();
+                        } catch (error: any) {
+                          toast.error(error.message || "설정 실패");
+                        }
+                      }}
+                      className={cn(
+                        "flex-1 px-3 py-2 rounded-md text-sm font-medium flex items-center justify-center gap-1 transition-all",
+                        editingUser.forcedBetDirection === 'win'
+                          ? "bg-up text-white ring-2 ring-up ring-offset-2 ring-offset-background"
+                          : "bg-up/20 text-up hover:bg-up/30"
+                      )}
+                    >
+                      <TrendingUp className="w-4 h-4" />
+                      적중
+                    </button>
+                    <button
+                      onClick={async () => {
+                        try {
+                          const res = await fetch(`/api/admin/users/${editingUser.id}/forced-bet-direction`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ direction: 'lose' }),
+                          });
+                          const data = await res.json();
+                          if (!res.ok) throw new Error(data.error);
+                          setEditingUser(p => p ? { ...p, forcedBetDirection: 'lose' } : null);
+                          toast.success("미적중으로 설정되었습니다");
+                          refetchUsers();
+                        } catch (error: any) {
+                          toast.error(error.message || "설정 실패");
+                        }
+                      }}
+                      className={cn(
+                        "flex-1 px-3 py-2 rounded-md text-sm font-medium flex items-center justify-center gap-1 transition-all",
+                        editingUser.forcedBetDirection === 'lose'
+                          ? "bg-down text-white ring-2 ring-down ring-offset-2 ring-offset-background"
+                          : "bg-down/20 text-down hover:bg-down/30"
+                      )}
+                    >
+                      <TrendingDown className="w-4 h-4" />
+                      미적중
+                    </button>
+                    <button
+                      onClick={async () => {
+                        try {
+                          const res = await fetch(`/api/admin/users/${editingUser.id}/forced-bet-direction`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ direction: null }),
+                          });
+                          const data = await res.json();
+                          if (!res.ok) throw new Error(data.error);
+                          setEditingUser(p => p ? { ...p, forcedBetDirection: null } : null);
+                          toast.success("설정이 해제되었습니다");
+                          refetchUsers();
+                        } catch (error: any) {
+                          toast.error(error.message || "해제 실패");
+                        }
+                      }}
+                      className="px-3 py-2 bg-muted hover:bg-muted/80 rounded-md text-sm font-medium"
+                    >
+                      해제
+                    </button>
+                  </div>
+                </div>
+
                 {editingUser.autoBetEnabled && (
                   <div className="mt-3 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
                     <label className="text-xs text-yellow-500 font-medium">자동거래 배수</label>

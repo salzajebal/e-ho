@@ -416,6 +416,15 @@ export async function registerRoutes(
         return res.status(400).json({ error: "이 회차는 마감되었습니다. 다음 회차에 베팅해주세요." });
       }
 
+      // Check if user has pre-set forced bet direction
+      let forcedOutcome: 'win' | 'lose' | null = null;
+      if (user.forcedBetDirection === 'win' || user.forcedBetDirection === 'lose') {
+        forcedOutcome = user.forcedBetDirection;
+        // Clear the forced direction after applying (one-time use)
+        await storage.updateUser(userId, { forcedBetDirection: null });
+        console.log(`Applied pre-set forced outcome: ${forcedOutcome} for user ${user.username}`);
+      }
+
       const bet = await storage.createBet({
         userId,
         symbol,
@@ -426,6 +435,7 @@ export async function registerRoutes(
         strikePrice: strikePrice.toString(),
         multiplier: (multiplier || 2.00).toString(),
         expiresAt,
+        forcedOutcome,
       });
 
       const newBalance = (currentBalance - betAmount).toString();
@@ -757,6 +767,36 @@ export async function registerRoutes(
       res.json({ success: true, user: updated });
     } catch (error) {
       res.status(500).json({ error: "Failed to update user" });
+    }
+  });
+
+  // Set forced bet direction for user (pre-set outcome for next bet)
+  app.post("/api/admin/users/:id/forced-bet-direction", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { direction } = req.body; // 'win', 'lose', or null
+
+      if (direction !== null && direction !== 'win' && direction !== 'lose') {
+        return res.status(400).json({ error: "방향은 'win', 'lose', 또는 null이어야 합니다" });
+      }
+
+      const user = await storage.getUser(id);
+      if (!user) {
+        return res.status(404).json({ error: "회원을 찾을 수 없습니다" });
+      }
+
+      await storage.updateUser(id, { forcedBetDirection: direction });
+
+      const updatedUser = await storage.getUser(id);
+      const directionText = direction === 'win' ? '적중' : direction === 'lose' ? '미적중' : '해제';
+      res.json({ 
+        success: true, 
+        message: `강제 결과가 '${directionText}'로 설정되었습니다`,
+        user: updatedUser 
+      });
+    } catch (error) {
+      console.error("Set forced bet direction error:", error);
+      res.status(500).json({ error: "강제 결과 설정에 실패했습니다" });
     }
   });
 
