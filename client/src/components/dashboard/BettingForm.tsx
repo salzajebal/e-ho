@@ -266,8 +266,8 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
       return false;
     }
 
-    if (numAmount < 1000) {
-      toast.error("최소 주문금액은 1,000원입니다.");
+    if (numAmount < 10000) {
+      toast.error("최소 주문금액은 10,000원입니다.");
       return false;
     }
 

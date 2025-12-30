@@ -1692,6 +1692,16 @@ export default function Landing() {
                     return;
                   }
                   
+                  if (transactionType === 'withdrawal' && Number(transactionAmount) < 10000) {
+                    toast.error('최소 출금금액은 10,000원입니다.');
+                    return;
+                  }
+                  
+                  if (transactionType === 'deposit' && Number(transactionAmount) < 10000) {
+                    toast.error('최소 입금금액은 10,000원입니다.');
+                    return;
+                  }
+                  
                   setTransactionSubmitting(true);
                   try {
                     const response = await fetch('/api/transactions', {
