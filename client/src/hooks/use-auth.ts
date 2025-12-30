@@ -60,6 +60,7 @@ export function useRegister() {
       name: string;
       phone: string;
       birthDate: string;
+      region?: string;
       bankName: string;
       accountHolder: string;
       accountNumber: string;

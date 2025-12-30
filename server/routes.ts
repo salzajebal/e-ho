@@ -142,7 +142,7 @@ export async function registerRoutes(
   // Register
   app.post("/api/auth/register", async (req, res) => {
     try {
-      const { username, password, name, phone, birthDate, bankName, accountHolder, accountNumber } = req.body;
+      const { username, password, name, phone, birthDate, region, bankName, accountHolder, accountNumber } = req.body;
 
       if (!username || username.length < 3) {
         return res.status(400).json({ error: "아이디는 3자 이상이어야 합니다" });
@@ -187,6 +187,7 @@ export async function registerRoutes(
         name, 
         phone,
         birthDate,
+        region,
         bankName, 
         accountHolder, 
         accountNumber 
