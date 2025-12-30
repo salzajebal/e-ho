@@ -365,6 +365,11 @@ export default function Admin() {
   const [telegramLink, setTelegramLink] = useState("");
   const [companyInfo, setCompanyInfo] = useState("");
   const [depositNotice, setDepositNotice] = useState("");
+  const [newTemplateTitle, setNewTemplateTitle] = useState("");
+  const [newTemplateContent, setNewTemplateContent] = useState("");
+  const [editingTemplateId, setEditingTemplateId] = useState<number | null>(null);
+  const [editingTemplateTitle, setEditingTemplateTitle] = useState("");
+  const [editingTemplateContent, setEditingTemplateContent] = useState("");
   const [alertIntervalRef, setAlertIntervalRef] = useState<NodeJS.Timeout | null>(null);
   const [prevPendingCount, setPrevPendingCount] = useState(0);
   const [prevTransactionCount, setPrevTransactionCount] = useState(0);
@@ -654,7 +659,7 @@ export default function Admin() {
     content: string;
     createdAt: string;
   }
-  const { data: inquiryTemplates = [] } = useQuery<InquiryTemplate[]>({
+  const { data: inquiryTemplates = [], refetch: refetchTemplates } = useQuery<InquiryTemplate[]>({
     queryKey: ["/api/admin/inquiry-templates"],
     queryFn: async () => {
       const res = await fetch("/api/admin/inquiry-templates");
@@ -2831,6 +2836,153 @@ export default function Admin() {
                 )}
               </div>
             </div>
+
+            {/* 자주 쓰는 답변 관리 */}
+            <div className="bg-card border border-border rounded-lg p-6">
+              <h2 className="text-lg font-semibold mb-4">자주 쓰는 답변 관리</h2>
+              <p className="text-sm text-muted-foreground mb-4">고객센터 답변 시 빠르게 사용할 수 있는 답변 템플릿을 관리합니다.</p>
+              
+              {/* 새 템플릿 추가 */}
+              <div className="space-y-3 mb-6 p-4 bg-muted/30 rounded-lg border border-border">
+                <h3 className="text-sm font-medium">새 템플릿 추가</h3>
+                <Input
+                  value={newTemplateTitle}
+                  onChange={(e) => setNewTemplateTitle(e.target.value)}
+                  placeholder="템플릿 제목 (예: 입금 안내)"
+                  className="text-sm"
+                />
+                <textarea
+                  value={newTemplateContent}
+                  onChange={(e) => setNewTemplateContent(e.target.value)}
+                  placeholder="템플릿 내용을 입력하세요..."
+                  rows={3}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                />
+                <Button
+                  size="sm"
+                  onClick={async () => {
+                    if (!newTemplateTitle.trim() || !newTemplateContent.trim()) {
+                      toast.error("제목과 내용을 모두 입력해주세요");
+                      return;
+                    }
+                    try {
+                      const res = await fetch("/api/admin/inquiry-templates", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ title: newTemplateTitle, content: newTemplateContent }),
+                      });
+                      if (!res.ok) throw new Error("템플릿 추가 실패");
+                      toast.success("템플릿이 추가되었습니다");
+                      setNewTemplateTitle("");
+                      setNewTemplateContent("");
+                      refetchTemplates();
+                    } catch (error) {
+                      toast.error("템플릿 추가에 실패했습니다");
+                    }
+                  }}
+                >
+                  템플릿 추가
+                </Button>
+              </div>
+
+              {/* 템플릿 목록 */}
+              <div className="space-y-3">
+                {inquiryTemplates.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">등록된 템플릿이 없습니다</p>
+                ) : (
+                  inquiryTemplates.map((template) => (
+                    <div key={template.id} className="p-3 bg-muted/20 rounded-lg border border-border">
+                      {editingTemplateId === template.id ? (
+                        <div className="space-y-2">
+                          <Input
+                            value={editingTemplateTitle}
+                            onChange={(e) => setEditingTemplateTitle(e.target.value)}
+                            placeholder="제목"
+                            className="text-sm"
+                          />
+                          <textarea
+                            value={editingTemplateContent}
+                            onChange={(e) => setEditingTemplateContent(e.target.value)}
+                            rows={3}
+                            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          />
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={async () => {
+                                if (!editingTemplateTitle.trim() || !editingTemplateContent.trim()) {
+                                  toast.error("제목과 내용을 모두 입력해주세요");
+                                  return;
+                                }
+                                try {
+                                  const res = await fetch(`/api/admin/inquiry-templates/${template.id}`, {
+                                    method: "PUT",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ title: editingTemplateTitle, content: editingTemplateContent }),
+                                  });
+                                  if (!res.ok) throw new Error("수정 실패");
+                                  toast.success("템플릿이 수정되었습니다");
+                                  setEditingTemplateId(null);
+                                  refetchTemplates();
+                                } catch (error) {
+                                  toast.error("템플릿 수정에 실패했습니다");
+                                }
+                              }}
+                            >
+                              저장
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => setEditingTemplateId(null)}>
+                              취소
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-medium text-sm">{template.title}</h4>
+                            <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap line-clamp-2">{template.content}</p>
+                          </div>
+                          <div className="flex gap-1 shrink-0">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 px-2"
+                              onClick={() => {
+                                setEditingTemplateId(template.id);
+                                setEditingTemplateTitle(template.title);
+                                setEditingTemplateContent(template.content);
+                              }}
+                            >
+                              수정
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 px-2 text-red-500 hover:text-red-600"
+                              onClick={async () => {
+                                if (!confirm("이 템플릿을 삭제하시겠습니까?")) return;
+                                try {
+                                  const res = await fetch(`/api/admin/inquiry-templates/${template.id}`, {
+                                    method: "DELETE",
+                                  });
+                                  if (!res.ok) throw new Error("삭제 실패");
+                                  toast.success("템플릿이 삭제되었습니다");
+                                  refetchTemplates();
+                                } catch (error) {
+                                  toast.error("템플릿 삭제에 실패했습니다");
+                                }
+                              }}
+                            >
+                              삭제
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </div>
         )}
 
@@ -3715,26 +3867,20 @@ export default function Admin() {
                             <>
                               {inquiryTemplates.length > 0 && (
                                 <div className="mb-2">
-                                  <select
-                                    className="w-full bg-muted/50 border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                                    onChange={(e) => {
-                                      const templateId = parseInt(e.target.value);
-                                      if (templateId) {
-                                        const template = inquiryTemplates.find(t => t.id === templateId);
-                                        if (template) {
-                                          setInquiryReplyContent(template.content);
-                                        }
-                                      }
-                                    }}
-                                    defaultValue=""
-                                  >
-                                    <option value="">템플릿 선택...</option>
+                                  <p className="text-xs text-muted-foreground mb-1.5">자주 쓰는 답변</p>
+                                  <div className="flex flex-wrap gap-1.5">
                                     {inquiryTemplates.map((template) => (
-                                      <option key={template.id} value={template.id}>
+                                      <Button
+                                        key={template.id}
+                                        size="sm"
+                                        variant="outline"
+                                        className="h-7 px-2 text-xs"
+                                        onClick={() => setInquiryReplyContent(template.content)}
+                                      >
                                         {template.title}
-                                      </option>
+                                      </Button>
                                     ))}
-                                  </select>
+                                  </div>
                                 </div>
                               )}
                               <textarea
