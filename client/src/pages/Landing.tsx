@@ -38,6 +38,11 @@ const KOREAN_BANKS = [
   "산림조합", "저축은행",
 ];
 
+const KOREAN_REGIONS = [
+  "서울특별시", "부산광역시", "대구광역시", "인천광역시", "광주광역시",
+  "대전광역시", "울산광역시", "세종특별자치시", "경기도", "강원도",
+  "충청북도", "충청남도", "전라북도", "전라남도", "경상북도", "경상남도", "제주특별자치도",
+];
 
 function isWithinOperatingHours(): boolean {
   // 입출금 시간 제한 해제 - 24시간 이용 가능
@@ -176,6 +181,7 @@ export default function Landing() {
   const [bankName, setBankName] = useState("");
   const [accountHolder, setAccountHolder] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
+  const [region, setRegion] = useState("");
   
   // Inquiry form state
   const [showInquiryFormModal, setShowInquiryFormModal] = useState(false);
@@ -334,6 +340,10 @@ export default function Landing() {
       toast.error("생년월일을 선택해주세요");
       return;
     }
+    if (!region) {
+      toast.error("지역을 선택해주세요");
+      return;
+    }
     if (!bankName) {
       toast.error("은행을 선택해주세요");
       return;
@@ -355,6 +365,7 @@ export default function Landing() {
       name, 
       phone,
       birthDate: birthDateStr,
+      region,
       bankName, 
       accountHolder, 
       accountNumber,
@@ -367,6 +378,7 @@ export default function Landing() {
         setName("");
         setPhone("");
         setBirthDate(undefined);
+        setRegion("");
         setBankName("");
         setAccountHolder("");
         setAccountNumber("");
@@ -1339,6 +1351,22 @@ export default function Landing() {
                       />
                     </PopoverContent>
                   </Popover>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs text-gray-300 font-medium">지역</label>
+                  <Select value={region} onValueChange={setRegion}>
+                    <SelectTrigger className="h-10 bg-white/5 border-white/10 text-white text-sm" data-testid="input-reg-region">
+                      <SelectValue placeholder="지역을 선택하세요" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-900 border-white/20 max-h-60 overflow-y-auto">
+                      {KOREAN_REGIONS.map((reg) => (
+                        <SelectItem key={reg} value={reg} className="text-white hover:bg-white/10">
+                          {reg}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="pt-2 border-t border-white/10">
