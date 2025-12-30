@@ -253,9 +253,13 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
     return `${seconds / 60}분`;
   };
 
-  const isBettingLocked = timeRemaining <= 3;
+  const isBettingLocked = timeRemaining <= 20;
 
   const validateBet = (direction: 'long' | 'short') => {
+    if (isBettingLocked) {
+      toast.error("거래 마감 임박으로 주문이 불가합니다.");
+      return false;
+    }
     const numAmount = parseFloat(amount);
     if (isNaN(numAmount) || numAmount <= 0) {
       toast.error("유효한 금액을 입력해주세요.");
@@ -388,15 +392,21 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
 
 
         {isBettingLocked && (
-          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-2 text-center">
-            <span className="text-yellow-500 font-medium text-xs">회차 마감 임박</span>
+          <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-2 text-center">
+            <span className="text-red-500 font-medium text-xs">거래 마감 - 다음 회차를 기다려주세요</span>
           </div>
         )}
 
         <div className="grid grid-cols-2 gap-2 lg:gap-3 pt-1 lg:pt-2">
           <Button 
             onClick={() => handleBetClick('long')}
-            className="h-11 lg:h-14 text-base lg:text-lg font-bold text-white flex items-center justify-center gap-2 bg-up hover:bg-up/90"
+            disabled={isBettingLocked}
+            className={cn(
+              "h-11 lg:h-14 text-base lg:text-lg font-bold text-white flex items-center justify-center gap-2",
+              isBettingLocked 
+                ? "bg-gray-500 hover:bg-gray-500 cursor-not-allowed opacity-50" 
+                : "bg-up hover:bg-up/90"
+            )}
             data-testid="button-long"
           >
             <TrendingUp className="w-5 h-5 shrink-0" />
@@ -404,7 +414,13 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
           </Button>
           <Button 
             onClick={() => handleBetClick('short')}
-            className="h-11 lg:h-14 text-base lg:text-lg font-bold text-white flex items-center justify-center gap-2 bg-down hover:bg-down/90"
+            disabled={isBettingLocked}
+            className={cn(
+              "h-11 lg:h-14 text-base lg:text-lg font-bold text-white flex items-center justify-center gap-2",
+              isBettingLocked 
+                ? "bg-gray-500 hover:bg-gray-500 cursor-not-allowed opacity-50" 
+                : "bg-down hover:bg-down/90"
+            )}
             data-testid="button-short"
           >
             <TrendingDown className="w-5 h-5 shrink-0" />
