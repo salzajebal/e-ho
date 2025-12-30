@@ -631,6 +631,23 @@ export default function Admin() {
   });
   const pendingInquiries = inquiries.filter(i => i.status === 'pending');
 
+  // Inquiry templates (1:1 문의 답변 템플릿)
+  interface InquiryTemplate {
+    id: number;
+    title: string;
+    content: string;
+    createdAt: string;
+  }
+  const { data: inquiryTemplates = [] } = useQuery<InquiryTemplate[]>({
+    queryKey: ["/api/admin/inquiry-templates"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/inquiry-templates");
+      if (!res.ok) throw new Error("Failed to fetch inquiry templates");
+      return res.json();
+    },
+    enabled: auth?.role === 'admin',
+  });
+
   // WebSocket for real-time bet and transaction updates
   useEffect(() => {
     if (auth?.role !== 'admin') return;
@@ -3652,6 +3669,30 @@ export default function Admin() {
                         <div className="space-y-2">
                           {inquiryReplyId === inquiry.id ? (
                             <>
+                              {inquiryTemplates.length > 0 && (
+                                <div className="mb-2">
+                                  <select
+                                    className="w-full bg-muted/50 border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                                    onChange={(e) => {
+                                      const templateId = parseInt(e.target.value);
+                                      if (templateId) {
+                                        const template = inquiryTemplates.find(t => t.id === templateId);
+                                        if (template) {
+                                          setInquiryReplyContent(template.content);
+                                        }
+                                      }
+                                    }}
+                                    defaultValue=""
+                                  >
+                                    <option value="">템플릿 선택...</option>
+                                    {inquiryTemplates.map((template) => (
+                                      <option key={template.id} value={template.id}>
+                                        {template.title}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                              )}
                               <textarea
                                 value={inquiryReplyContent}
                                 onChange={(e) => setInquiryReplyContent(e.target.value)}

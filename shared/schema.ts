@@ -339,6 +339,22 @@ export const insertLoginHistorySchema = createInsertSchema(loginHistory).omit({
 export type InsertLoginHistory = z.infer<typeof insertLoginHistorySchema>;
 export type LoginHistory = typeof loginHistory.$inferSelect;
 
+// Inquiry templates table (1:1 문의 답변 템플릿)
+export const inquiryTemplates = pgTable("inquiry_templates", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertInquiryTemplateSchema = createInsertSchema(inquiryTemplates).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertInquiryTemplate = z.infer<typeof insertInquiryTemplateSchema>;
+export type InquiryTemplate = typeof inquiryTemplates.$inferSelect;
+
 // Korean banks list
 export const KOREAN_BANKS = [
   "KB국민은행",

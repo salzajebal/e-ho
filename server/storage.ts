@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Bet, type InsertBet, type Setting, type Message, type InsertMessage, type Affiliate, type InsertAffiliate, type AffiliateCommission, type AffiliateSettlement, type InsertAffiliateSettlement, type Announcement, type InsertAnnouncement, type BlockedIp, type InsertBlockedIp, type MaintenanceSymbol, type InsertMaintenanceSymbol, type TransactionRequest, type InsertTransactionRequest, type Inquiry, type InsertInquiry, type RoundResult, type InsertRoundResult, type LoginHistory, type InsertLoginHistory, users, bets, settings, messages, affiliates, affiliateCommissions, affiliateSettlements, announcements, blockedIps, maintenanceSymbols, transactionRequests, inquiries, roundResults, loginHistory } from "@shared/schema";
+import { type User, type InsertUser, type Bet, type InsertBet, type Setting, type Message, type InsertMessage, type Affiliate, type InsertAffiliate, type AffiliateCommission, type AffiliateSettlement, type InsertAffiliateSettlement, type Announcement, type InsertAnnouncement, type BlockedIp, type InsertBlockedIp, type MaintenanceSymbol, type InsertMaintenanceSymbol, type TransactionRequest, type InsertTransactionRequest, type Inquiry, type InsertInquiry, type RoundResult, type InsertRoundResult, type LoginHistory, type InsertLoginHistory, type InquiryTemplate, type InsertInquiryTemplate, users, bets, settings, messages, affiliates, affiliateCommissions, affiliateSettlements, announcements, blockedIps, maintenanceSymbols, transactionRequests, inquiries, roundResults, loginHistory, inquiryTemplates } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, lt, sql, gte } from "drizzle-orm";
 
@@ -151,6 +151,13 @@ export interface IStorage {
   addLoginHistory(entry: InsertLoginHistory): Promise<LoginHistory>;
   getLoginHistoryForUser(userId: string): Promise<LoginHistory[]>;
   getAllLoginHistory(limit?: number): Promise<LoginHistory[]>;
+
+  // Inquiry template methods (1:1 문의 답변 템플릿)
+  createInquiryTemplate(template: InsertInquiryTemplate): Promise<InquiryTemplate>;
+  getInquiryTemplate(id: number): Promise<InquiryTemplate | undefined>;
+  getAllInquiryTemplates(): Promise<InquiryTemplate[]>;
+  updateInquiryTemplate(id: number, data: Partial<InquiryTemplate>): Promise<InquiryTemplate>;
+  deleteInquiryTemplate(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -947,6 +954,33 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(loginHistory)
       .orderBy(desc(loginHistory.loginAt))
       .limit(limit);
+  }
+
+  // Inquiry template methods (1:1 문의 답변 템플릿)
+  async createInquiryTemplate(template: InsertInquiryTemplate): Promise<InquiryTemplate> {
+    const [created] = await db.insert(inquiryTemplates).values(template).returning();
+    return created;
+  }
+
+  async getInquiryTemplate(id: number): Promise<InquiryTemplate | undefined> {
+    const [template] = await db.select().from(inquiryTemplates).where(eq(inquiryTemplates.id, id));
+    return template || undefined;
+  }
+
+  async getAllInquiryTemplates(): Promise<InquiryTemplate[]> {
+    return await db.select().from(inquiryTemplates).orderBy(desc(inquiryTemplates.createdAt));
+  }
+
+  async updateInquiryTemplate(id: number, data: Partial<InquiryTemplate>): Promise<InquiryTemplate> {
+    const [updated] = await db.update(inquiryTemplates)
+      .set(data)
+      .where(eq(inquiryTemplates.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteInquiryTemplate(id: number): Promise<void> {
+    await db.delete(inquiryTemplates).where(eq(inquiryTemplates.id, id));
   }
 }
 

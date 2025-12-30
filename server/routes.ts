@@ -2638,5 +2638,58 @@ export async function registerRoutes(
     }
   });
 
+  // === Inquiry Template Routes (1:1 문의 답변 템플릿) ===
+  
+  // Get all templates
+  app.get("/api/admin/inquiry-templates", requireAdmin, async (req, res) => {
+    try {
+      const templates = await storage.getAllInquiryTemplates();
+      res.json(templates);
+    } catch (error) {
+      console.error("Get inquiry templates error:", error);
+      res.status(500).json({ error: "템플릿 조회에 실패했습니다" });
+    }
+  });
+
+  // Create template
+  app.post("/api/admin/inquiry-templates", requireAdmin, async (req, res) => {
+    try {
+      const { title, content } = req.body;
+      if (!title || !content) {
+        return res.status(400).json({ error: "제목과 내용을 입력해주세요" });
+      }
+      const template = await storage.createInquiryTemplate({ title, content });
+      res.json({ success: true, template });
+    } catch (error) {
+      console.error("Create inquiry template error:", error);
+      res.status(500).json({ error: "템플릿 생성에 실패했습니다" });
+    }
+  });
+
+  // Update template
+  app.put("/api/admin/inquiry-templates/:id", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { title, content } = req.body;
+      const template = await storage.updateInquiryTemplate(parseInt(id), { title, content });
+      res.json({ success: true, template });
+    } catch (error) {
+      console.error("Update inquiry template error:", error);
+      res.status(500).json({ error: "템플릿 수정에 실패했습니다" });
+    }
+  });
+
+  // Delete template
+  app.delete("/api/admin/inquiry-templates/:id", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteInquiryTemplate(parseInt(id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete inquiry template error:", error);
+      res.status(500).json({ error: "템플릿 삭제에 실패했습니다" });
+    }
+  });
+
   return httpServer;
 }
