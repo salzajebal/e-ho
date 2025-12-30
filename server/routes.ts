@@ -775,6 +775,18 @@ export async function registerRoutes(
     }
   });
 
+  // Hold user registration (keep in pending list but mark as held)
+  app.post("/api/admin/users/:id/hold", requireAdmin, async (req, res) => {
+    try {
+      const userId = req.params.id;
+      const user = await storage.holdUser(userId);
+      res.json({ success: true, user });
+    } catch (error) {
+      console.error("Failed to hold user:", error);
+      res.status(500).json({ error: "Failed to hold user" });
+    }
+  });
+
   // Create user by admin
   app.post("/api/admin/users", requireAdmin, async (req, res) => {
     try {

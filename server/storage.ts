@@ -50,6 +50,7 @@ export interface IStorage {
   getPendingUsers(): Promise<User[]>;
   approveUser(userId: string): Promise<User>;
   rejectUser(userId: string): Promise<User>;
+  holdUser(userId: string): Promise<User>;
   updateUser(id: string, data: Partial<User>): Promise<User>;
   deleteUser(id: string): Promise<void>;
   updateLastLogin(userId: string, ip?: string): Promise<void>;
@@ -191,9 +192,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPendingUsers(): Promise<User[]> {
+    // Include both 'pending' and 'hold' status users
     return await db.select().from(users)
-      .where(eq(users.approvalStatus, 'pending'))
+      .where(sql`${users.approvalStatus} IN ('pending', 'hold')`)
       .orderBy(desc(users.createdAt));
+  }
+
+  async holdUser(userId: string): Promise<User> {
+    const [updated] = await db.update(users)
+      .set({ approvalStatus: 'hold' })
+      .where(eq(users.id, userId))
+      .returning();
+    return updated;
   }
 
   async approveUser(userId: string): Promise<User> {

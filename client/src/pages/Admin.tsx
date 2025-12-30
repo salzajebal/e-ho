@@ -1018,6 +1018,25 @@ export default function Admin() {
     },
   });
 
+  const holdUser = useMutation({
+    mutationFn: async (userId: string) => {
+      const res = await fetch(`/api/admin/users/${userId}/hold`, {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error("Failed to hold user");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/pending-users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/stats"] });
+      toast.success("회원 가입이 보류 처리되었습니다");
+    },
+    onError: () => {
+      toast.error("보류 처리에 실패했습니다");
+    },
+  });
+
   const sendMessage = useMutation({
     mutationFn: async ({ receiverId, title, content }: { receiverId: string; title: string; content: string }) => {
       const res = await fetch("/api/admin/messages", {
@@ -2218,7 +2237,7 @@ export default function Admin() {
                       {pendingUsers.map((user) => {
                         const affiliate = user.affiliateId ? affiliatesList.find(a => a.id === user.affiliateId) : null;
                         return (
-                        <tr key={user.id} className="hover:bg-muted/30 bg-yellow-500/5">
+                        <tr key={user.id} className={cn("hover:bg-muted/30", user.approvalStatus === 'hold' ? "bg-orange-500/10" : "bg-yellow-500/5")}>
                           <td className="px-2 lg:px-4 py-3">
                             <div className="flex gap-1">
                               <Button size="sm" className="h-7 px-2 bg-up hover:bg-up/90 text-xs" onClick={() => approveUser.mutate(user.id)} disabled={approveUser.isPending}>
@@ -2227,12 +2246,17 @@ export default function Admin() {
                               <Button size="sm" variant="outline" className="h-7 px-2 border-red-500/50 text-red-500 hover:bg-red-500/10 text-xs" onClick={() => rejectUser.mutate(user.id)} disabled={rejectUser.isPending}>
                                 거절
                               </Button>
-                              <Button size="sm" variant="outline" className="h-7 px-2 border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10 text-xs" onClick={() => toast.info('가입 신청이 보류 처리되었습니다')}>
+                              <Button size="sm" variant="outline" className="h-7 px-2 border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10 text-xs" onClick={() => holdUser.mutate(user.id)} disabled={holdUser.isPending}>
                                 보류
                               </Button>
                             </div>
                           </td>
-                          <td className="px-2 lg:px-4 py-3 font-medium">{user.username}</td>
+                          <td className="px-2 lg:px-4 py-3 font-medium">
+                            {user.username}
+                            {user.approvalStatus === 'hold' && (
+                              <span className="ml-2 px-1.5 py-0.5 text-xs bg-orange-500/20 text-orange-500 rounded">보류중</span>
+                            )}
+                          </td>
                           <td className="px-2 lg:px-4 py-3">{user.name || '-'}</td>
                           <td className="px-2 lg:px-4 py-3">{user.phone || '-'}</td>
                           <td className="px-2 lg:px-4 py-3 font-mono text-xs">{user.residentNumber || '-'}</td>
