@@ -484,9 +484,6 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
             </div>
             
             <div className="space-y-2">
-              <p className="text-2xl font-bold text-foreground">
-                {betConfirmation.amount.toLocaleString()}원
-              </p>
               <p className="text-base text-foreground font-medium">
                 주문하시겠습니까?
               </p>
