@@ -98,7 +98,7 @@ interface AdminUser {
   autoBetEnabled: boolean;
   autoBetMultiplier: number;
   isBettingBlocked: boolean;
-  forcedBetDirection: 'win' | 'lose' | null;
+  forcedBetDirection: 'up' | 'down' | null;
   approvalStatus: string;
   lastLoginAt: string | null;
   lastLoginIp: string | null;
@@ -2485,7 +2485,6 @@ export default function Admin() {
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">배당</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">남은시간</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">상태</th>
-                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap text-right">관리</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -2569,77 +2568,14 @@ export default function Admin() {
                           )}
                         </td>
                         <td className="px-2 lg:px-3 py-1.5 lg:py-2">
-                          <div className="flex flex-col gap-0.5">
-                            <span className={cn(
-                              "inline-flex items-center px-1.5 lg:px-2 py-0.5 rounded text-[10px] lg:text-xs font-medium",
-                              bet.outcome === 'win' ? "bg-up/20 text-up" :
-                              bet.outcome === 'lose' ? "bg-down/20 text-down" :
-                              "bg-yellow-500/20 text-yellow-500"
-                            )}>
-                              {bet.outcome === 'win' ? '적중' : bet.outcome === 'lose' ? '미적중' : '진행중'}
-                            </span>
-                            {bet.outcome === 'pending' && bet.forcedOutcome && (
-                              <span className={cn(
-                                "inline-flex items-center px-1.5 lg:px-2 py-0.5 rounded text-[10px] font-medium",
-                                bet.forcedOutcome === 'win' ? "bg-up/30 text-up" : "bg-down/30 text-down"
-                              )}>
-                                → {bet.forcedOutcome === 'win' ? '적중' : '미적중'}
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-2 lg:px-3 py-1.5 lg:py-2">
-                          <div className="flex items-center justify-end gap-1">
-                            {bet.outcome === 'pending' ? (
-                              <>
-                                <button
-                                  onClick={() => setForcedOutcome.mutate({ betId: bet.id, outcome: 'win' })}
-                                  disabled={setForcedOutcome.isPending}
-                                  className="p-1.5 rounded transition-colors hover:bg-up/20 text-up"
-                                  title="적중 예약 (타이머 후 적용)"
-                                >
-                                  <Check className="w-4 h-4" />
-                                </button>
-                                <button
-                                  onClick={() => setForcedOutcome.mutate({ betId: bet.id, outcome: 'lose' })}
-                                  disabled={setForcedOutcome.isPending}
-                                  className="p-1.5 rounded transition-colors hover:bg-down/20 text-down"
-                                  title="미적중 예약 (타이머 후 적용)"
-                                >
-                                  <X className="w-4 h-4" />
-                                </button>
-                              </>
-                            ) : (
-                              <>
-                                <button
-                                  onClick={() => updateBetOutcome.mutate({ betId: bet.id, outcome: 'win' })}
-                                  disabled={updateBetOutcome.isPending}
-                                  className={cn(
-                                    "p-1.5 rounded transition-colors",
-                                    bet.outcome === 'win' 
-                                      ? "bg-up text-white" 
-                                      : "hover:bg-up/20 text-up"
-                                  )}
-                                  title="적중으로 변경"
-                                >
-                                  <Check className="w-4 h-4" />
-                                </button>
-                                <button
-                                  onClick={() => updateBetOutcome.mutate({ betId: bet.id, outcome: 'lose' })}
-                                  disabled={updateBetOutcome.isPending}
-                                  className={cn(
-                                    "p-1.5 rounded transition-colors",
-                                    bet.outcome === 'lose' 
-                                      ? "bg-down text-white" 
-                                      : "hover:bg-down/20 text-down"
-                                  )}
-                                  title="미적중으로 변경"
-                                >
-                                  <X className="w-4 h-4" />
-                                </button>
-                              </>
-                            )}
-                          </div>
+                          <span className={cn(
+                            "inline-flex items-center px-1.5 lg:px-2 py-0.5 rounded text-[10px] lg:text-xs font-medium",
+                            bet.outcome === 'win' ? "bg-up/20 text-up" :
+                            bet.outcome === 'lose' ? "bg-down/20 text-down" :
+                            "bg-yellow-500/20 text-yellow-500"
+                          )}>
+                            {bet.outcome === 'win' ? '적중' : bet.outcome === 'lose' ? '미적중' : '진행중'}
+                          </span>
                         </td>
                       </tr>
                     ))}
@@ -4335,25 +4271,25 @@ export default function Admin() {
                   </div>
                 </div>
                 
-                {/* 강제 결과 설정 */}
+                {/* 거래 결과 강제 설정 */}
                 <div className="mt-4 p-3 bg-purple-500/10 border border-purple-500/30 rounded-lg">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <Zap className="w-4 h-4 text-purple-500" />
-                      <p className="text-sm font-medium">강제 결과 설정</p>
+                      <p className="text-sm font-medium">거래 결과 강제 설정</p>
                     </div>
                     {editingUser.forcedBetDirection && (
                       <span className={cn(
                         "px-2 py-0.5 rounded text-xs font-bold",
-                        editingUser.forcedBetDirection === 'win' 
+                        editingUser.forcedBetDirection === 'up' 
                           ? "bg-up/30 text-up" 
                           : "bg-down/30 text-down"
                       )}>
-                        {editingUser.forcedBetDirection === 'win' ? '적중 설정중' : '미적중 설정중'}
+                        {editingUser.forcedBetDirection === 'up' ? '매수(UP) 설정중' : '매도(DOWN) 설정중'}
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground mb-3">다음 거래 결과를 미리 설정합니다 (1회성)</p>
+                  <p className="text-xs text-muted-foreground mb-3">회원에게 보여지는 거래 결과를 강제로 설정합니다</p>
                   <div className="flex gap-2">
                     <button
                       onClick={async () => {
@@ -4361,12 +4297,12 @@ export default function Admin() {
                           const res = await fetch(`/api/admin/users/${editingUser.id}/forced-bet-direction`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ direction: 'win' }),
+                            body: JSON.stringify({ direction: 'up' }),
                           });
                           const data = await res.json();
                           if (!res.ok) throw new Error(data.error);
-                          setEditingUser(p => p ? { ...p, forcedBetDirection: 'win' } : null);
-                          toast.success("적중으로 설정되었습니다");
+                          setEditingUser(p => p ? { ...p, forcedBetDirection: 'up' } : null);
+                          toast.success("매수(UP)로 설정되었습니다");
                           refetchUsers();
                         } catch (error: any) {
                           toast.error(error.message || "설정 실패");
@@ -4374,13 +4310,13 @@ export default function Admin() {
                       }}
                       className={cn(
                         "flex-1 px-3 py-2 rounded-md text-sm font-medium flex items-center justify-center gap-1 transition-all",
-                        editingUser.forcedBetDirection === 'win'
+                        editingUser.forcedBetDirection === 'up'
                           ? "bg-up text-white ring-2 ring-up ring-offset-2 ring-offset-background"
                           : "bg-up/20 text-up hover:bg-up/30"
                       )}
                     >
                       <TrendingUp className="w-4 h-4" />
-                      적중
+                      매수 (UP)
                     </button>
                     <button
                       onClick={async () => {
@@ -4388,12 +4324,12 @@ export default function Admin() {
                           const res = await fetch(`/api/admin/users/${editingUser.id}/forced-bet-direction`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ direction: 'lose' }),
+                            body: JSON.stringify({ direction: 'down' }),
                           });
                           const data = await res.json();
                           if (!res.ok) throw new Error(data.error);
-                          setEditingUser(p => p ? { ...p, forcedBetDirection: 'lose' } : null);
-                          toast.success("미적중으로 설정되었습니다");
+                          setEditingUser(p => p ? { ...p, forcedBetDirection: 'down' } : null);
+                          toast.success("매도(DOWN)로 설정되었습니다");
                           refetchUsers();
                         } catch (error: any) {
                           toast.error(error.message || "설정 실패");
@@ -4401,13 +4337,13 @@ export default function Admin() {
                       }}
                       className={cn(
                         "flex-1 px-3 py-2 rounded-md text-sm font-medium flex items-center justify-center gap-1 transition-all",
-                        editingUser.forcedBetDirection === 'lose'
+                        editingUser.forcedBetDirection === 'down'
                           ? "bg-down text-white ring-2 ring-down ring-offset-2 ring-offset-background"
                           : "bg-down/20 text-down hover:bg-down/30"
                       )}
                     >
                       <TrendingDown className="w-4 h-4" />
-                      미적중
+                      매도 (DOWN)
                     </button>
                     <button
                       onClick={async () => {

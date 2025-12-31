@@ -57,7 +57,7 @@ export const users = pgTable("users", {
   autoBetEnabled: boolean("auto_bet_enabled").notNull().default(false),
   autoBetMultiplier: integer("auto_bet_multiplier").notNull().default(10),
   isBettingBlocked: boolean("is_betting_blocked").notNull().default(false),
-  forcedBetDirection: text("forced_bet_direction"), // 'win', 'lose', or null - pre-set forced outcome for next bet
+  forcedBetDirection: text("forced_bet_direction"), // 'up', 'down', or null - pre-set forced display direction for next bet
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
