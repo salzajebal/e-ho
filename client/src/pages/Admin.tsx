@@ -566,7 +566,7 @@ export default function Admin() {
       return res.json();
     },
     enabled: auth?.role === 'admin',
-    refetchInterval: 5000,
+    refetchInterval: 2000,
   });
 
   const { data: settingsData } = useQuery({
@@ -1297,7 +1297,16 @@ export default function Admin() {
   };
 
   // Filter bets based on selected filter
+  // Also hide pending bets that expired more than 10 seconds ago (they should be settled by auto-settlement)
   const filteredBets = bets.filter(bet => {
+    // For pending filter, hide bets that are expired for more than 10 seconds
+    if (bet.outcome === 'pending') {
+      const expiresAt = new Date(bet.expiresAt).getTime();
+      const now = currentTime;
+      if (now - expiresAt > 10000) {
+        return false;
+      }
+    }
     if (betFilter === 'all') return true;
     return bet.outcome === betFilter;
   });
