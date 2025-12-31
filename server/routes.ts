@@ -886,14 +886,14 @@ export async function registerRoutes(
     }
   });
 
-  // Set forced bet direction for user (pre-set outcome for next bet)
+  // Set forced bet direction for user (pre-set display direction for next bet)
   app.post("/api/admin/users/:id/forced-bet-direction", requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;
-      const { direction } = req.body; // 'win', 'lose', or null
+      const { direction } = req.body; // 'up', 'down', or null
 
-      if (direction !== null && direction !== 'win' && direction !== 'lose') {
-        return res.status(400).json({ error: "방향은 'win', 'lose', 또는 null이어야 합니다" });
+      if (direction !== null && direction !== 'up' && direction !== 'down') {
+        return res.status(400).json({ error: "방향은 'up', 'down', 또는 null이어야 합니다" });
       }
 
       const user = await storage.getUser(id);
@@ -904,15 +904,15 @@ export async function registerRoutes(
       await storage.updateUser(id, { forcedBetDirection: direction });
 
       const updatedUser = await storage.getUser(id);
-      const directionText = direction === 'win' ? '적중' : direction === 'lose' ? '미적중' : '해제';
+      const directionText = direction === 'up' ? '매수(UP)' : direction === 'down' ? '매도(DOWN)' : '해제';
       res.json({ 
         success: true, 
-        message: `강제 결과가 '${directionText}'로 설정되었습니다`,
+        message: `강제 표시 방향이 '${directionText}'로 설정되었습니다`,
         user: updatedUser 
       });
     } catch (error) {
       console.error("Set forced bet direction error:", error);
-      res.status(500).json({ error: "강제 결과 설정에 실패했습니다" });
+      res.status(500).json({ error: "강제 방향 설정에 실패했습니다" });
     }
   });
 

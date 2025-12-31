@@ -1286,6 +1286,29 @@ export default function Admin() {
     },
   });
 
+  const setUserForcedDirection = useMutation({
+    mutationFn: async ({ userId, direction }: { userId: string; direction: 'up' | 'down' | null }) => {
+      const res = await fetch(`/api/admin/users/${userId}/forced-bet-direction`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ direction }),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to set direction");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/bets"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      toast.success(data.message || "강제 방향 설정됨");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
   // Helper function to calculate remaining time
   const getTimeRemaining = (expiresAt: string) => {
     const remaining = new Date(expiresAt).getTime() - currentTime;
@@ -2494,6 +2517,7 @@ export default function Admin() {
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">배당</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">남은시간</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">상태</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap text-center">강제설정</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -2586,11 +2610,33 @@ export default function Admin() {
                             {bet.outcome === 'win' ? '적중' : bet.outcome === 'lose' ? '미적중' : '진행중'}
                           </span>
                         </td>
+                        <td className="px-2 lg:px-3 py-1.5 lg:py-2">
+                          {bet.outcome === 'pending' && (
+                            <div className="flex items-center gap-1 justify-center">
+                              <button
+                                onClick={() => setUserForcedDirection.mutate({ userId: bet.userId, direction: 'up' })}
+                                disabled={setUserForcedDirection.isPending}
+                                className="px-1.5 py-0.5 text-[10px] lg:text-xs font-medium rounded bg-up/20 hover:bg-up/30 text-up transition-colors"
+                                title="매수(UP) 강제 설정"
+                              >
+                                UP
+                              </button>
+                              <button
+                                onClick={() => setUserForcedDirection.mutate({ userId: bet.userId, direction: 'down' })}
+                                disabled={setUserForcedDirection.isPending}
+                                className="px-1.5 py-0.5 text-[10px] lg:text-xs font-medium rounded bg-down/20 hover:bg-down/30 text-down transition-colors"
+                                title="매도(DOWN) 강제 설정"
+                              >
+                                DOWN
+                              </button>
+                            </div>
+                          )}
+                        </td>
                       </tr>
                     ))}
                     {filteredBets.length === 0 && (
                       <tr>
-                        <td colSpan={8} className="px-3 py-8 text-center text-muted-foreground">
+                        <td colSpan={9} className="px-3 py-8 text-center text-muted-foreground">
                           {betFilter === 'pending' ? '진행중인 거래가 없습니다' : '거래 기록이 없습니다'}
                         </td>
                       </tr>
