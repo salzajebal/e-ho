@@ -2612,19 +2612,29 @@ export default function Admin() {
                         </td>
                         <td className="px-2 lg:px-3 py-1.5 lg:py-2">
                           {bet.outcome === 'pending' && (
-                            <div className="flex items-center gap-1 justify-center">
+                            <div className="flex items-center gap-1.5 justify-center">
                               <button
-                                onClick={() => setUserForcedDirection.mutate({ userId: bet.userId, direction: 'up' })}
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setUserForcedDirection.mutate({ userId: bet.userId, direction: 'up' });
+                                }}
                                 disabled={setUserForcedDirection.isPending}
-                                className="px-1.5 py-0.5 text-[10px] lg:text-xs font-medium rounded bg-up/20 hover:bg-up/30 text-up transition-colors"
+                                className="px-2.5 py-1 text-[10px] lg:text-xs font-bold rounded-md bg-up text-white hover:bg-up/80 shadow-sm shadow-up/30 transition-all hover:scale-105 disabled:opacity-50"
                                 title="매수(UP) 강제 설정"
                               >
                                 UP
                               </button>
                               <button
-                                onClick={() => setUserForcedDirection.mutate({ userId: bet.userId, direction: 'down' })}
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setUserForcedDirection.mutate({ userId: bet.userId, direction: 'down' });
+                                }}
                                 disabled={setUserForcedDirection.isPending}
-                                className="px-1.5 py-0.5 text-[10px] lg:text-xs font-medium rounded bg-down/20 hover:bg-down/30 text-down transition-colors"
+                                className="px-2.5 py-1 text-[10px] lg:text-xs font-bold rounded-md bg-down text-white hover:bg-down/80 shadow-sm shadow-down/30 transition-all hover:scale-105 disabled:opacity-50"
                                 title="매도(DOWN) 강제 설정"
                               >
                                 DOWN
