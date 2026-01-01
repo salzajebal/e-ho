@@ -1288,23 +1288,29 @@ export default function Admin() {
 
   const setUserForcedDirection = useMutation({
     mutationFn: async ({ userId, direction }: { userId: number | string; direction: 'up' | 'down' | null }) => {
+      console.log('setUserForcedDirection called:', { userId, direction });
       const res = await fetch(`/api/admin/users/${userId}/forced-bet-direction`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ direction }),
+        credentials: 'include',
       });
+      console.log('Response status:', res.status);
       if (!res.ok) {
         const error = await res.json();
+        console.log('Error response:', error);
         throw new Error(error.error || "Failed to set direction");
       }
       return res.json();
     },
     onSuccess: (data) => {
+      console.log('Success:', data);
       queryClient.invalidateQueries({ queryKey: ["/api/admin/bets"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
       toast.success(data.message || "강제 방향 설정됨");
     },
     onError: (error: Error) => {
+      console.log('Mutation error:', error);
       toast.error(error.message);
     },
   });
