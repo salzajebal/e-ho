@@ -466,7 +466,7 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
                       ) : (
                         <TrendingDown className="w-3 h-3" />
                       )}
-                      <span>{result.direction === 'up' ? 'UP' : 'DOWN'}</span>
+                      <span>{result.direction === 'up' ? '매수' : '매도'}</span>
                     </div>
                   </div>
                 ))}
