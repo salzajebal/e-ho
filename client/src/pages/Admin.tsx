@@ -2349,6 +2349,7 @@ export default function Admin() {
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">아이디</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">비밀번호</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">이름</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">강제설정</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">총판</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">보유머니</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">총거래</th>
@@ -2397,6 +2398,20 @@ export default function Admin() {
                           </div>
                         </td>
                         <td className="px-2 lg:px-3 py-1.5 lg:py-2">{user.name || '-'}</td>
+                        <td className="px-2 lg:px-3 py-1.5 lg:py-2">
+                          {user.forcedBetDirection ? (
+                            <span className={cn(
+                              "inline-flex items-center gap-1 px-1.5 lg:px-2 py-0.5 rounded text-[10px] lg:text-xs font-bold",
+                              user.forcedBetDirection === 'up' 
+                                ? "bg-up/30 text-up" 
+                                : "bg-down/30 text-down"
+                            )}>
+                              {user.forcedBetDirection === 'up' ? '▲ UP' : '▼ DOWN'}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </td>
                         <td className="px-2 lg:px-3 py-1.5 lg:py-2">
                           {user.affiliateId ? (
                             <span className="inline-flex items-center px-1.5 lg:px-2 py-0.5 rounded text-[10px] lg:text-xs font-medium bg-purple-500/20 text-purple-400">
