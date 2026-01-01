@@ -566,13 +566,51 @@ export async function registerRoutes(
       const multiplier = parseFloat(bet.multiplier);
 
       let outcome: 'win' | 'lose';
+      let forcedDirectionApplied = false;
       
-      // Check if admin has set a forced outcome
+      // Priority 1: Check if admin has set a forced outcome on individual bet
       if (bet.forcedOutcome === 'win' || bet.forcedOutcome === 'lose') {
         outcome = bet.forcedOutcome;
-        // Adjust closePrice to match the forced outcome for display
-        // If forcing win for long, price should be higher than strike
-        // If forcing lose for long, price should be lower than strike
+        forcedDirectionApplied = true;
+      } else {
+        // Priority 2: Check round-based forced result (회차별 강제결과)
+        if (bet.roundNumber) {
+          const betCreatedAt = new Date(bet.createdAt);
+          const kstOffset = 9 * 60 * 60 * 1000;
+          const kstTime = new Date(betCreatedAt.getTime() + betCreatedAt.getTimezoneOffset() * 60 * 1000 + kstOffset);
+          const dateKey = `${kstTime.getFullYear()}-${String(kstTime.getMonth() + 1).padStart(2, '0')}-${String(kstTime.getDate()).padStart(2, '0')}`;
+          
+          const roundForcedResult = await storage.getRoundForcedResult(bet.symbol, bet.duration, bet.roundNumber, dateKey);
+          if (roundForcedResult) {
+            // Round forced direction is 'up' (매수) or 'down' (매도)
+            // User wins if their direction matches the forced direction
+            const userDirection = bet.direction === 'long' ? 'up' : 'down';
+            outcome = userDirection === roundForcedResult.forcedDirection ? 'win' : 'lose';
+            forcedDirectionApplied = true;
+          }
+        }
+        
+        // Priority 3: Check user's forced bet direction
+        if (!forcedDirectionApplied) {
+          const user = await storage.getUser(userId);
+          if (user?.forcedBetDirection === 'win' || user?.forcedBetDirection === 'lose') {
+            outcome = user.forcedBetDirection as 'win' | 'lose';
+            forcedDirectionApplied = true;
+          }
+        }
+        
+        // Priority 4: Calculate based on price movement (normal logic)
+        if (!forcedDirectionApplied) {
+          if (bet.direction === 'long') {
+            outcome = closePriceNum > strikePrice ? 'win' : 'lose';
+          } else {
+            outcome = closePriceNum < strikePrice ? 'win' : 'lose';
+          }
+        }
+      }
+      
+      // Adjust closePrice to match the forced outcome for display (if forced)
+      if (forcedDirectionApplied) {
         const variation = strikePrice * 0.001; // 0.1% variation
         if (outcome === 'win') {
           if (bet.direction === 'long') {
@@ -586,13 +624,6 @@ export async function registerRoutes(
           } else {
             closePriceNum = strikePrice + variation;
           }
-        }
-      } else {
-        // Calculate based on price movement
-        if (bet.direction === 'long') {
-          outcome = closePriceNum > strikePrice ? 'win' : 'lose';
-        } else {
-          outcome = closePriceNum < strikePrice ? 'win' : 'lose';
         }
       }
 
