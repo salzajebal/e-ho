@@ -565,52 +565,14 @@ export async function registerRoutes(
       const betAmount = parseFloat(bet.amount);
       const multiplier = parseFloat(bet.multiplier);
 
-      let outcome: 'win' | 'lose' = 'lose'; // Default, will be overwritten
-      let forcedDirectionApplied = false;
+      let outcome: 'win' | 'lose';
       
-      // Priority 1: Check if admin has set a forced outcome on individual bet
+      // Check if admin has set a forced outcome
       if (bet.forcedOutcome === 'win' || bet.forcedOutcome === 'lose') {
         outcome = bet.forcedOutcome;
-        forcedDirectionApplied = true;
-      } else {
-        // Priority 2: Check round-based forced result (회차별 강제결과)
-        if (bet.roundNumber) {
-          const betCreatedAt = new Date(bet.createdAt);
-          const kstOffset = 9 * 60 * 60 * 1000;
-          const kstTime = new Date(betCreatedAt.getTime() + betCreatedAt.getTimezoneOffset() * 60 * 1000 + kstOffset);
-          const dateKey = `${kstTime.getFullYear()}-${String(kstTime.getMonth() + 1).padStart(2, '0')}-${String(kstTime.getDate()).padStart(2, '0')}`;
-          
-          const roundForcedResult = await storage.getRoundForcedResult(bet.symbol, bet.duration, bet.roundNumber, dateKey);
-          if (roundForcedResult) {
-            // Round forced direction is 'up' (매수) or 'down' (매도)
-            // User wins if their direction matches the forced direction
-            const userDirection = bet.direction === 'long' ? 'up' : 'down';
-            outcome = userDirection === roundForcedResult.forcedDirection ? 'win' : 'lose';
-            forcedDirectionApplied = true;
-          }
-        }
-        
-        // Priority 3: Check user's forced bet direction
-        if (!forcedDirectionApplied) {
-          const user = await storage.getUser(userId);
-          if (user?.forcedBetDirection === 'win' || user?.forcedBetDirection === 'lose') {
-            outcome = user.forcedBetDirection as 'win' | 'lose';
-            forcedDirectionApplied = true;
-          }
-        }
-        
-        // Priority 4: Calculate based on price movement (normal logic)
-        if (!forcedDirectionApplied) {
-          if (bet.direction === 'long') {
-            outcome = closePriceNum > strikePrice ? 'win' : 'lose';
-          } else {
-            outcome = closePriceNum < strikePrice ? 'win' : 'lose';
-          }
-        }
-      }
-      
-      // Adjust closePrice to match the forced outcome for display (if forced)
-      if (forcedDirectionApplied) {
+        // Adjust closePrice to match the forced outcome for display
+        // If forcing win for long, price should be higher than strike
+        // If forcing lose for long, price should be lower than strike
         const variation = strikePrice * 0.001; // 0.1% variation
         if (outcome === 'win') {
           if (bet.direction === 'long') {
@@ -624,6 +586,13 @@ export async function registerRoutes(
           } else {
             closePriceNum = strikePrice + variation;
           }
+        }
+      } else {
+        // Calculate based on price movement
+        if (bet.direction === 'long') {
+          outcome = closePriceNum > strikePrice ? 'win' : 'lose';
+        } else {
+          outcome = closePriceNum < strikePrice ? 'win' : 'lose';
         }
       }
 
@@ -2999,76 +2968,6 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Delete inquiry template error:", error);
       res.status(500).json({ error: "템플릿 삭제에 실패했습니다" });
-    }
-  });
-
-  // === Round Forced Result Routes (회차별 강제결과 - 모든 회원 공통) ===
-  
-  // Get round forced results for a date
-  app.get("/api/admin/round-forced-results", requireAdmin, async (req, res) => {
-    try {
-      const { dateKey } = req.query;
-      if (!dateKey || typeof dateKey !== 'string') {
-        return res.status(400).json({ error: "날짜를 지정해주세요" });
-      }
-      const results = await storage.getRoundForcedResults(dateKey);
-      res.json(results);
-    } catch (error) {
-      console.error("Get round forced results error:", error);
-      res.status(500).json({ error: "회차별 강제결과 조회에 실패했습니다" });
-    }
-  });
-
-  // Set round forced result
-  app.post("/api/admin/round-forced-results", requireAdmin, async (req, res) => {
-    try {
-      const { symbol, duration, roundNumber, dateKey, forcedDirection } = req.body;
-      if (!symbol || !duration || !roundNumber || !dateKey || !forcedDirection) {
-        return res.status(400).json({ error: "필수 정보를 모두 입력해주세요" });
-      }
-      if (!['up', 'down'].includes(forcedDirection)) {
-        return res.status(400).json({ error: "방향은 up 또는 down이어야 합니다" });
-      }
-      const result = await storage.setRoundForcedResult(symbol, duration, roundNumber, dateKey, forcedDirection);
-      res.json({ success: true, result });
-    } catch (error) {
-      console.error("Set round forced result error:", error);
-      res.status(500).json({ error: "회차별 강제결과 설정에 실패했습니다" });
-    }
-  });
-
-  // Delete round forced result
-  app.delete("/api/admin/round-forced-results", requireAdmin, async (req, res) => {
-    try {
-      const { symbol, duration, roundNumber, dateKey } = req.body;
-      if (!symbol || !duration || !roundNumber || !dateKey) {
-        return res.status(400).json({ error: "필수 정보를 모두 입력해주세요" });
-      }
-      await storage.deleteRoundForcedResult(symbol, duration, roundNumber, dateKey);
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Delete round forced result error:", error);
-      res.status(500).json({ error: "회차별 강제결과 삭제에 실패했습니다" });
-    }
-  });
-
-  // Get specific round forced result (for settlement)
-  app.get("/api/round-forced-result", async (req, res) => {
-    try {
-      const { symbol, duration, roundNumber, dateKey } = req.query;
-      if (!symbol || !duration || !roundNumber || !dateKey) {
-        return res.status(400).json({ error: "필수 정보를 모두 입력해주세요" });
-      }
-      const result = await storage.getRoundForcedResult(
-        symbol as string,
-        parseInt(duration as string),
-        parseInt(roundNumber as string),
-        dateKey as string
-      );
-      res.json(result || null);
-    } catch (error) {
-      console.error("Get round forced result error:", error);
-      res.status(500).json({ error: "회차별 강제결과 조회에 실패했습니다" });
     }
   });
 

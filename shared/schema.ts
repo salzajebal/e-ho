@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, serial, integer, decimal, timestamp, boolean, unique } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, serial, integer, decimal, timestamp, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -212,28 +212,6 @@ export const insertAffiliateSettlementSchema = createInsertSchema(affiliateSettl
 
 export type InsertAffiliateSettlement = z.infer<typeof insertAffiliateSettlementSchema>;
 export type AffiliateSettlement = typeof affiliateSettlements.$inferSelect;
-
-// Round forced results table (회차별 강제결과 - 모든 회원 공통)
-export const roundForcedResults = pgTable("round_forced_results", {
-  id: serial("id").primaryKey(),
-  symbol: text("symbol").notNull(), // 'BTC' or 'ETH'
-  duration: integer("duration").notNull(), // 120, 180, 300 seconds
-  roundNumber: integer("round_number").notNull(),
-  forcedDirection: text("forced_direction").notNull(), // 'up' (매수) or 'down' (매도)
-  dateKey: text("date_key").notNull(), // YYYY-MM-DD format for KST date
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-}, (table) => [
-  // Unique constraint to prevent duplicate forced results for the same round
-  unique('unique_round_forced_result').on(table.symbol, table.duration, table.roundNumber, table.dateKey)
-]);
-
-export const insertRoundForcedResultSchema = createInsertSchema(roundForcedResults).omit({
-  id: true,
-  createdAt: true,
-});
-
-export type InsertRoundForcedResult = z.infer<typeof insertRoundForcedResultSchema>;
-export type RoundForcedResult = typeof roundForcedResults.$inferSelect;
 
 // Blocked IPs table (IP 차단)
 export const blockedIps = pgTable("blocked_ips", {
