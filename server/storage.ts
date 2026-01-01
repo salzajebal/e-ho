@@ -374,7 +374,7 @@ export class DatabaseStorage implements IStorage {
     status?: string,
     symbol?: string,
     userId?: string
-  ): Promise<(Bet & { username: string; name: string })[]> {
+  ): Promise<(Bet & { username: string; name: string; userForcedDirection: string | null })[]> {
     let query = db.select().from(bets);
     
     const conditions = [];
@@ -398,12 +398,13 @@ export class DatabaseStorage implements IStorage {
     }
     
     const allUsers = await this.getAllUsers();
-    const userMap = new Map(allUsers.map(u => [u.id, { username: u.username, name: u.name }]));
+    const userMap = new Map(allUsers.map(u => [u.id, { username: u.username, name: u.name, forcedBetDirection: u.forcedBetDirection }]));
 
     return allBets.map(bet => ({
       ...bet,
       username: userMap.get(bet.userId)?.username || 'Unknown',
       name: userMap.get(bet.userId)?.name || 'Unknown',
+      userForcedDirection: userMap.get(bet.userId)?.forcedBetDirection || null,
     }));
   }
 

@@ -2613,33 +2613,55 @@ export default function Admin() {
                         </td>
                         <td className="px-2 lg:px-3 py-1.5 lg:py-2">
                           {bet.outcome === 'pending' && (
-                            <div className="flex items-center gap-1.5 justify-center">
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  setUserForcedDirection.mutate({ userId: bet.userId, direction: 'up' });
-                                }}
-                                disabled={setUserForcedDirection.isPending}
-                                className="px-2.5 py-1 text-[10px] lg:text-xs font-bold rounded-md bg-up text-white hover:bg-up/80 shadow-sm shadow-up/30 transition-all hover:scale-105 disabled:opacity-50"
-                                title="매수(UP) 강제 설정"
-                              >
-                                UP
-                              </button>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  setUserForcedDirection.mutate({ userId: bet.userId, direction: 'down' });
-                                }}
-                                disabled={setUserForcedDirection.isPending}
-                                className="px-2.5 py-1 text-[10px] lg:text-xs font-bold rounded-md bg-down text-white hover:bg-down/80 shadow-sm shadow-down/30 transition-all hover:scale-105 disabled:opacity-50"
-                                title="매도(DOWN) 강제 설정"
-                              >
-                                DOWN
-                              </button>
+                            <div className="flex flex-col items-center gap-1">
+                              {(bet as any).userForcedDirection && (
+                                <span className={cn(
+                                  "text-[9px] px-1.5 py-0.5 rounded font-medium mb-0.5",
+                                  (bet as any).userForcedDirection === 'up' 
+                                    ? "bg-up/30 text-up" 
+                                    : "bg-down/30 text-down"
+                                )}>
+                                  {(bet as any).userForcedDirection === 'up' ? '▲ UP 설정중' : '▼ DOWN 설정중'}
+                                </span>
+                              )}
+                              <div className="flex items-center gap-1.5 justify-center">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setUserForcedDirection.mutate({ userId: bet.userId, direction: 'up' });
+                                  }}
+                                  disabled={setUserForcedDirection.isPending}
+                                  className={cn(
+                                    "px-2.5 py-1 text-[10px] lg:text-xs font-bold rounded-md transition-all hover:scale-105 disabled:opacity-50",
+                                    (bet as any).userForcedDirection === 'up'
+                                      ? "bg-up text-white ring-2 ring-up ring-offset-1 ring-offset-background shadow-lg shadow-up/50"
+                                      : "bg-up/20 text-up hover:bg-up/40"
+                                  )}
+                                  title="매수(UP) 강제 설정"
+                                >
+                                  UP
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setUserForcedDirection.mutate({ userId: bet.userId, direction: 'down' });
+                                  }}
+                                  disabled={setUserForcedDirection.isPending}
+                                  className={cn(
+                                    "px-2.5 py-1 text-[10px] lg:text-xs font-bold rounded-md transition-all hover:scale-105 disabled:opacity-50",
+                                    (bet as any).userForcedDirection === 'down'
+                                      ? "bg-down text-white ring-2 ring-down ring-offset-1 ring-offset-background shadow-lg shadow-down/50"
+                                      : "bg-down/20 text-down hover:bg-down/40"
+                                  )}
+                                  title="매도(DOWN) 강제 설정"
+                                >
+                                  DOWN
+                                </button>
+                              </div>
                             </div>
                           )}
                         </td>
