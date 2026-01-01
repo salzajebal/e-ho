@@ -567,7 +567,13 @@ export async function registerRoutes(
 
       let outcome: 'win' | 'lose';
       
-      // Check if admin has set a forced outcome
+      // Get the date key for round forced directions (KST)
+      const betCreatedAt = new Date(bet.createdAt);
+      const kstOffset = 9 * 60 * 60 * 1000;
+      const kstBetTime = new Date(betCreatedAt.getTime() + betCreatedAt.getTimezoneOffset() * 60 * 1000 + kstOffset);
+      const betDateKey = `${kstBetTime.getFullYear()}-${String(kstBetTime.getMonth() + 1).padStart(2, '0')}-${String(kstBetTime.getDate()).padStart(2, '0')}`;
+      
+      // Check if admin has set a forced outcome (individual bet)
       if (bet.forcedOutcome === 'win' || bet.forcedOutcome === 'lose') {
         outcome = bet.forcedOutcome;
         // Adjust closePrice to match the forced outcome for display
@@ -588,11 +594,31 @@ export async function registerRoutes(
           }
         }
       } else {
-        // Calculate based on price movement
-        if (bet.direction === 'long') {
-          outcome = closePriceNum > strikePrice ? 'win' : 'lose';
+        // Check for round forced direction (applies to all users)
+        const roundForced = await storage.getRoundForcedDirection(bet.symbol, bet.duration, bet.roundNumber, betDateKey);
+        if (roundForced) {
+          // Determine outcome based on user's bet direction and forced market direction
+          // If forcedDirection is 'up', market goes up (longs win, shorts lose)
+          // If forcedDirection is 'down', market goes down (shorts win, longs lose)
+          if (roundForced.forcedDirection === 'up') {
+            outcome = bet.direction === 'long' ? 'win' : 'lose';
+          } else {
+            outcome = bet.direction === 'short' ? 'win' : 'lose';
+          }
+          // Adjust closePrice to match the forced direction
+          const variation = strikePrice * 0.001;
+          if (roundForced.forcedDirection === 'up') {
+            closePriceNum = strikePrice + variation;
+          } else {
+            closePriceNum = strikePrice - variation;
+          }
         } else {
-          outcome = closePriceNum < strikePrice ? 'win' : 'lose';
+          // Calculate based on price movement
+          if (bet.direction === 'long') {
+            outcome = closePriceNum > strikePrice ? 'win' : 'lose';
+          } else {
+            outcome = closePriceNum < strikePrice ? 'win' : 'lose';
+          }
         }
       }
 
@@ -2405,7 +2431,13 @@ export async function registerRoutes(
           
           let outcome: 'win' | 'lose';
           
-          // Check if admin has set a forced outcome
+          // Get the date key for round forced directions (KST)
+          const betCreatedAt = new Date(bet.createdAt);
+          const kstOffset = 9 * 60 * 60 * 1000;
+          const kstBetTime = new Date(betCreatedAt.getTime() + betCreatedAt.getTimezoneOffset() * 60 * 1000 + kstOffset);
+          const betDateKey = `${kstBetTime.getFullYear()}-${String(kstBetTime.getMonth() + 1).padStart(2, '0')}-${String(kstBetTime.getDate()).padStart(2, '0')}`;
+          
+          // Check if admin has set a forced outcome (individual bet)
           if (bet.forcedOutcome === 'win' || bet.forcedOutcome === 'lose') {
             outcome = bet.forcedOutcome;
             // Adjust closePrice to match the forced outcome for display
@@ -2424,11 +2456,31 @@ export async function registerRoutes(
               }
             }
           } else {
-            // Calculate based on price movement
-            if (bet.direction === 'long') {
-              outcome = closePrice > strikePrice ? 'win' : 'lose';
+            // Check for round forced direction (applies to all users)
+            const roundForced = await storage.getRoundForcedDirection(bet.symbol, bet.duration, bet.roundNumber, betDateKey);
+            if (roundForced) {
+              // Determine outcome based on user's bet direction and forced market direction
+              // If forcedDirection is 'up', market goes up (longs win, shorts lose)
+              // If forcedDirection is 'down', market goes down (shorts win, longs lose)
+              if (roundForced.forcedDirection === 'up') {
+                outcome = bet.direction === 'long' ? 'win' : 'lose';
+              } else {
+                outcome = bet.direction === 'short' ? 'win' : 'lose';
+              }
+              // Adjust closePrice to match the forced direction
+              const variation = strikePrice * 0.001;
+              if (roundForced.forcedDirection === 'up') {
+                closePrice = strikePrice + variation;
+              } else {
+                closePrice = strikePrice - variation;
+              }
             } else {
-              outcome = closePrice < strikePrice ? 'win' : 'lose';
+              // Calculate based on price movement
+              if (bet.direction === 'long') {
+                outcome = closePrice > strikePrice ? 'win' : 'lose';
+              } else {
+                outcome = closePrice < strikePrice ? 'win' : 'lose';
+              }
             }
           }
           
