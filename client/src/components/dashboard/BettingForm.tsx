@@ -97,8 +97,19 @@ const cleanupOldGameResults = (gameId: string) => {
   
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
-    if (key && key.startsWith(`gameResults_${gameId}_`) && key !== todayKey) {
-      keysToRemove.push(key);
+    if (key) {
+      // Remove old format keys (without date suffix)
+      if (key === `gameResults_${gameId}`) {
+        keysToRemove.push(key);
+      }
+      // Remove old date keys (not today)
+      else if (key.startsWith(`gameResults_${gameId}_`) && key !== todayKey) {
+        keysToRemove.push(key);
+      }
+      // Also remove any gameResults keys that start with this gameId but have different formats
+      else if (key.startsWith('gameResults_') && key.includes(gameId) && key !== todayKey && !key.match(/\d{4}-\d{2}-\d{2}$/)) {
+        keysToRemove.push(key);
+      }
     }
   }
   
