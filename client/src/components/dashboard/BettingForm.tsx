@@ -166,7 +166,13 @@ const generateAllPastResults = (gameId: string, duration: number, basePrice: num
       }
     } else {
       // Generate simulated result based on seeded random
-      const seed = round * 7919 + duration * 7907 + gameId.charCodeAt(0) * 7901;
+      // Use full gameId hash for better differentiation between BTC and ETH
+      let gameIdHash = 0;
+      for (let i = 0; i < gameId.length; i++) {
+        gameIdHash = ((gameIdHash << 5) - gameIdHash) + gameId.charCodeAt(i);
+        gameIdHash = gameIdHash & gameIdHash; // Convert to 32bit integer
+      }
+      const seed = round * 7919 + duration * 7907 + Math.abs(gameIdHash) * 7901;
       const pseudoRandom = ((seed * 9301 + 49297) % 233280) / 233280;
       const direction: 'up' | 'down' = pseudoRandom > 0.5 ? 'up' : 'down';
       
