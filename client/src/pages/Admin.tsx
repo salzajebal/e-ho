@@ -513,9 +513,49 @@ export default function Admin() {
   const [isPlacingForcedBet, setIsPlacingForcedBet] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Update current time every second for countdown display
+  // Round forced result states (회차별 강제결과)
+  const [roundForcedSymbol, setRoundForcedSymbol] = useState<'BTC' | 'ETH'>('BTC');
+  const [roundForcedDuration, setRoundForcedDuration] = useState<number>(120);
+  const [roundForcedRoundNumber, setRoundForcedRoundNumber] = useState("");
+  const [roundForcedDirection, setRoundForcedDirection] = useState<'up' | 'down'>('up');
+  const [currentRounds, setCurrentRounds] = useState<{ [key: string]: { round: number; timeRemaining: number } }>({});
+
+  // Calculate round number based on KST time
+  const calculateRoundNumber = (durationSeconds: number): number => {
+    const now = new Date();
+    const kstOffset = 9 * 60 * 60 * 1000;
+    const kstTime = new Date(now.getTime() + now.getTimezoneOffset() * 60 * 1000 + kstOffset);
+    const startOfDayKST = new Date(kstTime.getFullYear(), kstTime.getMonth(), kstTime.getDate());
+    const secondsSinceMidnight = Math.floor((kstTime.getTime() - startOfDayKST.getTime()) / 1000);
+    return Math.floor(secondsSinceMidnight / durationSeconds) + 1;
+  };
+
+  const getRoundTimeRemaining = (durationSeconds: number): number => {
+    const now = new Date();
+    const kstOffset = 9 * 60 * 60 * 1000;
+    const kstTime = new Date(now.getTime() + now.getTimezoneOffset() * 60 * 1000 + kstOffset);
+    const startOfDayKST = new Date(kstTime.getFullYear(), kstTime.getMonth(), kstTime.getDate());
+    const secondsSinceMidnight = Math.floor((kstTime.getTime() - startOfDayKST.getTime()) / 1000);
+    const elapsedInCurrentRound = secondsSinceMidnight % durationSeconds;
+    return durationSeconds - elapsedInCurrentRound;
+  };
+
+  const getKstDateKey = (): string => {
+    const now = new Date();
+    const kstOffset = 9 * 60 * 60 * 1000;
+    const kstTime = new Date(now.getTime() + now.getTimezoneOffset() * 60 * 1000 + kstOffset);
+    return `${kstTime.getFullYear()}-${String(kstTime.getMonth() + 1).padStart(2, '0')}-${String(kstTime.getDate()).padStart(2, '0')}`;
+  };
+
+  // Update current time and rounds every second
   useEffect(() => {
-    const interval = setInterval(() => setCurrentTime(Date.now()), 1000);
+    const interval = setInterval(() => {
+      setCurrentTime(Date.now());
+      setCurrentRounds({
+        'BTC-120': { round: calculateRoundNumber(120), timeRemaining: getRoundTimeRemaining(120) },
+        'ETH-120': { round: calculateRoundNumber(120), timeRemaining: getRoundTimeRemaining(120) },
+      });
+    }, 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -904,6 +944,70 @@ export default function Admin() {
     },
     onError: () => {
       toast.error("종목 점검 해제에 실패했습니다");
+    },
+  });
+
+  // Round Forced Results (회차별 강제결과)
+  interface RoundForcedResult {
+    id: number;
+    symbol: string;
+    duration: number;
+    roundNumber: number;
+    forcedDirection: string;
+    dateKey: string;
+    createdAt: string;
+  }
+  const { data: roundForcedResults = [], refetch: refetchRoundForcedResults } = useQuery<RoundForcedResult[]>({
+    queryKey: ["/api/admin/round-forced-results", getKstDateKey()],
+    queryFn: async () => {
+      const dateKey = getKstDateKey();
+      const res = await fetch(`/api/admin/round-forced-results?dateKey=${dateKey}`);
+      if (!res.ok) throw new Error("Failed to fetch round forced results");
+      return res.json();
+    },
+    enabled: auth?.role === 'admin',
+    refetchInterval: 5000,
+  });
+
+  const setRoundForcedResult = useMutation({
+    mutationFn: async (data: { symbol: string; duration: number; roundNumber: number; dateKey: string; forcedDirection: string }) => {
+      const res = await fetch("/api/admin/round-forced-results", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to set round forced result");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      refetchRoundForcedResults();
+      setRoundForcedRoundNumber("");
+      toast.success("회차별 강제결과가 설정되었습니다");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const deleteRoundForcedResult = useMutation({
+    mutationFn: async (data: { symbol: string; duration: number; roundNumber: number; dateKey: string }) => {
+      const res = await fetch("/api/admin/round-forced-results", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to delete round forced result");
+      return res.json();
+    },
+    onSuccess: () => {
+      refetchRoundForcedResults();
+      toast.success("회차별 강제결과가 삭제되었습니다");
+    },
+    onError: () => {
+      toast.error("회차별 강제결과 삭제에 실패했습니다");
     },
   });
 
@@ -3629,6 +3733,194 @@ export default function Admin() {
                 선택한 회원의 잔고에서 거래 금액이 차감됩니다. 회원이 충분한 잔고를 보유하고 있는지 확인하세요.
                 강제 거래는 일반 거래와 동일하게 정산됩니다.
               </p>
+            </div>
+
+            {/* 회차별 강제결과 설정 */}
+            <div className="bg-card border border-border rounded-lg p-6">
+              <h3 className="font-medium mb-4 flex items-center gap-2">
+                <Target className="w-4 h-4 text-primary" />
+                회차별 강제결과 설정 (모든 회원 공통)
+              </h3>
+
+              {/* 현재 회차 표시 */}
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="bg-muted/30 rounded-lg p-4 border border-orange-500/30">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-orange-500 font-bold">BTC (비트코인)</span>
+                    <span className="text-sm text-muted-foreground">2분 게임</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl font-bold">{currentRounds['BTC-120']?.round || calculateRoundNumber(120)}회차</span>
+                    <span className="text-lg font-mono text-primary">
+                      {Math.floor((currentRounds['BTC-120']?.timeRemaining || getRoundTimeRemaining(120)) / 60)}:
+                      {String((currentRounds['BTC-120']?.timeRemaining || getRoundTimeRemaining(120)) % 60).padStart(2, '0')}
+                    </span>
+                  </div>
+                </div>
+                <div className="bg-muted/30 rounded-lg p-4 border border-blue-500/30">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-blue-500 font-bold">ETH (이더리움)</span>
+                    <span className="text-sm text-muted-foreground">2분 게임</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl font-bold">{currentRounds['ETH-120']?.round || calculateRoundNumber(120)}회차</span>
+                    <span className="text-lg font-mono text-primary">
+                      {Math.floor((currentRounds['ETH-120']?.timeRemaining || getRoundTimeRemaining(120)) / 60)}:
+                      {String((currentRounds['ETH-120']?.timeRemaining || getRoundTimeRemaining(120)) % 60).padStart(2, '0')}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 회차별 강제결과 입력 */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                <div className="space-y-2">
+                  <label className="text-sm text-muted-foreground">종목</label>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant={roundForcedSymbol === 'BTC' ? 'default' : 'outline'}
+                      className={cn("flex-1", roundForcedSymbol === 'BTC' && "bg-orange-500 hover:bg-orange-600")}
+                      onClick={() => setRoundForcedSymbol('BTC')}
+                    >
+                      BTC
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={roundForcedSymbol === 'ETH' ? 'default' : 'outline'}
+                      className={cn("flex-1", roundForcedSymbol === 'ETH' && "bg-blue-500 hover:bg-blue-600")}
+                      onClick={() => setRoundForcedSymbol('ETH')}
+                    >
+                      ETH
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm text-muted-foreground">회차 번호</label>
+                  <Input
+                    type="number"
+                    value={roundForcedRoundNumber}
+                    onChange={(e) => setRoundForcedRoundNumber(e.target.value)}
+                    placeholder={`현재: ${calculateRoundNumber(120)}회차`}
+                    data-testid="input-round-forced-number"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm text-muted-foreground">강제 방향</label>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant={roundForcedDirection === 'up' ? 'default' : 'outline'}
+                      className={cn("flex-1", roundForcedDirection === 'up' && "bg-up hover:bg-up/90")}
+                      onClick={() => setRoundForcedDirection('up')}
+                    >
+                      <TrendingUp className="w-4 h-4 mr-1" />
+                      매수
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={roundForcedDirection === 'down' ? 'default' : 'outline'}
+                      className={cn("flex-1", roundForcedDirection === 'down' && "bg-down hover:bg-down/90")}
+                      onClick={() => setRoundForcedDirection('down')}
+                    >
+                      <TrendingDown className="w-4 h-4 mr-1" />
+                      매도
+                    </Button>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={() => {
+                    const roundNum = parseInt(roundForcedRoundNumber);
+                    if (!roundNum || roundNum < 1) {
+                      toast.error('유효한 회차 번호를 입력해주세요');
+                      return;
+                    }
+                    setRoundForcedResult.mutate({
+                      symbol: roundForcedSymbol,
+                      duration: 120,
+                      roundNumber: roundNum,
+                      dateKey: getKstDateKey(),
+                      forcedDirection: roundForcedDirection,
+                    });
+                  }}
+                  disabled={!roundForcedRoundNumber || setRoundForcedResult.isPending}
+                  className="h-10"
+                  data-testid="button-set-round-forced"
+                >
+                  {setRoundForcedResult.isPending ? '설정 중...' : '설정'}
+                </Button>
+              </div>
+
+              {/* 설정된 회차별 강제결과 목록 */}
+              {roundForcedResults.length > 0 && (
+                <div className="mt-6">
+                  <h4 className="text-sm font-medium mb-3">오늘 설정된 강제결과 ({getKstDateKey()})</h4>
+                  <div className="border border-border rounded-lg overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead className="bg-muted/50">
+                        <tr>
+                          <th className="px-4 py-2 text-left">종목</th>
+                          <th className="px-4 py-2 text-left">회차</th>
+                          <th className="px-4 py-2 text-left">방향</th>
+                          <th className="px-4 py-2 text-center">삭제</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {roundForcedResults.map((result) => (
+                          <tr key={result.id} className="hover:bg-muted/30">
+                            <td className="px-4 py-2">
+                              <span className={cn("font-medium", result.symbol === 'BTC' ? 'text-orange-500' : 'text-blue-500')}>
+                                {result.symbol}
+                              </span>
+                            </td>
+                            <td className="px-4 py-2">{result.roundNumber}회차</td>
+                            <td className="px-4 py-2">
+                              <span className={cn(
+                                "inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium",
+                                result.forcedDirection === 'up' ? "bg-up/20 text-up" : "bg-down/20 text-down"
+                              )}>
+                                {result.forcedDirection === 'up' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                                {result.forcedDirection === 'up' ? '매수' : '매도'}
+                              </span>
+                            </td>
+                            <td className="px-4 py-2 text-center">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                                onClick={() => deleteRoundForcedResult.mutate({
+                                  symbol: result.symbol,
+                                  duration: result.duration,
+                                  roundNumber: result.roundNumber,
+                                  dateKey: result.dateKey,
+                                })}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="bg-primary/10 border border-primary/30 rounded-lg p-4">
+              <h3 className="font-medium text-primary mb-2 flex items-center gap-2">
+                <Target className="w-4 h-4" />
+                회차별 강제결과 안내
+              </h3>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>• 설정된 회차의 결과는 모든 회원에게 동일하게 적용됩니다.</li>
+                <li>• 매수(up)로 설정하면 매수 방향으로 거래한 회원이 승리합니다.</li>
+                <li>• 매도(down)로 설정하면 매도 방향으로 거래한 회원이 승리합니다.</li>
+                <li>• 개별 회원 강제결과보다 우선순위가 낮습니다 (개별 {'>'} 회차별 {'>'} 유저별).</li>
+              </ul>
             </div>
           </div>
         )}

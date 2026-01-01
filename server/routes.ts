@@ -565,7 +565,7 @@ export async function registerRoutes(
       const betAmount = parseFloat(bet.amount);
       const multiplier = parseFloat(bet.multiplier);
 
-      let outcome: 'win' | 'lose';
+      let outcome: 'win' | 'lose' = 'lose'; // Default, will be overwritten
       let forcedDirectionApplied = false;
       
       // Priority 1: Check if admin has set a forced outcome on individual bet
