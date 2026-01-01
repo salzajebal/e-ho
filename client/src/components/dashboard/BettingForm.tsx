@@ -180,10 +180,11 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [] 
 
   // Load and generate all past results for current game, prioritizing user's actual bet results
   useEffect(() => {
-    // Get completed bets for current game (matching symbol)
+    // Get completed bets for current game (matching symbol AND duration)
     const completedBets = userBets.filter(bet => 
       bet.outcome !== 'pending' && 
       bet.symbol === game.symbol &&
+      bet.duration === game.duration &&
       bet.roundNumber != null &&
       bet.closePrice != null
     );
@@ -227,7 +228,7 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [] 
     mergedResults.sort((a, b) => b.round - a.round);
     
     setGameResults(mergedResults);
-  }, [game.id, game.duration, game.symbol, userBets]);
+  }, [game.id, game.duration, game.symbol, currentPrice, userBets]);
 
   // Track round changes for ALL 6 games simultaneously
   useEffect(() => {
