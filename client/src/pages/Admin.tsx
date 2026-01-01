@@ -314,30 +314,46 @@ function RoundForcedTab() {
   const [currentRound, setCurrentRound] = useState(1);
   const duration = 120; // 2분 고정
 
+  // Get KST Date - synchronized with BettingForm
+  const getKSTDate = (): Date => {
+    const now = new Date();
+    const kstOffset = 9 * 60;
+    const utcOffset = now.getTimezoneOffset();
+    return new Date(now.getTime() + (utcOffset + kstOffset) * 60 * 1000);
+  };
+
+  // Calculate current round number - synchronized with BettingForm
+  const calculateRoundNumber = (durationSeconds: number): number => {
+    const kstTime = getKSTDate();
+    const secondsSinceMidnight = kstTime.getHours() * 3600 + kstTime.getMinutes() * 60 + kstTime.getSeconds();
+    return Math.floor(secondsSinceMidnight / durationSeconds) + 1;
+  };
+
+  // Get remaining seconds in current round - synchronized with BettingForm
+  const getRoundTimeRemaining = (durationSeconds: number): number => {
+    const kstTime = getKSTDate();
+    const secondsSinceMidnight = kstTime.getHours() * 3600 + kstTime.getMinutes() * 60 + kstTime.getSeconds();
+    const elapsedInRound = secondsSinceMidnight % durationSeconds;
+    return durationSeconds - elapsedInRound;
+  };
+
   // Get today's date key in KST
   const getKSTDateKey = () => {
-    const now = new Date();
-    const kstOffset = 9 * 60 * 60 * 1000;
-    const kstDate = new Date(now.getTime() + kstOffset);
-    return kstDate.toISOString().split('T')[0];
+    const kstDate = getKSTDate();
+    const year = kstDate.getFullYear();
+    const month = String(kstDate.getMonth() + 1).padStart(2, '0');
+    const day = String(kstDate.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
 
   const dateKey = getKSTDateKey();
   const maxRounds = Math.floor(86400 / duration);
 
-  // Real-time round and countdown update
+  // Real-time round and countdown update - synchronized with BettingForm
   useEffect(() => {
     const calculateRoundInfo = () => {
-      const now = new Date();
-      const kstOffset = 9 * 60 * 60 * 1000;
-      const kstNow = new Date(now.getTime() + kstOffset);
-      const startOfDay = new Date(kstNow);
-      startOfDay.setHours(0, 0, 0, 0);
-      const elapsedMs = kstNow.getTime() - startOfDay.getTime();
-      const elapsedSeconds = Math.floor(elapsedMs / 1000);
-      const round = Math.floor(elapsedSeconds / duration) + 1;
-      const secondsIntoRound = elapsedSeconds % duration;
-      const remainingSeconds = duration - secondsIntoRound;
+      const round = calculateRoundNumber(duration);
+      const remainingSeconds = getRoundTimeRemaining(duration);
       const minutes = Math.floor(remainingSeconds / 60);
       const seconds = remainingSeconds % 60;
       
