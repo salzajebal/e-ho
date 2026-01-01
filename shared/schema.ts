@@ -124,6 +124,26 @@ export const insertBetSchema = createInsertSchema(bets).omit({
 export type InsertBet = z.infer<typeof insertBetSchema>;
 export type Bet = typeof bets.$inferSelect;
 
+// Round forced directions table (회차별 강제설정)
+// This sets a forced market direction for a specific round that applies to ALL users
+export const roundForcedDirections = pgTable("round_forced_directions", {
+  id: serial("id").primaryKey(),
+  symbol: text("symbol").notNull(), // 'BTC' or 'ETH'
+  duration: integer("duration").notNull(), // duration in seconds (120, 180)
+  roundNumber: integer("round_number").notNull(), // round number to force
+  forcedDirection: text("forced_direction").notNull(), // 'up' (매수) or 'down' (매도)
+  dateKey: text("date_key").notNull(), // YYYY-MM-DD format to identify the day (KST)
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertRoundForcedDirectionSchema = createInsertSchema(roundForcedDirections).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertRoundForcedDirection = z.infer<typeof insertRoundForcedDirectionSchema>;
+export type RoundForcedDirection = typeof roundForcedDirections.$inferSelect;
+
 // Bet history for display
 export interface BetDisplay extends Bet {
   timeRemaining?: number;
