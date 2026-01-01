@@ -214,20 +214,29 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [] 
   const availableBalance = balance ? parseFloat(balance) : 0;
 
   // Fetch round forced directions for today (회차별 강제 설정) - public API
-  const { data: roundForcedDirections = [] } = useQuery<RoundForcedDirection[]>({
+  const { data: roundForcedDirectionsData } = useQuery<RoundForcedDirection[]>({
     queryKey: ['/api/round-forced', getKSTDateString()],
     queryFn: async () => {
-      const dateKey = getKSTDateString();
-      const res = await fetch(`/api/round-forced?dateKey=${dateKey}`);
-      if (!res.ok) return [];
-      return res.json();
+      try {
+        const dateKey = getKSTDateString();
+        const res = await fetch(`/api/round-forced?dateKey=${dateKey}`);
+        if (!res.ok) return [];
+        const data = await res.json();
+        return Array.isArray(data) ? data : [];
+      } catch {
+        return [];
+      }
     },
     refetchInterval: 5000,
     staleTime: 2000,
   });
+  
+  // Ensure roundForcedDirections is always an array
+  const roundForcedDirections = Array.isArray(roundForcedDirectionsData) ? roundForcedDirectionsData : [];
 
   // Helper to get forced direction for a specific round
   const getForcedDirection = (symbol: string, duration: number, roundNumber: number): 'up' | 'down' | null => {
+    if (!Array.isArray(roundForcedDirections)) return null;
     const found = roundForcedDirections.find(
       r => r.symbol === symbol && r.duration === duration && r.roundNumber === roundNumber
     );
