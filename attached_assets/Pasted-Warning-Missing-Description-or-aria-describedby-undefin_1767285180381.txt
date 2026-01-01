@@ -1,0 +1,161 @@
+Warning: Missing Description or aria-describedby={undefined} for {DialogContent}.
+(익명) @ index-CYf1aHbN.js:421
+xf @ index-CYf1aHbN.js:48
+TT @ index-CYf1aHbN.js:48
+Fi @ index-CYf1aHbN.js:48
+TT @ index-CYf1aHbN.js:48
+Fi @ index-CYf1aHbN.js:48
+TT @ index-CYf1aHbN.js:48
+Fi @ index-CYf1aHbN.js:48
+TT @ index-CYf1aHbN.js:48
+Fi @ index-CYf1aHbN.js:48
+TT @ index-CYf1aHbN.js:48
+Fi @ index-CYf1aHbN.js:48
+TT @ index-CYf1aHbN.js:48
+Fi @ index-CYf1aHbN.js:48
+TT @ index-CYf1aHbN.js:48
+Fi @ index-CYf1aHbN.js:48
+TT @ index-CYf1aHbN.js:48
+Fi @ index-CYf1aHbN.js:48
+TT @ index-CYf1aHbN.js:48
+Fi @ index-CYf1aHbN.js:48
+TT @ index-CYf1aHbN.js:48
+Fi @ index-CYf1aHbN.js:48
+TT @ index-CYf1aHbN.js:48
+Fi @ index-CYf1aHbN.js:48
+TT @ index-CYf1aHbN.js:48
+Fi @ index-CYf1aHbN.js:48
+TT @ index-CYf1aHbN.js:48
+Fi @ index-CYf1aHbN.js:48
+TT @ index-CYf1aHbN.js:48
+Fi @ index-CYf1aHbN.js:48
+TT @ index-CYf1aHbN.js:48
+Fi @ index-CYf1aHbN.js:48
+TT @ index-CYf1aHbN.js:48
+Fi @ index-CYf1aHbN.js:48
+TT @ index-CYf1aHbN.js:48
+Fi @ index-CYf1aHbN.js:48
+TT @ index-CYf1aHbN.js:48
+Fi @ index-CYf1aHbN.js:48
+TT @ index-CYf1aHbN.js:48
+Fi @ index-CYf1aHbN.js:48
+TT @ index-CYf1aHbN.js:48
+Fi @ index-CYf1aHbN.js:48
+TT @ index-CYf1aHbN.js:48
+Fi @ index-CYf1aHbN.js:48
+TT @ index-CYf1aHbN.js:48
+Fi @ index-CYf1aHbN.js:48
+TT @ index-CYf1aHbN.js:48
+Fi @ index-CYf1aHbN.js:48
+TT @ index-CYf1aHbN.js:48
+Fi @ index-CYf1aHbN.js:48
+TT @ index-CYf1aHbN.js:48
+Fi @ index-CYf1aHbN.js:48
+TT @ index-CYf1aHbN.js:48
+Fi @ index-CYf1aHbN.js:48
+TT @ index-CYf1aHbN.js:48
+Fi @ index-CYf1aHbN.js:48
+TT @ index-CYf1aHbN.js:48
+Fi @ index-CYf1aHbN.js:48
+TT @ index-CYf1aHbN.js:48
+Fi @ index-CYf1aHbN.js:48
+TT @ index-CYf1aHbN.js:48
+Fi @ index-CYf1aHbN.js:48
+TT @ index-CYf1aHbN.js:48
+Fi @ index-CYf1aHbN.js:48
+TT @ index-CYf1aHbN.js:48
+ZT @ index-CYf1aHbN.js:48
+qp @ index-CYf1aHbN.js:48
+XT @ index-CYf1aHbN.js:48
+VT @ index-CYf1aHbN.js:48
+LT @ index-CYf1aHbN.js:48
+zT @ index-CYf1aHbN.js:48
+iM @ index-CYf1aHbN.js:48
+_f @ index-CYf1aHbN.js:48
+tM @ index-CYf1aHbN.js:48
+(익명) @ index-CYf1aHbN.js:48이 경고 이해하기
+index-CYf1aHbN.js:48 Uncaught Error: Minified React error #185; visit https://react.dev/errors/185 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at op (index-CYf1aHbN.js:48:27666)
+    at sb (index-CYf1aHbN.js:48:27191)
+    at pf (index-CYf1aHbN.js:48:60065)
+    at HA (index-CYf1aHbN.js:48:59680)
+    at index-CYf1aHbN.js:445:149987
+    at vP (index-CYf1aHbN.js:57:39398)
+    at index-CYf1aHbN.js:57:39490
+    at Array.map (<anonymous>)
+    at index-CYf1aHbN.js:57:39474
+    at ha (index-CYf1aHbN.js:48:94610)
+op @ index-CYf1aHbN.js:48
+sb @ index-CYf1aHbN.js:48
+pf @ index-CYf1aHbN.js:48
+HA @ index-CYf1aHbN.js:48
+(익명) @ index-CYf1aHbN.js:445
+vP @ index-CYf1aHbN.js:57
+(익명) @ index-CYf1aHbN.js:57
+(익명) @ index-CYf1aHbN.js:57
+ha @ index-CYf1aHbN.js:48
+ET @ index-CYf1aHbN.js:48
+Ar @ index-CYf1aHbN.js:48
+ET @ index-CYf1aHbN.js:48
+Ar @ index-CYf1aHbN.js:48
+ET @ index-CYf1aHbN.js:48
+Ar @ index-CYf1aHbN.js:48
+ET @ index-CYf1aHbN.js:48
+Ar @ index-CYf1aHbN.js:48
+ET @ index-CYf1aHbN.js:48
+Ar @ index-CYf1aHbN.js:48
+ET @ index-CYf1aHbN.js:48
+Ar @ index-CYf1aHbN.js:48
+ET @ index-CYf1aHbN.js:48
+Ar @ index-CYf1aHbN.js:48
+ET @ index-CYf1aHbN.js:48
+Ar @ index-CYf1aHbN.js:48
+ET @ index-CYf1aHbN.js:48
+Ar @ index-CYf1aHbN.js:48
+ET @ index-CYf1aHbN.js:48
+Ar @ index-CYf1aHbN.js:48
+ET @ index-CYf1aHbN.js:48
+Ar @ index-CYf1aHbN.js:48
+ET @ index-CYf1aHbN.js:48
+Ar @ index-CYf1aHbN.js:48
+ET @ index-CYf1aHbN.js:48
+Ar @ index-CYf1aHbN.js:48
+ET @ index-CYf1aHbN.js:48
+Ar @ index-CYf1aHbN.js:48
+ET @ index-CYf1aHbN.js:48
+Ar @ index-CYf1aHbN.js:48
+ET @ index-CYf1aHbN.js:48
+Ar @ index-CYf1aHbN.js:48
+ET @ index-CYf1aHbN.js:48
+Ar @ index-CYf1aHbN.js:48
+ET @ index-CYf1aHbN.js:48
+Ar @ index-CYf1aHbN.js:48
+ET @ index-CYf1aHbN.js:48
+Ar @ index-CYf1aHbN.js:48
+ET @ index-CYf1aHbN.js:48
+Ar @ index-CYf1aHbN.js:48
+ET @ index-CYf1aHbN.js:48
+Ar @ index-CYf1aHbN.js:48
+ET @ index-CYf1aHbN.js:48
+Ar @ index-CYf1aHbN.js:48
+ET @ index-CYf1aHbN.js:48
+Ar @ index-CYf1aHbN.js:48
+ET @ index-CYf1aHbN.js:48
+
+
+Ar @ index-CYf1aHbN.js:48
+ET @ index-CYf1aHbN.js:48
+Ar @ index-CYf1aHbN.js:48
+ET @ index-CYf1aHbN.js:48
+Ar @ index-CYf1aHbN.js:48
+ET @ index-CYf1aHbN.js:48
+GT @ index-CYf1aHbN.js:48
+VT @ index-CYf1aHbN.js:48
+LT @ index-CYf1aHbN.js:48
+zT @ index-CYf1aHbN.js:48
+iM @ index-CYf1aHbN.js:48
+_f @ index-CYf1aHbN.js:48
+tM @ index-CYf1aHbN.js:48
+(익명) @ index-CYf1aHbN.js:48이 오류 이해하기
+index-CYf1aHbN.js:445 [MarketData Direct] BTC: $87975.80, ETH: $2986.45
+index-CYf1aHbN.js:445 [MarketData] 서버 API 실패, Binance 직접 호출 모드로 전환

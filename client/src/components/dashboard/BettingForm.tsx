@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -8,15 +7,6 @@ import { TrendingUp, TrendingDown, Clock, Hash, Timer, History, AlertCircle } fr
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { TRADING_GAMES } from "@/lib/tradingGames";
-
-interface RoundForcedDirection {
-  id: number;
-  symbol: string;
-  duration: number;
-  roundNumber: number;
-  forcedDirection: 'up' | 'down';
-  dateKey: string;
-}
 
 interface Game {
   id: string;
@@ -213,36 +203,6 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [] 
   const maxRounds = getMaxRoundsPerDay(game.duration);
   const availableBalance = balance ? parseFloat(balance) : 0;
 
-  // Fetch round forced directions for today (회차별 강제 설정) - public API
-  const { data: roundForcedDirectionsData } = useQuery<RoundForcedDirection[]>({
-    queryKey: ['/api/round-forced', getKSTDateString()],
-    queryFn: async () => {
-      try {
-        const dateKey = getKSTDateString();
-        const res = await fetch(`/api/round-forced?dateKey=${dateKey}`);
-        if (!res.ok) return [];
-        const data = await res.json();
-        return Array.isArray(data) ? data : [];
-      } catch {
-        return [];
-      }
-    },
-    refetchInterval: 5000,
-    staleTime: 2000,
-  });
-  
-  // Ensure roundForcedDirections is always an array
-  const roundForcedDirections = Array.isArray(roundForcedDirectionsData) ? roundForcedDirectionsData : [];
-
-  // Helper to get forced direction for a specific round
-  const getForcedDirection = (symbol: string, duration: number, roundNumber: number): 'up' | 'down' | null => {
-    if (!Array.isArray(roundForcedDirections)) return null;
-    const found = roundForcedDirections.find(
-      r => r.symbol === symbol && r.duration === duration && r.roundNumber === roundNumber
-    );
-    return found ? found.forcedDirection : null;
-  };
-
   // Update last price ref
   useEffect(() => {
     lastPriceRef.current = currentPrice;
@@ -294,19 +254,9 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [] 
     });
     
     // Then, add generated results for rounds without user bets
-    // Apply forced directions if set by admin
     generatedResults.forEach(genResult => {
       if (!usedRounds.has(genResult.round)) {
-        // Check if there's a forced direction for this round
-        const forced = getForcedDirection(game.symbol, game.duration, genResult.round);
-        if (forced) {
-          finalResults.push({
-            ...genResult,
-            direction: forced,
-          });
-        } else {
-          finalResults.push(genResult);
-        }
+        finalResults.push(genResult);
       }
     });
     
@@ -314,7 +264,7 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [] 
     finalResults.sort((a, b) => b.round - a.round);
     
     setGameResults(finalResults);
-  }, [game.id, game.duration, game.symbol, currentPrice, userBets, roundForcedDirections]);
+  }, [game.id, game.duration, game.symbol, currentPrice, userBets]);
 
   // Track round changes for ALL 6 games simultaneously
   useEffect(() => {
