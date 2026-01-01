@@ -1801,9 +1801,27 @@ export async function registerRoutes(
     }
   });
 
+  // ==================== ROUND FORCED DIRECTIONS ====================
+
+  // Public API - Get round forced directions for today (for displaying in trading results)
+  app.get("/api/round-forced", async (req, res) => {
+    try {
+      const now = new Date();
+      const kstOffset = 9 * 60 * 60 * 1000;
+      const kstDate = new Date(now.getTime() + now.getTimezoneOffset() * 60 * 1000 + kstOffset);
+      const dateKey = req.query.dateKey as string || `${kstDate.getFullYear()}-${String(kstDate.getMonth() + 1).padStart(2, '0')}-${String(kstDate.getDate()).padStart(2, '0')}`;
+      
+      const directions = await storage.getRoundForcedDirectionsForDate(dateKey);
+      res.json(directions);
+    } catch (error) {
+      console.error("Failed to fetch round forced directions:", error);
+      res.status(500).json({ error: "회차별 강제설정 조회에 실패했습니다" });
+    }
+  });
+
   // ==================== ROUND FORCED DIRECTIONS (ADMIN) ====================
 
-  // Get round forced directions for today
+  // Get round forced directions for today (admin)
   app.get("/api/admin/round-forced", requireAdmin, async (req, res) => {
     try {
       const dateKey = req.query.dateKey as string || new Date().toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' }).split('.').map(p => p.trim().padStart(2, '0')).slice(0, 3).join('-');
