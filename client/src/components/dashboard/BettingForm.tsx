@@ -24,6 +24,7 @@ interface UserBet {
   closePrice?: string | null;
   createdAt: string;
   symbol: string;
+  duration: number;
 }
 
 interface BettingFormProps {
@@ -190,44 +191,50 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [] 
     );
     
     // Create results from user's actual bets (these reflect forced directions)
-    const betResults: GameResult[] = completedBets.map(bet => {
+    // The server manipulates closePrice to match forced direction:
+    // - forced "매수"(up) → closePrice > strikePrice
+    // - forced "매도"(down) → closePrice < strikePrice
+    const betResultsByRound = new Map<number, GameResult>();
+    completedBets.forEach(bet => {
       const strikePrice = parseFloat(bet.strikePrice);
       const closePrice = parseFloat(bet.closePrice || '0');
+      // Server adjusts closePrice to reflect forced direction
       const direction: 'up' | 'down' = closePrice >= strikePrice ? 'up' : 'down';
       
       const betDate = new Date(bet.createdAt);
       const timeStr = betDate.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
       
-      return {
+      betResultsByRound.set(bet.roundNumber!, {
         round: bet.roundNumber!,
         direction,
         time: timeStr,
-      };
+      });
     });
     
     // Get existing generated results
     const generatedResults = generateAllPastResults(game.id, game.duration, currentPrice);
     
-    // Create a map of bet results by round for quick lookup
-    const betResultsByRound = new Map(betResults.map(r => [r.round, r]));
+    // Build final results: user bet results take priority over generated results
+    const finalResults: GameResult[] = [];
+    const usedRounds = new Set<number>();
     
-    // Merge: use bet result if available, otherwise use generated result
-    const mergedResults = generatedResults.map(genResult => {
-      const betResult = betResultsByRound.get(genResult.round);
-      return betResult || genResult;
+    // First, add all user bet results (these are the authoritative source for forced directions)
+    betResultsByRound.forEach((result, round) => {
+      finalResults.push(result);
+      usedRounds.add(round);
     });
     
-    // Add any bet results that might not be in generated results
-    betResults.forEach(betResult => {
-      if (!mergedResults.find(r => r.round === betResult.round)) {
-        mergedResults.push(betResult);
+    // Then, add generated results for rounds without user bets
+    generatedResults.forEach(genResult => {
+      if (!usedRounds.has(genResult.round)) {
+        finalResults.push(genResult);
       }
     });
     
-    // Sort by round descending
-    mergedResults.sort((a, b) => b.round - a.round);
+    // Sort by round descending (most recent first)
+    finalResults.sort((a, b) => b.round - a.round);
     
-    setGameResults(mergedResults);
+    setGameResults(finalResults);
   }, [game.id, game.duration, game.symbol, currentPrice, userBets]);
 
   // Track round changes for ALL 6 games simultaneously
