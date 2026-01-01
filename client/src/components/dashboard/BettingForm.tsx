@@ -15,11 +15,23 @@ interface Game {
   label: string;
 }
 
+interface UserBet {
+  id: number;
+  roundNumber?: number | null;
+  direction: 'long' | 'short';
+  outcome: 'pending' | 'win' | 'lose';
+  strikePrice: string;
+  closePrice?: string | null;
+  createdAt: string;
+  symbol: string;
+}
+
 interface BettingFormProps {
   currentPrice: number;
   game: Game;
   balance?: string;
   onBet: (direction: 'long' | 'short', amount: number) => void;
+  userBets?: UserBet[];
 }
 
 interface GameResult {
@@ -149,7 +161,7 @@ interface AllGamesState {
   };
 }
 
-export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormProps) {
+export function BettingForm({ currentPrice, game, balance, onBet, userBets = [] }: BettingFormProps) {
   const [amount, setAmount] = useState<string>("");
   const [currentRound, setCurrentRound] = useState(calculateRoundNumber(game.duration));
   const [timeRemaining, setTimeRemaining] = useState(getRoundTimeRemaining(game.duration));
@@ -166,11 +178,56 @@ export function BettingForm({ currentPrice, game, balance, onBet }: BettingFormP
     lastPriceRef.current = currentPrice;
   }, [currentPrice]);
 
-  // Load and generate all past results for current game
+  // Load and generate all past results for current game, prioritizing user's actual bet results
   useEffect(() => {
-    const allResults = generateAllPastResults(game.id, game.duration, currentPrice);
-    setGameResults(allResults);
-  }, [game.id, game.duration]);
+    // Get completed bets for current game (matching symbol)
+    const completedBets = userBets.filter(bet => 
+      bet.outcome !== 'pending' && 
+      bet.symbol === game.symbol &&
+      bet.roundNumber != null &&
+      bet.closePrice != null
+    );
+    
+    // Create results from user's actual bets (these reflect forced directions)
+    const betResults: GameResult[] = completedBets.map(bet => {
+      const strikePrice = parseFloat(bet.strikePrice);
+      const closePrice = parseFloat(bet.closePrice || '0');
+      const direction: 'up' | 'down' = closePrice >= strikePrice ? 'up' : 'down';
+      
+      const betDate = new Date(bet.createdAt);
+      const timeStr = betDate.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+      
+      return {
+        round: bet.roundNumber!,
+        direction,
+        time: timeStr,
+      };
+    });
+    
+    // Get existing generated results
+    const generatedResults = generateAllPastResults(game.id, game.duration, currentPrice);
+    
+    // Create a map of bet results by round for quick lookup
+    const betResultsByRound = new Map(betResults.map(r => [r.round, r]));
+    
+    // Merge: use bet result if available, otherwise use generated result
+    const mergedResults = generatedResults.map(genResult => {
+      const betResult = betResultsByRound.get(genResult.round);
+      return betResult || genResult;
+    });
+    
+    // Add any bet results that might not be in generated results
+    betResults.forEach(betResult => {
+      if (!mergedResults.find(r => r.round === betResult.round)) {
+        mergedResults.push(betResult);
+      }
+    });
+    
+    // Sort by round descending
+    mergedResults.sort((a, b) => b.round - a.round);
+    
+    setGameResults(mergedResults);
+  }, [game.id, game.duration, game.symbol, userBets]);
 
   // Track round changes for ALL 6 games simultaneously
   useEffect(() => {

@@ -198,6 +198,7 @@ export default function Home() {
               game={selectedGame}
               onBet={handleBet}
               balance={balanceData?.balance}
+              userBets={allBets}
             />
           </div>
           
@@ -243,6 +244,7 @@ export default function Home() {
               game={selectedGame}
               onBet={handleBet}
               balance={balanceData?.balance}
+              userBets={allBets}
             />
           </div>
         </div>
