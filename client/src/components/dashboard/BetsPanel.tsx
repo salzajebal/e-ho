@@ -62,6 +62,9 @@ function BetRow({ bet, currentPrice, onExpire }: { bet: Bet; currentPrice: numbe
   const isWinning = bet.direction === 'long' ? currentPrice > strikePrice : currentPrice < strikePrice;
 
   if (bet.outcome !== 'pending') {
+    const betDate = new Date(bet.createdAt);
+    const formattedDate = `${(betDate.getMonth() + 1).toString().padStart(2, '0')}.${betDate.getDate().toString().padStart(2, '0')} ${betDate.getHours().toString().padStart(2, '0')}:${betDate.getMinutes().toString().padStart(2, '0')}`;
+    
     return (
       <div className={cn(
         "flex items-center gap-3 px-4 py-3 border-b border-border/50",
@@ -86,9 +89,16 @@ function BetRow({ bet, currentPrice, onExpire }: { bet: Bet; currentPrice: numbe
             )}>
               {bet.direction === 'long' ? '매수' : '매도'}
             </span>
+            {bet.roundNumber != null && (
+              <span className="text-xs px-1.5 py-0.5 rounded bg-primary/20 text-primary font-mono">
+                {bet.roundNumber}회차
+              </span>
+            )}
           </div>
-          <div className="text-xs text-muted-foreground">
-            {parseFloat(bet.strikePrice).toLocaleString()} → {parseFloat(bet.closePrice || '0').toLocaleString()}
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span>{parseFloat(bet.strikePrice).toLocaleString()} → {parseFloat(bet.closePrice || '0').toLocaleString()}</span>
+            <span className="text-muted-foreground/70">|</span>
+            <span className="font-mono">{formattedDate}</span>
           </div>
         </div>
         <div className="text-right">
