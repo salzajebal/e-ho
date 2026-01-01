@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Bet, type InsertBet, type Setting, type Message, type InsertMessage, type Affiliate, type InsertAffiliate, type AffiliateCommission, type AffiliateSettlement, type InsertAffiliateSettlement, type Announcement, type InsertAnnouncement, type BlockedIp, type InsertBlockedIp, type MaintenanceSymbol, type InsertMaintenanceSymbol, type TransactionRequest, type InsertTransactionRequest, type Inquiry, type InsertInquiry, type RoundResult, type InsertRoundResult, type LoginHistory, type InsertLoginHistory, type InquiryTemplate, type InsertInquiryTemplate, users, bets, settings, messages, affiliates, affiliateCommissions, affiliateSettlements, announcements, blockedIps, maintenanceSymbols, transactionRequests, inquiries, roundResults, loginHistory, inquiryTemplates } from "@shared/schema";
+import { type User, type InsertUser, type Bet, type InsertBet, type Setting, type Message, type InsertMessage, type Affiliate, type InsertAffiliate, type AffiliateCommission, type AffiliateSettlement, type InsertAffiliateSettlement, type Announcement, type InsertAnnouncement, type BlockedIp, type InsertBlockedIp, type MaintenanceSymbol, type InsertMaintenanceSymbol, type TransactionRequest, type InsertTransactionRequest, type Inquiry, type InsertInquiry, type RoundResult, type InsertRoundResult, type LoginHistory, type InsertLoginHistory, type InquiryTemplate, type InsertInquiryTemplate, type RoundForcedResult, users, bets, settings, messages, affiliates, affiliateCommissions, affiliateSettlements, announcements, blockedIps, maintenanceSymbols, transactionRequests, inquiries, roundResults, loginHistory, inquiryTemplates, roundForcedResults } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, lt, sql, gte } from "drizzle-orm";
 
@@ -159,6 +159,12 @@ export interface IStorage {
   getAllInquiryTemplates(): Promise<InquiryTemplate[]>;
   updateInquiryTemplate(id: number, data: Partial<InquiryTemplate>): Promise<InquiryTemplate>;
   deleteInquiryTemplate(id: number): Promise<void>;
+
+  // Round forced result methods (회차별 강제결과 - 모든 회원 공통)
+  setRoundForcedResult(symbol: string, duration: number, roundNumber: number, dateKey: string, forcedDirection: 'up' | 'down'): Promise<RoundForcedResult>;
+  getRoundForcedResult(symbol: string, duration: number, roundNumber: number, dateKey: string): Promise<RoundForcedResult | undefined>;
+  getRoundForcedResults(dateKey: string): Promise<RoundForcedResult[]>;
+  deleteRoundForcedResult(symbol: string, duration: number, roundNumber: number, dateKey: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -992,6 +998,57 @@ export class DatabaseStorage implements IStorage {
 
   async deleteInquiryTemplate(id: number): Promise<void> {
     await db.delete(inquiryTemplates).where(eq(inquiryTemplates.id, id));
+  }
+
+  // Round forced result methods (회차별 강제결과 - 모든 회원 공통)
+  async setRoundForcedResult(symbol: string, duration: number, roundNumber: number, dateKey: string, forcedDirection: 'up' | 'down'): Promise<RoundForcedResult> {
+    // Delete existing entry if any
+    await db.delete(roundForcedResults).where(
+      and(
+        eq(roundForcedResults.symbol, symbol),
+        eq(roundForcedResults.duration, duration),
+        eq(roundForcedResults.roundNumber, roundNumber),
+        eq(roundForcedResults.dateKey, dateKey)
+      )
+    );
+    // Insert new entry
+    const [created] = await db.insert(roundForcedResults).values({
+      symbol,
+      duration,
+      roundNumber,
+      dateKey,
+      forcedDirection,
+    }).returning();
+    return created;
+  }
+
+  async getRoundForcedResult(symbol: string, duration: number, roundNumber: number, dateKey: string): Promise<RoundForcedResult | undefined> {
+    const [result] = await db.select().from(roundForcedResults).where(
+      and(
+        eq(roundForcedResults.symbol, symbol),
+        eq(roundForcedResults.duration, duration),
+        eq(roundForcedResults.roundNumber, roundNumber),
+        eq(roundForcedResults.dateKey, dateKey)
+      )
+    );
+    return result || undefined;
+  }
+
+  async getRoundForcedResults(dateKey: string): Promise<RoundForcedResult[]> {
+    return await db.select().from(roundForcedResults)
+      .where(eq(roundForcedResults.dateKey, dateKey))
+      .orderBy(desc(roundForcedResults.createdAt));
+  }
+
+  async deleteRoundForcedResult(symbol: string, duration: number, roundNumber: number, dateKey: string): Promise<void> {
+    await db.delete(roundForcedResults).where(
+      and(
+        eq(roundForcedResults.symbol, symbol),
+        eq(roundForcedResults.duration, duration),
+        eq(roundForcedResults.roundNumber, roundNumber),
+        eq(roundForcedResults.dateKey, dateKey)
+      )
+    );
   }
 }
 
