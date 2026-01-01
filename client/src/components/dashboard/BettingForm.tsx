@@ -118,8 +118,8 @@ const generateAllPastResults = (gameId: string, duration: number, basePrice: num
       const pseudoRandom = ((seed * 9301 + 49297) % 233280) / 233280;
       const direction: 'up' | 'down' = pseudoRandom > 0.5 ? 'up' : 'down';
       
-      // Calculate time for this round
-      const secondsSinceStart = round * duration;
+      // Calculate time for this round (KST start time of the round)
+      const secondsSinceStart = (round - 1) * duration;
       const hours = Math.floor(secondsSinceStart / 3600);
       const minutes = Math.floor((secondsSinceStart % 3600) / 60);
       const timeStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
