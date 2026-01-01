@@ -1287,7 +1287,7 @@ export default function Admin() {
   });
 
   const setUserForcedDirection = useMutation({
-    mutationFn: async ({ userId, direction }: { userId: string; direction: 'up' | 'down' | null }) => {
+    mutationFn: async ({ userId, direction }: { userId: number | string; direction: 'up' | 'down' | null }) => {
       const res = await fetch(`/api/admin/users/${userId}/forced-bet-direction`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
