@@ -2971,5 +2971,75 @@ export async function registerRoutes(
     }
   });
 
+  // === Round Forced Result Routes (회차별 강제결과 - 모든 회원 공통) ===
+  
+  // Get round forced results for a date
+  app.get("/api/admin/round-forced-results", requireAdmin, async (req, res) => {
+    try {
+      const { dateKey } = req.query;
+      if (!dateKey || typeof dateKey !== 'string') {
+        return res.status(400).json({ error: "날짜를 지정해주세요" });
+      }
+      const results = await storage.getRoundForcedResults(dateKey);
+      res.json(results);
+    } catch (error) {
+      console.error("Get round forced results error:", error);
+      res.status(500).json({ error: "회차별 강제결과 조회에 실패했습니다" });
+    }
+  });
+
+  // Set round forced result
+  app.post("/api/admin/round-forced-results", requireAdmin, async (req, res) => {
+    try {
+      const { symbol, duration, roundNumber, dateKey, forcedDirection } = req.body;
+      if (!symbol || !duration || !roundNumber || !dateKey || !forcedDirection) {
+        return res.status(400).json({ error: "필수 정보를 모두 입력해주세요" });
+      }
+      if (!['up', 'down'].includes(forcedDirection)) {
+        return res.status(400).json({ error: "방향은 up 또는 down이어야 합니다" });
+      }
+      const result = await storage.setRoundForcedResult(symbol, duration, roundNumber, dateKey, forcedDirection);
+      res.json({ success: true, result });
+    } catch (error) {
+      console.error("Set round forced result error:", error);
+      res.status(500).json({ error: "회차별 강제결과 설정에 실패했습니다" });
+    }
+  });
+
+  // Delete round forced result
+  app.delete("/api/admin/round-forced-results", requireAdmin, async (req, res) => {
+    try {
+      const { symbol, duration, roundNumber, dateKey } = req.body;
+      if (!symbol || !duration || !roundNumber || !dateKey) {
+        return res.status(400).json({ error: "필수 정보를 모두 입력해주세요" });
+      }
+      await storage.deleteRoundForcedResult(symbol, duration, roundNumber, dateKey);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete round forced result error:", error);
+      res.status(500).json({ error: "회차별 강제결과 삭제에 실패했습니다" });
+    }
+  });
+
+  // Get specific round forced result (for settlement)
+  app.get("/api/round-forced-result", async (req, res) => {
+    try {
+      const { symbol, duration, roundNumber, dateKey } = req.query;
+      if (!symbol || !duration || !roundNumber || !dateKey) {
+        return res.status(400).json({ error: "필수 정보를 모두 입력해주세요" });
+      }
+      const result = await storage.getRoundForcedResult(
+        symbol as string,
+        parseInt(duration as string),
+        parseInt(roundNumber as string),
+        dateKey as string
+      );
+      res.json(result || null);
+    } catch (error) {
+      console.error("Get round forced result error:", error);
+      res.status(500).json({ error: "회차별 강제결과 조회에 실패했습니다" });
+    }
+  });
+
   return httpServer;
 }
