@@ -130,10 +130,22 @@ const generateAllPastResults = (gameId: string, duration: number, basePrice: num
   let existingResults: GameResult[] = [];
   if (saved) {
     try {
-      existingResults = JSON.parse(saved);
-      // Filter out any results with round numbers >= currentRound (shouldn't exist but safety check)
-      existingResults = existingResults.filter(r => r.round < currentRound);
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) {
+        // CRITICAL: Filter out any results with round numbers >= currentRound
+        // This ensures old data from previous days doesn't show up
+        existingResults = parsed.filter((r: GameResult) => 
+          typeof r.round === 'number' && r.round > 0 && r.round < currentRound
+        );
+        
+        // If we filtered out results, clear localStorage and start fresh
+        if (existingResults.length !== parsed.length) {
+          localStorage.removeItem(storageKey);
+          existingResults = [];
+        }
+      }
     } catch (e) {
+      localStorage.removeItem(storageKey);
       existingResults = [];
     }
   }
@@ -141,11 +153,11 @@ const generateAllPastResults = (gameId: string, duration: number, basePrice: num
   // Create a set of existing round numbers for quick lookup
   const existingRounds = new Set(existingResults.map(r => r.round));
   
-  // Generate results for all completed rounds (1 to currentRound-1)
-  let simulatedPrice = basePrice;
+  // Only generate results for recent rounds (limit to last 50 for performance)
+  const startRound = Math.max(1, currentRound - 50);
   
   // Generate all past rounds that don't exist yet
-  for (let round = currentRound - 1; round >= 1; round--) {
+  for (let round = currentRound - 1; round >= startRound; round--) {
     if (existingRounds.has(round)) {
       // Use existing result
       const existing = existingResults.find(r => r.round === round);
@@ -175,7 +187,7 @@ const generateAllPastResults = (gameId: string, duration: number, basePrice: num
   // Sort by round descending (newest first)
   results.sort((a, b) => b.round - a.round);
   
-  // Save to localStorage
+  // Save to localStorage (only valid results)
   localStorage.setItem(storageKey, JSON.stringify(results));
   
   return results;
