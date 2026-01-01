@@ -1775,6 +1775,75 @@ export async function registerRoutes(
     }
   });
 
+  // ==================== ROUND FORCED DIRECTIONS (ADMIN) ====================
+
+  // Get round forced directions for today
+  app.get("/api/admin/round-forced", requireAdmin, async (req, res) => {
+    try {
+      const dateKey = req.query.dateKey as string || new Date().toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' }).split('.').map(p => p.trim().padStart(2, '0')).slice(0, 3).join('-');
+      // Format to YYYY-MM-DD
+      const now = new Date();
+      const kstOffset = 9 * 60 * 60 * 1000;
+      const kstDate = new Date(now.getTime() + kstOffset);
+      const todayKey = dateKey || kstDate.toISOString().split('T')[0];
+      
+      const directions = await storage.getRoundForcedDirectionsForDate(todayKey);
+      res.json(directions);
+    } catch (error) {
+      console.error("Failed to fetch round forced directions:", error);
+      res.status(500).json({ error: "회차별 강제설정 조회에 실패했습니다" });
+    }
+  });
+
+  // Set round forced direction
+  app.post("/api/admin/round-forced", requireAdmin, async (req, res) => {
+    try {
+      const { symbol, duration, roundNumber, dateKey, forcedDirection } = req.body;
+      
+      if (!symbol || !duration || !roundNumber || !dateKey || !forcedDirection) {
+        return res.status(400).json({ error: "필수 필드가 누락되었습니다" });
+      }
+      
+      if (!['up', 'down'].includes(forcedDirection)) {
+        return res.status(400).json({ error: "유효하지 않은 방향입니다" });
+      }
+      
+      const result = await storage.setRoundForcedDirection(
+        symbol, 
+        parseInt(duration), 
+        parseInt(roundNumber), 
+        dateKey, 
+        forcedDirection
+      );
+      res.json(result);
+    } catch (error) {
+      console.error("Failed to set round forced direction:", error);
+      res.status(500).json({ error: "회차별 강제설정에 실패했습니다" });
+    }
+  });
+
+  // Delete round forced direction
+  app.delete("/api/admin/round-forced", requireAdmin, async (req, res) => {
+    try {
+      const { symbol, duration, roundNumber, dateKey } = req.body;
+      
+      if (!symbol || !duration || !roundNumber || !dateKey) {
+        return res.status(400).json({ error: "필수 필드가 누락되었습니다" });
+      }
+      
+      await storage.deleteRoundForcedDirection(
+        symbol, 
+        parseInt(duration), 
+        parseInt(roundNumber), 
+        dateKey
+      );
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Failed to delete round forced direction:", error);
+      res.status(500).json({ error: "회차별 강제설정 삭제에 실패했습니다" });
+    }
+  });
+
   // ==================== BETTING CONTROL (ADMIN) ====================
 
   // Get all live/pending bets with user info
