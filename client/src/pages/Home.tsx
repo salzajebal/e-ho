@@ -254,7 +254,7 @@ export default function Home() {
       <div className="h-6 bg-card border-t border-border flex items-center px-2 lg:px-4 text-[9px] lg:text-[10px] text-muted-foreground justify-between">
         <div className="flex gap-2 lg:gap-4">
           <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 lg:w-2 lg:h-2 rounded-full bg-up animate-pulse"></span> <span className="hidden sm:inline">실시간 데이터</span><span className="sm:hidden">Live</span></span>
-          <span>2.0x</span>
+          <span>1.95</span>
         </div>
         <div className="flex items-center gap-2">
           <span>{balanceData?.balance ? Math.floor(parseFloat(balanceData.balance)).toLocaleString() : '0'}원</span>
