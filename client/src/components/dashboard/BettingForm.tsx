@@ -283,10 +283,16 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [] 
       }
     });
     
-    // Sort by round descending (most recent first)
-    finalResults.sort((a, b) => b.round - a.round);
+    // Get current round to filter out invalid results
+    const currentRoundNow = calculateRoundNumber(game.duration);
     
-    setGameResults(finalResults);
+    // Filter out any results >= current round (shouldn't exist)
+    const validResults = finalResults.filter(r => r.round > 0 && r.round < currentRoundNow);
+    
+    // Sort by round descending (most recent first) - highest round number at top
+    validResults.sort((a, b) => b.round - a.round);
+    
+    setGameResults(validResults);
   }, [game.id, game.duration, game.symbol, currentPrice, userBets]);
 
   // Track round changes for ALL 6 games simultaneously
