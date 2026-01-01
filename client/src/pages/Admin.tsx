@@ -1988,19 +1988,6 @@ export default function Admin() {
         거래 관리
       </button>
       <button
-        onClick={() => { setActiveTab('forced-bet'); setMobileMenuOpen(false); }}
-        className={cn(
-          "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
-          activeTab === 'forced-bet'
-            ? "bg-primary/10 text-primary"
-            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-        )}
-        data-testid="tab-forced-bet"
-      >
-        <Zap className="w-4 h-4" />
-        강제 거래
-      </button>
-      <button
         onClick={() => { setActiveTab('round-forced'); setMobileMenuOpen(false); }}
         className={cn(
           "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
@@ -2012,6 +1999,19 @@ export default function Admin() {
       >
         <Calendar className="w-4 h-4" />
         회차별 설정
+      </button>
+      <button
+        onClick={() => { setActiveTab('forced-bet'); setMobileMenuOpen(false); }}
+        className={cn(
+          "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+          activeTab === 'forced-bet'
+            ? "bg-primary/10 text-primary"
+            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+        )}
+        data-testid="tab-forced-bet"
+      >
+        <Zap className="w-4 h-4" />
+        강제 거래
       </button>
       <button
         onClick={() => { setActiveTab('messages'); setMobileMenuOpen(false); }}
@@ -2266,19 +2266,6 @@ export default function Admin() {
             거래 관리
           </button>
           <button
-            onClick={() => setActiveTab('forced-bet')}
-            className={cn(
-              "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
-              activeTab === 'forced-bet'
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-            )}
-            data-testid="tab-forced-bet"
-          >
-            <Zap className="w-4 h-4" />
-            강제 거래
-          </button>
-          <button
             onClick={() => setActiveTab('round-forced')}
             className={cn(
               "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
@@ -2290,6 +2277,19 @@ export default function Admin() {
           >
             <Calendar className="w-4 h-4" />
             회차별 설정
+          </button>
+          <button
+            onClick={() => setActiveTab('forced-bet')}
+            className={cn(
+              "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+              activeTab === 'forced-bet'
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+            )}
+            data-testid="tab-forced-bet"
+          >
+            <Zap className="w-4 h-4" />
+            강제 거래
           </button>
           <button
             onClick={() => setActiveTab('messages')}
