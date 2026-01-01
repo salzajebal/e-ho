@@ -42,6 +42,7 @@ import {
   Plus,
   Minus,
   ArrowUpRight,
+  Clock,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -308,9 +309,10 @@ function AdminLogin() {
 // Round Forced Directions Tab Component
 function RoundForcedTab() {
   const [selectedSymbol, setSelectedSymbol] = useState<'BTC' | 'ETH'>('BTC');
-  const [selectedDuration, setSelectedDuration] = useState<number>(120);
-  const [roundInput, setRoundInput] = useState<string>('');
   const [selectedDirection, setSelectedDirection] = useState<'up' | 'down'>('up');
+  const [timeLeft, setTimeLeft] = useState({ minutes: 0, seconds: 0 });
+  const [currentRound, setCurrentRound] = useState(1);
+  const duration = 120; // 2분 고정
 
   // Get today's date key in KST
   const getKSTDateKey = () => {
@@ -321,6 +323,32 @@ function RoundForcedTab() {
   };
 
   const dateKey = getKSTDateKey();
+  const maxRounds = Math.floor(86400 / duration);
+
+  // Real-time round and countdown update
+  useEffect(() => {
+    const calculateRoundInfo = () => {
+      const now = new Date();
+      const kstOffset = 9 * 60 * 60 * 1000;
+      const kstNow = new Date(now.getTime() + kstOffset);
+      const startOfDay = new Date(kstNow);
+      startOfDay.setHours(0, 0, 0, 0);
+      const elapsedMs = kstNow.getTime() - startOfDay.getTime();
+      const elapsedSeconds = Math.floor(elapsedMs / 1000);
+      const round = Math.floor(elapsedSeconds / duration) + 1;
+      const secondsIntoRound = elapsedSeconds % duration;
+      const remainingSeconds = duration - secondsIntoRound;
+      const minutes = Math.floor(remainingSeconds / 60);
+      const seconds = remainingSeconds % 60;
+      
+      setCurrentRound(round);
+      setTimeLeft({ minutes, seconds });
+    };
+
+    calculateRoundInfo();
+    const interval = setInterval(calculateRoundInfo, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Fetch round forced directions for today
   const { data: forcedDirections = [], refetch: refetchDirections } = useQuery<any[]>({
@@ -333,33 +361,13 @@ function RoundForcedTab() {
     refetchInterval: 5000,
   });
 
-  // Calculate current round number
-  const getCurrentRound = (duration: number) => {
-    const now = new Date();
-    const kstOffset = 9 * 60 * 60 * 1000;
-    const kstNow = new Date(now.getTime() + kstOffset);
-    const startOfDay = new Date(kstNow);
-    startOfDay.setHours(0, 0, 0, 0);
-    const elapsedMs = kstNow.getTime() - startOfDay.getTime();
-    const elapsedSeconds = Math.floor(elapsedMs / 1000);
-    return Math.floor(elapsedSeconds / duration) + 1;
-  };
+  // Check if current round already has a setting
+  const currentRoundSetting = forcedDirections.find(
+    d => d.symbol === selectedSymbol && d.duration === duration && d.roundNumber === currentRound
+  );
 
-  const currentRound = getCurrentRound(selectedDuration);
-  const maxRounds = Math.floor(86400 / selectedDuration);
-
-  // Set forced direction mutation
-  const handleSetForced = async () => {
-    const roundNumber = parseInt(roundInput);
-    if (!roundNumber || roundNumber < 1 || roundNumber > maxRounds) {
-      toast.error(`유효한 회차 번호를 입력하세요 (1-${maxRounds})`);
-      return;
-    }
-    if (roundNumber <= currentRound) {
-      toast.error('이미 지난 회차는 설정할 수 없습니다');
-      return;
-    }
-
+  // Set forced direction for current round
+  const handleSetCurrentRound = async () => {
     try {
       const res = await fetch('/api/admin/round-forced', {
         method: 'POST',
@@ -367,15 +375,14 @@ function RoundForcedTab() {
         credentials: 'include',
         body: JSON.stringify({
           symbol: selectedSymbol,
-          duration: selectedDuration,
-          roundNumber,
+          duration,
+          roundNumber: currentRound,
           dateKey,
           forcedDirection: selectedDirection,
         }),
       });
       if (!res.ok) throw new Error('설정 실패');
-      toast.success(`${roundNumber}회차 ${selectedDirection === 'up' ? '매수' : '매도'} 설정 완료`);
-      setRoundInput('');
+      toast.success(`${currentRound}회차 ${selectedDirection === 'up' ? '매수' : '매도'} 설정 완료`);
       refetchDirections();
     } catch (error) {
       toast.error('회차별 설정에 실패했습니다');
@@ -405,32 +412,58 @@ function RoundForcedTab() {
   };
 
   const filteredDirections = forcedDirections.filter(
-    d => d.symbol === selectedSymbol && d.duration === selectedDuration
+    d => d.symbol === selectedSymbol && d.duration === duration
   );
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">회차별 거래결과 설정</h1>
-        <div className="text-sm text-muted-foreground">
-          현재 회차: <span className="font-bold text-primary">{currentRound}</span> / {maxRounds}
+      </div>
+
+      {/* Current Round Display */}
+      <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg p-6 text-white">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="bg-white/20 rounded-full p-2">
+              <Clock className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-sm opacity-80">현재 진행 중인 회차</div>
+              <div className="text-3xl font-bold">{currentRound}회차</div>
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="text-sm opacity-80">남은 시간</div>
+            <div className="text-4xl font-mono font-bold">
+              {String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}
+            </div>
+          </div>
+        </div>
+        <div className="text-sm opacity-70">
+          총 {maxRounds}회차 중 {currentRound}회차 진행 중
         </div>
       </div>
 
+      {/* Symbol Selection & Direction Setting */}
       <div className="bg-card border border-border rounded-lg p-6">
         <h3 className="font-medium mb-4 flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-blue-500" />
-          새 회차 설정 추가
+          <Zap className="w-4 h-4 text-yellow-500" />
+          현재 회차 강제 설정
         </h3>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-          <div className="space-y-2">
-            <label className="text-sm text-muted-foreground">종목</label>
-            <div className="flex gap-2">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Symbol Selection */}
+          <div className="space-y-3">
+            <label className="text-sm text-muted-foreground font-medium">종목 선택</label>
+            <div className="flex gap-3">
               <Button
                 type="button"
                 variant={selectedSymbol === 'BTC' ? 'default' : 'outline'}
-                className={cn("flex-1", selectedSymbol === 'BTC' && "bg-orange-500 hover:bg-orange-600")}
+                className={cn(
+                  "flex-1 h-14 text-lg font-bold",
+                  selectedSymbol === 'BTC' && "bg-orange-500 hover:bg-orange-600"
+                )}
                 onClick={() => setSelectedSymbol('BTC')}
               >
                 BTC
@@ -438,7 +471,10 @@ function RoundForcedTab() {
               <Button
                 type="button"
                 variant={selectedSymbol === 'ETH' ? 'default' : 'outline'}
-                className={cn("flex-1", selectedSymbol === 'ETH' && "bg-blue-500 hover:bg-blue-600")}
+                className={cn(
+                  "flex-1 h-14 text-lg font-bold",
+                  selectedSymbol === 'ETH' && "bg-blue-500 hover:bg-blue-600"
+                )}
                 onClick={() => setSelectedSymbol('ETH')}
               >
                 ETH
@@ -446,68 +482,66 @@ function RoundForcedTab() {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm text-muted-foreground">게임 시간</label>
-            <Select value={selectedDuration.toString()} onValueChange={(v) => setSelectedDuration(parseInt(v))}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="120">2분</SelectItem>
-                <SelectItem value="180">3분</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm text-muted-foreground">회차 번호</label>
-            <Input
-              type="number"
-              value={roundInput}
-              onChange={(e) => setRoundInput(e.target.value)}
-              placeholder={`${currentRound + 1} ~ ${maxRounds}`}
-              min={currentRound + 1}
-              max={maxRounds}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm text-muted-foreground">결과 방향</label>
-            <div className="flex gap-2">
+          {/* Direction Selection */}
+          <div className="space-y-3">
+            <label className="text-sm text-muted-foreground font-medium">결과 방향</label>
+            <div className="flex gap-3">
               <Button
                 type="button"
                 variant={selectedDirection === 'up' ? 'default' : 'outline'}
-                className={cn("flex-1", selectedDirection === 'up' && "bg-up hover:bg-up/90")}
+                className={cn(
+                  "flex-1 h-14 text-lg font-bold",
+                  selectedDirection === 'up' && "bg-up hover:bg-up/90"
+                )}
                 onClick={() => setSelectedDirection('up')}
               >
-                <TrendingUp className="w-4 h-4 mr-1" />
+                <TrendingUp className="w-5 h-5 mr-2" />
                 매수
               </Button>
               <Button
                 type="button"
                 variant={selectedDirection === 'down' ? 'default' : 'outline'}
-                className={cn("flex-1", selectedDirection === 'down' && "bg-down hover:bg-down/90")}
+                className={cn(
+                  "flex-1 h-14 text-lg font-bold",
+                  selectedDirection === 'down' && "bg-down hover:bg-down/90"
+                )}
                 onClick={() => setSelectedDirection('down')}
               >
-                <TrendingDown className="w-4 h-4 mr-1" />
+                <TrendingDown className="w-5 h-5 mr-2" />
                 매도
               </Button>
             </div>
           </div>
-        </div>
 
-        <div className="flex justify-end">
-          <Button onClick={handleSetForced} disabled={!roundInput}>
-            <Plus className="w-4 h-4 mr-2" />
-            설정 추가
-          </Button>
+          {/* Apply Button */}
+          <div className="space-y-3">
+            <label className="text-sm text-muted-foreground font-medium">적용</label>
+            {currentRoundSetting ? (
+              <div className="h-14 flex items-center justify-center bg-muted rounded-lg">
+                <span className="text-muted-foreground">
+                  이미 설정됨: <span className={currentRoundSetting.forcedDirection === 'up' ? 'text-up' : 'text-down'}>
+                    {currentRoundSetting.forcedDirection === 'up' ? '매수' : '매도'}
+                  </span>
+                </span>
+              </div>
+            ) : (
+              <Button
+                onClick={handleSetCurrentRound}
+                className="w-full h-14 text-lg font-bold bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
+              >
+                <Zap className="w-5 h-5 mr-2" />
+                현재 회차 설정
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
+      {/* Settings List */}
       <div className="bg-card border border-border rounded-lg overflow-hidden">
         <div className="p-4 border-b border-border flex items-center justify-between">
           <h3 className="font-medium">
-            {selectedSymbol} {selectedDuration / 60}분 - 설정된 회차 목록
+            {selectedSymbol} - 오늘 설정된 회차 목록
           </h3>
           <Button variant="outline" size="sm" onClick={() => refetchDirections()}>
             <RefreshCw className="w-4 h-4 mr-1" />
@@ -526,18 +560,28 @@ function RoundForcedTab() {
             </thead>
             <tbody className="divide-y divide-border">
               {filteredDirections.map((item) => (
-                <tr key={item.id} className="hover:bg-muted/30">
-                  <td className="px-4 py-3 font-mono">{item.roundNumber}회차</td>
+                <tr key={item.id} className={cn(
+                  "hover:bg-muted/30",
+                  item.roundNumber === currentRound && "bg-blue-500/10"
+                )}>
+                  <td className="px-4 py-3 font-mono">
+                    {item.roundNumber}회차
+                    {item.roundNumber === currentRound && (
+                      <span className="ml-2 text-xs bg-blue-500 text-white px-2 py-0.5 rounded">진행중</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3">
-                    {item.roundNumber <= currentRound ? (
+                    {item.roundNumber < currentRound ? (
                       <span className="text-muted-foreground">완료</span>
+                    ) : item.roundNumber === currentRound ? (
+                      <span className="text-blue-500 font-medium">진행중</span>
                     ) : (
                       <span className="text-green-500">대기 중</span>
                     )}
                   </td>
                   <td className="px-4 py-3 text-center">
                     <span className={cn(
-                      "px-2 py-1 rounded text-sm font-medium",
+                      "px-3 py-1 rounded text-sm font-medium",
                       item.forcedDirection === 'up' 
                         ? "bg-up/20 text-up" 
                         : "bg-down/20 text-down"
@@ -546,7 +590,7 @@ function RoundForcedTab() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-center">
-                    {item.roundNumber > currentRound && (
+                    {item.roundNumber >= currentRound && (
                       <Button
                         variant="outline"
                         size="sm"
@@ -577,8 +621,8 @@ function RoundForcedTab() {
           회차별 설정 안내
         </h3>
         <p className="text-sm text-muted-foreground">
-          특정 회차의 거래 결과를 미리 설정합니다. 설정된 회차에서는 모든 사용자의 거래가 지정된 방향으로 정산됩니다.
-          예: 100회차를 '매수'로 설정하면, 해당 회차의 모든 롱(매수) 거래는 승리, 숏(매도) 거래는 패배로 처리됩니다.
+          현재 진행 중인 회차의 거래 결과를 강제로 설정합니다. 설정된 회차에서는 모든 사용자의 거래가 지정된 방향으로 정산됩니다.
+          매수로 설정하면 롱(매수) 거래는 승리, 숏(매도) 거래는 패배로 처리됩니다.
         </p>
       </div>
     </div>
