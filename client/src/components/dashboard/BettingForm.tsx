@@ -78,21 +78,50 @@ const formatTime = (seconds: number): string => {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
 
-// Storage key for game results per game type
-const getStorageKey = (gameId: string) => `gameResults_${gameId}_${getKSTDate().toDateString()}`;
+// Get KST date string for storage key (YYYY-MM-DD format)
+const getKSTDateString = (): string => {
+  const kstDate = getKSTDate();
+  const year = kstDate.getFullYear();
+  const month = String(kstDate.getMonth() + 1).padStart(2, '0');
+  const day = String(kstDate.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+// Storage key for game results per game type (using KST date)
+const getStorageKey = (gameId: string) => `gameResults_${gameId}_${getKSTDateString()}`;
+
+// Clean up old localStorage keys for game results (older than today)
+const cleanupOldGameResults = (gameId: string) => {
+  const todayKey = getStorageKey(gameId);
+  const keysToRemove: string[] = [];
+  
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith(`gameResults_${gameId}_`) && key !== todayKey) {
+      keysToRemove.push(key);
+    }
+  }
+  
+  keysToRemove.forEach(key => localStorage.removeItem(key));
+};
 
 // Generate all past results for a game (entire day up to current round)
 const generateAllPastResults = (gameId: string, duration: number, basePrice: number): GameResult[] => {
+  // Clean up old date results first
+  cleanupOldGameResults(gameId);
+  
   const currentRound = calculateRoundNumber(duration);
   const results: GameResult[] = [];
   
-  // Get existing results from localStorage
+  // Get existing results from localStorage (today only)
   const storageKey = getStorageKey(gameId);
   const saved = localStorage.getItem(storageKey);
   let existingResults: GameResult[] = [];
   if (saved) {
     try {
       existingResults = JSON.parse(saved);
+      // Filter out any results with round numbers >= currentRound (shouldn't exist but safety check)
+      existingResults = existingResults.filter(r => r.round < currentRound);
     } catch (e) {
       existingResults = [];
     }
