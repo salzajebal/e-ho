@@ -2235,6 +2235,19 @@ export default function Admin() {
             강제 거래
           </button>
           <button
+            onClick={() => setActiveTab('round-forced')}
+            className={cn(
+              "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+              activeTab === 'round-forced'
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+            )}
+            data-testid="tab-round-forced-desktop"
+          >
+            <Calendar className="w-4 h-4" />
+            회차별 설정
+          </button>
+          <button
             onClick={() => setActiveTab('messages')}
             className={cn(
               "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
