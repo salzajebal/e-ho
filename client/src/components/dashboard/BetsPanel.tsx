@@ -84,7 +84,7 @@ function BetRow({ bet, currentPrice, onExpire }: { bet: Bet; currentPrice: numbe
               "text-xs px-1.5 py-0.5 rounded",
               bet.direction === 'long' ? "bg-up/20 text-up" : "bg-down/20 text-down"
             )}>
-              {bet.direction.toUpperCase()}
+              {bet.direction === 'long' ? '매수' : '매도'}
             </span>
           </div>
           <div className="text-xs text-muted-foreground">
@@ -129,7 +129,7 @@ function BetRow({ bet, currentPrice, onExpire }: { bet: Bet; currentPrice: numbe
             "text-xs px-1.5 py-0.5 rounded shrink-0",
             bet.direction === 'long' ? "bg-up/20 text-up" : "bg-down/20 text-down"
           )}>
-            {bet.direction.toUpperCase()}
+            {bet.direction === 'long' ? '매수' : '매도'}
           </span>
           {bet.outcome === 'pending' && bet.roundNumber != null && (
             <span className="text-xs px-1.5 py-0.5 rounded shrink-0 bg-primary/20 text-primary font-mono">
