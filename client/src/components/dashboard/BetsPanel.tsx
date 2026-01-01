@@ -3,22 +3,22 @@ import { cn } from "@/lib/utils";
 import { Bet } from "@/hooks/use-bets";
 import { TrendingUp, TrendingDown, Clock, Trophy, XCircle, Calendar } from "lucide-react";
 
-function getKSTDate(): Date {
-  const now = new Date();
-  const kstOffset = 9 * 60;
-  const utcOffset = now.getTimezoneOffset();
-  return new Date(now.getTime() + (utcOffset + kstOffset) * 60 * 1000);
+function toKSTDate(date: Date): Date {
+  const kstOffset = 9 * 60 * 60 * 1000;
+  const utcTime = date.getTime() + (date.getTimezoneOffset() * 60 * 1000);
+  return new Date(utcTime + kstOffset);
 }
 
 function isToday(dateString: string): boolean {
-  const kstNow = getKSTDate();
-  const kstToday = new Date(kstNow.getFullYear(), kstNow.getMonth(), kstNow.getDate());
+  const now = new Date();
+  const kstNow = toKSTDate(now);
+  const kstTodayStart = new Date(kstNow.getFullYear(), kstNow.getMonth(), kstNow.getDate());
   
   const betDate = new Date(dateString);
-  const kstBetDate = new Date(betDate.getTime() + (9 * 60 * 60 * 1000));
-  const kstBetDay = new Date(kstBetDate.getFullYear(), kstBetDate.getMonth(), kstBetDate.getDate());
+  const kstBetDate = toKSTDate(betDate);
+  const kstBetDayStart = new Date(kstBetDate.getFullYear(), kstBetDate.getMonth(), kstBetDate.getDate());
   
-  return kstToday.getTime() === kstBetDay.getTime();
+  return kstTodayStart.getTime() === kstBetDayStart.getTime();
 }
 
 interface BetsPanelProps {
