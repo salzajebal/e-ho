@@ -2406,7 +2406,7 @@ export default function Admin() {
                                 ? "bg-up/30 text-up" 
                                 : "bg-down/30 text-down"
                             )}>
-                              {user.forcedBetDirection === 'up' ? '▲ UP' : '▼ DOWN'}
+                              {user.forcedBetDirection === 'up' ? '매수' : '매도'}
                             </span>
                           ) : (
                             <span className="text-muted-foreground">-</span>
@@ -2636,7 +2636,7 @@ export default function Admin() {
                                     ? "bg-up/30 text-up" 
                                     : "bg-down/30 text-down"
                                 )}>
-                                  {(bet as any).userForcedDirection === 'up' ? '▲ UP 설정중' : '▼ DOWN 설정중'}
+                                  {(bet as any).userForcedDirection === 'up' ? '매수 설정중' : '매도 설정중'}
                                 </span>
                               )}
                               <div className="flex items-center gap-1.5 justify-center">
@@ -2654,9 +2654,9 @@ export default function Admin() {
                                       ? "bg-up text-white ring-2 ring-up ring-offset-1 ring-offset-background shadow-lg shadow-up/50"
                                       : "bg-up/20 text-up hover:bg-up/40"
                                   )}
-                                  title="매수(UP) 강제 설정"
+                                  title="매수 강제 설정"
                                 >
-                                  UP
+                                  매수
                                 </button>
                                 <button
                                   type="button"
@@ -2672,9 +2672,9 @@ export default function Admin() {
                                       ? "bg-down text-white ring-2 ring-down ring-offset-1 ring-offset-background shadow-lg shadow-down/50"
                                       : "bg-down/20 text-down hover:bg-down/40"
                                   )}
-                                  title="매도(DOWN) 강제 설정"
+                                  title="매도 강제 설정"
                                 >
-                                  DOWN
+                                  매도
                                 </button>
                               </div>
                             </div>
@@ -4388,7 +4388,7 @@ export default function Admin() {
                           ? "bg-up/30 text-up" 
                           : "bg-down/30 text-down"
                       )}>
-                        {editingUser.forcedBetDirection === 'up' ? '매수(UP) 설정중' : '매도(DOWN) 설정중'}
+                        {editingUser.forcedBetDirection === 'up' ? '매수 설정중' : '매도 설정중'}
                       </span>
                     )}
                   </div>
@@ -4405,7 +4405,7 @@ export default function Admin() {
                           const data = await res.json();
                           if (!res.ok) throw new Error(data.error);
                           setEditingUser(p => p ? { ...p, forcedBetDirection: 'up' } : null);
-                          toast.success("매수(UP)로 설정되었습니다");
+                          toast.success("매수로 설정되었습니다");
                           refetchUsers();
                         } catch (error: any) {
                           toast.error(error.message || "설정 실패");
@@ -4419,7 +4419,7 @@ export default function Admin() {
                       )}
                     >
                       <TrendingUp className="w-4 h-4" />
-                      매수 (UP)
+                      매수
                     </button>
                     <button
                       onClick={async () => {
@@ -4432,7 +4432,7 @@ export default function Admin() {
                           const data = await res.json();
                           if (!res.ok) throw new Error(data.error);
                           setEditingUser(p => p ? { ...p, forcedBetDirection: 'down' } : null);
-                          toast.success("매도(DOWN)로 설정되었습니다");
+                          toast.success("매도로 설정되었습니다");
                           refetchUsers();
                         } catch (error: any) {
                           toast.error(error.message || "설정 실패");
@@ -4446,7 +4446,7 @@ export default function Admin() {
                       )}
                     >
                       <TrendingDown className="w-4 h-4" />
-                      매도 (DOWN)
+                      매도
                     </button>
                     <button
                       onClick={async () => {
