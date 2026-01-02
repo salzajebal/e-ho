@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useLocation } from "wouter";
 import { Navbar } from "@/components/layout/Navbar";
 import { Ticker } from "@/components/dashboard/Ticker";
@@ -12,7 +12,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useUnreadMessages, useMessages, useMarkMessageRead, useMarkAllMessagesRead } from "@/hooks/use-messages";
 import { useUserWebSocket } from "@/hooks/use-user-websocket";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Mail, X, Check, MessageSquare, Headphones, FileText, ChevronRight } from "lucide-react";
@@ -161,12 +161,12 @@ export default function Home() {
     });
   };
 
-  const handleBetExpire = (bet: any, currentPrice: number) => {
+  const handleBetExpire = useCallback((bet: any, currentPrice: number) => {
     settleBet.mutate({
       id: bet.id,
       closePrice: currentPrice,
     });
-  };
+  }, [settleBet]);
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground lg:overflow-hidden font-sans">
