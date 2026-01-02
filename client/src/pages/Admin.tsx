@@ -440,14 +440,7 @@ function RoundForcedTab() {
 
   const filteredDirections = forcedDirections
     .filter(d => d.symbol === selectedSymbol && d.duration === duration)
-    .sort((a, b) => {
-      // Priority: 1. In-progress (current round), 2. Upcoming, 3. Completed
-      const aStatus = a.roundNumber === currentRound ? 0 : a.roundNumber > currentRound ? 1 : 2;
-      const bStatus = b.roundNumber === currentRound ? 0 : b.roundNumber > currentRound ? 1 : 2;
-      if (aStatus !== bStatus) return aStatus - bStatus;
-      // Within same status, sort by round number descending
-      return b.roundNumber - a.roundNumber;
-    });
+    .sort((a, b) => b.roundNumber - a.roundNumber);
 
   return (
     <div className="space-y-6">
@@ -718,21 +711,16 @@ export default function Admin() {
   const [balanceAdjustAmount, setBalanceAdjustAmount] = useState("");
   
   // Real-time balance refresh when editing user dialog is open
-  const editingUserId = editingUser?.id;
   useEffect(() => {
-    if (!editingUserId) return;
+    if (!editingUser) return;
     
     const refreshBalance = async () => {
       try {
-        const res = await fetch(`/api/admin/users/${editingUserId}`);
+        const res = await fetch(`/api/admin/users/${editingUser.id}`);
         if (res.ok) {
           const data = await res.json();
           if (data.balance !== undefined) {
-            setEditingUser(prev => {
-              if (!prev || prev.id !== editingUserId) return prev;
-              if (prev.balance === data.balance) return prev; // Avoid unnecessary re-render
-              return { ...prev, balance: data.balance };
-            });
+            setEditingUser(prev => prev ? { ...prev, balance: data.balance } : null);
           }
         }
       } catch (error) {
@@ -744,7 +732,7 @@ export default function Admin() {
     const interval = setInterval(refreshBalance, 2000);
     
     return () => clearInterval(interval);
-  }, [editingUserId]);
+  }, [editingUser?.id]);
   
   const [createUserOpen, setCreateUserOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
