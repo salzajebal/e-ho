@@ -66,6 +66,7 @@ export interface IStorage {
   getExpiredPendingBets(): Promise<Bet[]>;
   getAllBets(): Promise<Bet[]>;
   getUserBetStats(userId: string): Promise<{ totalBet: number; totalWin: number; betCount: number; winCount: number }>;
+  deleteAllBetsForUser(userId: string): Promise<number>;
 
   // Settings methods
   getSetting(key: string): Promise<string | undefined>;
@@ -347,6 +348,13 @@ export class DatabaseStorage implements IStorage {
     const winCount = settledBets.filter(b => b.outcome === 'win').length;
 
     return { totalBet, totalWin, betCount, winCount };
+  }
+
+  async deleteAllBetsForUser(userId: string): Promise<number> {
+    const userBets = await this.getBets(userId);
+    const count = userBets.length;
+    await db.delete(bets).where(eq(bets.userId, userId));
+    return count;
   }
 
   async updateBetOutcome(betId: number, outcome: 'win' | 'lose', closePrice: string): Promise<Bet> {

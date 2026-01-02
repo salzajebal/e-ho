@@ -4918,6 +4918,37 @@ export default function Admin() {
                   </div>
                 )}
               </div>
+              <div className="pt-4 border-t border-border">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h4 className="text-sm font-medium text-red-500">위험 영역</h4>
+                    <p className="text-xs text-muted-foreground">이 작업은 되돌릴 수 없습니다</p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-red-500/50 text-red-500 hover:bg-red-500/10"
+                    onClick={async () => {
+                      if (!confirm(`${editingUser.username}의 모든 거래내역을 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`)) return;
+                      try {
+                        const res = await fetch(`/api/admin/users/${editingUser.id}/bets`, {
+                          method: 'DELETE',
+                          credentials: 'include',
+                        });
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data.error);
+                        toast.success(data.message);
+                        refetchUsers();
+                      } catch (error: any) {
+                        toast.error(error.message || "거래내역 삭제에 실패했습니다");
+                      }
+                    }}
+                  >
+                    <Trash2 className="w-4 h-4 mr-1" />
+                    거래내역 일괄 삭제
+                  </Button>
+                </div>
+              </div>
               <div className="flex justify-end gap-2 pt-4">
                 <Button variant="outline" onClick={() => setEditingUser(null)}>취소</Button>
                 <Button 
