@@ -352,7 +352,8 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [] 
     validResults.sort((a, b) => b.round - a.round);
     
     setGameResults(validResults);
-  }, [game.id, game.duration, game.symbol, currentPrice, userBets, forcedDirections]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [game.id, game.duration, game.symbol, userBets, forcedDirections]);
 
   // Track round changes for ALL 6 games simultaneously
   useEffect(() => {
