@@ -43,6 +43,7 @@ export function useMarketData() {
   const lastApiPrices = useRef<Record<string, { price: number; change: number; changePercent: number; high: number; low: number }>>({});
   const updateCounter = useRef(0);
   const useDirectBinance = useRef(false);
+  const serverFailCount = useRef(0);
 
   useEffect(() => {
     // 직접 Binance API 호출 (프로덕션 환경 우회용)
@@ -154,12 +155,17 @@ export function useMarketData() {
       // 서버 API 먼저 시도
       const serverSuccess = await fetchFromServerApi();
       
-      if (!serverSuccess) {
-        // 서버 실패 시 직접 Binance 호출
-        const directSuccess = await fetchFromBinanceDirect();
-        if (directSuccess) {
-          console.log('[MarketData] 서버 API 실패, Binance 직접 호출 모드로 전환');
-          useDirectBinance.current = true;
+      if (serverSuccess) {
+        serverFailCount.current = 0;
+      } else {
+        serverFailCount.current++;
+        // 서버 2번 연속 실패 시 직접 Binance 호출로 전환
+        if (serverFailCount.current >= 2) {
+          const directSuccess = await fetchFromBinanceDirect();
+          if (directSuccess) {
+            console.log('[MarketData] 서버 API 실패, Binance 직접 호출 모드로 전환');
+            useDirectBinance.current = true;
+          }
         }
       }
     };

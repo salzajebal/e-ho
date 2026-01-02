@@ -134,13 +134,20 @@ export default function Home() {
     return [...uniqueActiveBets, ...historyBets];
   }, [activeBets, historyBets]);
 
-  const currentMarket = marketData.find(m => m.symbol === selectedGame.symbol) || marketData[0];
+  const currentMarket = useMemo(() => {
+    if (!marketData || marketData.length === 0) {
+      return { symbol: 'BTC', name: 'Bitcoin', price: 0, change: 0, changePercent: 0, high: 0, low: 0, volume: 0, category: '암호화폐' as const };
+    }
+    return marketData.find(m => m.symbol === selectedGame.symbol) || marketData[0];
+  }, [marketData, selectedGame.symbol]);
 
   const currentPrices = useMemo(() => {
     const prices: Record<string, number> = {};
-    marketData.forEach(m => {
-      prices[m.symbol] = m.price;
-    });
+    if (marketData && marketData.length > 0) {
+      marketData.forEach(m => {
+        prices[m.symbol] = m.price;
+      });
+    }
     return prices;
   }, [marketData]);
 
