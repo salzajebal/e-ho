@@ -38,12 +38,15 @@ async function fetchBinancePricesDirect(): Promise<{ btc: any; eth: any } | null
 }
 
 // Hook to manage real-time data with API integration
-export function useMarketData() {
-  const [data, setData] = useState<MarketData[]>(INITIAL_MARKET_DATA);
+export function useMarketData(): { data: MarketData[]; isLoaded: boolean; isError: boolean } {
+  const [data, setData] = useState<MarketData[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [isError, setIsError] = useState(false);
   const lastApiPrices = useRef<Record<string, { price: number; change: number; changePercent: number; high: number; low: number }>>({});
   const updateCounter = useRef(0);
   const useDirectBinance = useRef(false);
   const serverFailCount = useRef(0);
+  const totalFailCount = useRef(0);
 
   useEffect(() => {
     // 직접 Binance API 호출 (프로덕션 환경 우회용)
@@ -82,6 +85,9 @@ export function useMarketData() {
         }
         
         setData(newData);
+        setIsLoaded(true);
+        setIsError(false);
+        totalFailCount.current = 0;
         return true;
       }
       return false;
@@ -138,6 +144,9 @@ export function useMarketData() {
         }
         
         setData(newData);
+        setIsLoaded(true);
+        setIsError(false);
+        totalFailCount.current = 0;
         return true;
       } catch (error) {
         return false;
@@ -148,7 +157,13 @@ export function useMarketData() {
     const fetchRealPrices = async () => {
       // 이미 직접 호출 모드면 계속 직접 호출
       if (useDirectBinance.current) {
-        await fetchFromBinanceDirect();
+        const success = await fetchFromBinanceDirect();
+        if (!success) {
+          totalFailCount.current++;
+          if (totalFailCount.current >= 5) {
+            setIsError(true);
+          }
+        }
         return;
       }
       
@@ -165,6 +180,11 @@ export function useMarketData() {
           if (directSuccess) {
             console.log('[MarketData] 서버 API 실패, Binance 직접 호출 모드로 전환');
             useDirectBinance.current = true;
+          } else {
+            totalFailCount.current++;
+            if (totalFailCount.current >= 5) {
+              setIsError(true);
+            }
           }
         }
       }
@@ -181,7 +201,7 @@ export function useMarketData() {
     };
   }, []);
 
-  return data;
+  return { data, isLoaded, isError };
 }
 
 // Generate initial chart data
