@@ -427,9 +427,9 @@ function RoundForcedTab() {
     }
   };
 
-  const filteredDirections = forcedDirections.filter(
-    d => d.symbol === selectedSymbol && d.duration === duration
-  );
+  const filteredDirections = forcedDirections
+    .filter(d => d.symbol === selectedSymbol && d.duration === duration)
+    .sort((a, b) => b.roundNumber - a.roundNumber);
 
   return (
     <div className="space-y-6">
