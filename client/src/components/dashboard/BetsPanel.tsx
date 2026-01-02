@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { Bet } from "@/hooks/use-bets";
 import { TrendingUp, TrendingDown, Clock, Trophy, XCircle, Calendar } from "lucide-react";
@@ -30,6 +30,13 @@ interface BetsPanelProps {
 function BetRow({ bet, currentPrice, onExpire }: { bet: Bet; currentPrice: number; onExpire: (price: number) => void }) {
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
   const [hasExpired, setHasExpired] = useState(false);
+  const onExpireRef = useRef(onExpire);
+  const currentPriceRef = useRef(currentPrice);
+
+  useEffect(() => {
+    onExpireRef.current = onExpire;
+    currentPriceRef.current = currentPrice;
+  });
 
   useEffect(() => {
     const calculateRemaining = () => {
@@ -40,14 +47,14 @@ function BetRow({ bet, currentPrice, onExpire }: { bet: Bet; currentPrice: numbe
       
       if (remaining === 0 && !hasExpired && bet.outcome === 'pending') {
         setHasExpired(true);
-        onExpire(currentPrice);
+        onExpireRef.current(currentPriceRef.current);
       }
     };
 
     calculateRemaining();
     const interval = setInterval(calculateRemaining, 100);
     return () => clearInterval(interval);
-  }, [bet.expiresAt, bet.outcome, hasExpired, currentPrice, onExpire]);
+  }, [bet.expiresAt, bet.outcome, hasExpired]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
