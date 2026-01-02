@@ -188,7 +188,7 @@ export default function Home() {
   return (
     <div className="flex flex-col h-screen bg-background text-foreground lg:overflow-hidden font-sans">
       <Navbar onSelectGame={setSelectedGameId} selectedGameId={selectedGameId} />
-      <Ticker data={marketData} />
+      {marketLoaded && marketData.length > 0 && <Ticker data={marketData} />}
       
       {/* Loading/Error overlay for market data */}
       {(!marketLoaded || marketError) && (

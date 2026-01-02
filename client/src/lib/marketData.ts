@@ -39,7 +39,7 @@ async function fetchBinancePricesDirect(): Promise<{ btc: any; eth: any } | null
 
 // Hook to manage real-time data with API integration
 export function useMarketData(): { data: MarketData[]; isLoaded: boolean; isError: boolean } {
-  const [data, setData] = useState<MarketData[]>([]);
+  const [data, setData] = useState<MarketData[]>(INITIAL_MARKET_DATA);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isError, setIsError] = useState(false);
   const lastApiPrices = useRef<Record<string, { price: number; change: number; changePercent: number; high: number; low: number }>>({});
