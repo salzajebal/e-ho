@@ -76,6 +76,17 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
 
+interface Message {
+  id: number;
+  senderId: string;
+  receiverId: string;
+  title: string;
+  content: string;
+  isRead: boolean;
+  deletedForUser: boolean;
+  createdAt: string;
+}
+
 interface AdminUser {
   id: string;
   username: string;
@@ -1413,6 +1424,40 @@ export default function Admin() {
     setMessageContent("");
     setMessageDialogOpen(true);
   };
+
+  // Message management state
+  const [messageManageUser, setMessageManageUser] = useState<AdminUser | null>(null);
+  
+  // Fetch messages for user (admin view - includes deleted)
+  const { data: userMessagesData = [], refetch: refetchUserMessages } = useQuery<Message[]>({
+    queryKey: ["/api/admin/messages", messageManageUser?.id],
+    queryFn: async () => {
+      if (!messageManageUser) return [];
+      const res = await fetch(`/api/admin/messages/${messageManageUser.id}`, { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!messageManageUser,
+  });
+
+  // Soft delete message for user
+  const deleteMessageForUser = useMutation({
+    mutationFn: async (messageId: number) => {
+      const res = await fetch(`/api/admin/messages/${messageId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to delete message");
+      return res.json();
+    },
+    onSuccess: () => {
+      refetchUserMessages();
+      toast.success("메시지가 회원에게서 삭제되었습니다");
+    },
+    onError: () => {
+      toast.error("메시지 삭제에 실패했습니다");
+    },
+  });
 
   // Update settings when data loads
   useEffect(() => {
@@ -3097,15 +3142,26 @@ export default function Admin() {
                           )}
                         </td>
                         <td className="px-3 py-2 text-center">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => openMessageDialog(user)}
-                            className="gap-1"
-                          >
-                            <Send className="w-3 h-3" />
-                            쪽지 보내기
-                          </Button>
+                          <div className="flex gap-1 justify-center">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => openMessageDialog(user)}
+                              className="gap-1"
+                            >
+                              <Send className="w-3 h-3" />
+                              보내기
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setMessageManageUser(user)}
+                              className="gap-1"
+                            >
+                              <Eye className="w-3 h-3" />
+                              관리
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -4962,6 +5018,75 @@ export default function Admin() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Message Management Dialog */}
+      <Dialog open={!!messageManageUser} onOpenChange={() => setMessageManageUser(null)}>
+        <DialogContent className="bg-card border-border max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>쪽지 관리 - {messageManageUser?.username}</DialogTitle>
+          </DialogHeader>
+          <div className="mt-4">
+            <p className="text-sm text-muted-foreground mb-4">
+              회원에게 보낸 쪽지 목록입니다. 삭제하면 회원에게만 안 보이고 관리자는 계속 볼 수 있습니다.
+            </p>
+            {userMessagesData.length === 0 ? (
+              <div className="text-center text-muted-foreground py-8">
+                보낸 쪽지가 없습니다
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {userMessagesData.map((msg) => (
+                  <div 
+                    key={msg.id} 
+                    className={cn(
+                      "p-4 rounded-lg border",
+                      msg.deletedForUser 
+                        ? "bg-muted/30 border-muted opacity-60" 
+                        : "bg-background border-border"
+                    )}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-medium truncate">{msg.title}</h4>
+                          {msg.deletedForUser && (
+                            <span className="text-xs bg-red-500/20 text-red-500 px-2 py-0.5 rounded">회원삭제됨</span>
+                          )}
+                          {msg.isRead && !msg.deletedForUser && (
+                            <span className="text-xs bg-green-500/20 text-green-500 px-2 py-0.5 rounded">읽음</span>
+                          )}
+                          {!msg.isRead && !msg.deletedForUser && (
+                            <span className="text-xs bg-yellow-500/20 text-yellow-500 px-2 py-0.5 rounded">안읽음</span>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground line-clamp-2">{msg.content}</p>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          {new Date(msg.createdAt).toLocaleString('ko-KR')}
+                        </p>
+                      </div>
+                      {!msg.deletedForUser && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="shrink-0 text-red-500 border-red-500/50 hover:bg-red-500/10"
+                          onClick={() => deleteMessageForUser.mutate(msg.id)}
+                          disabled={deleteMessageForUser.isPending}
+                        >
+                          <Trash2 className="w-3 h-3 mr-1" />
+                          삭제
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="flex justify-end pt-4">
+            <Button variant="outline" onClick={() => setMessageManageUser(null)}>닫기</Button>
+          </div>
         </DialogContent>
       </Dialog>
 

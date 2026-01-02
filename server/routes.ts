@@ -1194,6 +1194,28 @@ export async function registerRoutes(
     }
   });
 
+  // Get all messages for user (admin only - includes deleted)
+  app.get("/api/admin/messages/:userId", requireAdmin, async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const userMessages = await storage.getAllMessagesForAdmin(userId);
+      res.json(userMessages);
+    } catch (error) {
+      res.status(500).json({ error: "메시지 조회에 실패했습니다" });
+    }
+  });
+
+  // Soft delete message for user (admin only)
+  app.delete("/api/admin/messages/:id", requireAdmin, async (req, res) => {
+    try {
+      const messageId = parseInt(req.params.id);
+      await storage.softDeleteMessageForUser(messageId);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "메시지 삭제에 실패했습니다" });
+    }
+  });
+
   // ==================== AFFILIATE ROUTES ====================
 
   // Helper function to generate referral code

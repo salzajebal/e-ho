@@ -75,6 +75,8 @@ export interface IStorage {
   createMessage(message: InsertMessage): Promise<Message>;
   getMessagesForUser(userId: string): Promise<Message[]>;
   getUnreadMessagesForUser(userId: string): Promise<Message[]>;
+  getAllMessagesForAdmin(userId: string): Promise<Message[]>;
+  softDeleteMessageForUser(messageId: number): Promise<void>;
   markMessageAsRead(messageId: number): Promise<void>;
   markAllMessagesAsRead(userId: string): Promise<void>;
 
@@ -445,7 +447,10 @@ export class DatabaseStorage implements IStorage {
 
   async getMessagesForUser(userId: string): Promise<Message[]> {
     return await db.select().from(messages)
-      .where(eq(messages.receiverId, userId))
+      .where(and(
+        eq(messages.receiverId, userId),
+        eq(messages.deletedForUser, false)
+      ))
       .orderBy(desc(messages.createdAt));
   }
 
@@ -453,9 +458,22 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(messages)
       .where(and(
         eq(messages.receiverId, userId),
-        eq(messages.isRead, false)
+        eq(messages.isRead, false),
+        eq(messages.deletedForUser, false)
       ))
       .orderBy(desc(messages.createdAt));
+  }
+
+  async getAllMessagesForAdmin(userId: string): Promise<Message[]> {
+    return await db.select().from(messages)
+      .where(eq(messages.receiverId, userId))
+      .orderBy(desc(messages.createdAt));
+  }
+
+  async softDeleteMessageForUser(messageId: number): Promise<void> {
+    await db.update(messages)
+      .set({ deletedForUser: true })
+      .where(eq(messages.id, messageId));
   }
 
   async markMessageAsRead(messageId: number): Promise<void> {

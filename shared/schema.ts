@@ -167,12 +167,14 @@ export const messages = pgTable("messages", {
   title: text("title").notNull(),
   content: text("content").notNull(),
   isRead: boolean("is_read").notNull().default(false),
+  deletedForUser: boolean("deleted_for_user").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const insertMessageSchema = createInsertSchema(messages).omit({
   id: true,
   isRead: true,
+  deletedForUser: true,
   createdAt: true,
 });
 
