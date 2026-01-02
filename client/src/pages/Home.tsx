@@ -15,7 +15,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/componen
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Mail, X, Check, MessageSquare, Headphones, FileText, ChevronRight, Loader2, AlertTriangle } from "lucide-react";
+import { Mail, X, Check, MessageSquare, Headphones, FileText, ChevronRight } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -25,7 +25,7 @@ import { TRADING_GAMES } from "@/lib/tradingGames";
 export default function Home() {
   const [selectedGameId, setSelectedGameId] = useState("BTC-120");
   const [, setLocation] = useLocation();
-  const { data: marketData, isLoaded: marketLoaded, isError: marketError } = useMarketData();
+  const marketData = useMarketData();
   
   const selectedGame = TRADING_GAMES.find(g => g.id === selectedGameId) || TRADING_GAMES[0];
   
@@ -134,20 +134,13 @@ export default function Home() {
     return [...uniqueActiveBets, ...historyBets];
   }, [activeBets, historyBets]);
 
-  const currentMarket = useMemo(() => {
-    if (!marketData || marketData.length === 0) {
-      return { symbol: 'BTC', name: 'Bitcoin', price: 0, change: 0, changePercent: 0, high: 0, low: 0, volume: 0, category: '암호화폐' as const };
-    }
-    return marketData.find(m => m.symbol === selectedGame.symbol) || marketData[0];
-  }, [marketData, selectedGame.symbol]);
+  const currentMarket = marketData.find(m => m.symbol === selectedGame.symbol) || marketData[0];
 
   const currentPrices = useMemo(() => {
     const prices: Record<string, number> = {};
-    if (marketData && marketData.length > 0) {
-      marketData.forEach(m => {
-        prices[m.symbol] = m.price;
-      });
-    }
+    marketData.forEach(m => {
+      prices[m.symbol] = m.price;
+    });
     return prices;
   }, [marketData]);
 
@@ -155,16 +148,6 @@ export default function Home() {
     if (!user) {
       toast.error("로그인이 필요합니다");
       setLocation("/login");
-      return;
-    }
-    
-    if (!marketLoaded || marketError) {
-      toast.error("시장 데이터를 불러오는 중입니다. 잠시 후 다시 시도해주세요.");
-      return;
-    }
-    
-    if (currentMarket.price <= 0) {
-      toast.error("유효한 시장 가격을 불러오지 못했습니다.");
       return;
     }
     
@@ -188,27 +171,8 @@ export default function Home() {
   return (
     <div className="flex flex-col h-screen bg-background text-foreground lg:overflow-hidden font-sans">
       <Navbar onSelectGame={setSelectedGameId} selectedGameId={selectedGameId} />
-      {marketLoaded && marketData.length > 0 && <Ticker data={marketData} />}
+      <Ticker data={marketData} />
       
-      {/* Loading/Error overlay for market data */}
-      {(!marketLoaded || marketError) && (
-        <div className="flex-1 flex items-center justify-center bg-background">
-          {marketError ? (
-            <div className="flex flex-col items-center gap-4 text-destructive">
-              <AlertTriangle className="w-12 h-12" />
-              <p className="text-lg font-medium">시장 데이터를 불러올 수 없습니다</p>
-              <p className="text-sm text-muted-foreground">잠시 후 다시 시도해주세요</p>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center gap-4">
-              <Loader2 className="w-12 h-12 animate-spin text-primary" />
-              <p className="text-lg font-medium">시장 데이터 로딩 중...</p>
-            </div>
-          )}
-        </div>
-      )}
-      
-      {marketLoaded && !marketError && (
       <main className="flex-1 flex flex-col lg:flex-row min-h-0 lg:overflow-hidden">
         {/* Left: Game List - Hidden on mobile/tablet */}
         <div className="hidden xl:flex flex-col border-r border-border">
@@ -285,10 +249,8 @@ export default function Home() {
           </div>
         </div>
       </main>
-      )}
       
-      {/* Footer - 항상 표시 */}
-      {marketLoaded && !marketError && (
+      {/* Footer */}
       <div className="h-6 bg-card border-t border-border flex items-center px-2 lg:px-4 text-[9px] lg:text-[10px] text-muted-foreground justify-between">
         <div className="flex gap-2 lg:gap-4">
           <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 lg:w-2 lg:h-2 rounded-full bg-up animate-pulse"></span> <span className="hidden sm:inline">실시간 데이터</span><span className="sm:hidden">Live</span></span>
@@ -298,7 +260,6 @@ export default function Home() {
           <span>{balanceData?.balance ? Math.floor(parseFloat(balanceData.balance)).toLocaleString() : '0'}원</span>
         </div>
       </div>
-      )}
 
       {/* Message Inbox Button (fixed) */}
       {user && (

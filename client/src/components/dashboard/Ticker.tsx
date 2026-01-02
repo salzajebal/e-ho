@@ -32,17 +32,6 @@ const TickerItem = memo(function TickerItem({
 export function Ticker({ data }: { data: MarketData[] }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   
-  // Guard against empty or undefined data
-  if (!data || data.length === 0) {
-    return (
-      <div className="flex items-center h-8 bg-card border-b border-border overflow-hidden whitespace-nowrap">
-        <div className="flex items-center px-4 text-xs text-muted-foreground">
-          시장 데이터 로딩 중...
-        </div>
-      </div>
-    );
-  }
-  
   // Memoize the symbol order (stable structure)
   const symbols = useMemo(() => data.map(d => d.symbol), [data.length]);
   

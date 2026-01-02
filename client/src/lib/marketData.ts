@@ -38,15 +38,11 @@ async function fetchBinancePricesDirect(): Promise<{ btc: any; eth: any } | null
 }
 
 // Hook to manage real-time data with API integration
-export function useMarketData(): { data: MarketData[]; isLoaded: boolean; isError: boolean } {
+export function useMarketData() {
   const [data, setData] = useState<MarketData[]>(INITIAL_MARKET_DATA);
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [isError, setIsError] = useState(false);
   const lastApiPrices = useRef<Record<string, { price: number; change: number; changePercent: number; high: number; low: number }>>({});
   const updateCounter = useRef(0);
   const useDirectBinance = useRef(false);
-  const serverFailCount = useRef(0);
-  const totalFailCount = useRef(0);
 
   useEffect(() => {
     // 직접 Binance API 호출 (프로덕션 환경 우회용)
@@ -85,9 +81,6 @@ export function useMarketData(): { data: MarketData[]; isLoaded: boolean; isErro
         }
         
         setData(newData);
-        setIsLoaded(true);
-        setIsError(false);
-        totalFailCount.current = 0;
         return true;
       }
       return false;
@@ -144,9 +137,6 @@ export function useMarketData(): { data: MarketData[]; isLoaded: boolean; isErro
         }
         
         setData(newData);
-        setIsLoaded(true);
-        setIsError(false);
-        totalFailCount.current = 0;
         return true;
       } catch (error) {
         return false;
@@ -157,35 +147,19 @@ export function useMarketData(): { data: MarketData[]; isLoaded: boolean; isErro
     const fetchRealPrices = async () => {
       // 이미 직접 호출 모드면 계속 직접 호출
       if (useDirectBinance.current) {
-        const success = await fetchFromBinanceDirect();
-        if (!success) {
-          totalFailCount.current++;
-          if (totalFailCount.current >= 5) {
-            setIsError(true);
-          }
-        }
+        await fetchFromBinanceDirect();
         return;
       }
       
       // 서버 API 먼저 시도
       const serverSuccess = await fetchFromServerApi();
       
-      if (serverSuccess) {
-        serverFailCount.current = 0;
-      } else {
-        serverFailCount.current++;
-        // 서버 2번 연속 실패 시 직접 Binance 호출로 전환
-        if (serverFailCount.current >= 2) {
-          const directSuccess = await fetchFromBinanceDirect();
-          if (directSuccess) {
-            console.log('[MarketData] 서버 API 실패, Binance 직접 호출 모드로 전환');
-            useDirectBinance.current = true;
-          } else {
-            totalFailCount.current++;
-            if (totalFailCount.current >= 5) {
-              setIsError(true);
-            }
-          }
+      if (!serverSuccess) {
+        // 서버 실패 시 직접 Binance 호출
+        const directSuccess = await fetchFromBinanceDirect();
+        if (directSuccess) {
+          console.log('[MarketData] 서버 API 실패, Binance 직접 호출 모드로 전환');
+          useDirectBinance.current = true;
         }
       }
     };
@@ -201,7 +175,7 @@ export function useMarketData(): { data: MarketData[]; isLoaded: boolean; isErro
     };
   }, []);
 
-  return { data, isLoaded, isError };
+  return data;
 }
 
 // Generate initial chart data
