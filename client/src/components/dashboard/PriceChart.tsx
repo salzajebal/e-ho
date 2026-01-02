@@ -261,7 +261,8 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
     };
     
     initializeChart();
-  }, [symbol, isReady, duration, data.price]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [symbol, isReady, duration]);
 
   useEffect(() => {
     if (!seriesRef.current || !isReady || !isInitialized) return;

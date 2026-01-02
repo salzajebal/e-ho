@@ -1,0 +1,96 @@
+페이지가 완전히 로드되기 전에 레이아웃이 강제로 적용되었습니다. 스타일시트가 아직 로드되지 않은 경우 스타일이 지정되지 않은 콘텐츠가 깜박일 수 있습니다. ThumbnailsChild.sys.mjs:26:13
+Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}. index-BYM3P1F_.js:421:476
+Uncaught Error: Minified React error #185; visit https://react.dev/errors/185 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    pp https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    hb https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    Sf https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    GA https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    z https://coinone-korea.kr/assets/index-BYM3P1F_.js:445
+    jP https://coinone-korea.kr/assets/index-BYM3P1F_.js:57
+    r https://coinone-korea.kr/assets/index-BYM3P1F_.js:57
+    na https://coinone-korea.kr/assets/index-BYM3P1F_.js:57
+    fa https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    kT https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    Tr https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    kT https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    Tr https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    kT https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    Tr https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    kT https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    Tr https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    kT https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    Tr https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    kT https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    Tr https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    kT https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    Tr https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    kT https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    Tr https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    kT https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    Tr https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    kT https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    Tr https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    kT https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    Tr https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    kT https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    Tr https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    kT https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    Tr https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    kT https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    Tr https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    kT https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    Tr https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    kT https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    Tr https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    kT https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    Tr https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    kT https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    Tr https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    kT https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    Tr https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    kT https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    Tr https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    kT https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    Tr https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    kT https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    Tr https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    kT https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    Tr https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    kT https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    Tr https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    kT https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    Tr https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    kT https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    Tr https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    kT https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    JT https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    ZT https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    UT https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    HT https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    cM https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    Rf https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    sM https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+    AV https://coinone-korea.kr/assets/index-BYM3P1F_.js:48
+index-BYM3P1F_.js:48:27666
+Firefox가 wss://coinone-korea.kr/ws/user 서버에 연결할 수 없습니다. index-BYM3P1F_.js:445:188160
+페이지 로드 중 wss://coinone-korea.kr/ws/user에 대한 연결이 중단되었습니다. index-BYM3P1F_.js:445:188160
+downloadable font: glyf: empty gid 1 used as component in glyph 225 (font-family: "Roboto Mono" style:normal weight:400 stretch:100 src index:0) source: https://fonts.gstatic.com/s/robotomono/v31/L0x5DF4xlVMF-BfR8bXMIjhLq3-cXbKD.woff2
+downloadable font: glyf: empty gid 1 used as component in glyph 225 (font-family: "Roboto Mono" style:normal weight:500 stretch:100 src index:0) source: https://fonts.gstatic.com/s/robotomono/v31/L0x5DF4xlVMF-BfR8bXMIjhLq3-cXbKD.woff2
+[MarketData Direct] BTC: $89783.15, ETH: $3062.32 index-BYM3P1F_.js:445:183803
+[MarketData] 서버 API 실패, Binance 직접 호출 모드로 전환 index-BYM3P1F_.js:445:184804
+Firefox가 wss://coinone-korea.kr/ws/user 서버에 연결할 수 없습니다. index-BYM3P1F_.js:445:188160
+GET
+wss://coinone-korea.kr/ws/user
+NS_ERROR_WEBSOCKET_CONNECTION_REFUSED
+
+Firefox가 wss://coinone-korea.kr/ws/user 서버에 연결할 수 없습니다. index-BYM3P1F_.js:445:188160
+GET
+wss://coinone-korea.kr/ws/user
+NS_ERROR_WEBSOCKET_CONNECTION_REFUSED
+
+Firefox가 wss://coinone-korea.kr/ws/user 서버에 연결할 수 없습니다. index-BYM3P1F_.js:445:188160
+GET
+wss://coinone-korea.kr/ws/user
+NS_ERROR_WEBSOCKET_CONNECTION_REFUSED
+
+Firefox가 wss://coinone-korea.kr/ws/user 서버에 연결할 수 없습니다.
