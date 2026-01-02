@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,15 @@ import { TrendingUp, TrendingDown, Clock, Hash, Timer, History, AlertCircle } fr
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { TRADING_GAMES } from "@/lib/tradingGames";
+
+interface RoundForcedDirection {
+  id: number;
+  symbol: string;
+  duration: number;
+  roundNumber: number;
+  forcedDirection: 'up' | 'down';
+  dateKey: string;
+}
 
 interface Game {
   id: string;
@@ -232,6 +242,22 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [] 
   const maxRounds = getMaxRoundsPerDay(game.duration);
   const availableBalance = balance ? parseFloat(balance) : 0;
 
+  // Fetch round forced directions from server (public API)
+  const { data: forcedDirections = [] } = useQuery<RoundForcedDirection[]>({
+    queryKey: ["/api/round-forced"],
+    queryFn: async () => {
+      try {
+        const res = await fetch("/api/round-forced");
+        if (!res.ok) return [];
+        return res.json();
+      } catch {
+        return [];
+      }
+    },
+    refetchInterval: 5000, // Refresh every 5 seconds
+    staleTime: 2000,
+  });
+
   // Update last price ref
   useEffect(() => {
     lastPriceRef.current = currentPrice;
@@ -239,6 +265,22 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [] 
 
   // Load and generate all past results for current game, prioritizing user's actual bet results
   useEffect(() => {
+    // Get today's date key for filtering forced directions
+    const todayDateKey = getKSTDateString();
+    
+    // Get forced directions for this game (symbol + duration + today)
+    const gameForcedDirections = forcedDirections.filter(fd => 
+      fd.symbol === game.symbol && 
+      fd.duration === game.duration &&
+      fd.dateKey === todayDateKey
+    );
+    
+    // Create a map of round number to forced direction
+    const forcedDirectionsByRound = new Map<number, 'up' | 'down'>();
+    gameForcedDirections.forEach(fd => {
+      forcedDirectionsByRound.set(fd.roundNumber, fd.forcedDirection);
+    });
+    
     // Get completed bets for current game (matching symbol AND duration)
     const completedBets = userBets.filter(bet => 
       bet.outcome !== 'pending' && 
@@ -272,7 +314,7 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [] 
     // Get existing generated results
     const generatedResults = generateAllPastResults(game.id, game.duration, currentPrice);
     
-    // Build final results: user bet results take priority over generated results
+    // Build final results: user bet results take priority, then forced directions, then generated
     const finalResults: GameResult[] = [];
     const usedRounds = new Set<number>();
     
@@ -283,9 +325,20 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [] 
     });
     
     // Then, add generated results for rounds without user bets
+    // But apply forced directions if they exist
     generatedResults.forEach(genResult => {
       if (!usedRounds.has(genResult.round)) {
-        finalResults.push(genResult);
+        // Check if this round has a forced direction
+        const forcedDir = forcedDirectionsByRound.get(genResult.round);
+        if (forcedDir) {
+          // Use forced direction instead of generated
+          finalResults.push({
+            ...genResult,
+            direction: forcedDir,
+          });
+        } else {
+          finalResults.push(genResult);
+        }
       }
     });
     
@@ -299,7 +352,7 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [] 
     validResults.sort((a, b) => b.round - a.round);
     
     setGameResults(validResults);
-  }, [game.id, game.duration, game.symbol, currentPrice, userBets]);
+  }, [game.id, game.duration, game.symbol, currentPrice, userBets, forcedDirections]);
 
   // Track round changes for ALL 6 games simultaneously
   useEffect(() => {
