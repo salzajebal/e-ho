@@ -55,7 +55,12 @@ export default function Home() {
   const { data: historyBets = [] } = useBetHistory();
   const createBet = useCreateBet();
   const settleBet = useSettleBet();
+  const settleBetRef = useRef(settleBet);
   const { data: balanceData } = useUserBalance();
+
+  useEffect(() => {
+    settleBetRef.current = settleBet;
+  });
 
   // Messages queries
   const { data: unreadMessages = [] } = useUnreadMessages();
@@ -162,11 +167,11 @@ export default function Home() {
   };
 
   const handleBetExpire = useCallback((bet: any, currentPrice: number) => {
-    settleBet.mutate({
+    settleBetRef.current.mutate({
       id: bet.id,
       closePrice: currentPrice,
     });
-  }, [settleBet]);
+  }, []);
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground lg:overflow-hidden font-sans">
