@@ -44,12 +44,13 @@ export default function Home() {
   const [showInquiryNotification, setShowInquiryNotification] = useState(false);
   
   // Real-time WebSocket for message notifications
-  useUserWebSocket(!!user, {
+  const wsOptions = useMemo(() => ({
     onNewMessage: () => setInboxOpen(true),
     onInquiryReplied: () => {
       setShowInquiryNotification(true);
     },
-  });
+  }), []);
+  useUserWebSocket(!!user, wsOptions);
   
   const { data: activeBets = [] } = useBets();
   const { data: historyBets = [] } = useBetHistory();
