@@ -839,6 +839,20 @@ export async function registerRoutes(
     }
   });
 
+  // Get single user by ID (for real-time balance updates)
+  app.get("/api/admin/users/:id", requireAdmin, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.params.id);
+      if (!user) {
+        return res.status(404).json({ error: "회원을 찾을 수 없습니다" });
+      }
+      res.json(user);
+    } catch (error) {
+      console.error("Get user error:", error);
+      res.status(500).json({ error: "회원 조회에 실패했습니다" });
+    }
+  });
+
   // Create user by admin
   app.post("/api/admin/users", requireAdmin, async (req, res) => {
     try {

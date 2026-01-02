@@ -709,6 +709,31 @@ export default function Admin() {
   const [messageContent, setMessageContent] = useState("");
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
   const [balanceAdjustAmount, setBalanceAdjustAmount] = useState("");
+  
+  // Real-time balance refresh when editing user dialog is open
+  useEffect(() => {
+    if (!editingUser) return;
+    
+    const refreshBalance = async () => {
+      try {
+        const res = await fetch(`/api/admin/users/${editingUser.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.balance !== undefined) {
+            setEditingUser(prev => prev ? { ...prev, balance: data.balance } : null);
+          }
+        }
+      } catch (error) {
+        // Silently fail - don't interrupt user experience
+      }
+    };
+    
+    // Refresh every 2 seconds
+    const interval = setInterval(refreshBalance, 2000);
+    
+    return () => clearInterval(interval);
+  }, [editingUser?.id]);
+  
   const [createUserOpen, setCreateUserOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [userSearchQuery, setUserSearchQuery] = useState("");
