@@ -440,7 +440,14 @@ function RoundForcedTab() {
 
   const filteredDirections = forcedDirections
     .filter(d => d.symbol === selectedSymbol && d.duration === duration)
-    .sort((a, b) => b.roundNumber - a.roundNumber);
+    .sort((a, b) => {
+      // Priority: 1. In-progress (current round), 2. Upcoming, 3. Completed
+      const aStatus = a.roundNumber === currentRound ? 0 : a.roundNumber > currentRound ? 1 : 2;
+      const bStatus = b.roundNumber === currentRound ? 0 : b.roundNumber > currentRound ? 1 : 2;
+      if (aStatus !== bStatus) return aStatus - bStatus;
+      // Within same status, sort by round number descending
+      return b.roundNumber - a.roundNumber;
+    });
 
   return (
     <div className="space-y-6">
