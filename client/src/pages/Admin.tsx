@@ -709,18 +709,32 @@ export default function Admin() {
   const [messageContent, setMessageContent] = useState("");
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
   const [balanceAdjustAmount, setBalanceAdjustAmount] = useState("");
+  const editingUserIdRef = useRef<string | null>(null);
+  
+  // Track editingUser ID in ref to avoid closure issues
+  useEffect(() => {
+    editingUserIdRef.current = editingUser?.id || null;
+  }, [editingUser?.id]);
   
   // Real-time balance refresh when editing user dialog is open
   useEffect(() => {
     if (!editingUser) return;
     
+    const userId = editingUser.id;
+    
     const refreshBalance = async () => {
+      // Double check the user is still being edited
+      if (editingUserIdRef.current !== userId) return;
+      
       try {
-        const res = await fetch(`/api/admin/users/${editingUser.id}`);
-        if (res.ok) {
+        const res = await fetch(`/api/admin/users/${userId}`);
+        if (res.ok && editingUserIdRef.current === userId) {
           const data = await res.json();
           if (data.balance !== undefined) {
-            setEditingUser(prev => prev ? { ...prev, balance: data.balance } : null);
+            setEditingUser(prev => {
+              if (!prev || prev.id !== userId) return prev;
+              return { ...prev, balance: data.balance };
+            });
           }
         }
       } catch (error) {
