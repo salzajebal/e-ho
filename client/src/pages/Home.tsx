@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { Navbar } from "@/components/layout/Navbar";
 import { Ticker } from "@/components/dashboard/Ticker";
@@ -12,7 +12,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useUnreadMessages, useMessages, useMarkMessageRead, useMarkAllMessagesRead } from "@/hooks/use-messages";
 import { useUserWebSocket } from "@/hooks/use-user-websocket";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Mail, X, Check, MessageSquare, Headphones, FileText, ChevronRight } from "lucide-react";
@@ -44,24 +44,18 @@ export default function Home() {
   const [showInquiryNotification, setShowInquiryNotification] = useState(false);
   
   // Real-time WebSocket for message notifications
-  const wsOptions = useMemo(() => ({
+  useUserWebSocket(!!user, {
     onNewMessage: () => setInboxOpen(true),
     onInquiryReplied: () => {
       setShowInquiryNotification(true);
     },
-  }), []);
-  useUserWebSocket(!!user, wsOptions);
+  });
   
   const { data: activeBets = [] } = useBets();
   const { data: historyBets = [] } = useBetHistory();
   const createBet = useCreateBet();
   const settleBet = useSettleBet();
-  const settleBetRef = useRef(settleBet);
   const { data: balanceData } = useUserBalance();
-
-  useEffect(() => {
-    settleBetRef.current = settleBet;
-  });
 
   // Messages queries
   const { data: unreadMessages = [] } = useUnreadMessages();
@@ -167,12 +161,12 @@ export default function Home() {
     });
   };
 
-  const handleBetExpire = useCallback((bet: any, currentPrice: number) => {
-    settleBetRef.current.mutate({
+  const handleBetExpire = (bet: any, currentPrice: number) => {
+    settleBet.mutate({
       id: bet.id,
       closePrice: currentPrice,
     });
-  }, []);
+  };
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground lg:overflow-hidden font-sans">
@@ -200,6 +194,7 @@ export default function Home() {
           {/* Betting Form on Mobile */}
           <div className="border-b border-border">
             <BettingForm 
+              currentPrice={currentMarket.price} 
               game={selectedGame}
               onBet={handleBet}
               balance={balanceData?.balance}
@@ -245,6 +240,7 @@ export default function Home() {
           {/* Right: Betting Form Sidebar */}
           <div className="flex flex-col border-l border-border w-[320px] shrink-0 overflow-auto">
             <BettingForm 
+              currentPrice={currentMarket.price} 
               game={selectedGame}
               onBet={handleBet}
               balance={balanceData?.balance}

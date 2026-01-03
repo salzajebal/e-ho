@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, memo } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createChart, ColorType, CandlestickData, Time, CandlestickSeries } from "lightweight-charts";
 import type { IChartApi, ISeriesApi } from "lightweight-charts";
 import { MarketData } from "@/lib/marketData";
@@ -261,8 +261,7 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
     };
     
     initializeChart();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [symbol, isReady, duration]);
+  }, [symbol, isReady, duration, data.price]);
 
   useEffect(() => {
     if (!seriesRef.current || !isReady || !isInitialized) return;
@@ -337,4 +336,4 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
   );
 }
 
-export const PriceChart = memo(PriceChartComponent);
+export const PriceChart = PriceChartComponent;

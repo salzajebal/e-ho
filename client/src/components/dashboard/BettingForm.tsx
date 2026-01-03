@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, memo } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,6 @@ import { TrendingUp, TrendingDown, Clock, Hash, Timer, History, AlertCircle } fr
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { TRADING_GAMES } from "@/lib/tradingGames";
-import { useMarketData } from "@/lib/marketData";
 
 interface RoundForcedDirection {
   id: number;
@@ -39,6 +38,7 @@ interface UserBet {
 }
 
 interface BettingFormProps {
+  currentPrice: number;
   game: Game;
   balance?: string;
   onBet: (direction: 'long' | 'short', amount: number) => void;
@@ -230,11 +230,7 @@ interface AllGamesState {
   };
 }
 
-function BettingFormComponent({ game, balance, onBet, userBets = [] }: BettingFormProps) {
-  // Get market data internally to avoid props-based re-renders
-  const marketData = useMarketData();
-  const marketItem = marketData.find(m => m.symbol === game.symbol) || marketData[0];
-  const currentPrice = marketItem?.price || 0;
+export function BettingForm({ currentPrice, game, balance, onBet, userBets = [] }: BettingFormProps) {
   const [amount, setAmount] = useState<string>("");
   const [currentRound, setCurrentRound] = useState(calculateRoundNumber(game.duration));
   const [timeRemaining, setTimeRemaining] = useState(getRoundTimeRemaining(game.duration));
@@ -356,8 +352,7 @@ function BettingFormComponent({ game, balance, onBet, userBets = [] }: BettingFo
     validResults.sort((a, b) => b.round - a.round);
     
     setGameResults(validResults);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [game.id, game.duration, game.symbol, userBets, forcedDirections]);
+  }, [game.id, game.duration, game.symbol, currentPrice, userBets, forcedDirections]);
 
   // Track round changes for ALL 6 games simultaneously
   useEffect(() => {
@@ -431,8 +426,7 @@ function BettingFormComponent({ game, balance, onBet, userBets = [] }: BettingFo
     checkAllGames();
     const interval = setInterval(checkAllGames, 1000);
     return () => clearInterval(interval);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [game.duration, game.id]);
+  }, [game.duration, game.id, currentPrice]);
 
   const betAmount = parseFloat(amount) || 0;
   const potentialWin = betAmount * MULTIPLIER;
@@ -763,5 +757,3 @@ function BettingFormComponent({ game, balance, onBet, userBets = [] }: BettingFo
     </div>
   );
 }
-
-export const BettingForm = memo(BettingFormComponent);
