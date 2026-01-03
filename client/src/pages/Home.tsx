@@ -200,7 +200,6 @@ export default function Home() {
           {/* Betting Form on Mobile */}
           <div className="border-b border-border">
             <BettingForm 
-              currentPrice={currentMarket.price} 
               game={selectedGame}
               onBet={handleBet}
               balance={balanceData?.balance}
@@ -246,7 +245,6 @@ export default function Home() {
           {/* Right: Betting Form Sidebar */}
           <div className="flex flex-col border-l border-border w-[320px] shrink-0 overflow-auto">
             <BettingForm 
-              currentPrice={currentMarket.price} 
               game={selectedGame}
               onBet={handleBet}
               balance={balanceData?.balance}
