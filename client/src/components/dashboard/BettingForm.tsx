@@ -427,7 +427,8 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [] 
     checkAllGames();
     const interval = setInterval(checkAllGames, 1000);
     return () => clearInterval(interval);
-  }, [game.duration, game.id, currentPrice]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [game.duration, game.id]);
 
   const betAmount = parseFloat(amount) || 0;
   const potentialWin = betAmount * MULTIPLIER;

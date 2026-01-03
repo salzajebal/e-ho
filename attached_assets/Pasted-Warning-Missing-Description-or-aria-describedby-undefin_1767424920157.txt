@@ -1,0 +1,90 @@
+Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}. index-Ct3uqJNM.js:421:476
+Uncaught Error: Minified React error #185; visit https://react.dev/errors/185 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    pp https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    hb https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    Sf https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    GA https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    z https://coinone-korea.kr/assets/index-Ct3uqJNM.js:445
+    jP https://coinone-korea.kr/assets/index-Ct3uqJNM.js:57
+    r https://coinone-korea.kr/assets/index-Ct3uqJNM.js:57
+    na https://coinone-korea.kr/assets/index-Ct3uqJNM.js:57
+    fa https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    kT https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    Tr https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    kT https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    Tr https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    kT https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    Tr https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    kT https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    Tr https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    kT https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    Tr https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    kT https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    Tr https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    kT https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    Tr https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    kT https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    Tr https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    kT https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    Tr https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    kT https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    Tr https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    kT https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    Tr https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    kT https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    Tr https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    kT https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    Tr https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    kT https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    Tr https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    kT https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    Tr https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    kT https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    Tr https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    kT https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    Tr https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    kT https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    Tr https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    kT https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    Tr https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    kT https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    Tr https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    kT https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    Tr https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    kT https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    Tr https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    kT https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    Tr https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    kT https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    Tr https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    kT https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    Tr https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    kT https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    Tr https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    kT https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    JT https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    ZT https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    UT https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    HT https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    cM https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    Rf https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    sM https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+    AV https://coinone-korea.kr/assets/index-Ct3uqJNM.js:48
+index-Ct3uqJNM.js:48:27666
+Firefox가 wss://coinone-korea.kr/ws/user 서버에 연결할 수 없습니다. index-Ct3uqJNM.js:445:188160
+페이지 로드 중 wss://coinone-korea.kr/ws/user에 대한 연결이 중단되었습니다. index-Ct3uqJNM.js:445:188160
+[MarketData Direct] BTC: $89550.39, ETH: $3083.21 index-Ct3uqJNM.js:445:183803
+[MarketData] 서버 API 실패, Binance 직접 호출 모드로 전환 index-Ct3uqJNM.js:445:184804
+Firefox가 wss://coinone-korea.kr/ws/user 서버에 연결할 수 없습니다. index-Ct3uqJNM.js:445:188160
+GET
+wss://coinone-korea.kr/ws/user
+NS_ERROR_WEBSOCKET_CONNECTION_REFUSED
+
+Firefox가 wss://coinone-korea.kr/ws/user 서버에 연결할 수 없습니다. index-Ct3uqJNM.js:445:188160
+GET
+wss://coinone-korea.kr/ws/user
+NS_ERROR_WEBSOCKET_CONNECTION_REFUSED
+
+Firefox가 wss://coinone-korea.kr/ws/user 서버에 연결할 수 없습니다. index-Ct3uqJNM.js:445:188160
+
+​
