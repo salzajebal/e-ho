@@ -155,27 +155,10 @@ app.use((req, res, next) => {
     const port = parseInt(process.env.PORT || "5000", 10);
     console.log(`Starting HTTP server on port ${port}...`);
     
-    // Setup WebSocket servers in noServer mode to avoid conflicts with Vite HMR
-    const adminWss = new WebSocketServer({ noServer: true });
-    const userWss = new WebSocketServer({ noServer: true });
+    // Setup WebSocket server for real-time admin betting control
+    const wss = new WebSocketServer({ server: httpServer, path: '/ws/admin' });
     
-    // Handle upgrade requests manually to route to correct WebSocket server
-    httpServer.on('upgrade', (request, socket, head) => {
-      const pathname = request.url;
-      
-      if (pathname === '/ws/admin') {
-        adminWss.handleUpgrade(request, socket, head, (ws) => {
-          adminWss.emit('connection', ws, request);
-        });
-      } else if (pathname === '/ws/user') {
-        userWss.handleUpgrade(request, socket, head, (ws) => {
-          userWss.emit('connection', ws, request);
-        });
-      }
-      // Don't close socket for other paths - let Vite HMR handle them
-    });
-    
-    adminWss.on('connection', async (ws, req) => {
+    wss.on('connection', async (ws, req) => {
       // Authenticate WebSocket connection by validating session cookie
       try {
         const sessionData = await validateWebSocketSession(req.headers.cookie);
@@ -213,6 +196,9 @@ app.use((req, res, next) => {
       }
     });
 
+    // Setup WebSocket server for real-time user notifications (messages, etc)
+    const userWss = new WebSocketServer({ server: httpServer, path: '/ws/user' });
+    
     userWss.on('connection', async (ws, req) => {
       console.log('User WebSocket connection attempt received');
       try {

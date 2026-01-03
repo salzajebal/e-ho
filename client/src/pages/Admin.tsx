@@ -711,7 +711,6 @@ export default function Admin() {
   const [balanceAdjustAmount, setBalanceAdjustAmount] = useState("");
   const [createUserOpen, setCreateUserOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-  const [userSearchQuery, setUserSearchQuery] = useState("");
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
   const [loginHistoryUser, setLoginHistoryUser] = useState<AdminUser | null>(null);
   const [telegramLink, setTelegramLink] = useState("");
@@ -2752,38 +2751,6 @@ export default function Admin() {
               </div>
             </div>
 
-            <div className="bg-card border border-border rounded-lg p-3">
-              <div className="flex items-center gap-2">
-                <Input
-                  placeholder="아이디, 이름, 예금주로 검색..."
-                  value={userSearchQuery}
-                  onChange={(e) => setUserSearchQuery(e.target.value)}
-                  className="max-w-xs"
-                />
-                {userSearchQuery && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => setUserSearchQuery("")}
-                    className="h-8 px-2"
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                )}
-                <span className="text-sm text-muted-foreground ml-2">
-                  {users.filter(u => {
-                    if (!userSearchQuery.trim()) return true;
-                    const query = userSearchQuery.toLowerCase();
-                    return (
-                      u.username.toLowerCase().includes(query) ||
-                      (u.name && u.name.toLowerCase().includes(query)) ||
-                      (u.accountHolder && u.accountHolder.toLowerCase().includes(query))
-                    );
-                  }).length}명 / 전체 {users.length}명
-                </span>
-              </div>
-            </div>
-
             <div className="bg-card border border-border rounded-lg overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-xs lg:text-sm">
@@ -2806,15 +2773,7 @@ export default function Admin() {
                     </tr>
                   </thead>
                   <tbody>
-                    {users.filter(u => {
-                      if (!userSearchQuery.trim()) return true;
-                      const query = userSearchQuery.toLowerCase();
-                      return (
-                        u.username.toLowerCase().includes(query) ||
-                        (u.name && u.name.toLowerCase().includes(query)) ||
-                        (u.accountHolder && u.accountHolder.toLowerCase().includes(query))
-                      );
-                    }).map((user) => (
+                    {users.map((user) => (
                       <tr key={user.id} className="border-t border-border/50 hover:bg-muted/10">
                         <td className="px-2 lg:px-3 py-1.5 lg:py-2">
                           <span className={cn(
