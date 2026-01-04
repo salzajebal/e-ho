@@ -146,6 +146,7 @@ export interface IStorage {
   getAllInquiries(): Promise<Inquiry[]>;
   getPendingInquiries(): Promise<Inquiry[]>;
   replyToInquiry(id: number, reply: string, repliedBy: string): Promise<Inquiry>;
+  deleteAllInquiriesForUser(userId: string): Promise<number>;
 
   // Round result methods (라운드 결과 - 차트 캔들용)
   createRoundResult(result: InsertRoundResult): Promise<RoundResult>;
@@ -956,6 +957,13 @@ export class DatabaseStorage implements IStorage {
       .where(eq(inquiries.id, id))
       .returning();
     return updated;
+  }
+
+  async deleteAllInquiriesForUser(userId: string): Promise<number> {
+    const userInquiries = await this.getInquiriesForUser(userId);
+    const count = userInquiries.length;
+    await db.delete(inquiries).where(eq(inquiries.userId, userId));
+    return count;
   }
 
   // Round result methods (라운드 결과 - 차트 캔들용)
