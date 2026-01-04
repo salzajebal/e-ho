@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Shield, Zap, Headphones, TrendingUp, Lock, Award, X, ChevronDown, ChevronRight, Phone, Mail, MessageCircle, History, Wallet, Menu, Bell, FileText, Check, Calendar as CalendarIcon } from "lucide-react";
+import { Shield, Zap, Headphones, TrendingUp, Lock, Award, X, ChevronDown, ChevronRight, Phone, Mail, MessageCircle, History, Wallet, Menu, Bell, FileText, Check, Calendar as CalendarIcon, RefreshCw } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useLogin, useRegister, useAuth, useLogout } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
@@ -1994,7 +1994,17 @@ export default function Landing() {
                 <div className="flex items-center justify-center gap-2 mb-3">
                   <MessageCircle className="w-8 h-8 text-blue-500" />
                 </div>
-                <h2 className="text-2xl font-bold text-white mb-1">내 문의 내역</h2>
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <h2 className="text-2xl font-bold text-white">내 문의 내역</h2>
+                  <button
+                    onClick={() => refetchInquiries()}
+                    className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-500/10 rounded-lg transition-colors"
+                    title="새로고침"
+                    data-testid="button-refresh-inquiries"
+                  >
+                    <RefreshCw className="w-5 h-5" />
+                  </button>
+                </div>
                 <p className="text-gray-400 text-sm">총 {myInquiries.length}건의 문의</p>
               </div>
 
