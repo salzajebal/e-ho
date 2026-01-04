@@ -4806,6 +4806,7 @@ export default function Admin() {
                               const res = await fetch(`/api/admin/users/${editingUser.id}/pending-balance`, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
+                                credentials: 'include',
                                 body: JSON.stringify({ amount: amount }),
                               });
                               const data = await res.json();
@@ -4832,6 +4833,7 @@ export default function Admin() {
                               const res = await fetch(`/api/admin/users/${editingUser.id}/pending-balance`, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
+                                credentials: 'include',
                                 body: JSON.stringify({ amount: -amount }),
                               });
                               const data = await res.json();
@@ -4858,6 +4860,7 @@ export default function Admin() {
                             const res = await fetch(`/api/admin/users/${editingUser.id}/pending-balance`, {
                               method: 'POST',
                               headers: { 'Content-Type': 'application/json' },
+                              credentials: 'include',
                               body: JSON.stringify({ amount: 0 }),
                             });
                             const data = await res.json();
