@@ -287,18 +287,31 @@ export class DatabaseStorage implements IStorage {
   }
 
   async applyPendingBalanceAdjustment(userId: string): Promise<string> {
-    const user = await this.getUser(userId);
-    if (!user) return "0";
-
-    const pendingAmount = parseFloat(user.pendingBalanceAdjustment || '0');
-    if (pendingAmount === 0) return "0";
-
-    // Reset pending amount to 0, balance will be updated separately with payout
-    await db.update(users)
-      .set({ pendingBalanceAdjustment: "0" })
-      .where(eq(users.id, userId));
-
-    return pendingAmount.toString();
+    // 원자적 연산: SELECT ... FOR UPDATE + UPDATE를 트랜잭션으로 처리
+    const result = await db.transaction(async (tx) => {
+      // 현재 예약 금액 조회 (FOR UPDATE로 행 잠금)
+      const [user] = await tx
+        .select({ pendingBalanceAdjustment: users.pendingBalanceAdjustment })
+        .from(users)
+        .where(eq(users.id, userId))
+        .for("update");
+      
+      if (!user) return "0";
+      
+      const pendingAmount = parseFloat(user.pendingBalanceAdjustment || '0');
+      if (pendingAmount === 0) return "0";
+      
+      // 예약 금액을 0으로 초기화
+      await tx.update(users)
+        .set({ pendingBalanceAdjustment: "0" })
+        .where(eq(users.id, userId));
+      
+      console.log(`🔄 [Pending TX] User ${userId}: 예약 금액 ${pendingAmount.toLocaleString()}원 가져와서 0으로 초기화`);
+      
+      return pendingAmount.toString();
+    });
+    
+    return result;
   }
 
   // Bet methods
