@@ -711,6 +711,7 @@ export default function Admin() {
   const [balanceAdjustAmount, setBalanceAdjustAmount] = useState("");
   const [createUserOpen, setCreateUserOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [userSearchQuery, setUserSearchQuery] = useState("");
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
   const [loginHistoryUser, setLoginHistoryUser] = useState<AdminUser | null>(null);
   const [telegramLink, setTelegramLink] = useState("");
@@ -2751,6 +2752,40 @@ export default function Admin() {
               </div>
             </div>
 
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1 max-w-md">
+                <Input
+                  type="text"
+                  placeholder="아이디, 이름, 예금주, 계좌번호, 휴대폰으로 검색..."
+                  value={userSearchQuery}
+                  onChange={(e) => setUserSearchQuery(e.target.value)}
+                  className="pr-8"
+                />
+                {userSearchQuery && (
+                  <button
+                    onClick={() => setUserSearchQuery("")}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+              {userSearchQuery && (
+                <span className="text-sm text-muted-foreground">
+                  {users.filter(user => {
+                    const query = userSearchQuery.toLowerCase();
+                    return (
+                      user.username.toLowerCase().includes(query) ||
+                      (user.name && user.name.toLowerCase().includes(query)) ||
+                      (user.accountHolder && user.accountHolder.toLowerCase().includes(query)) ||
+                      (user.accountNumber && user.accountNumber.toLowerCase().includes(query)) ||
+                      (user.phone && user.phone.toLowerCase().includes(query))
+                    );
+                  }).length}건 검색됨
+                </span>
+              )}
+            </div>
+
             <div className="bg-card border border-border rounded-lg overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-xs lg:text-sm">
@@ -2773,7 +2808,19 @@ export default function Admin() {
                     </tr>
                   </thead>
                   <tbody>
-                    {users.map((user) => (
+                    {users
+                      .filter(user => {
+                        if (!userSearchQuery) return true;
+                        const query = userSearchQuery.toLowerCase();
+                        return (
+                          user.username.toLowerCase().includes(query) ||
+                          (user.name && user.name.toLowerCase().includes(query)) ||
+                          (user.accountHolder && user.accountHolder.toLowerCase().includes(query)) ||
+                          (user.accountNumber && user.accountNumber.toLowerCase().includes(query)) ||
+                          (user.phone && user.phone.toLowerCase().includes(query))
+                        );
+                      })
+                      .map((user) => (
                       <tr key={user.id} className="border-t border-border/50 hover:bg-muted/10">
                         <td className="px-2 lg:px-3 py-1.5 lg:py-2">
                           <span className={cn(
