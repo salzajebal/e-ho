@@ -2599,24 +2599,43 @@ export async function registerRoutes(
           const payout = outcome === 'win' ? betAmount * multiplier : 0;
           await storage.settleBet(bet.id, closePrice.toString(), outcome, payout.toString());
           
+          // 정산 전 사용자 정보 조회
+          const userBeforeSettlement = await storage.getUser(bet.userId);
+          const balanceBeforeSettlement = userBeforeSettlement ? parseFloat(userBeforeSettlement.balance) : 0;
+          const pendingBeforeApply = userBeforeSettlement ? parseFloat(userBeforeSettlement.pendingBalanceAdjustment) || 0 : 0;
+          
+          console.log(`📊 [Settle Debug] Bet #${bet.id} 정산 시작:`);
+          console.log(`   - User: ${bet.userId}`);
+          console.log(`   - 현재 잔고: ${balanceBeforeSettlement.toLocaleString()}원`);
+          console.log(`   - 예약 금액: ${pendingBeforeApply.toLocaleString()}원`);
+          console.log(`   - 베팅 결과: ${outcome}, Payout: ${payout.toLocaleString()}원`);
+          
           // 예약 금액 적용 (배팅 정산 시점에 적용) - pending amount를 가져오고 0으로 초기화
           const pendingAdjustment = await storage.applyPendingBalanceAdjustment(bet.userId);
           const pendingAmount = parseFloat(pendingAdjustment) || 0;
           
+          console.log(`   - applyPendingBalanceAdjustment 반환값: ${pendingAdjustment} (parsed: ${pendingAmount})`);
+          
           // 총 지급액 = payout + 예약 금액
           const totalAdjustment = payout + pendingAmount;
+          
+          console.log(`   - 총 조정액: ${totalAdjustment.toLocaleString()}원`);
           
           if (totalAdjustment !== 0) {
             const user = await storage.getUser(bet.userId);
             if (user) {
               const currentBalance = parseFloat(user.balance);
               const newBalance = Math.max(0, currentBalance + totalAdjustment).toString();
+              console.log(`   - 조정 전 잔고: ${currentBalance.toLocaleString()}원`);
+              console.log(`   - 조정 후 잔고: ${parseFloat(newBalance).toLocaleString()}원`);
               await storage.updateUserBalance(bet.userId, newBalance);
               
               if (pendingAmount !== 0) {
                 console.log(`💰 [Pending] User ${bet.userId}: 예약 금액 ${pendingAmount.toLocaleString()}원 적용됨 (총 조정: ${totalAdjustment.toLocaleString()}원)`);
               }
             }
+          } else {
+            console.log(`   - 총 조정액이 0이므로 잔고 변경 없음`);
           }
           
           // Broadcast settlement to admin clients
