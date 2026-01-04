@@ -5010,7 +5010,6 @@ export default function Admin() {
                     bankName: editingUser.bankName,
                     accountHolder: editingUser.accountHolder,
                     accountNumber: editingUser.accountNumber,
-                    balance: editingUser.balance,
                     totalDeposit: editingUser.totalDeposit,
                     totalWithdrawal: editingUser.totalWithdrawal,
                     role: editingUser.role,
