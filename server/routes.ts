@@ -2578,12 +2578,20 @@ export async function registerRoutes(
           const payout = outcome === 'win' ? betAmount * multiplier : 0;
           await storage.settleBet(bet.id, closePrice.toString(), outcome, payout.toString());
           
-          if (outcome === 'win') {
+          // 예약 금액 적용 (배팅 정산 시점에 적용)
+          const pendingAdjustment = await storage.applyPendingBalanceAdjustment(bet.userId);
+          const pendingAmount = parseFloat(pendingAdjustment) || 0;
+          
+          if (outcome === 'win' || pendingAmount !== 0) {
             const user = await storage.getUser(bet.userId);
             if (user) {
               const currentBalance = parseFloat(user.balance);
               const newBalance = (currentBalance + payout).toString();
               await storage.updateUserBalance(bet.userId, newBalance);
+              
+              if (pendingAmount !== 0) {
+                console.log(`💰 [Pending] User ${bet.userId}: 예약 금액 ${pendingAmount.toLocaleString()}원 적용됨`);
+              }
             }
           }
           
