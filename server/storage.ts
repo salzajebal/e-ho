@@ -292,14 +292,9 @@ export class DatabaseStorage implements IStorage {
     const pendingAmount = parseFloat(user.pendingBalanceAdjustment || '0');
     if (pendingAmount === 0) return "0";
 
-    const currentBalance = parseFloat(user.balance || '0');
-    const newBalance = (currentBalance + pendingAmount).toString();
-
+    // Reset pending amount to 0, balance will be updated separately with payout
     await db.update(users)
-      .set({ 
-        balance: newBalance,
-        pendingBalanceAdjustment: "0"
-      })
+      .set({ pendingBalanceAdjustment: "0" })
       .where(eq(users.id, userId));
 
     return pendingAmount.toString();

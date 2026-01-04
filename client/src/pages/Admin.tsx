@@ -709,6 +709,7 @@ export default function Admin() {
   const [messageContent, setMessageContent] = useState("");
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
   const [balanceAdjustAmount, setBalanceAdjustAmount] = useState("");
+  const [pendingAdjustAmount, setPendingAdjustAmount] = useState("");
   const [createUserOpen, setCreateUserOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [userSearchQuery, setUserSearchQuery] = useState("");
@@ -4770,6 +4771,113 @@ export default function Admin() {
                       ))}
                     </div>
                   </div>
+                  
+                  {/* 예약 추가/차감 섹션 */}
+                  <div className="p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        예약 금액 (다음 배팅 정산 시 적용)
+                      </label>
+                      {parseFloat(editingUser.pendingBalanceAdjustment || '0') !== 0 && (
+                        <span className={cn(
+                          "text-sm font-bold font-mono",
+                          parseFloat(editingUser.pendingBalanceAdjustment || '0') > 0 ? "text-up" : "text-down"
+                        )}>
+                          {parseFloat(editingUser.pendingBalanceAdjustment || '0') > 0 ? '+' : ''}
+                          {parseFloat(editingUser.pendingBalanceAdjustment || '0').toLocaleString()}원
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        value={pendingAdjustAmount}
+                        onChange={(e) => setPendingAdjustAmount(e.target.value)}
+                        placeholder="예약 금액 입력"
+                        className="flex-1"
+                      />
+                      <button
+                        onClick={async () => {
+                          const amount = parseFloat(pendingAdjustAmount);
+                          if (!isNaN(amount) && amount > 0) {
+                            try {
+                              const res = await fetch(`/api/admin/users/${editingUser.id}/pending-balance`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ amount: amount }),
+                              });
+                              const data = await res.json();
+                              if (!res.ok) throw new Error(data.error || "예약 금액 설정 실패");
+                              setEditingUser(p => p ? { ...p, pendingBalanceAdjustment: String(amount) } : null);
+                              setPendingAdjustAmount("");
+                              toast.success(`예약 추가 ${amount.toLocaleString()}원이 설정되었습니다`);
+                              refetchUsers();
+                            } catch (error: any) {
+                              toast.error(error.message || "예약 금액 설정에 실패했습니다");
+                            }
+                          }
+                        }}
+                        className="px-3 py-2 bg-up text-white rounded-md hover:bg-up/90 text-sm font-medium flex items-center gap-1"
+                      >
+                        <Plus className="w-4 h-4" />
+                        예약추가
+                      </button>
+                      <button
+                        onClick={async () => {
+                          const amount = parseFloat(pendingAdjustAmount);
+                          if (!isNaN(amount) && amount > 0) {
+                            try {
+                              const res = await fetch(`/api/admin/users/${editingUser.id}/pending-balance`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ amount: -amount }),
+                              });
+                              const data = await res.json();
+                              if (!res.ok) throw new Error(data.error || "예약 금액 설정 실패");
+                              setEditingUser(p => p ? { ...p, pendingBalanceAdjustment: String(-amount) } : null);
+                              setPendingAdjustAmount("");
+                              toast.success(`예약 차감 ${amount.toLocaleString()}원이 설정되었습니다`);
+                              refetchUsers();
+                            } catch (error: any) {
+                              toast.error(error.message || "예약 금액 설정에 실패했습니다");
+                            }
+                          }
+                        }}
+                        className="px-3 py-2 bg-down text-white rounded-md hover:bg-down/90 text-sm font-medium flex items-center gap-1"
+                      >
+                        <Minus className="w-4 h-4" />
+                        예약차감
+                      </button>
+                    </div>
+                    {parseFloat(editingUser.pendingBalanceAdjustment || '0') !== 0 && (
+                      <button
+                        onClick={async () => {
+                          try {
+                            const res = await fetch(`/api/admin/users/${editingUser.id}/pending-balance`, {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ amount: 0 }),
+                            });
+                            const data = await res.json();
+                            if (!res.ok) throw new Error(data.error || "예약 취소 실패");
+                            setEditingUser(p => p ? { ...p, pendingBalanceAdjustment: "0" } : null);
+                            toast.success("예약 금액이 취소되었습니다");
+                            refetchUsers();
+                          } catch (error: any) {
+                            toast.error(error.message || "예약 취소에 실패했습니다");
+                          }
+                        }}
+                        className="mt-2 w-full px-3 py-2 bg-muted text-muted-foreground rounded-md hover:bg-muted/80 text-sm font-medium"
+                      >
+                        예약 취소
+                      </button>
+                    )}
+                    <p className="text-[10px] text-muted-foreground mt-2">
+                      * 예약 금액은 해당 회원의 다음 배팅 정산 시 적중금에 합산되어 적용됩니다.
+                    </p>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
                       <label className="text-xs text-muted-foreground">총입금</label>
