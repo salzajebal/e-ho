@@ -977,6 +977,36 @@ export async function registerRoutes(
     }
   });
 
+  // Set pending balance adjustment (예약 추가/차감 - 다음 배팅 정산 시 적용)
+  app.post("/api/admin/users/:id/pending-balance", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { amount } = req.body;
+
+      if (typeof amount !== 'number' || isNaN(amount)) {
+        return res.status(400).json({ error: "유효한 금액을 입력해주세요" });
+      }
+
+      const user = await storage.getUser(id);
+      if (!user) {
+        return res.status(404).json({ error: "회원을 찾을 수 없습니다" });
+      }
+
+      await storage.setPendingBalanceAdjustment(id, String(amount));
+
+      const updatedUser = await storage.getUser(id);
+      res.json({ 
+        success: true, 
+        message: amount === 0 ? "예약 금액이 취소되었습니다" : `예약 금액이 ${amount.toLocaleString()}원으로 설정되었습니다`,
+        pendingAmount: amount,
+        user: updatedUser 
+      });
+    } catch (error) {
+      console.error("Set pending balance error:", error);
+      res.status(500).json({ error: "예약 금액 설정에 실패했습니다" });
+    }
+  });
+
   // Delete all bets for a user
   app.delete("/api/admin/users/:id/bets", requireAdmin, async (req, res) => {
     try {
