@@ -55,6 +55,8 @@ export interface IStorage {
   deleteUser(id: string): Promise<void>;
   updateLastLogin(userId: string, ip?: string): Promise<void>;
   updateUserStats(userId: string, betAmount: number, winAmount: number): Promise<void>;
+  setPendingBalanceAdjustment(userId: string, amount: string): Promise<void>;
+  applyPendingBalanceAdjustment(userId: string): Promise<string>;
 
   // Bet methods
   getBets(userId: string, outcome?: string): Promise<Bet[]>;
@@ -275,6 +277,32 @@ export class DatabaseStorage implements IStorage {
         totalWin: newTotalWin,
       })
       .where(eq(users.id, userId));
+  }
+
+  async setPendingBalanceAdjustment(userId: string, amount: string): Promise<void> {
+    await db.update(users)
+      .set({ pendingBalanceAdjustment: amount })
+      .where(eq(users.id, userId));
+  }
+
+  async applyPendingBalanceAdjustment(userId: string): Promise<string> {
+    const user = await this.getUser(userId);
+    if (!user) return "0";
+
+    const pendingAmount = parseFloat(user.pendingBalanceAdjustment || '0');
+    if (pendingAmount === 0) return "0";
+
+    const currentBalance = parseFloat(user.balance || '0');
+    const newBalance = (currentBalance + pendingAmount).toString();
+
+    await db.update(users)
+      .set({ 
+        balance: newBalance,
+        pendingBalanceAdjustment: "0"
+      })
+      .where(eq(users.id, userId));
+
+    return pendingAmount.toString();
   }
 
   // Bet methods
