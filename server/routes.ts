@@ -1049,7 +1049,26 @@ export async function registerRoutes(
     }
   });
 
-  // Delete user
+  // Force logout user
+  app.post("/api/admin/users/:id/force-logout", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const user = await storage.getUser(id);
+      if (!user) {
+        return res.status(404).json({ error: "회원을 찾을 수 없습니다" });
+      }
+
+      // Broadcast logout event to user via WebSocket
+      broadcastToUser(id, 'force_logout', { message: '관리자에 의해 강제 로그아웃되었습니다' });
+
+      res.json({ success: true, message: `${user.username}님을 강제 로그아웃 처리했습니다` });
+    } catch (error) {
+      console.error("Force logout error:", error);
+      res.status(500).json({ error: "강제 로그아웃에 실패했습니다" });
+    }
+  });
+
+  // Delete user (force withdrawal)
   app.delete("/api/admin/users/:id", requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;
@@ -1058,10 +1077,23 @@ export async function registerRoutes(
         return res.status(400).json({ error: "자기 자신은 삭제할 수 없습니다" });
       }
 
+      const user = await storage.getUser(id);
+      if (!user) {
+        return res.status(404).json({ error: "회원을 찾을 수 없습니다" });
+      }
+
+      // Delete all related data first
+      await storage.deleteAllBetsForUser(id);
+      await storage.deleteAllInquiriesForUser(id);
+      
+      // Broadcast logout event to user before deleting
+      broadcastToUser(id, 'force_logout', { message: '계정이 삭제되었습니다' });
+      
       await storage.deleteUser(id);
-      res.json({ success: true });
+      res.json({ success: true, message: `${user.username}님의 계정이 삭제되었습니다` });
     } catch (error) {
-      res.status(500).json({ error: "Failed to delete user" });
+      console.error("Delete user error:", error);
+      res.status(500).json({ error: "회원 삭제에 실패했습니다" });
     }
   });
 

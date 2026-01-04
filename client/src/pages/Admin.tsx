@@ -43,6 +43,7 @@ import {
   Minus,
   ArrowUpRight,
   Clock,
+  UserX,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -5031,6 +5032,30 @@ export default function Admin() {
                     >
                       <Trash2 className="w-4 h-4 mr-1" />
                       문의 삭제
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={async () => {
+                        if (!confirm(`정말로 ${editingUser.username}님을 강제 탈퇴시키시겠습니까?\n\n모든 데이터(거래내역, 문의내역 등)가 삭제되며, 이 작업은 되돌릴 수 없습니다.`)) return;
+                        try {
+                          const res = await fetch(`/api/admin/users/${editingUser.id}`, {
+                            method: 'DELETE',
+                            credentials: 'include',
+                          });
+                          const data = await res.json();
+                          if (!res.ok) throw new Error(data.error);
+                          toast.success(data.message || "회원이 탈퇴 처리되었습니다");
+                          setEditingUser(null);
+                          refetchUsers();
+                        } catch (error: any) {
+                          toast.error(error.message || "회원 탈퇴에 실패했습니다");
+                        }
+                      }}
+                      data-testid="button-force-withdraw"
+                    >
+                      <UserX className="w-4 h-4 mr-1" />
+                      강제 탈퇴
                     </Button>
                   </div>
                 </div>
