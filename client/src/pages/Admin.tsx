@@ -111,6 +111,7 @@ interface AdminUser {
   autoBetMultiplier: number;
   isBettingBlocked: boolean;
   forcedBetDirection: 'up' | 'down' | null;
+  pendingBalanceAdjustment: string;
   approvalStatus: string;
   lastLoginAt: string | null;
   lastLoginIp: string | null;
