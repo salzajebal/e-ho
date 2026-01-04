@@ -220,6 +220,15 @@ interface AllGamesState {
   };
 }
 
+interface ForcedDirection {
+  id: number;
+  symbol: string;
+  duration: number;
+  roundNumber: number;
+  forcedDirection: 'up' | 'down';
+  dateKey: string;
+}
+
 export function BettingForm({ currentPrice, game, balance, onBet, userBets = [] }: BettingFormProps) {
   const [amount, setAmount] = useState<string>("");
   const [currentRound, setCurrentRound] = useState(calculateRoundNumber(game.duration));
@@ -227,10 +236,30 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [] 
   const [gameResults, setGameResults] = useState<GameResult[]>([]);
   const [betConfirmation, setBetConfirmation] = useState<BetConfirmation>({ show: false, direction: 'long', amount: 0, price: 0, round: 0 });
   const [timeAlert, setTimeAlert] = useState<TimeAlert>({ show: false, message: '' });
+  const [forcedDirections, setForcedDirections] = useState<ForcedDirection[]>([]);
   const allGamesStateRef = useRef<AllGamesState>({});
   const lastPriceRef = useRef<number>(currentPrice);
   const maxRounds = getMaxRoundsPerDay(game.duration);
   const availableBalance = balance ? parseFloat(balance) : 0;
+
+  // Fetch forced directions from server
+  useEffect(() => {
+    const fetchForcedDirections = async () => {
+      try {
+        const res = await fetch('/api/round-forced');
+        if (res.ok) {
+          const data = await res.json();
+          setForcedDirections(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch forced directions:', error);
+      }
+    };
+    fetchForcedDirections();
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchForcedDirections, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Update last price ref
   useEffect(() => {
@@ -283,9 +312,28 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [] 
     });
     
     // Then, add generated results for rounds without user bets
+    // Apply forced directions from server
+    const todayKey = getKSTDateString();
+    const forcedForGame = forcedDirections.filter(
+      fd => fd.symbol === game.symbol && fd.duration === game.duration && fd.dateKey === todayKey
+    );
+    const forcedMap = new Map<number, 'up' | 'down'>();
+    forcedForGame.forEach(fd => {
+      forcedMap.set(fd.roundNumber, fd.forcedDirection);
+    });
+
     generatedResults.forEach(genResult => {
       if (!usedRounds.has(genResult.round)) {
-        finalResults.push(genResult);
+        // Check if this round has a forced direction
+        const forcedDir = forcedMap.get(genResult.round);
+        if (forcedDir) {
+          finalResults.push({
+            ...genResult,
+            direction: forcedDir,
+          });
+        } else {
+          finalResults.push(genResult);
+        }
       }
     });
     
@@ -299,7 +347,7 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [] 
     validResults.sort((a, b) => b.round - a.round);
     
     setGameResults(validResults);
-  }, [game.id, game.duration, game.symbol, currentPrice, userBets]);
+  }, [game.id, game.duration, game.symbol, currentPrice, userBets, forcedDirections]);
 
   // Track round changes for ALL 6 games simultaneously
   useEffect(() => {
