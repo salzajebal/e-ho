@@ -983,18 +983,29 @@ export async function registerRoutes(
       const { id } = req.params;
       const { amount } = req.body;
 
+      console.log(`🔔 [Pending Balance API] 예약 금액 설정 요청:`);
+      console.log(`   - User ID: ${id}`);
+      console.log(`   - Amount: ${amount}`);
+
       if (typeof amount !== 'number' || isNaN(amount)) {
+        console.log(`   - ❌ 유효하지 않은 금액`);
         return res.status(400).json({ error: "유효한 금액을 입력해주세요" });
       }
 
       const user = await storage.getUser(id);
       if (!user) {
+        console.log(`   - ❌ 회원을 찾을 수 없음`);
         return res.status(404).json({ error: "회원을 찾을 수 없습니다" });
       }
+
+      console.log(`   - 회원: ${user.username} (${user.name})`);
+      console.log(`   - 기존 예약 금액: ${user.pendingBalanceAdjustment}`);
 
       await storage.setPendingBalanceAdjustment(id, String(amount));
 
       const updatedUser = await storage.getUser(id);
+      console.log(`   - ✅ 설정 완료, 새 예약 금액: ${updatedUser?.pendingBalanceAdjustment}`);
+      
       res.json({ 
         success: true, 
         message: amount === 0 ? "예약 금액이 취소되었습니다" : `예약 금액이 ${amount.toLocaleString()}원으로 설정되었습니다`,
