@@ -626,14 +626,12 @@ export async function registerRoutes(
       const payout = outcome === 'win' ? betAmount * multiplier : 0;
       const settledBet = await storage.settleBet(id, finalClosePrice, outcome, payout.toString());
 
-      if (outcome === 'win') {
-        const user = await storage.getUser(userId);
-        if (user) {
-          const currentBalance = parseFloat(user.balance);
-          const newBalance = (currentBalance + payout).toString();
-          await storage.updateUserBalance(userId, newBalance);
-        }
+      // 원자적 정산: 예약금액 + payout을 합산하여 잔고 업데이트
+      const { pendingAmount, newBalance } = await storage.applyPendingAndUpdateBalance(userId, payout);
+      if (pendingAmount !== 0) {
+        console.log(`💰 [Manual Settle] User ${userId}: 예약 금액 ${pendingAmount.toLocaleString()}원 적용됨`);
       }
+      console.log(`✅ [Manual Settle] Bet #${id}: 새 잔고 = ${parseFloat(newBalance).toLocaleString()}원`);
 
       // Record round result for chart candles (use bet creation time for round date)
       try {
@@ -2133,15 +2131,13 @@ export async function registerRoutes(
         payout
       );
 
-      // Update user balance if win
-      if (outcome === 'win') {
-        const user = await storage.getUser(bet.userId);
-        if (user) {
-          const currentBalance = parseFloat(user.balance);
-          const newBalance = (currentBalance + parseFloat(payout)).toString();
-          await storage.updateUserBalance(bet.userId, newBalance);
-        }
+      // 원자적 정산: 예약금액 + payout을 합산하여 잔고 업데이트
+      const payoutNum = parseFloat(payout);
+      const { pendingAmount, newBalance } = await storage.applyPendingAndUpdateBalance(bet.userId, payoutNum);
+      if (pendingAmount !== 0) {
+        console.log(`💰 [Admin Force Settle] User ${bet.userId}: 예약 금액 ${pendingAmount.toLocaleString()}원 적용됨`);
       }
+      console.log(`✅ [Admin Force Settle] Bet #${betId}: 새 잔고 = ${parseFloat(newBalance).toLocaleString()}원`);
 
       // Record round result for chart candles (use bet creation time for round date)
       try {
