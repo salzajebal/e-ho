@@ -4804,21 +4804,27 @@ export default function Admin() {
                           const amount = parseFloat(pendingAdjustAmount);
                           if (!isNaN(amount) && amount > 0) {
                             try {
+                              console.log(`[Pending] 예약 추가 요청: userId=${editingUser.id}, amount=${amount}`);
                               const res = await fetch(`/api/admin/users/${editingUser.id}/pending-balance`, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 credentials: 'include',
                                 body: JSON.stringify({ amount: amount }),
                               });
+                              console.log(`[Pending] 응답 상태: ${res.status}`);
                               const data = await res.json();
+                              console.log(`[Pending] 응답 데이터:`, data);
                               if (!res.ok) throw new Error(data.error || "예약 금액 설정 실패");
                               setEditingUser(p => p ? { ...p, pendingBalanceAdjustment: String(amount) } : null);
                               setPendingAdjustAmount("");
                               toast.success(`예약 추가 ${amount.toLocaleString()}원이 설정되었습니다`);
                               refetchUsers();
                             } catch (error: any) {
+                              console.error(`[Pending] 에러:`, error);
                               toast.error(error.message || "예약 금액 설정에 실패했습니다");
                             }
+                          } else {
+                            toast.error("올바른 금액을 입력해주세요");
                           }
                         }}
                         className="px-3 py-2 bg-up text-white rounded-md hover:bg-up/90 text-sm font-medium flex items-center gap-1"
@@ -4831,21 +4837,27 @@ export default function Admin() {
                           const amount = parseFloat(pendingAdjustAmount);
                           if (!isNaN(amount) && amount > 0) {
                             try {
+                              console.log(`[Pending] 예약 차감 요청: userId=${editingUser.id}, amount=-${amount}`);
                               const res = await fetch(`/api/admin/users/${editingUser.id}/pending-balance`, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 credentials: 'include',
                                 body: JSON.stringify({ amount: -amount }),
                               });
+                              console.log(`[Pending] 응답 상태: ${res.status}`);
                               const data = await res.json();
+                              console.log(`[Pending] 응답 데이터:`, data);
                               if (!res.ok) throw new Error(data.error || "예약 금액 설정 실패");
                               setEditingUser(p => p ? { ...p, pendingBalanceAdjustment: String(-amount) } : null);
                               setPendingAdjustAmount("");
                               toast.success(`예약 차감 ${amount.toLocaleString()}원이 설정되었습니다`);
                               refetchUsers();
                             } catch (error: any) {
+                              console.error(`[Pending] 에러:`, error);
                               toast.error(error.message || "예약 금액 설정에 실패했습니다");
                             }
+                          } else {
+                            toast.error("올바른 금액을 입력해주세요");
                           }
                         }}
                         className="px-3 py-2 bg-down text-white rounded-md hover:bg-down/90 text-sm font-medium flex items-center gap-1"
