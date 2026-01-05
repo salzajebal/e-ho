@@ -57,6 +57,7 @@ export interface IStorage {
   updateUserStats(userId: string, betAmount: number, winAmount: number): Promise<void>;
   setPendingBalanceAdjustment(userId: string, amount: string): Promise<void>;
   applyPendingBalanceAdjustment(userId: string): Promise<string>;
+  applyPendingAndUpdateBalance(userId: string, payout: number): Promise<{ pendingAmount: number; newBalance: string }>;
 
   // Bet methods
   getBets(userId: string, outcome?: string): Promise<Bet[]>;
@@ -324,6 +325,51 @@ export class DatabaseStorage implements IStorage {
     });
     
     console.log(`🔍 [Pending Apply] User ${userId}: 최종 반환값 = ${result}`);
+    return result;
+  }
+
+  async applyPendingAndUpdateBalance(userId: string, payout: number): Promise<{ pendingAmount: number; newBalance: string }> {
+    console.log(`🔄 [Atomic Settlement] User ${userId}: 원자적 정산 시작 (payout: ${payout})`);
+    
+    const result = await db.transaction(async (tx) => {
+      const [user] = await tx
+        .select({ 
+          balance: users.balance, 
+          pendingBalanceAdjustment: users.pendingBalanceAdjustment 
+        })
+        .from(users)
+        .where(eq(users.id, userId))
+        .for("update");
+      
+      if (!user) {
+        console.log(`🔄 [Atomic Settlement] User ${userId}: 사용자를 찾을 수 없음`);
+        return { pendingAmount: 0, newBalance: "0" };
+      }
+      
+      const currentBalance = parseFloat(user.balance || '0');
+      const pendingAmount = parseFloat(user.pendingBalanceAdjustment || '0');
+      const totalAdjustment = payout + pendingAmount;
+      const newBalance = Math.max(0, currentBalance + totalAdjustment).toString();
+      
+      console.log(`🔄 [Atomic Settlement] User ${userId}:`);
+      console.log(`   - 현재 잔고: ${currentBalance.toLocaleString()}원`);
+      console.log(`   - 예약 금액: ${pendingAmount.toLocaleString()}원`);
+      console.log(`   - Payout: ${payout.toLocaleString()}원`);
+      console.log(`   - 총 조정: ${totalAdjustment.toLocaleString()}원`);
+      console.log(`   - 새 잔고: ${parseFloat(newBalance).toLocaleString()}원`);
+      
+      await tx.update(users)
+        .set({ 
+          balance: newBalance,
+          pendingBalanceAdjustment: "0"
+        })
+        .where(eq(users.id, userId));
+      
+      console.log(`✅ [Atomic Settlement] User ${userId}: 잔고 업데이트 완료`);
+      
+      return { pendingAmount, newBalance };
+    });
+    
     return result;
   }
 
