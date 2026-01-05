@@ -287,6 +287,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async applyPendingBalanceAdjustment(userId: string): Promise<string> {
+    console.log(`🔍 [Pending Apply] User ${userId}: 예약 금액 적용 시작`);
+    
     // 원자적 연산: SELECT ... FOR UPDATE + UPDATE를 트랜잭션으로 처리
     const result = await db.transaction(async (tx) => {
       // 현재 예약 금액 조회 (FOR UPDATE로 행 잠금)
@@ -296,21 +298,32 @@ export class DatabaseStorage implements IStorage {
         .where(eq(users.id, userId))
         .for("update");
       
-      if (!user) return "0";
+      console.log(`🔍 [Pending Apply] User ${userId}: DB 조회 결과 = ${JSON.stringify(user)}`);
+      
+      if (!user) {
+        console.log(`🔍 [Pending Apply] User ${userId}: 사용자를 찾을 수 없음, 0 반환`);
+        return "0";
+      }
       
       const pendingAmount = parseFloat(user.pendingBalanceAdjustment || '0');
-      if (pendingAmount === 0) return "0";
+      console.log(`🔍 [Pending Apply] User ${userId}: pendingBalanceAdjustment = "${user.pendingBalanceAdjustment}", parsed = ${pendingAmount}`);
+      
+      if (pendingAmount === 0) {
+        console.log(`🔍 [Pending Apply] User ${userId}: 예약 금액이 0, 0 반환`);
+        return "0";
+      }
       
       // 예약 금액을 0으로 초기화
       await tx.update(users)
         .set({ pendingBalanceAdjustment: "0" })
         .where(eq(users.id, userId));
       
-      console.log(`🔄 [Pending TX] User ${userId}: 예약 금액 ${pendingAmount.toLocaleString()}원 가져와서 0으로 초기화`);
+      console.log(`🔄 [Pending TX] User ${userId}: 예약 금액 ${pendingAmount.toLocaleString()}원 가져와서 0으로 초기화 완료`);
       
       return pendingAmount.toString();
     });
     
+    console.log(`🔍 [Pending Apply] User ${userId}: 최종 반환값 = ${result}`);
     return result;
   }
 
