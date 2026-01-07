@@ -88,7 +88,7 @@ export function useUserWebSocket(isAuthenticated: boolean, options?: WebSocketOp
             // Clear session by calling logout endpoint
             fetch('/api/auth/logout', { method: 'POST' }).finally(() => {
               // Show alert and redirect to login page
-              alert('서버와의 접속이 종료되었습니다');
+              alert('로그아웃 되었습니다.');
               window.location.href = '/login';
             });
           }

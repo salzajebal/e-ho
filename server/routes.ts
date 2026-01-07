@@ -756,27 +756,6 @@ export async function registerRoutes(
     }
   });
 
-  // Force logout a user (kick from system)
-  app.post("/api/admin/users/:id/force-logout", requireAdmin, async (req, res) => {
-    try {
-      const userId = req.params.id;
-      
-      // Send force_logout event via WebSocket
-      broadcastToUser(userId, 'force_logout', { 
-        message: '서버와의 접속이 종료되었습니다',
-        reason: 'admin_forced'
-      });
-      
-      // Remove from online users
-      onlineUsers.delete(userId);
-      
-      res.json({ success: true, message: 'User force logged out' });
-    } catch (error) {
-      console.error("Failed to force logout user:", error);
-      res.status(500).json({ error: "Failed to force logout user" });
-    }
-  });
-
   // Get login history for a user
   app.get("/api/admin/users/:id/login-history", requireAdmin, async (req, res) => {
     try {
@@ -1068,7 +1047,10 @@ export async function registerRoutes(
       }
 
       // Broadcast logout event to user via WebSocket
-      broadcastToUser(id, 'force_logout', { message: '관리자에 의해 강제 로그아웃되었습니다' });
+      broadcastToUser(id, 'force_logout', { message: '로그아웃 되었습니다.' });
+      
+      // Remove from online users list
+      onlineUsers.delete(id);
 
       res.json({ success: true, message: `${user.username}님을 강제 로그아웃 처리했습니다` });
     } catch (error) {
