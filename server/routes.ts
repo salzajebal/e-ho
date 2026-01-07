@@ -495,6 +495,12 @@ export async function registerRoutes(
         return res.status(400).json({ error: "이 회차는 마감되었습니다. 다음 회차에 베팅해주세요." });
       }
 
+      // Check if user already has a bet for this round (1 bet per round limit)
+      const existingBet = await storage.getUserBetForRound(userId, symbol, duration, roundNumber);
+      if (existingBet) {
+        return res.status(400).json({ error: "이 회차에 이미 거래하셨습니다. 다음 회차에 거래해주세요." });
+      }
+
       // Check if user has pre-set forced display direction (up/down)
       // This determines how the result appears to the user (price went up or down)
       let forcedOutcome: 'win' | 'lose' | null = null;

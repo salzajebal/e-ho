@@ -63,6 +63,7 @@ export interface IStorage {
   getBets(userId: string, outcome?: string): Promise<Bet[]>;
   getActiveBets(userId: string): Promise<Bet[]>;
   getBet(id: number): Promise<Bet | undefined>;
+  getUserBetForRound(userId: string, symbol: string, duration: number, roundNumber: number): Promise<Bet | undefined>;
   createBet(bet: InsertBet): Promise<Bet>;
   settleBet(id: number, closePrice: string, outcome: 'win' | 'lose', payout: string): Promise<Bet>;
   setForcedOutcome(betId: number, forcedOutcome: 'win' | 'lose' | null): Promise<Bet>;
@@ -395,6 +396,17 @@ export class DatabaseStorage implements IStorage {
 
   async getBet(id: number): Promise<Bet | undefined> {
     const [bet] = await db.select().from(bets).where(eq(bets.id, id));
+    return bet || undefined;
+  }
+
+  async getUserBetForRound(userId: string, symbol: string, duration: number, roundNumber: number): Promise<Bet | undefined> {
+    const [bet] = await db.select().from(bets)
+      .where(and(
+        eq(bets.userId, userId),
+        eq(bets.symbol, symbol),
+        eq(bets.duration, duration),
+        eq(bets.roundNumber, roundNumber)
+      ));
     return bet || undefined;
   }
 
