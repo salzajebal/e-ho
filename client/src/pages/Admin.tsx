@@ -659,6 +659,10 @@ function RoundForcedTab() {
 }
 
 export default function Admin() {
+  // Track if user was previously logged in (to detect session expiration)
+  const wasLoggedInRef = useRef(false);
+  const [sessionExpiredDialogOpen, setSessionExpiredDialogOpen] = useState(false);
+
   // Use separate admin auth API (not shared with user session)
   const { data: auth, isLoading: authLoading } = useQuery<{ id: string; username: string; role: string } | null>({
     queryKey: ["/api/admin/auth/me"],
@@ -668,7 +672,21 @@ export default function Admin() {
       return res.json();
     },
     staleTime: 5000,
+    refetchInterval: 30000, // Check session every 30 seconds
   });
+
+  // Detect session expiration
+  useEffect(() => {
+    if (!authLoading) {
+      if (auth) {
+        wasLoggedInRef.current = true;
+      } else if (wasLoggedInRef.current && !auth) {
+        // Was logged in, now logged out = session expired
+        setSessionExpiredDialogOpen(true);
+        wasLoggedInRef.current = false;
+      }
+    }
+  }, [auth, authLoading]);
   
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
@@ -5671,6 +5689,32 @@ export default function Admin() {
               className="bg-down hover:bg-down/90"
             >
               삭제
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Session Expired Dialog */}
+      <AlertDialog open={sessionExpiredDialogOpen} onOpenChange={() => {}}>
+        <AlertDialogContent className="bg-card border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-red-500 flex items-center gap-2">
+              <AlertCircle className="w-5 h-5" />
+              세션 만료
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground">
+              로그인 세션이 만료되었습니다. 다시 로그인해 주세요.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction
+              onClick={() => {
+                setSessionExpiredDialogOpen(false);
+                window.location.reload();
+              }}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              다시 로그인
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

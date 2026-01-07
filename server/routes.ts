@@ -5,14 +5,20 @@ import { storage } from "./storage";
 import { insertBetSchema, loginSchema } from "@shared/schema";
 import { z } from "zod";
 import session from "express-session";
-import MemoryStore from "memorystore";
+import pgSession from "connect-pg-simple";
+import { Pool } from "pg";
 import { broadcastToAdmins, broadcastToUser, onlineUsers } from "./index";
 import { parse as parseCookie } from "cookie";
 import { unsign } from "cookie-signature";
 import { calculateRoundNumber, getRoundEndTime, getRoundTimeRemaining } from "@shared/rounds";
 import WebSocket from "ws";
 
-const SessionStore = MemoryStore(session);
+const PgSessionStore = pgSession(session);
+
+// Create a separate pool for session store
+const sessionPool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
 
 // Get KST Date (Korea Standard Time, UTC+9)
 const getKSTDate = (): Date => {
@@ -32,9 +38,12 @@ declare module "express-session" {
 // Export session secret and store for WebSocket auth
 export const SESSION_SECRET = process.env.SESSION_SECRET || "myinfx-secret-key-2024";
 
-// Create shared session store instance
-const sessionStore = new SessionStore({
-  checkPeriod: 86400000,
+// Create shared session store instance using PostgreSQL
+const sessionStore = new PgSessionStore({
+  pool: sessionPool,
+  tableName: 'user_sessions',
+  createTableIfMissing: true,
+  pruneSessionInterval: 60 * 15, // Prune expired sessions every 15 minutes
 });
 
 // Helper to validate session from WebSocket request
@@ -96,21 +105,30 @@ export async function registerRoutes(
     app.set("trust proxy", 1);
   }
 
-  // Session middleware
+  // Session middleware - 7 days session with rolling (extends on activity)
   app.use(
     session({
       secret: SESSION_SECRET,
       resave: false,
       saveUninitialized: false,
       store: sessionStore,
+      rolling: true, // Reset session expiry on each request
       cookie: {
         secure: isProduction,
         httpOnly: true,
-        maxAge: 24 * 60 * 60 * 1000,
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         sameSite: "lax",
       },
     })
   );
+
+  // Touch session on every request to keep it alive
+  app.use((req, res, next) => {
+    if (req.session) {
+      req.session.touch();
+    }
+    next();
+  });
 
   // Auth middleware helper
   const requireAuth = (req: Request, res: Response, next: NextFunction) => {
