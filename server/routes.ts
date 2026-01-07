@@ -1018,14 +1018,18 @@ export async function registerRoutes(
 
   // Delete all inquiries for a user
   app.delete("/api/admin/users/:id/inquiries", requireAdmin, async (req, res) => {
+    console.log("Delete user inquiries API called, userId:", req.params.id);
     try {
       const { id } = req.params;
       const user = await storage.getUser(id);
       if (!user) {
+        console.log("User not found:", id);
         return res.status(404).json({ error: "회원을 찾을 수 없습니다" });
       }
 
+      console.log("Deleting inquiries for user:", user.username);
       const deletedCount = await storage.deleteAllInquiriesForUser(id);
+      console.log("Deleted inquiry count:", deletedCount);
       res.json({ 
         success: true, 
         message: `${deletedCount}건의 문의 내역이 삭제되었습니다`,
