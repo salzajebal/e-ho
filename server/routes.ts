@@ -1149,32 +1149,39 @@ export async function registerRoutes(
         return res.json({ success: true, bet, message: "No change" });
       }
 
-      const oldPayout = parseFloat(bet.payout || '0');
       const betAmount = parseFloat(bet.amount);
       const multiplier = parseFloat(bet.multiplier);
       const newPayout = outcome === 'win' ? betAmount * multiplier : 0;
 
-      // Calculate balance change based on outcome transition
-      let balanceChange = 0;
-      if (oldOutcome === 'win') {
-        // Was win, remove old payout
-        balanceChange -= oldPayout;
-      }
-      if (outcome === 'win') {
-        // Now win, add new payout
-        balanceChange += newPayout;
-      }
-
       // Update bet outcome
       const updated = await storage.updateBetOutcome(betId, outcome, closePrice || bet.strikePrice);
 
-      // Adjust user balance
-      if (balanceChange !== 0) {
-        const user = await storage.getUser(bet.userId);
-        if (user) {
-          const currentBalance = parseFloat(user.balance);
-          const newBalance = Math.max(0, currentBalance + balanceChange).toString();
-          await storage.updateUserBalance(bet.userId, newBalance);
+      // pending에서 첫 정산 시: applyPendingAndUpdateBalance 사용 (예약금액 적용)
+      if (oldOutcome === 'pending') {
+        const { pendingAmount, newBalance } = await storage.applyPendingAndUpdateBalance(bet.userId, newPayout);
+        if (pendingAmount !== 0) {
+          console.log(`💰 [Admin Update Bet] User ${bet.userId}: 예약 금액 ${pendingAmount.toLocaleString()}원 적용됨`);
+        }
+        console.log(`✅ [Admin Update Bet] Bet #${betId}: 새 잔고 = ${parseFloat(newBalance).toLocaleString()}원`);
+      } else {
+        // 이미 정산된 배팅의 결과 변경: payout 차이만 적용
+        const oldPayout = parseFloat(bet.payout || '0');
+        let balanceChange = 0;
+        if (oldOutcome === 'win') {
+          balanceChange -= oldPayout;
+        }
+        if (outcome === 'win') {
+          balanceChange += newPayout;
+        }
+
+        if (balanceChange !== 0) {
+          const user = await storage.getUser(bet.userId);
+          if (user) {
+            const currentBalance = parseFloat(user.balance);
+            const newBalance = Math.max(0, currentBalance + balanceChange).toString();
+            await storage.updateUserBalance(bet.userId, newBalance);
+            console.log(`✅ [Admin Update Bet] Bet #${betId} 결과변경: 잔고 ${balanceChange > 0 ? '+' : ''}${balanceChange.toLocaleString()}원`);
+          }
         }
       }
 
