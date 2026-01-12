@@ -367,10 +367,23 @@ export async function registerRoutes(
         return res.status(401).json({ error: "아이디 또는 비밀번호가 올바르지 않습니다" });
       }
 
-      // Set admin session (separate from user session) - preserve existing userId
+      // Set admin session
       req.session.adminUserId = user.id;
       
-      // Session will be saved automatically by express-session
+      // Explicitly save session and wait for completion before responding
+      await new Promise<void>((resolve, reject) => {
+        req.session.save((err) => {
+          if (err) {
+            console.error("Session save error:", err);
+            reject(err);
+          } else {
+            resolve();
+          }
+        });
+      });
+      
+      console.log("Admin login successful, session saved:", req.session.adminUserId);
+      
       res.json({
         id: user.id,
         username: user.username,
