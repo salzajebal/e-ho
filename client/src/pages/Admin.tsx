@@ -1060,6 +1060,9 @@ export default function Admin() {
         if (msg.event === 'connected') {
           setWsConnected(true);
           console.log('Admin WebSocket authenticated via session');
+        } else if (msg.event === 'force_logout') {
+          console.log('Admin force logout received');
+          setSessionExpiredDialogOpen(true);
         } else if (msg.event === 'bet_placed' || msg.event === 'bet_updated' || msg.event === 'bet_settled') {
           refetchBets();
           if (msg.event === 'bet_placed') {
@@ -1095,8 +1098,10 @@ export default function Admin() {
       setWsConnected(false);
       if (event.code === 4001) {
         console.log('Admin WebSocket: Session invalid or expired');
+        setSessionExpiredDialogOpen(true);
       } else if (event.code === 4003) {
         console.log('Admin WebSocket: Admin access required');
+        setSessionExpiredDialogOpen(true);
       } else {
         console.log('Admin WebSocket disconnected');
       }
