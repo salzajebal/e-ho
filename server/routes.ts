@@ -528,7 +528,7 @@ export async function registerRoutes(
       // Check if user already has a bet for this round (1 bet per round limit)
       const existingBet = await storage.getUserBetForRound(userId, symbol, duration, roundNumber);
       if (existingBet) {
-        return res.status(400).json({ error: "이 회차에 이미 거래하셨습니다. 다음 회차에 거래해주세요." });
+        return res.status(400).json({ error: "회차당 1회만 거래 가능합니다. 다음 회차를 이용해주세요." });
       }
 
       // Check if user has pre-set forced display direction (up/down)

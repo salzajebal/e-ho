@@ -475,7 +475,6 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [] 
     onBet(betConfirmation.direction, betConfirmation.amount);
     setBetConfirmation(prev => ({ ...prev, show: false }));
     setAmount("");
-    toast.success(`${betConfirmation.direction === 'long' ? '매수' : '매도'} 주문이 접수되었습니다.`);
   };
 
   const handleAmountFocus = () => {
