@@ -50,6 +50,13 @@ class BetBlockedError extends Error {
   }
 }
 
+class RoundLimitError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'RoundLimitError';
+  }
+}
+
 export function useCreateBet() {
   const queryClient = useQueryClient();
 
@@ -72,6 +79,9 @@ export function useCreateBet() {
         if (res.status === 403 && error.error === "네트워크 오류 거래불가") {
           throw new BetBlockedError(error.error);
         }
+        if (res.status === 400 && error.error?.includes("회차당 1회만")) {
+          throw new RoundLimitError(error.error);
+        }
         throw new Error(error.error || "Failed to place bet");
       }
       return res.json();
@@ -86,6 +96,8 @@ export function useCreateBet() {
     onError: (error: Error) => {
       if (error instanceof BetBlockedError) {
         alert("네트워크 오류 거래불가");
+      } else if (error instanceof RoundLimitError) {
+        alert("회차당 1회만 거래 가능합니다.\n다음 회차를 이용해주세요.");
       } else {
         toast.error(error.message);
       }
