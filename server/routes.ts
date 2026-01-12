@@ -660,14 +660,20 @@ export async function registerRoutes(
 
       const finalClosePrice = closePriceNum.toString();
       const payout = outcome === 'win' ? betAmount * multiplier : 0;
-      const settledBet = await storage.settleBet(id, finalClosePrice, outcome, payout.toString());
-
-      // 원자적 정산: 예약금액 + payout을 합산하여 잔고 업데이트
-      const { pendingAmount, newBalance } = await storage.applyPendingAndUpdateBalance(userId, payout);
-      if (pendingAmount !== 0) {
-        console.log(`💰 [Manual Settle] User ${userId}: 예약 금액 ${pendingAmount.toLocaleString()}원 적용됨`);
+      
+      // 원자적 정산: 베팅 정산 + 잔고 업데이트를 하나의 트랜잭션에서 처리 (중복 정산 방지)
+      const settleResult = await storage.atomicSettleBetAndUpdateBalance(id, finalClosePrice, outcome, payout);
+      
+      if (!settleResult.success) {
+        if (settleResult.alreadySettled) {
+          console.log(`⏭️ [Manual Settle] Bet #${id}: 이미 정산됨, 건너뛰기`);
+          return res.status(400).json({ error: "Bet already settled" });
+        }
+        return res.status(500).json({ error: "Failed to settle bet" });
       }
-      console.log(`✅ [Manual Settle] Bet #${id}: 새 잔고 = ${parseFloat(newBalance).toLocaleString()}원`);
+      
+      const settledBet = settleResult.bet;
+      console.log(`✅ [Manual Settle] Bet #${id}: 정산 완료 (${outcome}, payout: ${payout.toLocaleString()}원)`);
 
       // Record round result for chart candles (use bet creation time for round date)
       try {
@@ -2676,17 +2682,19 @@ export async function registerRoutes(
           }
           
           const payout = outcome === 'win' ? betAmount * multiplier : 0;
-          await storage.settleBet(bet.id, closePrice.toString(), outcome, payout.toString());
           
-          console.log(`📊 [Settle] Bet #${bet.id} 정산: ${outcome}, Payout: ${payout.toLocaleString()}원`);
+          // 원자적 정산: 베팅 정산 + 잔고 업데이트를 하나의 트랜잭션에서 처리 (중복 정산 방지)
+          const settleResult = await storage.atomicSettleBetAndUpdateBalance(bet.id, closePrice.toString(), outcome, payout);
           
-          // 원자적 트랜잭션: 예약 금액 적용 + 잔고 업데이트를 한 번에 처리
-          const { pendingAmount, newBalance } = await storage.applyPendingAndUpdateBalance(bet.userId, payout);
-          
-          if (pendingAmount !== 0) {
-            console.log(`💰 [Pending Applied] User ${bet.userId}: 예약 금액 ${pendingAmount.toLocaleString()}원 적용됨`);
+          if (!settleResult.success) {
+            if (settleResult.alreadySettled) {
+              console.log(`⏭️ [Auto-Settle] Bet #${bet.id}: 이미 정산됨, 건너뛰기`);
+            }
+            continue;
           }
-          console.log(`✅ [Settle Complete] Bet #${bet.id}: 새 잔고 = ${parseFloat(newBalance).toLocaleString()}원`)
+          
+          console.log(`✅ [Auto-Settle] Bet #${bet.id}: 정산 완료 (${outcome}, payout: ${payout.toLocaleString()}원)`);
+          console.log(`   새 잔고: ${settleResult.newBalance ? parseFloat(settleResult.newBalance).toLocaleString() : '알 수 없음'}원`)
           
           // Broadcast settlement to admin clients
           broadcastToAdmins('bet_settled', {

@@ -432,6 +432,89 @@ export class DatabaseStorage implements IStorage {
     return settled;
   }
 
+  // 원자적 정산: 베팅 정산과 잔고 업데이트를 하나의 트랜잭션에서 처리 (중복 정산 방지)
+  async atomicSettleBetAndUpdateBalance(
+    betId: number, 
+    closePrice: string, 
+    outcome: 'win' | 'lose', 
+    payout: number
+  ): Promise<{ success: boolean; bet?: Bet; newBalance?: string; alreadySettled?: boolean }> {
+    console.log(`🔒 [Atomic Settle] Bet #${betId}: 원자적 정산 시작`);
+    
+    const result = await db.transaction(async (tx) => {
+      // 1. 베팅을 FOR UPDATE로 잠금
+      const [bet] = await tx
+        .select()
+        .from(bets)
+        .where(eq(bets.id, betId))
+        .for("update");
+      
+      if (!bet) {
+        console.log(`🔒 [Atomic Settle] Bet #${betId}: 베팅을 찾을 수 없음`);
+        return { success: false };
+      }
+      
+      // 2. 이미 정산된 베팅인지 확인 (중복 정산 방지)
+      if (bet.outcome !== 'pending') {
+        console.log(`🔒 [Atomic Settle] Bet #${betId}: 이미 정산됨 (${bet.outcome}), 건너뛰기`);
+        return { success: false, alreadySettled: true };
+      }
+      
+      // 3. 베팅 정산
+      const [settledBet] = await tx
+        .update(bets)
+        .set({ 
+          closePrice,
+          outcome,
+          payout: payout.toString(),
+          settledAt: new Date(),
+        })
+        .where(eq(bets.id, betId))
+        .returning();
+      
+      console.log(`🔒 [Atomic Settle] Bet #${betId}: 베팅 정산 완료 (${outcome}, payout: ${payout})`);
+      
+      // 4. 사용자 잔고 업데이트 (FOR UPDATE로 잠금)
+      const [user] = await tx
+        .select({ 
+          balance: users.balance, 
+          pendingBalanceAdjustment: users.pendingBalanceAdjustment 
+        })
+        .from(users)
+        .where(eq(users.id, bet.userId))
+        .for("update");
+      
+      if (!user) {
+        console.log(`🔒 [Atomic Settle] Bet #${betId}: 사용자를 찾을 수 없음`);
+        return { success: false };
+      }
+      
+      const currentBalance = parseFloat(user.balance || '0');
+      const pendingAmount = parseFloat(user.pendingBalanceAdjustment || '0');
+      const totalAdjustment = payout + pendingAmount;
+      const newBalance = Math.max(0, currentBalance + totalAdjustment).toString();
+      
+      console.log(`🔒 [Atomic Settle] Bet #${betId}: 잔고 업데이트`);
+      console.log(`   - 현재 잔고: ${currentBalance.toLocaleString()}원`);
+      console.log(`   - 예약 금액: ${pendingAmount.toLocaleString()}원`);
+      console.log(`   - Payout: ${payout.toLocaleString()}원`);
+      console.log(`   - 새 잔고: ${parseFloat(newBalance).toLocaleString()}원`);
+      
+      await tx.update(users)
+        .set({ 
+          balance: newBalance,
+          pendingBalanceAdjustment: "0"
+        })
+        .where(eq(users.id, bet.userId));
+      
+      console.log(`✅ [Atomic Settle] Bet #${betId}: 완료`);
+      
+      return { success: true, bet: settledBet, newBalance };
+    });
+    
+    return result;
+  }
+
   async getExpiredPendingBets(): Promise<Bet[]> {
     return await db.select().from(bets)
       .where(and(
