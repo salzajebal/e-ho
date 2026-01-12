@@ -40,14 +40,14 @@ function BetRow({ bet, currentPrice, onExpire }: { bet: Bet; currentPrice: numbe
       
       if (remaining === 0 && !hasExpired && bet.outcome === 'pending') {
         setHasExpired(true);
-        onExpire(currentPrice);
+        // 서버 자동 정산에만 의존 - 프론트엔드에서 수동 정산 제거 (중복 정산 방지)
       }
     };
 
     calculateRemaining();
     const interval = setInterval(calculateRemaining, 100);
     return () => clearInterval(interval);
-  }, [bet.expiresAt, bet.outcome, hasExpired, currentPrice, onExpire]);
+  }, [bet.expiresAt, bet.outcome, hasExpired]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
