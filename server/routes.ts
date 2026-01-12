@@ -1086,6 +1086,17 @@ export async function registerRoutes(
         return res.status(404).json({ error: "회원을 찾을 수 없습니다" });
       }
 
+      // Delete all sessions for this user from the database
+      try {
+        await sessionPool.query(
+          `DELETE FROM user_sessions WHERE sess::text LIKE $1`,
+          [`%"userId":"${id}"%`]
+        );
+        console.log(`🔒 [Force Logout] Deleted sessions for user ${user.username}`);
+      } catch (sessionError) {
+        console.error("Failed to delete user sessions:", sessionError);
+      }
+
       // Broadcast logout event to user via WebSocket
       broadcastToUser(id, 'force_logout', { message: '로그아웃 되었습니다.' });
       
