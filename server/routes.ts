@@ -271,7 +271,12 @@ export async function registerRoutes(
         return res.status(403).json({ error: "동결된 계정입니다. 관리자에게 문의하세요." });
       }
 
+      // Set user session - preserve existing adminUserId
+      const existingAdminUserId = req.session.adminUserId;
       req.session.userId = user.id;
+      if (existingAdminUserId) {
+        req.session.adminUserId = existingAdminUserId; // Ensure admin session is preserved
+      }
       
       // Get client IP address
       const clientIp = req.headers['x-forwarded-for']?.toString().split(',')[0].trim() || 
@@ -306,9 +311,10 @@ export async function registerRoutes(
     }
   });
 
-  // Logout
+  // Logout - only clears user session, preserves admin session
   app.post("/api/auth/logout", (req, res) => {
-    req.session.destroy((err) => {
+    delete req.session.userId;
+    req.session.save((err) => {
       if (err) {
         return res.status(500).json({ error: "로그아웃에 실패했습니다" });
       }
@@ -366,14 +372,26 @@ export async function registerRoutes(
         return res.status(401).json({ error: "아이디 또는 비밀번호가 올바르지 않습니다" });
       }
 
-      // Set admin session (separate from user session)
+      // Set admin session (separate from user session) - preserve existing userId
+      const existingUserId = req.session.userId;
       req.session.adminUserId = user.id;
-
-      res.json({
-        id: user.id,
-        username: user.username,
-        balance: user.balance,
-        role: user.role,
+      if (existingUserId) {
+        req.session.userId = existingUserId; // Ensure user session is preserved
+      }
+      
+      // Explicitly save session to ensure both adminUserId and userId are preserved
+      req.session.save((err) => {
+        if (err) {
+          console.error("Admin login session save error:", err);
+          return res.status(500).json({ error: "세션 저장에 실패했습니다" });
+        }
+        
+        res.json({
+          id: user.id,
+          username: user.username,
+          balance: user.balance,
+          role: user.role,
+        });
       });
     } catch (error) {
       console.error("Admin login error:", error);
