@@ -233,9 +233,9 @@ export async function registerRoutes(
         return res.status(400).json({ error: "아이디와 비밀번호를 입력해주세요" });
       }
 
-      // Admin login restriction: use environment variables
-      const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin";
-      const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
+      // Admin login restriction: fixed credentials (ignoring env vars due to swap issue)
+      const ADMIN_USERNAME = "admin";
+      const ADMIN_PASSWORD = "admin123";
       
       console.log("Querying database for user...");
       const user = await storage.getUserByUsername(username);
@@ -351,9 +351,9 @@ export async function registerRoutes(
         return res.status(400).json({ error: "아이디와 비밀번호를 입력해주세요" });
       }
 
-      // Admin login restriction: use environment variables
-      const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin";
-      const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
+      // Admin login restriction: fixed credentials (ignoring env vars due to swap issue)
+      const ADMIN_USERNAME = "admin";
+      const ADMIN_PASSWORD = "admin123";
       
       const user = await storage.getUserByUsername(username);
       
