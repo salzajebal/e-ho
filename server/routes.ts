@@ -100,10 +100,8 @@ export async function registerRoutes(
 ): Promise<Server> {
   const isProduction = process.env.NODE_ENV === "production";
   
-  // Trust proxy for production (Replit uses reverse proxy)
-  if (isProduction) {
-    app.set("trust proxy", 1);
-  }
+  // Trust proxy - always enabled for Replit (uses reverse proxy)
+  app.set("trust proxy", 1);
 
   // Session middleware - 7 days session with rolling (extends on activity)
   app.use(
@@ -117,7 +115,7 @@ export async function registerRoutes(
         secure: isProduction,
         httpOnly: true,
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        sameSite: "lax",
+        sameSite: isProduction ? "none" : "lax", // "none" required for cross-site cookies with secure
       },
     })
   );
