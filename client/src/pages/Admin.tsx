@@ -5716,7 +5716,11 @@ export default function Admin() {
             <AlertDialogAction
               onClick={() => {
                 setSessionExpiredDialogOpen(false);
-                window.location.reload();
+                // 어드민 로그아웃 API 호출 후 로그인 페이지로 이동
+                fetch("/api/admin/auth/logout", { method: "POST", credentials: "include" })
+                  .finally(() => {
+                    window.location.href = "/admin";
+                  });
               }}
               className="bg-blue-600 hover:bg-blue-700"
             >
