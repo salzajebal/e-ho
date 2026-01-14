@@ -95,9 +95,11 @@ export function useCreateBet() {
     },
     onError: (error: Error) => {
       if (error instanceof BetBlockedError) {
-        alert("네트워크 오류 거래불가");
+        toast.error("네트워크 오류 거래불가", { duration: 5000 });
+        setTimeout(() => alert("네트워크 오류 거래불가"), 100);
       } else if (error instanceof RoundLimitError) {
-        alert("한 회차당 1회 주문만 가능합니다.");
+        toast.error("한 회차당 1회 주문만 가능합니다.", { duration: 5000 });
+        setTimeout(() => alert("한 회차당 1회 주문만 가능합니다."), 100);
       } else {
         toast.error(error.message);
       }
