@@ -672,19 +672,21 @@ export default function Admin() {
       if (!res.ok) return null;
       return res.json();
     },
-    staleTime: 5000,
-    refetchInterval: 30000, // Check session every 30 seconds
+    staleTime: 3000,
+    refetchInterval: 10000, // Check session every 10 seconds (faster detection)
   });
 
-  // Detect session expiration
+  // Detect session expiration - immediately redirect to login
   useEffect(() => {
     if (!authLoading) {
       if (auth) {
         wasLoggedInRef.current = true;
       } else if (wasLoggedInRef.current && !auth) {
         // Was logged in, now logged out = session expired
-        setSessionExpiredDialogOpen(true);
         wasLoggedInRef.current = false;
+        // Show alert and redirect to login
+        alert("세션이 만료되었습니다. 다시 로그인해 주세요.");
+        window.location.href = "/admin";
       }
     }
   }, [auth, authLoading]);
@@ -1062,7 +1064,8 @@ export default function Admin() {
           console.log('Admin WebSocket authenticated via session');
         } else if (msg.event === 'force_logout') {
           console.log('Admin force logout received');
-          setSessionExpiredDialogOpen(true);
+          alert("세션이 만료되었습니다. 다시 로그인해 주세요.");
+          window.location.href = "/admin";
         } else if (msg.event === 'bet_placed' || msg.event === 'bet_updated' || msg.event === 'bet_settled') {
           refetchBets();
           if (msg.event === 'bet_placed') {
@@ -1098,10 +1101,12 @@ export default function Admin() {
       setWsConnected(false);
       if (event.code === 4001) {
         console.log('Admin WebSocket: Session invalid or expired');
-        setSessionExpiredDialogOpen(true);
+        alert("세션이 만료되었습니다. 다시 로그인해 주세요.");
+        window.location.href = "/admin";
       } else if (event.code === 4003) {
         console.log('Admin WebSocket: Admin access required');
-        setSessionExpiredDialogOpen(true);
+        alert("세션이 만료되었습니다. 다시 로그인해 주세요.");
+        window.location.href = "/admin";
       } else {
         console.log('Admin WebSocket disconnected');
       }
