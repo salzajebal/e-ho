@@ -97,7 +97,7 @@ export function useCreateBet() {
       if (error instanceof BetBlockedError) {
         alert("네트워크 오류 거래불가");
       } else if (error instanceof RoundLimitError) {
-        alert("회차당 1회만 거래 가능합니다.\n다음 회차를 이용해주세요.");
+        alert("한 회차당 1회 주문만 가능합니다.");
       } else {
         toast.error(error.message);
       }
