@@ -894,7 +894,6 @@ export default function Landing() {
                         <span className="text-white font-medium text-sm line-clamp-1">{ann.title}</span>
                       </div>
                       <p className="text-gray-400 text-xs line-clamp-2">{ann.content}</p>
-                      <p className="text-gray-600 text-[10px] mt-1">{new Date(ann.createdAt).toLocaleDateString('ko-KR')}</p>
                     </button>
                   ))
                 )}
@@ -2199,16 +2198,7 @@ export default function Landing() {
                       )}
                       <h3 className="text-white font-medium text-lg">{selectedAnnouncement.title}</h3>
                     </div>
-                    <p className="text-gray-300 text-sm whitespace-pre-wrap mb-3">{selectedAnnouncement.content}</p>
-                    <p className="text-gray-500 text-xs">
-                      {new Date(selectedAnnouncement.createdAt).toLocaleDateString('ko-KR', {
-                        year: 'numeric',
-                        month: '2-digit',
-                        day: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </p>
+                    <p className="text-gray-300 text-sm whitespace-pre-wrap">{selectedAnnouncement.content}</p>
                   </div>
                 </div>
               ) : (
@@ -2230,9 +2220,6 @@ export default function Landing() {
                           <div className="flex-1">
                             <h3 className="text-white font-medium mb-1">{ann.title}</h3>
                             <p className="text-gray-400 text-sm line-clamp-2">{ann.content}</p>
-                            <p className="text-gray-500 text-xs mt-2">
-                              {new Date(ann.createdAt).toLocaleDateString('ko-KR')}
-                            </p>
                           </div>
                         </div>
                       </button>
