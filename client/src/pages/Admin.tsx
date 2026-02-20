@@ -191,8 +191,12 @@ const SYMBOL_NAMES: Record<string, string> = {
   'JPY': '엔화 (JPY)',
   'EUR': '유로 (EUR)',
   'AUD': '호주달러 (AUD)',
-  'BTC': 'USD/JPY',
-  'ETH': 'EUR/USD',
+};
+
+const DURATION_NAMES: Record<number, string> = {
+  60: '1분',
+  180: '3분',
+  300: '5분',
 };
 
 function AdminLogin() {
@@ -383,7 +387,7 @@ function RoundForcedTab() {
     calculateRoundInfo();
     const interval = setInterval(calculateRoundInfo, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [duration]);
 
   // Fetch round forced directions for today
   const { data: forcedDirections = [], refetch: refetchDirections } = useQuery<any[]>({
@@ -585,7 +589,7 @@ function RoundForcedTab() {
       <div className="bg-card border border-border rounded-lg overflow-hidden">
         <div className="p-4 border-b border-border flex items-center justify-between">
           <h3 className="font-medium">
-            {selectedSymbol} - 오늘 설정된 회차 목록
+            {SYMBOL_NAMES[selectedSymbol] || selectedSymbol} {duration / 60}분 - 오늘 설정된 회차 목록
           </h3>
           <Button variant="outline" size="sm" onClick={() => refetchDirections()}>
             <RefreshCw className="w-4 h-4 mr-1" />
@@ -897,6 +901,7 @@ export default function Admin() {
   // Forced betting states
   const [forcedBetUserId, setForcedBetUserId] = useState("");
   const [forcedBetSymbol, setForcedBetSymbol] = useState("USD");
+  const [forcedBetDuration, setForcedBetDuration] = useState<number>(60);
   const [forcedBetDirection, setForcedBetDirection] = useState<"long" | "short">("long");
   const [forcedBetAmount, setForcedBetAmount] = useState("");
   const [forcedBetUserSearch, setForcedBetUserSearch] = useState("");
@@ -3047,7 +3052,8 @@ export default function Admin() {
                         bet.outcome === 'pending' && "bg-yellow-500/5"
                       )}>
                         <td className="px-2 lg:px-3 py-1.5 lg:py-2 font-medium">
-                          {SYMBOL_NAMES[bet.symbol] || bet.symbol}
+                          <div>{SYMBOL_NAMES[bet.symbol] || bet.symbol}</div>
+                          <div className="text-[9px] lg:text-[10px] text-muted-foreground">{DURATION_NAMES[bet.duration] || `${bet.duration}초`}</div>
                         </td>
                         <td className="px-2 lg:px-3 py-1.5 lg:py-2">
                           <span className="inline-flex items-center px-1.5 lg:px-2 py-0.5 rounded text-[10px] lg:text-xs font-medium bg-yellow-500/20 text-yellow-500">
@@ -3110,7 +3116,7 @@ export default function Admin() {
                           {bet.outcome === 'pending' ? (
                             <span className={cn(
                               "font-mono text-[10px] lg:text-xs px-1.5 lg:px-2 py-0.5 rounded",
-                              new Date(bet.expiresAt).getTime() - currentTime <= 10000 
+                              new Date(bet.expiresAt).getTime() - currentTime <= (bet.duration === 300 ? 20000 : bet.duration === 180 ? 15000 : 10000)
                                 ? "bg-down/20 text-down animate-pulse" 
                                 : "bg-yellow-500/20 text-yellow-500"
                             )}>
@@ -3950,7 +3956,7 @@ export default function Admin() {
             <div className="bg-card border border-border rounded-lg p-6">
               <h3 className="font-medium mb-4 flex items-center gap-2">
                 <Zap className="w-4 h-4 text-yellow-500" />
-                회원 대신 거래하기 (2분 게임)
+                회원 대신 거래하기
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2 md:col-span-2">
@@ -4017,6 +4023,23 @@ export default function Admin() {
                         onClick={() => setForcedBetSymbol(s)}
                       >
                         {l} ({s})
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm text-muted-foreground">거래 시간 *</label>
+                  <div className="flex gap-2">
+                    {[60, 180, 300].map(d => (
+                      <Button
+                        key={d}
+                        type="button"
+                        variant={forcedBetDuration === d ? 'default' : 'outline'}
+                        className={cn("flex-1", forcedBetDuration === d && "bg-amber-600 hover:bg-amber-700")}
+                        onClick={() => setForcedBetDuration(d)}
+                      >
+                        {d / 60}분
                       </Button>
                     ))}
                   </div>
@@ -4093,7 +4116,7 @@ export default function Admin() {
                           symbol: forcedBetSymbol,
                           direction: forcedBetDirection,
                           amount: parseFloat(forcedBetAmount),
-                          duration: 60,
+                          duration: forcedBetDuration,
                           strikePrice: symbolPrice.price,
                           multiplier: 1.95,
                         }),
@@ -4107,6 +4130,7 @@ export default function Admin() {
                       toast.success('강제 거래가 성공적으로 등록되었습니다');
                       setForcedBetUserId('');
                       setForcedBetSymbol('USD');
+                      setForcedBetDuration(60);
                       setForcedBetDirection('long');
                       setForcedBetAmount('');
                       setForcedBetUserSearch('');
