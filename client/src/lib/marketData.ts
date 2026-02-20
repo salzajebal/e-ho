@@ -9,12 +9,12 @@ export interface MarketData {
   high: number;
   low: number;
   volume: number;
-  category: '암호화폐';
+  category: '통화';
 }
 
 export const INITIAL_MARKET_DATA: MarketData[] = [
-  { symbol: 'BTC', name: 'Bitcoin', price: 87500, change: 0, changePercent: 0, high: 89000, low: 86500, volume: 0, category: '암호화폐' },
-  { symbol: 'ETH', name: 'Ethereum', price: 2930, change: 0, changePercent: 0, high: 2980, low: 2890, volume: 0, category: '암호화폐' },
+  { symbol: 'BTC', name: 'USD/JPY', price: 87500, change: 0, changePercent: 0, high: 89000, low: 86500, volume: 0, category: '통화' },
+  { symbol: 'ETH', name: 'EUR/USD', price: 2930, change: 0, changePercent: 0, high: 2980, low: 2890, volume: 0, category: '통화' },
 ];
 
 // 직접 Binance API에서 가격 가져오기 (프로덕션 환경에서 서버 우회)
@@ -54,25 +54,25 @@ export function useMarketData() {
         const newData: MarketData[] = [
           {
             symbol: 'BTC',
-            name: 'Bitcoin',
+            name: 'USD/JPY',
             price: parseFloat(binanceData.btc.lastPrice),
             change: parseFloat(binanceData.btc.priceChange),
             changePercent: parseFloat(binanceData.btc.priceChangePercent),
             high: parseFloat(binanceData.btc.highPrice),
             low: parseFloat(binanceData.btc.lowPrice),
             volume: parseFloat(binanceData.btc.volume),
-            category: '암호화폐',
+            category: '통화',
           },
           {
             symbol: 'ETH',
-            name: 'Ethereum',
+            name: 'EUR/USD',
             price: parseFloat(binanceData.eth.lastPrice),
             change: parseFloat(binanceData.eth.priceChange),
             changePercent: parseFloat(binanceData.eth.priceChangePercent),
             high: parseFloat(binanceData.eth.highPrice),
             low: parseFloat(binanceData.eth.lowPrice),
             volume: parseFloat(binanceData.eth.volume),
-            category: '암호화폐',
+            category: '통화',
           }
         ];
         
@@ -128,7 +128,7 @@ export function useMarketData() {
             high: apiPrice.high,
             low: apiPrice.low,
             volume: 0,
-            category: '암호화폐' as const,
+            category: '통화' as const,
           };
         });
         

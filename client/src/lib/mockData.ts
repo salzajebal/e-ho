@@ -7,12 +7,12 @@ export interface MarketData {
   high: number;
   low: number;
   volume: number;
-  category: '암호화폐';
+  category: '통화';
 }
 
 export const INITIAL_MARKET_DATA: MarketData[] = [
-  { symbol: 'BTC', name: 'Bitcoin', price: 87500.00, change: 0, changePercent: 0, high: 89500.00, low: 86500.00, volume: 0, category: '암호화폐' },
-  { symbol: 'ETH', name: 'Ethereum', price: 2930.00, change: 0, changePercent: 0, high: 3000.00, low: 2890.00, volume: 0, category: '암호화폐' },
+  { symbol: 'BTC', name: 'USD/JPY', price: 87500.00, change: 0, changePercent: 0, high: 89500.00, low: 86500.00, volume: 0, category: '통화' },
+  { symbol: 'ETH', name: 'EUR/USD', price: 2930.00, change: 0, changePercent: 0, high: 3000.00, low: 2890.00, volume: 0, category: '통화' },
 ];
 
 export function generatePriceUpdate(currentPrice: number): number {

@@ -40,7 +40,7 @@
 
 @layer base {
   :root {
-    /* Coinone-inspired Dark Theme */
+    /* Value-Option FX Trading Theme */
     --background: 220 20% 7%;     /* Deep dark blue-black */
     --foreground: 210 20% 98%;    /* Light text */
 
@@ -50,7 +50,7 @@
     --popover: 220 18% 10%;
     --popover-foreground: 210 20% 98%;
 
-    --primary: 217 91% 60%;       /* Coinone Blue #3B82F6 */
+    --primary: 43 96% 56%;        /* FX Gold #D4A843 */
     --primary-foreground: 0 0% 100%;
 
     --secondary: 220 14% 16%;     /* Dark Grey Button */
@@ -67,7 +67,7 @@
 
     --border: 220 14% 16%;        /* Subtle borders */
     --input: 220 14% 16%;
-    --ring: 217 91% 60%;
+    --ring: 43 96% 56%;
 
     --up: 0 72% 55%;              /* Red for up (Korean market) #E53935 */
     --down: 217 91% 55%;          /* Blue for down (Korean market) #3B82F6 */

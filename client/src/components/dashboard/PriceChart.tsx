@@ -29,7 +29,7 @@ async function fetchBinanceKlines(symbol: string, intervalSeconds: number, limit
     else if (intervalSeconds === 1800) interval = '30m';
     else if (intervalSeconds === 3600) interval = '1h';
     
-    const binanceSymbol = symbol === 'BTC' ? 'BTCUSDT' : symbol === 'ETH' ? 'ETHUSDT' : `${symbol}USDT`;
+    const binanceSymbol = (symbol === 'BTC' || symbol === 'USD/JPY') ? 'BTCUSDT' : (symbol === 'ETH' || symbol === 'EUR/USD') ? 'ETHUSDT' : `${symbol}USDT`;
     const url = `https://api.binance.com/api/v3/klines?symbol=${binanceSymbol}&interval=${interval}&limit=${limit}`;
     
     const response = await fetch(url);

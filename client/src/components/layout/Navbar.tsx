@@ -32,11 +32,11 @@ export function Navbar({ onSelectGame, selectedGameId }: NavbarProps) {
         <Link href="/" className="flex items-center gap-2 font-bold text-lg lg:text-xl hover:opacity-90 transition-opacity shrink-0">
           <img 
             src="/coinone-logo.png" 
-            alt="Coinone Logo" 
+            alt="Value-Option Logo" 
             className="w-7 h-7 lg:w-8 lg:h-8 rounded-lg object-cover"
           />
           <div className="hidden sm:flex items-center tracking-tight">
-            <span className="text-primary font-bold">COINONE</span>
+            <span className="text-primary font-bold">VALUE-OPTION</span>
           </div>
         </Link>
         

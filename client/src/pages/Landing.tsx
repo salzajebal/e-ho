@@ -25,8 +25,8 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
 const CRYPTO_ASSETS = [
-  { symbol: "BTC", name: "Bitcoin" },
-  { symbol: "ETH", name: "Ethereum" },
+  { symbol: "USD/JPY", name: "달러/엔" },
+  { symbol: "EUR/USD", name: "유로/달러" },
 ];
 
 const KOREAN_BANKS = [
@@ -57,15 +57,17 @@ interface LandingMarketData {
   priceHistory: number[];
 }
 
+const SYMBOL_API_MAP: Record<string, string> = { "USD/JPY": "BTC", "EUR/USD": "ETH" };
+
 function useLandingMarketData() {
   const [markets, setMarkets] = useState<LandingMarketData[]>([
-    { symbol: "BTC", name: "Bitcoin", price: 88700, changePercent: 0, priceHistory: [] },
-    { symbol: "ETH", name: "Ethereum", price: 2960, changePercent: 0, priceHistory: [] },
+    { symbol: "USD/JPY", name: "달러/엔", price: 88700, changePercent: 0, priceHistory: [] },
+    { symbol: "EUR/USD", name: "유로/달러", price: 2960, changePercent: 0, priceHistory: [] },
   ]);
   
   const historyRef = useRef<Record<string, number[]>>({
-    "BTC": [],
-    "ETH": [],
+    "USD/JPY": [],
+    "EUR/USD": [],
   });
   
   const lastApiPrices = useRef<Record<string, { price: number; changePercent: number }>>({});
@@ -90,7 +92,7 @@ function useLandingMarketData() {
         
         if (result.prices && !result.fallback) {
           setMarkets(prev => prev.map(m => {
-            const apiPrice = result.prices.find((p: any) => p.symbol === m.symbol);
+            const apiPrice = result.prices.find((p: any) => p.symbol === SYMBOL_API_MAP[m.symbol]);
             if (apiPrice) {
               lastApiPrices.current[m.symbol] = {
                 price: apiPrice.price,
@@ -397,14 +399,14 @@ export default function Landing() {
               <div className="flex items-center gap-2 md:gap-3">
                 <img 
                   src="/coinone-logo.png" 
-                  alt="Coinone Logo" 
+                  alt="Value-Option Logo" 
                   className="w-8 h-8 md:w-10 md:h-10 rounded-lg object-cover"
                 />
                 <div className="flex flex-col">
-                  <span className="text-lg md:text-xl font-bold tracking-wide text-blue-500">
-                    COINONE
+                  <span className="text-lg md:text-xl font-bold tracking-wide text-amber-500">
+                    VALUE-OPTION
                   </span>
-                  <span className="hidden sm:block text-[10px] text-gray-400 tracking-widest uppercase">Premium Trading</span>
+                  <span className="hidden sm:block text-[10px] text-gray-400 tracking-widest uppercase">FX Trading</span>
                 </div>
               </div>
             </Link>
@@ -412,14 +414,14 @@ export default function Landing() {
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-6">
               <DropdownMenu>
-                <DropdownMenuTrigger className="text-gray-300 hover:text-blue-500 transition-colors text-sm font-medium flex items-center gap-1" data-testid="nav-options-trading">
+                <DropdownMenuTrigger className="text-gray-300 hover:text-amber-500 transition-colors text-sm font-medium flex items-center gap-1" data-testid="nav-options-trading">
                   옵션거래 <ChevronDown className="w-3 h-3" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="bg-[#161b22] border-white/10">
                   {CRYPTO_ASSETS.map((stock) => (
                     <DropdownMenuItem 
                       key={stock.symbol}
-                      className="text-gray-300 hover:text-blue-500 hover:bg-white/5 cursor-pointer"
+                      className="text-gray-300 hover:text-amber-500 hover:bg-white/5 cursor-pointer"
                       onClick={() => {
                         if (user) {
                           setLocation("/trade");
@@ -428,7 +430,7 @@ export default function Landing() {
                         }
                       }}
                     >
-                      <span className="font-medium text-blue-500 mr-2">{stock.symbol}</span>
+                      <span className="font-medium text-amber-500 mr-2">{stock.symbol}</span>
                       {stock.name}
                     </DropdownMenuItem>
                   ))}
@@ -442,7 +444,7 @@ export default function Landing() {
                     setShowLoginModal(true);
                   }
                 }}
-                className="text-gray-300 hover:text-blue-500 transition-colors text-sm font-medium" 
+                className="text-gray-300 hover:text-amber-500 transition-colors text-sm font-medium" 
                 data-testid="nav-trade-history"
               >
                 거래내역
@@ -459,21 +461,21 @@ export default function Landing() {
                   }
                   setShowDepositModal(true);
                 }}
-                className="text-gray-300 hover:text-blue-500 transition-colors text-sm font-medium" 
+                className="text-gray-300 hover:text-amber-500 transition-colors text-sm font-medium" 
                 data-testid="nav-deposit-withdraw"
               >
                 입금/출금신청
               </button>
               <button 
                 onClick={() => setShowAnnouncementsModal(true)}
-                className="text-gray-300 hover:text-blue-500 transition-colors text-sm font-medium" 
+                className="text-gray-300 hover:text-amber-500 transition-colors text-sm font-medium" 
                 data-testid="nav-announcements"
               >
                 공지사항
               </button>
               <button 
                 onClick={() => setShowCustomerServiceModal(true)}
-                className="text-gray-300 hover:text-blue-500 transition-colors text-sm font-medium" 
+                className="text-gray-300 hover:text-amber-500 transition-colors text-sm font-medium" 
                 data-testid="nav-customer-service"
               >
                 고객센터
@@ -487,7 +489,7 @@ export default function Landing() {
               <>
                 {/* Balance Display */}
                 <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5">
-                  <Wallet className="w-4 h-4 text-blue-500" />
+                  <Wallet className="w-4 h-4 text-amber-500" />
                   <span className="text-gray-400 text-xs">잔고</span>
                   <span className="text-white font-bold text-sm" data-testid="text-header-balance">
                     {balanceData?.balance ? Math.floor(parseFloat(balanceData.balance)).toLocaleString() : '0'}원
@@ -533,7 +535,7 @@ export default function Landing() {
                 </span>
                 {user.role === 'admin' ? (
                   <Button 
-                    className="bg-blue-500 hover:bg-blue-600 text-white font-semibold" 
+                    className="bg-amber-500 hover:bg-amber-600 text-white font-semibold" 
                     data-testid="button-header-admin"
                     onClick={() => setLocation("/admin")}
                   >
@@ -541,7 +543,7 @@ export default function Landing() {
                   </Button>
                 ) : (
                   <Button 
-                    className="bg-blue-500 hover:bg-blue-600 text-white font-semibold" 
+                    className="bg-amber-500 hover:bg-amber-600 text-white font-semibold" 
                     data-testid="button-header-trade"
                     onClick={() => setLocation("/trade")}
                   >
@@ -568,7 +570,7 @@ export default function Landing() {
                   로그인
                 </Button>
                 <Button 
-                  className="bg-blue-500 hover:bg-blue-600 text-white font-semibold" 
+                  className="bg-amber-500 hover:bg-amber-600 text-white font-semibold" 
                   data-testid="button-header-register"
                   onClick={() => setShowRegisterModal(true)}
                 >
@@ -592,7 +594,7 @@ export default function Landing() {
               <nav className="flex flex-col gap-2 mt-6">
                 {user && (
                   <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2 mb-4">
-                    <Wallet className="w-4 h-4 text-blue-500" />
+                    <Wallet className="w-4 h-4 text-amber-500" />
                     <span className="text-gray-400 text-xs">잔고</span>
                     <span className="text-white font-bold text-sm">
                       {balanceData?.balance ? Math.floor(parseFloat(balanceData.balance)).toLocaleString() : '0'}원
@@ -609,7 +611,7 @@ export default function Landing() {
                     }
                     setMobileMenuOpen(false);
                   }}
-                  className="text-left text-gray-300 hover:text-blue-500 py-3 border-b border-white/10 w-full touch-manipulation"
+                  className="text-left text-gray-300 hover:text-amber-500 py-3 border-b border-white/10 w-full touch-manipulation"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   옵션거래
@@ -623,7 +625,7 @@ export default function Landing() {
                     }
                     setMobileMenuOpen(false);
                   }}
-                  className="text-left text-gray-300 hover:text-blue-500 py-3 border-b border-white/10 w-full touch-manipulation"
+                  className="text-left text-gray-300 hover:text-amber-500 py-3 border-b border-white/10 w-full touch-manipulation"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   거래내역
@@ -643,7 +645,7 @@ export default function Landing() {
                     setShowDepositModal(true);
                     setMobileMenuOpen(false);
                   }}
-                  className="text-left text-gray-300 hover:text-blue-500 py-3 border-b border-white/10 w-full touch-manipulation"
+                  className="text-left text-gray-300 hover:text-amber-500 py-3 border-b border-white/10 w-full touch-manipulation"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   입금/출금신청
@@ -653,7 +655,7 @@ export default function Landing() {
                     setShowAnnouncementsModal(true);
                     setMobileMenuOpen(false);
                   }}
-                  className="text-left text-gray-300 hover:text-blue-500 py-3 border-b border-white/10 w-full touch-manipulation"
+                  className="text-left text-gray-300 hover:text-amber-500 py-3 border-b border-white/10 w-full touch-manipulation"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   공지사항
@@ -663,7 +665,7 @@ export default function Landing() {
                     setShowCustomerServiceModal(true);
                     setMobileMenuOpen(false);
                   }}
-                  className="text-left text-gray-300 hover:text-blue-500 py-3 border-b border-white/10 w-full touch-manipulation"
+                  className="text-left text-gray-300 hover:text-amber-500 py-3 border-b border-white/10 w-full touch-manipulation"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   고객센터
@@ -675,14 +677,14 @@ export default function Landing() {
                       <p className="text-gray-400 text-sm mb-2">{user.username}님</p>
                       {user.role === 'admin' && (
                         <Button 
-                          className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold" 
+                          className="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold" 
                           onClick={() => { setLocation("/admin"); setMobileMenuOpen(false); }}
                         >
                           관리자
                         </Button>
                       )}
                       <Button 
-                        className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold" 
+                        className="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold" 
                         onClick={() => { setLocation("/trade"); setMobileMenuOpen(false); }}
                       >
                         거래하기
@@ -705,7 +707,7 @@ export default function Landing() {
                         로그인
                       </Button>
                       <Button 
-                        className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold" 
+                        className="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold" 
                         onClick={() => { setShowRegisterModal(true); setMobileMenuOpen(false); }}
                       >
                         회원가입
@@ -724,7 +726,7 @@ export default function Landing() {
         <div 
           className="absolute inset-0 bg-cover bg-center opacity-30"
           style={{
-            backgroundImage: "url('https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=1920&q=80')",
+            backgroundImage: "url('https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1920&q=80')",
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0a0a0f]/70 to-[#0a0a0f]" />
@@ -733,11 +735,11 @@ export default function Landing() {
           <div className="mb-8 flex flex-col items-center">
             <img 
               src="/coinone-logo.png" 
-              alt="Coinone Logo" 
+              alt="Value-Option Logo" 
               className="w-24 h-24 rounded-2xl object-cover mb-4"
             />
-            <h1 className="text-5xl md:text-7xl font-bold mb-2 tracking-wide text-blue-500">
-              COINONE
+            <h1 className="text-5xl md:text-7xl font-bold mb-2 tracking-wide text-amber-500">
+              VALUE-OPTION
             </h1>
           </div>
           
@@ -753,7 +755,7 @@ export default function Landing() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
               size="lg" 
-              className="bg-blue-500 hover:bg-blue-600 text-white font-bold px-10 py-6 text-lg rounded-lg"
+              className="bg-amber-500 hover:bg-amber-600 text-white font-bold px-10 py-6 text-lg rounded-lg"
               data-testid="button-trade"
               onClick={handleTradeClick}
             >
@@ -802,13 +804,13 @@ export default function Landing() {
               return (
                 <div 
                   key={item.symbol}
-                  className="w-full sm:w-[280px] bg-gradient-to-br from-[#1a1a24] to-[#12121a] border border-white/10 rounded-xl p-5 hover:border-blue-500/50 transition-all cursor-pointer group"
+                  className="w-full sm:w-[280px] bg-gradient-to-br from-[#1a1a24] to-[#12121a] border border-white/10 rounded-xl p-5 hover:border-amber-500/50 transition-all cursor-pointer group"
                   data-testid={`card-market-${index}`}
                 >
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center group-hover:bg-blue-500/30 transition-colors">
-                        <TrendingUp className="w-5 h-5 text-blue-500" />
+                      <div className="w-10 h-10 bg-amber-500/20 rounded-full flex items-center justify-center group-hover:bg-amber-500/30 transition-colors">
+                        <TrendingUp className="w-5 h-5 text-amber-500" />
                       </div>
                       <div>
                         <h3 className="font-semibold text-white">{item.name}</h3>
@@ -851,7 +853,7 @@ export default function Landing() {
                       <p className="text-lg font-bold text-white transition-all">${formattedPrice}</p>
                     </div>
                     <Link href="/trade">
-                      <Button size="sm" className="bg-blue-500/20 hover:bg-blue-500 text-blue-400 hover:text-white text-xs transition-all" data-testid={`button-trade-${item.symbol}`}>
+                      <Button size="sm" className="bg-amber-500/20 hover:bg-amber-500 text-amber-400 hover:text-white text-xs transition-all" data-testid={`button-trade-${item.symbol}`}>
                         거래하기
                       </Button>
                     </Link>
@@ -870,8 +872,8 @@ export default function Landing() {
             {/* Announcements */}
             <div className="bg-gradient-to-br from-[#1a1a24] to-[#12121a] border border-white/10 rounded-xl p-6">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <div className="w-10 h-10 bg-amber-500/20 rounded-full flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
                     <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
                   </svg>
@@ -886,11 +888,11 @@ export default function Landing() {
                     <button
                       key={ann.id}
                       onClick={() => { setSelectedAnnouncement(ann); setShowAnnouncementsModal(true); }}
-                      className="w-full text-left p-3 bg-black/30 rounded-lg border border-white/5 hover:border-blue-500/30 transition-colors cursor-pointer"
+                      className="w-full text-left p-3 bg-black/30 rounded-lg border border-white/5 hover:border-amber-500/30 transition-colors cursor-pointer"
                       data-testid={`landing-announcement-${ann.id}`}
                     >
                       <div className="flex items-center gap-2 mb-1">
-                        {ann.isPinned && <span className="text-[10px] px-1.5 py-0.5 bg-blue-500/20 text-blue-400 rounded">고정</span>}
+                        {ann.isPinned && <span className="text-[10px] px-1.5 py-0.5 bg-amber-500/20 text-amber-400 rounded">고정</span>}
                         <span className="text-white font-medium text-sm line-clamp-1">{ann.title}</span>
                       </div>
                       <p className="text-gray-400 text-xs line-clamp-2">{ann.content}</p>
@@ -903,8 +905,8 @@ export default function Landing() {
             {/* Messages (for logged-in users) or Login Prompt */}
             <div className="bg-gradient-to-br from-[#1a1a24] to-[#12121a] border border-white/10 rounded-xl p-6">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center">
-                  <Mail className="w-5 h-5 text-blue-500" />
+                <div className="w-10 h-10 bg-amber-500/20 rounded-full flex items-center justify-center">
+                  <Mail className="w-5 h-5 text-amber-500" />
                 </div>
                 <h3 className="text-lg font-bold text-white">쪽지함</h3>
                 {user && messages.filter(m => !m.isRead).length > 0 && (
@@ -920,7 +922,7 @@ export default function Landing() {
                     <p className="text-gray-400 text-sm mb-3">로그인 후 쪽지를 확인하세요</p>
                     <Button 
                       size="sm" 
-                      className="bg-blue-500 hover:bg-blue-600 text-white"
+                      className="bg-amber-500 hover:bg-amber-600 text-white"
                       onClick={() => setShowLoginModal(true)}
                     >
                       로그인
@@ -933,11 +935,11 @@ export default function Landing() {
                     <button
                       key={msg.id}
                       onClick={() => handleOpenMessage(msg)}
-                      className={`w-full text-left p-3 rounded-lg border transition-colors cursor-pointer hover:border-blue-500/50 ${msg.isRead ? 'bg-black/20 border-white/5' : 'bg-blue-500/10 border-blue-500/30'}`}
+                      className={`w-full text-left p-3 rounded-lg border transition-colors cursor-pointer hover:border-amber-500/50 ${msg.isRead ? 'bg-black/20 border-white/5' : 'bg-amber-500/10 border-amber-500/30'}`}
                       data-testid={`message-item-${msg.id}`}
                     >
                       <div className="flex items-center gap-2 mb-1">
-                        {!msg.isRead && <span className="w-2 h-2 bg-blue-500 rounded-full" />}
+                        {!msg.isRead && <span className="w-2 h-2 bg-amber-500 rounded-full" />}
                         <span className={`font-medium text-sm line-clamp-1 ${msg.isRead ? 'text-gray-400' : 'text-white'}`}>{msg.title}</span>
                       </div>
                       <p className="text-gray-400 text-xs line-clamp-2">{msg.content}</p>
@@ -955,7 +957,7 @@ export default function Landing() {
       <section className="py-20 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <p className="text-blue-400 font-medium mb-2">월드 클래스</p>
+            <p className="text-amber-400 font-medium mb-2">월드 클래스</p>
             <h2 className="text-3xl md:text-4xl font-bold" data-testid="text-features-title">트레이딩 플랫폼</h2>
           </div>
           
@@ -994,11 +996,11 @@ export default function Landing() {
             ].map((feature, index) => (
               <div 
                 key={index}
-                className="bg-[#0d1117] border border-white/5 rounded-2xl p-8 hover:border-blue-500/30 transition-all hover:transform hover:-translate-y-1"
+                className="bg-[#0d1117] border border-white/5 rounded-2xl p-8 hover:border-amber-500/30 transition-all hover:transform hover:-translate-y-1"
                 data-testid={`card-feature-${index}`}
               >
-                <div className="w-14 h-14 bg-blue-500/10 rounded-xl flex items-center justify-center mb-6">
-                  <feature.icon className="w-7 h-7 text-blue-400" />
+                <div className="w-14 h-14 bg-amber-500/10 rounded-xl flex items-center justify-center mb-6">
+                  <feature.icon className="w-7 h-7 text-amber-400" />
                 </div>
                 <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
                 <p className="text-gray-400 leading-relaxed">{feature.description}</p>
@@ -1012,7 +1014,7 @@ export default function Landing() {
       <section className="py-20 px-4 bg-[#0d1117]">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <p className="text-blue-400 font-medium mb-2">플랫폼 이용 후기</p>
+            <p className="text-amber-400 font-medium mb-2">플랫폼 이용 후기</p>
             <h2 className="text-3xl md:text-4xl font-bold" data-testid="text-reviews-title">고객리뷰</h2>
           </div>
           
@@ -1028,7 +1030,7 @@ export default function Landing() {
                 data-testid={`card-review-${index}`}
               >
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-500 rounded-full" />
+                  <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-amber-500 rounded-full" />
                   <div>
                     <p className="font-semibold">투자자 {index + 1}</p>
                     <p className="text-sm text-gray-500">Premium 회원</p>
@@ -1046,11 +1048,11 @@ export default function Landing() {
         <section className="py-20 px-4">
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="text-3xl md:text-4xl font-bold mb-4" data-testid="text-cta-title">
-              COINONE에 가입하고<br />지금 바로 시작해보세요
+              VALUE-OPTION에 가입하고<br />지금 바로 시작해보세요
             </h2>
             <p className="text-gray-400 text-lg mb-10">
               당신의 첫 옵션 거래,<br />
-              믿을 수 있는 COINONE에서 시작하세요!
+              믿을 수 있는 VALUE-OPTION에서 시작하세요!
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
@@ -1064,7 +1066,7 @@ export default function Landing() {
               </Button>
               <Button 
                 size="lg" 
-                className="bg-blue-500 hover:bg-blue-600 text-white font-bold px-10 py-6 text-lg rounded-lg"
+                className="bg-amber-500 hover:bg-amber-600 text-white font-bold px-10 py-6 text-lg rounded-lg"
                 data-testid="button-register-cta"
                 onClick={() => setShowRegisterModal(true)}
               >
@@ -1083,11 +1085,11 @@ export default function Landing() {
               <div className="flex items-center gap-3 mb-4">
                 <img 
                   src="/coinone-logo.png" 
-                  alt="Coinone Logo" 
+                  alt="Value-Option Logo" 
                   className="w-10 h-10 rounded-lg object-cover"
                 />
-                <h3 className="text-xl font-bold text-blue-500">
-                  COINONE
+                <h3 className="text-xl font-bold text-amber-500">
+                  VALUE-OPTION
                 </h3>
               </div>
               <p className="text-gray-500 text-sm">
@@ -1096,10 +1098,10 @@ export default function Landing() {
               </p>
             </div>
             <div>
-              <h4 className="font-semibold mb-4 text-gray-300">암호화폐 거래</h4>
+              <h4 className="font-semibold mb-4 text-gray-300">통화 거래</h4>
               <ul className="space-y-2 text-gray-500 text-sm">
-                <li><Link href="/trade" className="hover:text-blue-500 transition-colors" data-testid="link-trade-btc">Bitcoin (BTC)</Link></li>
-                <li><Link href="/trade" className="hover:text-blue-500 transition-colors" data-testid="link-trade-eth">Ethereum (ETH)</Link></li>
+                <li><Link href="/trade" className="hover:text-amber-500 transition-colors" data-testid="link-trade-btc">USD/JPY (달러/엔)</Link></li>
+                <li><Link href="/trade" className="hover:text-amber-500 transition-colors" data-testid="link-trade-eth">EUR/USD (유로/달러)</Link></li>
               </ul>
             </div>
             <div>
@@ -1109,27 +1111,27 @@ export default function Landing() {
                   if (!user) { setShowLoginModal(true); return; }
                   if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 9시~오후 6시 사이에만 가능합니다"); return; }
                   setTransactionType('deposit'); setShowDepositModal(true); 
-                }} className="hover:text-blue-500 transition-colors" data-testid="link-deposit">입금신청</button></li>
+                }} className="hover:text-amber-500 transition-colors" data-testid="link-deposit">입금신청</button></li>
                 <li><button onClick={() => { 
                   if (!user) { setShowLoginModal(true); return; }
                   if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 9시~오후 6시 사이에만 가능합니다"); return; }
                   setTransactionType('withdrawal'); setShowDepositModal(true); 
-                }} className="hover:text-blue-500 transition-colors" data-testid="link-withdraw">출금신청</button></li>
-                <li><button onClick={() => { if (user) { setShowHistoryModal(true); } else { setShowLoginModal(true); } }} className="hover:text-blue-500 transition-colors" data-testid="link-transaction-history">입출금내역</button></li>
+                }} className="hover:text-amber-500 transition-colors" data-testid="link-withdraw">출금신청</button></li>
+                <li><button onClick={() => { if (user) { setShowHistoryModal(true); } else { setShowLoginModal(true); } }} className="hover:text-amber-500 transition-colors" data-testid="link-transaction-history">입출금내역</button></li>
               </ul>
             </div>
             <div>
               <h4 className="font-semibold mb-4 text-gray-300">고객센터</h4>
               <ul className="space-y-2 text-gray-500 text-sm">
-                <li><button onClick={() => setShowAnnouncementsModal(true)} className="hover:text-blue-500 transition-colors" data-testid="link-notice">공지사항</button></li>
-                <li><button onClick={() => setShowCustomerServiceModal(true)} className="hover:text-blue-500 transition-colors" data-testid="link-inquiry">고객센터</button></li>
+                <li><button onClick={() => setShowAnnouncementsModal(true)} className="hover:text-amber-500 transition-colors" data-testid="link-notice">공지사항</button></li>
+                <li><button onClick={() => setShowCustomerServiceModal(true)} className="hover:text-amber-500 transition-colors" data-testid="link-inquiry">고객센터</button></li>
               </ul>
             </div>
           </div>
           
           <div className="border-t border-white/5 pt-8 text-center text-gray-600 text-sm space-y-2">
             <p className="text-gray-500">대표이사 김동호 외2인</p>
-            <p>© 2024 COINONE Trade International, Inc. All rights reserved.</p>
+            <p>© 2024 VALUE-OPTION Trade International, Inc. All rights reserved.</p>
           </div>
         </div>
       </footer>
@@ -1139,7 +1141,7 @@ export default function Landing() {
         <DialogContent className="sm:max-w-md p-0 bg-transparent border-none shadow-none [&>button]:hidden">
           <DialogTitle className="sr-only">로그인</DialogTitle>
           <div className="relative">
-            <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 via-amber-500/20 to-blue-500/20 rounded-2xl blur-xl" />
+            <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/20 via-amber-500/20 to-amber-500/20 rounded-2xl blur-xl" />
             <div className="relative backdrop-blur-xl bg-[#161b22]/95 border border-white/10 rounded-2xl p-8 shadow-2xl">
               <button 
                 onClick={() => setShowLoginModal(false)}
@@ -1153,7 +1155,7 @@ export default function Landing() {
                 <div className="flex items-center justify-center gap-2 mb-4">
                   <img 
                     src="/coinone-logo.png" 
-                    alt="Coinone Logo" 
+                    alt="Value-Option Logo" 
                     className="w-12 h-12 rounded-lg object-cover"
                   />
                 </div>
@@ -1169,7 +1171,7 @@ export default function Landing() {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="아이디를 입력하세요"
-                    className="h-12 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-blue-500/50 focus:ring-blue-500/20 transition-all"
+                    className="h-12 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-amber-500/50 focus:ring-amber-500/20 transition-all"
                     data-testid="input-modal-username"
                     required
                   />
@@ -1182,7 +1184,7 @@ export default function Landing() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="비밀번호를 입력하세요"
-                    className="h-12 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-blue-500/50 focus:ring-blue-500/20 transition-all"
+                    className="h-12 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-amber-500/50 focus:ring-amber-500/20 transition-all"
                     data-testid="input-modal-password"
                     required
                   />
@@ -1190,7 +1192,7 @@ export default function Landing() {
 
                 <Button
                   type="submit"
-                  className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-blue-500 via-amber-500 to-blue-600 hover:from-blue-400 hover:via-amber-400 hover:to-blue-500 text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:shadow-blue-500/40"
+                  className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-amber-500 via-amber-500 to-amber-600 hover:from-amber-400 hover:via-amber-400 hover:to-amber-500 text-white shadow-lg shadow-amber-500/25 transition-all duration-300 hover:shadow-amber-500/40"
                   disabled={login.isPending}
                   data-testid="button-modal-login"
                 >
@@ -1201,7 +1203,7 @@ export default function Landing() {
               <div className="mt-6 pt-6 border-t border-white/10 text-center text-sm text-gray-400">
                 계정이 없으신가요?{" "}
                 <button 
-                  className="text-blue-500 hover:text-blue-400 font-medium transition-colors"
+                  className="text-amber-500 hover:text-amber-400 font-medium transition-colors"
                   onClick={() => {
                     setShowLoginModal(false);
                     setShowRegisterModal(true);
@@ -1231,7 +1233,7 @@ export default function Landing() {
         <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden max-h-[90vh] overflow-y-auto">
           <DialogTitle className="sr-only">회원가입</DialogTitle>
           <div className="relative">
-            <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 via-amber-500/20 to-blue-500/20 rounded-2xl blur-xl" />
+            <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/20 via-amber-500/20 to-amber-500/20 rounded-2xl blur-xl" />
             <div className="relative backdrop-blur-xl bg-[#161b22]/95 border border-white/10 rounded-2xl p-6 shadow-2xl">
               <button 
                 onClick={() => setShowRegisterModal(false)}
@@ -1245,7 +1247,7 @@ export default function Landing() {
                 <div className="flex items-center justify-center gap-2 mb-3">
                   <img 
                     src="/coinone-logo.png" 
-                    alt="Coinone Logo" 
+                    alt="Value-Option Logo" 
                     className="w-10 h-10 rounded-lg object-cover"
                   />
                 </div>
@@ -1262,7 +1264,7 @@ export default function Landing() {
                       value={regUsername}
                       onChange={(e) => setRegUsername(e.target.value)}
                       placeholder="아이디 (3자 이상)"
-                      className="h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-blue-500/50 text-sm"
+                      className="h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-amber-500/50 text-sm"
                       data-testid="input-reg-username"
                       required
                     />
@@ -1274,7 +1276,7 @@ export default function Landing() {
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="실명"
-                      className="h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-blue-500/50 text-sm"
+                      className="h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-amber-500/50 text-sm"
                       data-testid="input-reg-name"
                       required
                     />
@@ -1289,7 +1291,7 @@ export default function Landing() {
                       value={regPassword}
                       onChange={(e) => setRegPassword(e.target.value)}
                       placeholder="4자 이상"
-                      className="h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-blue-500/50 text-sm"
+                      className="h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-amber-500/50 text-sm"
                       data-testid="input-reg-password"
                       required
                     />
@@ -1301,7 +1303,7 @@ export default function Landing() {
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="비밀번호 재입력"
-                      className="h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-blue-500/50 text-sm"
+                      className="h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-amber-500/50 text-sm"
                       data-testid="input-reg-confirm-password"
                       required
                     />
@@ -1315,7 +1317,7 @@ export default function Landing() {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="01012345678"
-                    className="h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-blue-500/50 text-sm"
+                    className="h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-amber-500/50 text-sm"
                     data-testid="input-reg-phone"
                     required
                   />
@@ -1396,7 +1398,7 @@ export default function Landing() {
                           value={accountHolder}
                           onChange={(e) => setAccountHolder(e.target.value)}
                           placeholder="예금주명"
-                          className="h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-blue-500/50 text-sm"
+                          className="h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-amber-500/50 text-sm"
                           data-testid="input-reg-account-holder"
                           required
                         />
@@ -1408,7 +1410,7 @@ export default function Landing() {
                           value={accountNumber}
                           onChange={(e) => setAccountNumber(e.target.value)}
                           placeholder="- 없이 입력"
-                          className="h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-blue-500/50 text-sm"
+                          className="h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-amber-500/50 text-sm"
                           data-testid="input-reg-account-number"
                           required
                         />
@@ -1419,7 +1421,7 @@ export default function Landing() {
 
                 <Button
                   type="submit"
-                  className="w-full h-11 text-base font-semibold bg-gradient-to-r from-blue-500 via-amber-500 to-blue-600 hover:from-blue-400 hover:via-amber-400 hover:to-blue-500 text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:shadow-blue-500/40 mt-4"
+                  className="w-full h-11 text-base font-semibold bg-gradient-to-r from-amber-500 via-amber-500 to-amber-600 hover:from-amber-400 hover:via-amber-400 hover:to-amber-500 text-white shadow-lg shadow-amber-500/25 transition-all duration-300 hover:shadow-amber-500/40 mt-4"
                   disabled={register.isPending}
                   data-testid="button-modal-register"
                 >
@@ -1430,7 +1432,7 @@ export default function Landing() {
               <div className="mt-4 pt-4 border-t border-white/10 text-center text-sm text-gray-400">
                 이미 계정이 있으신가요?{" "}
                 <button 
-                  className="text-blue-500 hover:text-blue-400 font-medium transition-colors"
+                  className="text-amber-500 hover:text-amber-400 font-medium transition-colors"
                   onClick={() => {
                     setShowRegisterModal(false);
                     setShowLoginModal(true);
@@ -1449,7 +1451,7 @@ export default function Landing() {
         <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden max-h-[90vh] overflow-y-auto">
           <DialogTitle className="sr-only">거래내역</DialogTitle>
           <div className="relative">
-            <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 via-amber-500/20 to-blue-500/20 rounded-2xl blur-xl" />
+            <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/20 via-amber-500/20 to-amber-500/20 rounded-2xl blur-xl" />
             <div className="relative backdrop-blur-xl bg-[#161b22]/95 border border-white/10 rounded-2xl p-6 shadow-2xl">
               <button 
                 onClick={() => setShowHistoryModal(false)}
@@ -1460,17 +1462,17 @@ export default function Landing() {
               
               <div className="text-center mb-6">
                 <div className="flex items-center justify-center gap-2 mb-3">
-                  <History className="w-8 h-8 text-blue-500" />
+                  <History className="w-8 h-8 text-amber-500" />
                 </div>
                 <h2 className="text-2xl font-bold text-white mb-1">거래내역</h2>
                 <p className="text-gray-400 text-sm">나의 거래 기록과 잔고를 확인하세요</p>
               </div>
 
               {/* Balance Card */}
-              <div className="bg-gradient-to-r from-blue-500/20 to-amber-500/20 border border-blue-500/30 rounded-xl p-4 mb-6">
+              <div className="bg-gradient-to-r from-amber-500/20 to-amber-500/20 border border-amber-500/30 rounded-xl p-4 mb-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <Wallet className="w-6 h-6 text-blue-500" />
+                    <Wallet className="w-6 h-6 text-amber-500" />
                     <span className="text-gray-300">보유 잔고</span>
                   </div>
                   <span className="text-2xl font-bold text-white">
@@ -1517,7 +1519,7 @@ export default function Landing() {
               </div>
 
               <Button
-                className="w-full mt-4 bg-blue-500 hover:bg-blue-600 text-white"
+                className="w-full mt-4 bg-amber-500 hover:bg-amber-600 text-white"
                 onClick={() => {
                   setShowHistoryModal(false);
                   setLocation("/trade");
@@ -1535,7 +1537,7 @@ export default function Landing() {
         <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden max-h-[90vh] overflow-y-auto">
           <DialogTitle className="sr-only">입출금 신청</DialogTitle>
           <div className="relative">
-            <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 via-amber-500/20 to-blue-500/20 rounded-2xl blur-xl" />
+            <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/20 via-amber-500/20 to-amber-500/20 rounded-2xl blur-xl" />
             <div className="relative backdrop-blur-xl bg-[#161b22]/95 border border-white/10 rounded-2xl p-6 shadow-2xl max-h-[85vh] overflow-y-auto overscroll-contain touch-pan-y">
               {/* Mobile-friendly header with back button */}
               <div className="flex items-center justify-between mb-6">
@@ -1556,14 +1558,14 @@ export default function Landing() {
               
               <div className="text-center mb-6">
                 <div className="flex items-center justify-center gap-2 mb-3">
-                  <Wallet className="w-8 h-8 text-blue-500" />
+                  <Wallet className="w-8 h-8 text-amber-500" />
                 </div>
                 <h2 className="text-2xl font-bold text-white mb-1">입출금 신청</h2>
                 <p className="text-gray-400 text-sm">입금 또는 출금을 신청하세요</p>
               </div>
 
               {/* Current Balance */}
-              <div className="bg-gradient-to-r from-blue-500/20 to-amber-500/20 border border-blue-500/30 rounded-xl p-4 mb-6">
+              <div className="bg-gradient-to-r from-amber-500/20 to-amber-500/20 border border-amber-500/30 rounded-xl p-4 mb-6">
                 <div className="flex items-center justify-between">
                   <span className="text-gray-300">현재 잔고</span>
                   <span className="text-2xl font-bold text-white">
@@ -1657,15 +1659,15 @@ export default function Landing() {
                 )}
 
                 {transactionType === 'deposit' && (
-                  <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
-                    <p className="text-blue-400 text-sm whitespace-pre-wrap">
+                  <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4">
+                    <p className="text-amber-400 text-sm whitespace-pre-wrap">
                       {depositNoticeData?.depositNotice || '입금 신청 후 고객센터에서 입금 계좌 정보를 안내해드립니다.'}
                     </p>
                   </div>
                 )}
 
                 {transactionType === 'withdrawal' && (
-                  <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
+                  <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4">
                     <p className="text-yellow-400 text-sm">
                       출금은 가입 시 등록한 계좌로 처리됩니다. 처리까지 약 30분 소요됩니다.
                     </p>
@@ -1758,7 +1760,7 @@ export default function Landing() {
         <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden">
           <DialogTitle className="sr-only">고객센터</DialogTitle>
           <div className="relative">
-            <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 via-amber-500/20 to-blue-500/20 rounded-2xl blur-xl" />
+            <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/20 via-amber-500/20 to-amber-500/20 rounded-2xl blur-xl" />
             <div className="relative backdrop-blur-xl bg-[#161b22]/95 border border-white/10 rounded-2xl p-6 shadow-2xl">
               <button 
                 onClick={() => setShowCustomerServiceModal(false)}
@@ -1769,7 +1771,7 @@ export default function Landing() {
               
               <div className="text-center mb-6">
                 <div className="flex items-center justify-center gap-2 mb-3">
-                  <Headphones className="w-8 h-8 text-blue-500" />
+                  <Headphones className="w-8 h-8 text-amber-500" />
                 </div>
                 <h2 className="text-2xl font-bold text-white mb-1">고객센터</h2>
                 <p className="text-gray-400 text-sm">문의를 남기시면 빠르게 답변드립니다</p>
@@ -1778,7 +1780,7 @@ export default function Landing() {
               <div className="space-y-3">
                 {/* 문의 작성하기 */}
                 <button 
-                  className="w-full block bg-gradient-to-r from-blue-500/10 to-amber-500/10 border border-blue-500/30 rounded-xl p-4 hover:border-blue-500/50 transition-colors cursor-pointer text-left"
+                  className="w-full block bg-gradient-to-r from-amber-500/10 to-amber-500/10 border border-amber-500/30 rounded-xl p-4 hover:border-amber-500/50 transition-colors cursor-pointer text-left"
                   onClick={() => {
                     if (!user) {
                       toast.error("로그인이 필요합니다");
@@ -1791,15 +1793,15 @@ export default function Landing() {
                   }}
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center">
-                      <FileText className="w-6 h-6 text-blue-500" />
+                    <div className="w-12 h-12 bg-amber-500/20 rounded-full flex items-center justify-center">
+                      <FileText className="w-6 h-6 text-amber-500" />
                     </div>
                     <div className="flex-1">
                       <h3 className="text-white font-medium">문의 작성하기</h3>
-                      <p className="text-blue-400 text-sm">새로운 문의를 작성합니다</p>
+                      <p className="text-amber-400 text-sm">새로운 문의를 작성합니다</p>
                       <p className="text-gray-400 text-xs">빠른 답변 보장</p>
                     </div>
-                    <div className="text-blue-500">
+                    <div className="text-amber-500">
                       <ChevronRight className="w-5 h-5" />
                     </div>
                   </div>
@@ -1807,7 +1809,7 @@ export default function Landing() {
 
                 {/* 내 문의 내역 */}
                 <button 
-                  className="w-full block bg-white/5 border border-white/10 rounded-xl p-4 hover:border-blue-500/50 transition-colors cursor-pointer text-left"
+                  className="w-full block bg-white/5 border border-white/10 rounded-xl p-4 hover:border-amber-500/50 transition-colors cursor-pointer text-left"
                   onClick={() => {
                     if (!user) {
                       toast.error("로그인이 필요합니다");
@@ -1820,15 +1822,15 @@ export default function Landing() {
                   }}
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center">
-                      <MessageCircle className="w-6 h-6 text-blue-500" />
+                    <div className="w-12 h-12 bg-amber-500/20 rounded-full flex items-center justify-center">
+                      <MessageCircle className="w-6 h-6 text-amber-500" />
                     </div>
                     <div className="flex-1">
                       <h3 className="text-white font-medium">내 문의 내역</h3>
-                      <p className="text-blue-400 text-sm">작성한 문의와 답변 확인</p>
+                      <p className="text-amber-400 text-sm">작성한 문의와 답변 확인</p>
                       <p className="text-gray-400 text-xs">{myInquiries.length}건의 문의</p>
                     </div>
-                    <div className="text-blue-500">
+                    <div className="text-amber-500">
                       <ChevronRight className="w-5 h-5" />
                     </div>
                   </div>
@@ -1885,7 +1887,7 @@ export default function Landing() {
           <AlertDialogFooter>
             <AlertDialogAction 
               onClick={() => setShowWithdrawalSuccessModal(false)}
-              className="bg-gradient-to-r from-blue-500 to-amber-500 hover:from-blue-600 hover:to-amber-600 text-white"
+              className="bg-gradient-to-r from-amber-500 to-amber-500 hover:from-amber-600 hover:to-amber-600 text-white"
             >
               확인
             </AlertDialogAction>
@@ -1898,7 +1900,7 @@ export default function Landing() {
         <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden">
           <DialogTitle className="sr-only">문의 작성</DialogTitle>
           <div className="relative">
-            <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 via-amber-500/20 to-blue-500/20 rounded-2xl blur-xl" />
+            <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/20 via-amber-500/20 to-amber-500/20 rounded-2xl blur-xl" />
             <div className="relative backdrop-blur-xl bg-[#161b22]/95 border border-white/10 rounded-2xl p-6 shadow-2xl">
               <button 
                 onClick={() => setShowInquiryFormModal(false)}
@@ -1909,7 +1911,7 @@ export default function Landing() {
               
               <div className="text-center mb-6">
                 <div className="flex items-center justify-center gap-2 mb-3">
-                  <FileText className="w-8 h-8 text-blue-500" />
+                  <FileText className="w-8 h-8 text-amber-500" />
                 </div>
                 <h2 className="text-2xl font-bold text-white mb-1">문의 작성</h2>
                 <p className="text-gray-400 text-sm">문의를 남기시면 빠르게 답변드립니다</p>
@@ -1923,7 +1925,7 @@ export default function Landing() {
                     placeholder="문의 제목을 입력해주세요"
                     value={inquiryTitle}
                     onChange={(e) => setInquiryTitle(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-amber-500"
                     data-testid="input-inquiry-title"
                   />
                 </div>
@@ -1934,12 +1936,12 @@ export default function Landing() {
                     value={inquiryContent}
                     onChange={(e) => setInquiryContent(e.target.value)}
                     rows={5}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-amber-500 resize-none"
                     data-testid="input-inquiry-content"
                   />
                 </div>
                 <Button
-                  className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3"
+                  className="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3"
                   disabled={inquirySubmitting || !inquiryTitle.trim() || !inquiryContent.trim()}
                   onClick={async () => {
                     try {
@@ -1980,7 +1982,7 @@ export default function Landing() {
         <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden">
           <DialogTitle className="sr-only">내 문의 내역</DialogTitle>
           <div className="relative">
-            <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 via-amber-500/20 to-blue-500/20 rounded-2xl blur-xl" />
+            <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/20 via-amber-500/20 to-amber-500/20 rounded-2xl blur-xl" />
             <div className="relative backdrop-blur-xl bg-[#161b22]/95 border border-white/10 rounded-2xl p-6 shadow-2xl max-h-[80vh] overflow-y-auto">
               <button 
                 onClick={() => setShowMyInquiriesModal(false)}
@@ -1991,13 +1993,13 @@ export default function Landing() {
               
               <div className="text-center mb-6">
                 <div className="flex items-center justify-center gap-2 mb-3">
-                  <MessageCircle className="w-8 h-8 text-blue-500" />
+                  <MessageCircle className="w-8 h-8 text-amber-500" />
                 </div>
                 <div className="flex items-center justify-center gap-2 mb-1">
                   <h2 className="text-2xl font-bold text-white">내 문의 내역</h2>
                   <button
                     onClick={() => refetchInquiries()}
-                    className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-500/10 rounded-lg transition-colors"
+                    className="p-1.5 text-gray-400 hover:text-amber-500 hover:bg-amber-500/10 rounded-lg transition-colors"
                     title="새로고침"
                     data-testid="button-refresh-inquiries"
                   >
@@ -2018,7 +2020,7 @@ export default function Landing() {
                         <span className={`px-2 py-0.5 rounded text-xs font-medium ${
                           inquiry.status === 'answered' 
                             ? 'bg-red-500/20 text-red-400' 
-                            : 'bg-blue-500/20 text-yellow-400'
+                            : 'bg-amber-500/20 text-yellow-400'
                         }`}>
                           {inquiry.status === 'answered' ? '답변완료' : '대기중'}
                         </span>
@@ -2037,7 +2039,7 @@ export default function Landing() {
                       {inquiry.reply && (
                         <div className="mt-3 pt-3 border-t border-white/10">
                           <div className="flex items-center gap-2 mb-2">
-                            <span className="text-blue-500 text-sm font-medium">관리자 답변</span>
+                            <span className="text-amber-500 text-sm font-medium">관리자 답변</span>
                             {inquiry.repliedAt && (
                               <span className="text-gray-500 text-xs">
                                 {new Date(inquiry.repliedAt).toLocaleDateString('ko-KR', {
@@ -2050,7 +2052,7 @@ export default function Landing() {
                               </span>
                             )}
                           </div>
-                          <p className="text-gray-300 text-sm whitespace-pre-wrap bg-blue-500/10 p-3 rounded-lg">{inquiry.reply}</p>
+                          <p className="text-gray-300 text-sm whitespace-pre-wrap bg-amber-500/10 p-3 rounded-lg">{inquiry.reply}</p>
                         </div>
                       )}
                     </div>
@@ -2059,7 +2061,7 @@ export default function Landing() {
               </div>
               
               <Button
-                className="w-full mt-4 bg-blue-500 hover:bg-blue-600 text-white font-semibold"
+                className="w-full mt-4 bg-amber-500 hover:bg-amber-600 text-white font-semibold"
                 onClick={() => {
                   setShowMyInquiriesModal(false);
                   setShowInquiryFormModal(true);
@@ -2077,7 +2079,7 @@ export default function Landing() {
         <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden">
           <DialogTitle className="sr-only">쪽지함</DialogTitle>
           <div className="relative">
-            <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 via-cyan-500/20 to-blue-500/20 rounded-2xl blur-xl" />
+            <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/20 via-cyan-500/20 to-amber-500/20 rounded-2xl blur-xl" />
             <div className="relative backdrop-blur-xl bg-[#161b22]/95 border border-white/10 rounded-2xl p-6 shadow-2xl max-h-[80vh] overflow-y-auto">
               <button 
                 onClick={() => { setShowMessagesModal(false); setSelectedMessage(null); }}
@@ -2088,7 +2090,7 @@ export default function Landing() {
               
               <div className="text-center mb-6">
                 <div className="flex items-center justify-center gap-2 mb-3">
-                  <Mail className="w-8 h-8 text-blue-500" />
+                  <Mail className="w-8 h-8 text-amber-500" />
                 </div>
                 <h2 className="text-2xl font-bold text-white mb-1">쪽지함</h2>
                 <p className="text-gray-400 text-sm">
@@ -2100,7 +2102,7 @@ export default function Landing() {
                 <div className="space-y-4">
                   <button
                     onClick={() => setSelectedMessage(null)}
-                    className="flex items-center gap-2 text-blue-400 hover:text-blue-300 text-sm"
+                    className="flex items-center gap-2 text-amber-400 hover:text-amber-300 text-sm"
                   >
                     <ChevronRight className="w-4 h-4 rotate-180" />
                     목록으로 돌아가기
@@ -2130,11 +2132,11 @@ export default function Landing() {
                       <button
                         key={msg.id}
                         onClick={() => handleOpenMessage(msg)}
-                        className={`w-full text-left bg-white/5 border rounded-xl p-4 hover:border-blue-500/50 transition-colors ${msg.isRead ? 'border-white/10' : 'border-blue-500/30 bg-blue-500/10'}`}
+                        className={`w-full text-left bg-white/5 border rounded-xl p-4 hover:border-amber-500/50 transition-colors ${msg.isRead ? 'border-white/10' : 'border-amber-500/30 bg-amber-500/10'}`}
                       >
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex items-center gap-2">
-                            {!msg.isRead && <span className="w-2 h-2 bg-blue-500 rounded-full" />}
+                            {!msg.isRead && <span className="w-2 h-2 bg-amber-500 rounded-full" />}
                             <h3 className={`font-medium ${msg.isRead ? 'text-gray-400' : 'text-white'}`}>{msg.title}</h3>
                           </div>
                         </div>
@@ -2163,7 +2165,7 @@ export default function Landing() {
         <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden">
           <DialogTitle className="sr-only">공지사항</DialogTitle>
           <div className="relative">
-            <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 via-amber-500/20 to-blue-500/20 rounded-2xl blur-xl" />
+            <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/20 via-amber-500/20 to-amber-500/20 rounded-2xl blur-xl" />
             <div className="relative backdrop-blur-xl bg-[#161b22]/95 border border-white/10 rounded-2xl p-6 shadow-2xl max-h-[80vh] overflow-y-auto">
               <button 
                 onClick={() => { setShowAnnouncementsModal(false); setSelectedAnnouncement(null); }}
@@ -2174,7 +2176,7 @@ export default function Landing() {
               
               <div className="text-center mb-6">
                 <div className="flex items-center justify-center gap-2 mb-3">
-                  <Bell className="w-8 h-8 text-blue-500" />
+                  <Bell className="w-8 h-8 text-amber-500" />
                 </div>
                 <h2 className="text-2xl font-bold text-white mb-1">공지사항</h2>
                 <p className="text-gray-400 text-sm">
@@ -2186,7 +2188,7 @@ export default function Landing() {
                 <div className="space-y-4">
                   <button
                     onClick={() => setSelectedAnnouncement(null)}
-                    className="flex items-center gap-2 text-blue-400 hover:text-blue-300 text-sm"
+                    className="flex items-center gap-2 text-amber-400 hover:text-amber-300 text-sm"
                   >
                     <ChevronRight className="w-4 h-4 rotate-180" />
                     목록으로 돌아가기
@@ -2194,7 +2196,7 @@ export default function Landing() {
                   <div className="bg-white/5 border border-white/10 rounded-xl p-4">
                     <div className="flex items-start gap-3 mb-3">
                       {selectedAnnouncement.isPinned && (
-                        <span className="px-2 py-0.5 bg-blue-500/20 text-blue-500 rounded text-xs font-medium">고정</span>
+                        <span className="px-2 py-0.5 bg-amber-500/20 text-amber-500 rounded text-xs font-medium">고정</span>
                       )}
                       <h3 className="text-white font-medium text-lg">{selectedAnnouncement.title}</h3>
                     </div>
@@ -2210,12 +2212,12 @@ export default function Landing() {
                       <button
                         key={ann.id}
                         onClick={() => setSelectedAnnouncement(ann)}
-                        className="w-full text-left bg-white/5 border border-white/10 rounded-xl p-4 hover:border-blue-500/50 transition-colors"
+                        className="w-full text-left bg-white/5 border border-white/10 rounded-xl p-4 hover:border-amber-500/50 transition-colors"
                         data-testid={`announcement-item-${ann.id}`}
                       >
                         <div className="flex items-start gap-3">
                           {ann.isPinned && (
-                            <span className="px-2 py-0.5 bg-blue-500/20 text-blue-500 rounded text-xs font-medium">고정</span>
+                            <span className="px-2 py-0.5 bg-amber-500/20 text-amber-500 rounded text-xs font-medium">고정</span>
                           )}
                           <div className="flex-1">
                             <h3 className="text-white font-medium mb-1">{ann.title}</h3>
@@ -2247,7 +2249,7 @@ export default function Landing() {
           <AlertDialogFooter>
             <AlertDialogAction 
               onClick={() => setLoginErrorMessage("")}
-              className="bg-blue-500 hover:bg-blue-600 text-white"
+              className="bg-amber-500 hover:bg-amber-600 text-white"
             >
               확인
             </AlertDialogAction>

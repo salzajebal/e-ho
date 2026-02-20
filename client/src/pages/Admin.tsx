@@ -187,8 +187,8 @@ const KOREAN_BANKS = [
 ];
 
 const SYMBOL_NAMES: Record<string, string> = {
-  'BTC': 'Bitcoin',
-  'ETH': 'Ethereum',
+  'BTC': 'USD/JPY',
+  'ETH': 'EUR/USD',
 };
 
 function AdminLogin() {
@@ -242,12 +242,12 @@ function AdminLogin() {
         <div className="text-center mb-8">
           <img 
             src="/coinone-logo.png" 
-            alt="Coinone Logo" 
+            alt="Value-Option Logo" 
             className="w-16 h-16 rounded-xl object-cover mx-auto mb-4"
           />
           <h1 className="text-3xl font-bold text-white mb-2">
             <span className="text-white"></span>
-            <span className="text-blue-500 font-bold">COINONE</span>
+            <span className="text-amber-500 font-bold">VALUE-OPTION</span>
             <span className="text-white ml-2">관리자</span>
           </h1>
           <p className="text-gray-400 text-sm">관리자 계정으로 로그인하세요</p>
@@ -496,7 +496,7 @@ function RoundForcedTab() {
                 )}
                 onClick={() => setSelectedSymbol('BTC')}
               >
-                BTC
+                USD/JPY
               </Button>
               <Button
                 type="button"
@@ -507,7 +507,7 @@ function RoundForcedTab() {
                 )}
                 onClick={() => setSelectedSymbol('ETH')}
               >
-                ETH
+                EUR/USD
               </Button>
             </div>
           </div>
@@ -2189,12 +2189,12 @@ export default function Admin() {
         <div className="flex items-center gap-2">
           <img 
             src="/coinone-logo.png" 
-            alt="Coinone Logo" 
+            alt="Value-Option Logo" 
             className="w-7 h-7 rounded-lg object-cover"
           />
           <span className="font-bold text-sm">
             <span className="text-white"></span>
-            <span className="text-blue-500 font-bold">COINONE</span>
+            <span className="text-amber-500 font-bold">VALUE-OPTION</span>
           </span>
           <span className="text-xs text-muted-foreground">관리자</span>
         </div>
@@ -2241,13 +2241,13 @@ export default function Admin() {
           <div className="flex items-center gap-2">
             <img 
               src="/coinone-logo.png" 
-              alt="Coinone Logo" 
+              alt="Value-Option Logo" 
               className="w-8 h-8 rounded-lg object-cover"
             />
             <div>
               <span className="font-bold text-lg">
                 <span className="text-white"></span>
-                <span className="text-blue-500 font-bold">COINONE</span>
+                <span className="text-amber-500 font-bold">VALUE-OPTION</span>
               </span>
             </div>
           </div>
@@ -4000,7 +4000,7 @@ export default function Admin() {
                       className={cn("flex-1", forcedBetSymbol === 'BTC' && "bg-orange-500 hover:bg-orange-600")}
                       onClick={() => setForcedBetSymbol('BTC')}
                     >
-                      BTC (비트코인)
+                      USD/JPY (달러/엔)
                     </Button>
                     <Button
                       type="button"
@@ -4008,7 +4008,7 @@ export default function Admin() {
                       className={cn("flex-1", forcedBetSymbol === 'ETH' && "bg-blue-500 hover:bg-blue-600")}
                       onClick={() => setForcedBetSymbol('ETH')}
                     >
-                      ETH (이더리움)
+                      EUR/USD (유로/달러)
                     </Button>
                   </div>
                 </div>
