@@ -765,7 +765,7 @@ export default function Landing() {
           </div>
           
           <h2 className="text-2xl md:text-4xl font-bold mb-6" data-testid="text-hero-title">
-            가장 신뢰받는 글로벌 <span className="text-amber-400">FX</span> 거래
+            가장 신뢰받는 글로벌 <span className="text-amber-400">FX</span> 옵션
           </h2>
           
           <p className="text-gray-300 text-lg md:text-xl mb-8 max-w-2xl mx-auto" data-testid="text-hero-description">
