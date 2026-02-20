@@ -42,8 +42,8 @@ export const SESSION_SECRET = process.env.SESSION_SECRET || "myinfx-secret-key-2
 const sessionStore = new PgSessionStore({
   pool: sessionPool,
   tableName: 'user_sessions',
-  createTableIfMissing: true,
-  pruneSessionInterval: 60 * 15, // Prune expired sessions every 15 minutes
+  createTableIfMissing: false,
+  pruneSessionInterval: 60 * 15,
 });
 
 // Helper to validate session from WebSocket request
