@@ -175,7 +175,7 @@ function AffiliateLogin({ onLogin }: { onLogin: () => void }) {
         <Card className="bg-card border-border">
           <CardHeader className="text-center">
             <img
-              src="/coinone-logo.png"
+              src="/value-option-logo.png"
               alt="Value-Option Logo"
               className="w-20 h-20 mx-auto rounded-xl mb-4 object-contain bg-black"
               onError={(e) => { e.currentTarget.style.display = 'none'; }}
@@ -456,7 +456,7 @@ export default function AffiliateDashboard() {
         <div className="p-4 border-b border-border">
           <div className="flex items-center gap-2">
             <img
-              src="/coinone-logo.png"
+              src="/value-option-logo.png"
               alt="Value-Option Logo"
               className="w-10 h-10 rounded-lg object-contain bg-black"
             />
