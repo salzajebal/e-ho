@@ -382,7 +382,9 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
         const duration = g.duration;
         const symbol = g.symbol;
         const currentRoundForGame = calculateRoundNumber(duration);
-        const symbolPrice = allPricesRef.current[symbol] || lastPriceRef.current;
+        const symbolPrice = allPricesRef.current[symbol];
+        
+        if (!symbolPrice) return;
         
         if (!allGamesStateRef.current[gameId]) {
           allGamesStateRef.current[gameId] = {
