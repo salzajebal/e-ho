@@ -546,19 +546,6 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
         </div>
 
         <div className="grid grid-cols-2 gap-2 lg:space-y-3 lg:block">
-          <div className="flex justify-between text-xs">
-            <span className="text-muted-foreground">가용 잔고</span>
-            <span className="text-foreground font-mono font-semibold">
-              {availableBalance.toLocaleString()}원
-            </span>
-          </div>
-          
-          <div className="flex justify-between text-xs">
-            <span className="text-muted-foreground">현재가</span>
-            <span className="text-primary font-mono font-bold">
-              {currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-            </span>
-          </div>
         </div>
 
         <div className="space-y-2">
