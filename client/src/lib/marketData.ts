@@ -16,21 +16,25 @@ export interface MarketData {
 export const INITIAL_MARKET_DATA: MarketData[] = [
   { symbol: 'USD', name: 'USD/KRW', price: 87500, change: 0, changePercent: 0, high: 89000, low: 86500, volume: 0, category: '통화' },
   { symbol: 'JPY', name: 'JPY/KRW', price: 2930, change: 0, changePercent: 0, high: 2980, low: 2890, volume: 0, category: '통화' },
-  { symbol: 'EUR', name: 'EUR/KRW', price: 87500, change: 0, changePercent: 0, high: 89000, low: 86500, volume: 0, category: '통화' },
-  { symbol: 'AUD', name: 'AUD/KRW', price: 2930, change: 0, changePercent: 0, high: 2980, low: 2890, volume: 0, category: '통화' },
+  { symbol: 'EUR', name: 'EUR/KRW', price: 170, change: 0, changePercent: 0, high: 175, low: 165, volume: 0, category: '통화' },
+  { symbol: 'AUD', name: 'AUD/KRW', price: 2.5, change: 0, changePercent: 0, high: 2.6, low: 2.4, volume: 0, category: '통화' },
 ];
 
-async function fetchBinancePricesDirect(): Promise<{ btc: any; eth: any } | null> {
+async function fetchBinancePricesDirect(): Promise<{ btc: any; eth: any; sol: any; xrp: any } | null> {
   try {
-    const [btcRes, ethRes] = await Promise.all([
+    const [btcRes, ethRes, solRes, xrpRes] = await Promise.all([
       fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT'),
-      fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=ETHUSDT')
+      fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=ETHUSDT'),
+      fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=SOLUSDT'),
+      fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=XRPUSDT')
     ]);
     
-    if (btcRes.ok && ethRes.ok) {
+    if (btcRes.ok && ethRes.ok && solRes.ok && xrpRes.ok) {
       const btc = await btcRes.json();
       const eth = await ethRes.json();
-      return { btc, eth };
+      const sol = await solRes.json();
+      const xrp = await xrpRes.json();
+      return { btc, eth, sol, xrp };
     }
     return null;
   } catch (error) {
@@ -39,55 +43,26 @@ async function fetchBinancePricesDirect(): Promise<{ btc: any; eth: any } | null
   }
 }
 
-function buildMarketDataFromBinance(btcData: any, ethData: any): MarketData[] {
-  const btcPrice = parseFloat(btcData.lastPrice);
-  const ethPrice = parseFloat(ethData.lastPrice);
-  
+function buildCoinData(symbol: string, name: string, coinData: any): MarketData {
+  return {
+    symbol,
+    name,
+    price: parseFloat(coinData.lastPrice),
+    change: parseFloat(coinData.priceChange),
+    changePercent: parseFloat(coinData.priceChangePercent),
+    high: parseFloat(coinData.highPrice),
+    low: parseFloat(coinData.lowPrice),
+    volume: parseFloat(coinData.volume),
+    category: '통화',
+  };
+}
+
+function buildMarketDataFromBinance(btcData: any, ethData: any, solData: any, xrpData: any): MarketData[] {
   return [
-    {
-      symbol: 'USD',
-      name: 'USD/KRW',
-      price: btcPrice,
-      change: parseFloat(btcData.priceChange),
-      changePercent: parseFloat(btcData.priceChangePercent),
-      high: parseFloat(btcData.highPrice),
-      low: parseFloat(btcData.lowPrice),
-      volume: parseFloat(btcData.volume),
-      category: '통화',
-    },
-    {
-      symbol: 'JPY',
-      name: 'JPY/KRW',
-      price: ethPrice,
-      change: parseFloat(ethData.priceChange),
-      changePercent: parseFloat(ethData.priceChangePercent),
-      high: parseFloat(ethData.highPrice),
-      low: parseFloat(ethData.lowPrice),
-      volume: parseFloat(ethData.volume),
-      category: '통화',
-    },
-    {
-      symbol: 'EUR',
-      name: 'EUR/KRW',
-      price: btcPrice,
-      change: parseFloat(btcData.priceChange),
-      changePercent: parseFloat(btcData.priceChangePercent),
-      high: parseFloat(btcData.highPrice),
-      low: parseFloat(btcData.lowPrice),
-      volume: parseFloat(btcData.volume),
-      category: '통화',
-    },
-    {
-      symbol: 'AUD',
-      name: 'AUD/KRW',
-      price: ethPrice,
-      change: parseFloat(ethData.priceChange),
-      changePercent: parseFloat(ethData.priceChangePercent),
-      high: parseFloat(ethData.highPrice),
-      low: parseFloat(ethData.lowPrice),
-      volume: parseFloat(ethData.volume),
-      category: '통화',
-    },
+    buildCoinData('USD', 'USD/KRW', btcData),
+    buildCoinData('JPY', 'JPY/KRW', ethData),
+    buildCoinData('EUR', 'EUR/KRW', solData),
+    buildCoinData('AUD', 'AUD/KRW', xrpData),
   ];
 }
 
@@ -102,7 +77,7 @@ export function useMarketData() {
       const binanceData = await fetchBinancePricesDirect();
       if (binanceData) {
         updateCounter.current++;
-        const newData = buildMarketDataFromBinance(binanceData.btc, binanceData.eth);
+        const newData = buildMarketDataFromBinance(binanceData.btc, binanceData.eth, binanceData.sol, binanceData.xrp);
         
         if (updateCounter.current <= 3 || updateCounter.current % 30 === 0) {
           console.log('[MarketData Direct] USD: $' + newData[0].price.toFixed(2) + ', JPY: $' + newData[1].price.toFixed(2));

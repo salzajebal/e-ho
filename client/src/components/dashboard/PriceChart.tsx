@@ -29,7 +29,7 @@ async function fetchBinanceKlines(symbol: string, intervalSeconds: number, limit
     else if (intervalSeconds === 1800) interval = '30m';
     else if (intervalSeconds === 3600) interval = '1h';
     
-    const SYMBOL_TO_BINANCE: Record<string, string> = { USD: 'BTCUSDT', EUR: 'BTCUSDT', JPY: 'ETHUSDT', AUD: 'ETHUSDT', BTC: 'BTCUSDT', ETH: 'ETHUSDT' };
+    const SYMBOL_TO_BINANCE: Record<string, string> = { USD: 'BTCUSDT', JPY: 'ETHUSDT', EUR: 'SOLUSDT', AUD: 'XRPUSDT', BTC: 'BTCUSDT', ETH: 'ETHUSDT', SOL: 'SOLUSDT', XRP: 'XRPUSDT' };
     const binanceSymbol = SYMBOL_TO_BINANCE[symbol] || `${symbol}USDT`;
     const url = `https://api.binance.com/api/v3/klines?symbol=${binanceSymbol}&interval=${interval}&limit=${limit}`;
     

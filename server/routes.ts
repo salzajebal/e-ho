@@ -2411,14 +2411,16 @@ export async function registerRoutes(
   // 실시간 가격 저장소
   const FOREX_TO_BINANCE: Record<string, string> = {
     USD: 'BTC',
-    EUR: 'BTC',
     JPY: 'ETH',
-    AUD: 'ETH',
+    EUR: 'SOL',
+    AUD: 'XRP',
   };
 
   const binancePrices: { [key: string]: { price: number; change: number; changePercent: number; high: number; low: number; volume: number; updatedAt: number } } = {
     BTC: { price: 0, change: 0, changePercent: 0, high: 0, low: 0, volume: 0, updatedAt: 0 },
-    ETH: { price: 0, change: 0, changePercent: 0, high: 0, low: 0, volume: 0, updatedAt: 0 }
+    ETH: { price: 0, change: 0, changePercent: 0, high: 0, low: 0, volume: 0, updatedAt: 0 },
+    SOL: { price: 0, change: 0, changePercent: 0, high: 0, low: 0, volume: 0, updatedAt: 0 },
+    XRP: { price: 0, change: 0, changePercent: 0, high: 0, low: 0, volume: 0, updatedAt: 0 }
   };
 
   function getForexPrice(forexSymbol: string) {
@@ -2455,43 +2457,40 @@ export async function registerRoutes(
 
   async function fetchPricesFromRestApi() {
     try {
-      const [btcData, ethData] = await Promise.all([
+      const [btcData, ethData, solData, xrpData] = await Promise.all([
         fetchBinancePrice('BTC'),
-        fetchBinancePrice('ETH')
+        fetchBinancePrice('ETH'),
+        fetchBinancePrice('SOL'),
+        fetchBinancePrice('XRP')
       ]);
       
-      if (btcData && btcData.lastPrice && ethData && ethData.lastPrice) {
-        binancePrices.BTC = {
-          price: parseFloat(btcData.lastPrice),
-          change: parseFloat(btcData.priceChange),
-          changePercent: parseFloat(btcData.priceChangePercent),
-          high: parseFloat(btcData.highPrice),
-          low: parseFloat(btcData.lowPrice),
-          volume: parseFloat(btcData.volume),
-          updatedAt: Date.now()
-        };
-        
-        binancePrices.ETH = {
-          price: parseFloat(ethData.lastPrice),
-          change: parseFloat(ethData.priceChange),
-          changePercent: parseFloat(ethData.priceChangePercent),
-          high: parseFloat(ethData.highPrice),
-          low: parseFloat(ethData.lowPrice),
-          volume: parseFloat(ethData.volume),
-          updatedAt: Date.now()
-        };
-        
-        if (!usingRestApi) {
-          usingRestApi = true;
-          console.log('📡 [Binance] REST API 폴백 모드로 전환');
+      const updateCoin = (key: string, data: any) => {
+        if (data && data.lastPrice) {
+          binancePrices[key] = {
+            price: parseFloat(data.lastPrice),
+            change: parseFloat(data.priceChange),
+            changePercent: parseFloat(data.priceChangePercent),
+            high: parseFloat(data.highPrice),
+            low: parseFloat(data.lowPrice),
+            volume: parseFloat(data.volume),
+            updatedAt: Date.now()
+          };
         }
+      };
+      
+      updateCoin('BTC', btcData);
+      updateCoin('ETH', ethData);
+      updateCoin('SOL', solData);
+      updateCoin('XRP', xrpData);
         
-        messageCount++;
-        if (messageCount <= 5 || messageCount % 60 === 0) {
-          console.log(`📊 [Binance REST] BTC: $${binancePrices.BTC.price.toFixed(2)}, ETH: $${binancePrices.ETH.price.toFixed(2)}`);
-        }
-      } else {
-        console.error('❌ [Binance REST] 응답 데이터 형식 오류:', { btcData, ethData });
+      if (!usingRestApi) {
+        usingRestApi = true;
+        console.log('📡 [Binance] REST API 폴백 모드로 전환');
+      }
+      
+      messageCount++;
+      if (messageCount <= 5 || messageCount % 60 === 0) {
+        console.log(`📊 [Binance REST] BTC: $${binancePrices.BTC.price.toFixed(2)}, ETH: $${binancePrices.ETH.price.toFixed(2)}, SOL: $${binancePrices.SOL.price.toFixed(2)}, XRP: $${binancePrices.XRP.price.toFixed(2)}`);
       }
     } catch (err) {
       console.error('❌ [Binance REST] API 호출 실패:', err);
@@ -2543,11 +2542,11 @@ export async function registerRoutes(
         // BTC, ETH 실시간 티커 구독
         const subscribeMsg = JSON.stringify({
           method: 'SUBSCRIBE',
-          params: ['btcusdt@ticker', 'ethusdt@ticker'],
+          params: ['btcusdt@ticker', 'ethusdt@ticker', 'solusdt@ticker', 'xrpusdt@ticker'],
           id: 1
         });
         binanceWs!.send(subscribeMsg);
-        console.log('📨 [Binance] 구독 요청 전송: btcusdt@ticker, ethusdt@ticker');
+        console.log('📨 [Binance] 구독 요청 전송: btcusdt@ticker, ethusdt@ticker, solusdt@ticker, xrpusdt@ticker');
       });
 
       binanceWs.on('message', (data: Buffer) => {
@@ -2561,7 +2560,8 @@ export async function registerRoutes(
           
           // 티커 데이터 처리
           if (msg.e === '24hrTicker') {
-            const symbol = msg.s === 'BTCUSDT' ? 'BTC' : msg.s === 'ETHUSDT' ? 'ETH' : null;
+            const symbolMap: Record<string, string> = { 'BTCUSDT': 'BTC', 'ETHUSDT': 'ETH', 'SOLUSDT': 'SOL', 'XRPUSDT': 'XRP' };
+            const symbol = symbolMap[msg.s] || null;
             if (symbol) {
               messageCount++;
               binancePrices[symbol] = {
@@ -2761,9 +2761,9 @@ export async function registerRoutes(
     const prices = [];
     let hasFallback = false;
 
-    const FOREX_DEFAULTS: Record<string, number> = { USD: 87500, JPY: 2930, EUR: 87500, AUD: 2930 };
-    const FOREX_HIGHS: Record<string, number> = { USD: 89500, JPY: 3000, EUR: 89500, AUD: 3000 };
-    const FOREX_LOWS: Record<string, number> = { USD: 86500, JPY: 2890, EUR: 86500, AUD: 2890 };
+    const FOREX_DEFAULTS: Record<string, number> = { USD: 87500, JPY: 2930, EUR: 170, AUD: 2.5 };
+    const FOREX_HIGHS: Record<string, number> = { USD: 89500, JPY: 3000, EUR: 175, AUD: 2.6 };
+    const FOREX_LOWS: Record<string, number> = { USD: 86500, JPY: 2890, EUR: 165, AUD: 2.4 };
 
     for (const forexSymbol of ['USD', 'JPY', 'EUR', 'AUD']) {
       const data = getForexPrice(forexSymbol);

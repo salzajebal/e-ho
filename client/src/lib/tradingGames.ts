@@ -10,16 +10,16 @@ export const FOREX_DISPLAY: Record<ForexSymbol, { name: string; pair: string; fl
 
 export const BINANCE_SYMBOL_MAP: Record<ForexSymbol, string> = {
   USD: 'BTCUSDT',
-  EUR: 'BTCUSDT',
   JPY: 'ETHUSDT',
-  AUD: 'ETHUSDT',
+  EUR: 'SOLUSDT',
+  AUD: 'XRPUSDT',
 };
 
-export const INTERNAL_SYMBOL_MAP: Record<ForexSymbol, 'BTC' | 'ETH'> = {
+export const INTERNAL_SYMBOL_MAP: Record<ForexSymbol, 'BTC' | 'ETH' | 'SOL' | 'XRP'> = {
   USD: 'BTC',
-  EUR: 'BTC',
   JPY: 'ETH',
-  AUD: 'ETH',
+  EUR: 'SOL',
+  AUD: 'XRP',
 };
 
 export const TRADING_GAMES = [
