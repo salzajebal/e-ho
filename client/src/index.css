@@ -117,3 +117,8 @@
 .bg-down-10 {
   background-color: hsla(217, 91%, 55%, 0.1);
 }
+
+@keyframes scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}

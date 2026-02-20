@@ -724,48 +724,82 @@ export default function Landing() {
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
         <div 
-          className="absolute inset-0 bg-cover bg-center opacity-30"
+          className="absolute inset-0 bg-cover bg-center opacity-40"
           style={{
-            backgroundImage: "url('https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1920&q=80')",
+            backgroundImage: "url('/images/hero-forex-bg.png')",
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0a0a0f]/70 to-[#0a0a0f]" />
-        
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0f]/40 via-[#0a0a0f]/70 to-[#0a0a0f]" />
+
+        <div className="absolute top-20 left-[8%] opacity-[0.07] text-[180px] md:text-[260px] font-black text-amber-500 select-none pointer-events-none leading-none" aria-hidden="true">$</div>
+        <div className="absolute bottom-32 right-[5%] opacity-[0.05] text-[140px] md:text-[200px] font-black text-amber-400 select-none pointer-events-none leading-none rotate-12" aria-hidden="true">¥</div>
+        <div className="absolute top-[40%] right-[12%] opacity-[0.04] text-[100px] md:text-[140px] font-black text-amber-300 select-none pointer-events-none leading-none -rotate-6" aria-hidden="true">€</div>
+
         <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
           <div className="mb-8 flex flex-col items-center">
-            <img 
-              src="/coinone-logo.png" 
-              alt="Value-Option Logo" 
-              className="w-24 h-24 rounded-2xl object-cover mb-4"
-            />
-            <h1 className="text-5xl md:text-7xl font-bold mb-2 tracking-wide text-amber-500">
-              VALUE-OPTION
+            <div className="relative mb-6">
+              <div className="absolute -inset-4 bg-amber-500/20 rounded-full blur-xl animate-pulse" />
+              <img 
+                src="/value-option-logo.png" 
+                alt="Value-Option Logo" 
+                className="relative w-24 h-24 rounded-2xl object-cover"
+              />
+            </div>
+            <h1 className="text-5xl md:text-7xl font-bold mb-2 tracking-wide">
+              <span className="bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 bg-clip-text text-transparent">VALUE-OPTION</span>
             </h1>
+          </div>
+
+          <div className="flex items-center justify-center gap-4 mb-6">
+            <span className="h-px w-12 bg-gradient-to-r from-transparent to-amber-500/50" />
+            <div className="flex items-center gap-2">
+              <img src="/images/dollar-icon.png" alt="" className="w-6 h-6 object-contain" />
+              <span className="text-amber-400 text-sm font-semibold tracking-widest uppercase">Global Forex Trading</span>
+              <img src="/images/dollar-icon.png" alt="" className="w-6 h-6 object-contain" />
+            </div>
+            <span className="h-px w-12 bg-gradient-to-l from-transparent to-amber-500/50" />
           </div>
           
           <h2 className="text-2xl md:text-4xl font-bold mb-6" data-testid="text-hero-title">
-            가장 신뢰받는 글로벌 선도 거래
+            가장 신뢰받는 글로벌 <span className="text-amber-400">FX</span> 거래
           </h2>
           
-          <p className="text-gray-300 text-lg md:text-xl mb-10 max-w-2xl mx-auto" data-testid="text-hero-description">
-            안전하게 투명한 시스템으로<br />
-            빠르고 편리한 옵션 거래를 제공합니다.
+          <p className="text-gray-300 text-lg md:text-xl mb-8 max-w-2xl mx-auto" data-testid="text-hero-description">
+            안전하고 투명한 시스템으로<br />
+            빠르고 편리한 외환 옵션 거래를 제공합니다.
           </p>
+
+          <div className="flex items-center justify-center gap-6 mb-10 text-sm">
+            <div className="flex items-center gap-2 text-gray-400">
+              <span className="text-xl font-bold text-amber-500">$</span>
+              <span>USD/JPY</span>
+            </div>
+            <div className="w-1 h-1 rounded-full bg-gray-600" />
+            <div className="flex items-center gap-2 text-gray-400">
+              <span className="text-xl font-bold text-amber-500">€</span>
+              <span>EUR/USD</span>
+            </div>
+            <div className="w-1 h-1 rounded-full bg-gray-600" />
+            <div className="flex items-center gap-2 text-gray-400">
+              <span className="text-xl font-bold text-amber-500">A$</span>
+              <span>AUD/USD</span>
+            </div>
+          </div>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
               size="lg" 
-              className="bg-amber-500 hover:bg-amber-600 text-white font-bold px-10 py-6 text-lg rounded-lg"
+              className="bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-black font-bold px-10 py-6 text-lg rounded-lg shadow-lg shadow-amber-500/25"
               data-testid="button-trade"
               onClick={handleTradeClick}
             >
-              거래하기
+              거래 시작하기
             </Button>
             {!user && (
               <Button 
                 size="lg" 
                 variant="outline" 
-                className="border-white/30 text-white hover:bg-white/10 px-10 py-6 text-lg rounded-lg"
+                className="border-amber-500/30 text-amber-400 hover:bg-amber-500/10 px-10 py-6 text-lg rounded-lg"
                 data-testid="button-register"
                 onClick={() => setShowRegisterModal(true)}
               >
@@ -775,13 +809,37 @@ export default function Landing() {
           </div>
         </div>
 
-        {/* Scroll indicator */}
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
-          <div className="w-6 h-10 border-2 border-white/30 rounded-full flex justify-center pt-2">
-            <div className="w-1.5 h-3 bg-white/50 rounded-full" />
+          <div className="w-6 h-10 border-2 border-amber-500/30 rounded-full flex justify-center pt-2">
+            <div className="w-1.5 h-3 bg-amber-500/50 rounded-full" />
           </div>
         </div>
       </section>
+
+      {/* Currency Ticker Strip */}
+      <div className="relative overflow-hidden bg-[#0c0f15] border-y border-amber-500/10 py-3">
+        <div className="flex animate-[scroll_20s_linear_infinite] whitespace-nowrap gap-8">
+          {[...Array(2)].map((_, repeatIdx) => (
+            <div key={repeatIdx} className="flex gap-8 shrink-0">
+              {[
+                { pair: 'USD/JPY', flag: '$' },
+                { pair: 'EUR/USD', flag: '€' },
+                { pair: 'GBP/USD', flag: '£' },
+                { pair: 'AUD/USD', flag: 'A$' },
+                { pair: 'USD/CHF', flag: '₣' },
+                { pair: 'NZD/USD', flag: 'NZ$' },
+                { pair: 'USD/CAD', flag: 'C$' },
+                { pair: 'USD/CNY', flag: '¥' },
+              ].map((item, i) => (
+                <div key={`${repeatIdx}-${i}`} className="flex items-center gap-2 text-sm">
+                  <span className="text-amber-500 font-bold">{item.flag}</span>
+                  <span className="text-gray-400">{item.pair}</span>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* Market Overview */}
       <section className="py-20 px-4 bg-[#0d1117]">
@@ -792,7 +850,7 @@ export default function Landing() {
               <span className="text-green-400 text-sm font-medium">LIVE</span>
             </div>
             <h2 className="text-2xl md:text-3xl font-bold mb-2">실시간 마켓</h2>
-            <p className="text-gray-400">글로벌 시장을 실시간으로 확인하세요</p>
+            <p className="text-gray-400">글로벌 외환 시장을 실시간으로 확인하세요</p>
           </div>
           <div className="flex flex-wrap justify-center gap-4">
             {marketData.map((item, index) => {
@@ -809,8 +867,8 @@ export default function Landing() {
                 >
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-amber-500/20 rounded-full flex items-center justify-center group-hover:bg-amber-500/30 transition-colors">
-                        <TrendingUp className="w-5 h-5 text-amber-500" />
+                      <div className="w-10 h-10 bg-gradient-to-br from-amber-500/30 to-amber-600/10 rounded-full flex items-center justify-center group-hover:from-amber-500/40 group-hover:to-amber-600/20 transition-colors border border-amber-500/20">
+                        <span className="text-lg font-bold text-amber-400">{item.symbol === 'USD/JPY' ? '$' : '€'}</span>
                       </div>
                       <div>
                         <h3 className="font-semibold text-white">{item.name}</h3>
