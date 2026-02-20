@@ -33,6 +33,7 @@ interface BettingFormProps {
   balance?: string;
   onBet: (direction: 'long' | 'short', amount: number) => void;
   userBets?: UserBet[];
+  allPrices?: Record<string, number>;
 }
 
 interface GameResult {
@@ -229,7 +230,7 @@ interface ForcedDirection {
   dateKey: string;
 }
 
-export function BettingForm({ currentPrice, game, balance, onBet, userBets = [] }: BettingFormProps) {
+export function BettingForm({ currentPrice, game, balance, onBet, userBets = [], allPrices = {} }: BettingFormProps) {
   const [amount, setAmount] = useState<string>("");
   const [currentRound, setCurrentRound] = useState(calculateRoundNumber(game.duration));
   const [timeRemaining, setTimeRemaining] = useState(getRoundTimeRemaining(game.duration));
@@ -239,8 +240,18 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [] 
   const [forcedDirections, setForcedDirections] = useState<ForcedDirection[]>([]);
   const allGamesStateRef = useRef<AllGamesState>({});
   const lastPriceRef = useRef<number>(currentPrice);
+  const allPricesRef = useRef<Record<string, number>>(allPrices);
+  const gameDurationRef = useRef<number>(game.duration);
+  const gameIdRef = useRef<string>(game.id);
   const maxRounds = getMaxRoundsPerDay(game.duration);
   const availableBalance = balance ? parseFloat(balance) : 0;
+
+  useEffect(() => {
+    gameDurationRef.current = game.duration;
+    gameIdRef.current = game.id;
+    setCurrentRound(calculateRoundNumber(game.duration));
+    setTimeRemaining(getRoundTimeRemaining(game.duration));
+  }, [game.duration, game.id]);
 
   // Fetch forced directions from server
   useEffect(() => {
@@ -261,10 +272,13 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [] 
     return () => clearInterval(interval);
   }, []);
 
-  // Update last price ref
   useEffect(() => {
     lastPriceRef.current = currentPrice;
   }, [currentPrice]);
+
+  useEffect(() => {
+    allPricesRef.current = allPrices;
+  }, [allPrices]);
 
   // Load and generate all past results for current game, prioritizing user's actual bet results
   useEffect(() => {
@@ -349,38 +363,39 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [] 
     setGameResults(validResults);
   }, [game.id, game.duration, game.symbol, currentPrice, userBets, forcedDirections]);
 
-  // Track round changes for ALL 6 games simultaneously
+  // Track round changes for ALL 12 games simultaneously
   useEffect(() => {
     const checkAllGames = () => {
       const kstTime = getKSTDate();
       const timeStr = kstTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
       
-      // Update current game display
-      const newRound = calculateRoundNumber(game.duration);
-      const newTime = getRoundTimeRemaining(game.duration);
+      const dur = gameDurationRef.current;
+      const gid = gameIdRef.current;
+      
+      const newRound = calculateRoundNumber(dur);
+      const newTime = getRoundTimeRemaining(dur);
       setCurrentRound(newRound);
       setTimeRemaining(newTime);
       
-      // Check each of the 6 games
       TRADING_GAMES.forEach((g) => {
         const gameId = g.id;
         const duration = g.duration;
+        const symbol = g.symbol;
         const currentRoundForGame = calculateRoundNumber(duration);
+        const symbolPrice = allPricesRef.current[symbol] || lastPriceRef.current;
         
-        // Initialize state for this game if not exists
         if (!allGamesStateRef.current[gameId]) {
           allGamesStateRef.current[gameId] = {
             lastRound: currentRoundForGame,
-            roundStartPrice: currentPrice,
+            roundStartPrice: symbolPrice,
           };
           return;
         }
         
         const gameState = allGamesStateRef.current[gameId];
         
-        // Round changed for this game - record result
         if (currentRoundForGame > gameState.lastRound) {
-          const closePrice = lastPriceRef.current;
+          const closePrice = symbolPrice;
           const openPrice = gameState.roundStartPrice;
           const direction = closePrice >= openPrice ? 'up' : 'down';
           
@@ -390,7 +405,6 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [] 
             time: timeStr,
           };
           
-          // Save to localStorage for this game
           const storageKey = getStorageKey(gameId);
           const saved = localStorage.getItem(storageKey);
           let results: GameResult[] = [];
@@ -404,15 +418,13 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [] 
           const updated = [newResult, ...results];
           localStorage.setItem(storageKey, JSON.stringify(updated));
           
-          // If this is the currently selected game, update state
-          if (gameId === game.id) {
+          if (gameId === gid) {
             setGameResults(updated);
           }
           
-          // Update ref
           allGamesStateRef.current[gameId] = {
             lastRound: currentRoundForGame,
-            roundStartPrice: currentPrice,
+            roundStartPrice: symbolPrice,
           };
         }
       });
@@ -421,7 +433,7 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [] 
     checkAllGames();
     const interval = setInterval(checkAllGames, 1000);
     return () => clearInterval(interval);
-  }, [game.duration, game.id, currentPrice]);
+  }, []);
 
   const betAmount = parseFloat(amount) || 0;
   const potentialWin = betAmount * MULTIPLIER;
@@ -430,7 +442,8 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [] 
     return `${seconds / 60}분`;
   };
 
-  const isBettingLocked = timeRemaining <= 20;
+  const lockThreshold = game.duration <= 60 ? 10 : game.duration <= 180 ? 15 : 20;
+  const isBettingLocked = timeRemaining <= lockThreshold;
 
   const validateBet = (direction: 'long' | 'short') => {
     if (isBettingLocked) {
@@ -517,12 +530,12 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [] 
             </div>
             <div className={cn(
               "flex items-center justify-center gap-2 rounded py-2 px-2",
-              timeRemaining <= 10 ? "bg-red-500/20 animate-pulse" : "bg-blue-500/20"
+              isBettingLocked ? "bg-red-500/20 animate-pulse" : "bg-blue-500/20"
             )}>
-              <Timer className={cn("w-3.5 h-3.5", timeRemaining <= 10 ? "text-red-500" : "text-blue-500")} />
+              <Timer className={cn("w-3.5 h-3.5", isBettingLocked ? "text-red-500" : "text-blue-500")} />
               <span className={cn(
                 "text-lg font-bold font-mono",
-                timeRemaining <= 10 ? "text-red-500" : "text-blue-500"
+                isBettingLocked ? "text-red-500" : "text-blue-500"
               )}>
                 {formatTime(timeRemaining)}
               </span>
@@ -569,7 +582,7 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [] 
 
         {isBettingLocked && (
           <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-2 text-center">
-            <span className="text-red-500 font-medium text-xs">거래 마감 - 다음 회차를 기다려주세요</span>
+            <span className="text-red-500 font-medium text-xs">거래 마감 ({formatDuration(game.duration)} 회차) - 다음 회차를 기다려주세요</span>
           </div>
         )}
 

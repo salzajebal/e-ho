@@ -30,6 +30,7 @@ interface BetsPanelProps {
 function BetRow({ bet, currentPrice, onExpire }: { bet: Bet; currentPrice: number; onExpire: (price: number) => void }) {
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
   const [hasExpired, setHasExpired] = useState(false);
+  const betLockThreshold = bet.duration <= 60 ? 10 : bet.duration <= 180 ? 15 : 20;
 
   useEffect(() => {
     const calculateRemaining = () => {
@@ -40,7 +41,6 @@ function BetRow({ bet, currentPrice, onExpire }: { bet: Bet; currentPrice: numbe
       
       if (remaining === 0 && !hasExpired && bet.outcome === 'pending') {
         setHasExpired(true);
-        // 서버 자동 정산에만 의존 - 프론트엔드에서 수동 정산 제거 (중복 정산 방지)
       }
     };
 
@@ -165,7 +165,7 @@ function BetRow({ bet, currentPrice, onExpire }: { bet: Bet; currentPrice: numbe
       <div className="flex flex-col items-end gap-1">
         <div className={cn(
           "flex items-center gap-1 px-2 py-1 rounded-full text-xs font-mono font-bold",
-          timeRemaining <= 10 ? "bg-down/20 text-down animate-pulse" : "bg-muted/30 text-foreground"
+          timeRemaining <= betLockThreshold ? "bg-down/20 text-down animate-pulse" : "bg-muted/30 text-foreground"
         )}>
           <Clock className="w-3 h-3" />
           {formatTime(timeRemaining)}
