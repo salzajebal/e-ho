@@ -588,7 +588,7 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
             data-testid="button-long"
           >
             <TrendingUp className="w-5 h-5 shrink-0" />
-            <span>매수</span>
+            <span>LONG</span>
           </Button>
           <Button 
             onClick={() => handleBetClick('short')}
@@ -602,7 +602,7 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
             data-testid="button-short"
           >
             <TrendingDown className="w-5 h-5 shrink-0" />
-            <span>매도</span>
+            <span>SHORT</span>
           </Button>
         </div>
 
@@ -644,7 +644,7 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
                       ) : (
                         <TrendingDown className="w-3 h-3" />
                       )}
-                      <span>{result.direction === 'up' ? '매수' : '매도'}</span>
+                      <span>{result.direction === 'up' ? 'LONG' : 'SHORT'}</span>
                     </div>
                   </div>
                 ))}
@@ -675,7 +675,7 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
               ) : (
                 <TrendingDown className="w-5 h-5" />
               )}
-              {betConfirmation.direction === 'long' ? '매수' : '매도'}
+              {betConfirmation.direction === 'long' ? 'LONG' : 'SHORT'}
             </div>
             
             <div className="space-y-2">

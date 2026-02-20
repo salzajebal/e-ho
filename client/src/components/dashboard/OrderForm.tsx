@@ -34,7 +34,7 @@ export function OrderForm({ currentPrice, symbol, balance, onOrder }: OrderFormP
     }
     
     onOrder(side, numAmount, leverage[0]);
-    toast.success(`${side === 'long' ? '매수' : '매도'} 주문이 접수되었습니다.`, {
+    toast.success(`${side === 'long' ? 'LONG' : 'SHORT'} 주문이 접수되었습니다.`, {
       description: `${symbol} ${leverage[0]}x 격리`,
     });
   };
@@ -114,14 +114,14 @@ export function OrderForm({ currentPrice, symbol, balance, onOrder }: OrderFormP
               onClick={() => handleOrder('long')}
               data-testid="button-long"
             >
-              매수 / 롱
+              LONG
             </Button>
             <Button 
               className="w-full bg-down hover:bg-down/90 text-white font-semibold"
               onClick={() => handleOrder('short')}
               data-testid="button-short"
             >
-              매도 / 숏
+              SHORT
             </Button>
           </div>
 
@@ -130,7 +130,7 @@ export function OrderForm({ currentPrice, symbol, balance, onOrder }: OrderFormP
             <span className="text-right text-foreground font-mono">
               {(parseFloat(amount || "0") / leverage[0]).toFixed(2)} USDT
             </span>
-            <span>최대 매수</span>
+            <span>최대 주문</span>
             <span className="text-right text-foreground font-mono">
               {(availableBalance * leverage[0]).toLocaleString()} USDT
             </span>

@@ -90,7 +90,7 @@ export function useCreateBet() {
       queryClient.invalidateQueries({ queryKey: ["/api/bets"] });
       queryClient.invalidateQueries({ queryKey: ["/api/bets/history"] });
       queryClient.invalidateQueries({ queryKey: ["/api/user/balance"] });
-      const direction = data.direction === 'long' ? '매수' : '매도';
+      const direction = data.direction === 'long' ? 'LONG' : 'SHORT';
       toast.success(`${direction} 주문이 체결되었습니다`);
     },
     onError: (error: Error) => {

@@ -94,7 +94,7 @@ function BetRow({ bet, currentPrice, onExpire }: { bet: Bet; currentPrice: numbe
               "text-xs px-1.5 py-0.5 rounded",
               marketDirection === 'up' ? "bg-up/20 text-up" : "bg-down/20 text-down"
             )}>
-              {marketDirection === 'up' ? '매수' : '매도'}
+              {marketDirection === 'up' ? 'LONG' : 'SHORT'}
             </span>
             {bet.roundNumber != null && (
               <span className="text-xs px-1.5 py-0.5 rounded bg-primary/20 text-primary font-mono">
@@ -146,7 +146,7 @@ function BetRow({ bet, currentPrice, onExpire }: { bet: Bet; currentPrice: numbe
             "text-xs px-1.5 py-0.5 rounded shrink-0",
             bet.direction === 'long' ? "bg-up/20 text-up" : "bg-down/20 text-down"
           )}>
-            {bet.direction === 'long' ? '매수' : '매도'}
+            {bet.direction === 'long' ? 'LONG' : 'SHORT'}
           </span>
           {bet.outcome === 'pending' && bet.roundNumber != null && (
             <span className="text-xs px-1.5 py-0.5 rounded shrink-0 bg-primary/20 text-primary font-mono">
