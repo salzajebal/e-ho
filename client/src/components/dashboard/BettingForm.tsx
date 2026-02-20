@@ -475,7 +475,6 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
     if (validateBet(direction)) {
       const numAmount = parseFloat(amount);
       
-      // Show confirmation popup before placing bet
       setBetConfirmation({
         show: true,
         direction,
@@ -484,6 +483,26 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
         round: currentRound,
       });
     }
+  };
+
+  const handleMaxBetClick = (direction: 'long' | 'short') => {
+    if (isBettingLocked) {
+      toast.error("거래 마감 임박으로 주문이 불가합니다.");
+      return;
+    }
+    if (availableBalance < 10000) {
+      toast.error("잔고가 부족합니다. 최소 주문금액은 10,000원입니다.");
+      return;
+    }
+    const maxAmount = Math.floor(availableBalance);
+    setAmount(maxAmount.toString());
+    setBetConfirmation({
+      show: true,
+      direction,
+      amount: maxAmount,
+      price: currentPrice,
+      round: currentRound,
+    });
   };
 
   const confirmBet = () => {
@@ -576,34 +595,64 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
         )}
 
         <div className="grid grid-cols-2 gap-2 lg:gap-3 pt-1 lg:pt-2">
-          <Button 
-            onClick={() => handleBetClick('long')}
-            disabled={isBettingLocked}
-            className={cn(
-              "h-11 lg:h-14 text-base lg:text-lg font-bold text-white flex items-center justify-center gap-2",
-              isBettingLocked 
-                ? "bg-gray-500 hover:bg-gray-500 cursor-not-allowed opacity-50" 
-                : "bg-up hover:bg-up/90"
-            )}
-            data-testid="button-long"
-          >
-            <TrendingUp className="w-5 h-5 shrink-0" />
-            <span>LONG</span>
-          </Button>
-          <Button 
-            onClick={() => handleBetClick('short')}
-            disabled={isBettingLocked}
-            className={cn(
-              "h-11 lg:h-14 text-base lg:text-lg font-bold text-white flex items-center justify-center gap-2",
-              isBettingLocked 
-                ? "bg-gray-500 hover:bg-gray-500 cursor-not-allowed opacity-50" 
-                : "bg-down hover:bg-down/90"
-            )}
-            data-testid="button-short"
-          >
-            <TrendingDown className="w-5 h-5 shrink-0" />
-            <span>SHORT</span>
-          </Button>
+          <div className="flex gap-0">
+            <Button 
+              onClick={() => handleBetClick('long')}
+              disabled={isBettingLocked}
+              className={cn(
+                "h-11 lg:h-14 text-base lg:text-lg font-bold text-white flex items-center justify-center gap-2 flex-1 rounded-r-none",
+                isBettingLocked 
+                  ? "bg-gray-500 hover:bg-gray-500 cursor-not-allowed opacity-50" 
+                  : "bg-up hover:bg-up/90"
+              )}
+              data-testid="button-long"
+            >
+              <TrendingUp className="w-5 h-5 shrink-0" />
+              <span>LONG</span>
+            </Button>
+            <Button 
+              onClick={() => handleMaxBetClick('long')}
+              disabled={isBettingLocked}
+              className={cn(
+                "h-11 lg:h-14 text-xs font-bold text-white px-2 lg:px-3 rounded-l-none border-l border-white/20",
+                isBettingLocked 
+                  ? "bg-gray-500 hover:bg-gray-500 cursor-not-allowed opacity-50" 
+                  : "bg-up hover:bg-up/90"
+              )}
+              data-testid="button-long-max"
+            >
+              MAX
+            </Button>
+          </div>
+          <div className="flex gap-0">
+            <Button 
+              onClick={() => handleBetClick('short')}
+              disabled={isBettingLocked}
+              className={cn(
+                "h-11 lg:h-14 text-base lg:text-lg font-bold text-white flex items-center justify-center gap-2 flex-1 rounded-r-none",
+                isBettingLocked 
+                  ? "bg-gray-500 hover:bg-gray-500 cursor-not-allowed opacity-50" 
+                  : "bg-down hover:bg-down/90"
+              )}
+              data-testid="button-short"
+            >
+              <TrendingDown className="w-5 h-5 shrink-0" />
+              <span>SHORT</span>
+            </Button>
+            <Button 
+              onClick={() => handleMaxBetClick('short')}
+              disabled={isBettingLocked}
+              className={cn(
+                "h-11 lg:h-14 text-xs font-bold text-white px-2 lg:px-3 rounded-l-none border-l border-white/20",
+                isBettingLocked 
+                  ? "bg-gray-500 hover:bg-gray-500 cursor-not-allowed opacity-50" 
+                  : "bg-down hover:bg-down/90"
+              )}
+              data-testid="button-short-max"
+            >
+              MAX
+            </Button>
+          </div>
         </div>
 
         {/* Game Results Section */}
