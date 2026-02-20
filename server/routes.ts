@@ -478,13 +478,13 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Direction must be 'long' or 'short'" });
       }
 
-      if (![120].includes(duration)) {
-        return res.status(400).json({ error: "Duration must be 120 seconds" });
+      if (![60, 180, 300].includes(duration)) {
+        return res.status(400).json({ error: "Duration must be 60, 180, or 300 seconds" });
       }
 
-      // BTC and ETH are available 24/7
-      if (!['BTC', 'ETH'].includes(symbol)) {
-        return res.status(400).json({ error: "Invalid symbol. Only BTC and ETH are available." });
+      const VALID_SYMBOLS = ['USD', 'JPY', 'EUR', 'AUD'];
+      if (!VALID_SYMBOLS.includes(symbol)) {
+        return res.status(400).json({ error: "Invalid symbol. Only USD, JPY, EUR, AUD are available." });
       }
 
       let betAmount = parseFloat(amount);
@@ -2409,10 +2409,22 @@ export async function registerRoutes(
   // ==================== 바이낸스 실시간 시세 (WebSocket + REST API 폴백) ====================
   
   // 실시간 가격 저장소
+  const FOREX_TO_BINANCE: Record<string, string> = {
+    USD: 'BTC',
+    EUR: 'BTC',
+    JPY: 'ETH',
+    AUD: 'ETH',
+  };
+
   const binancePrices: { [key: string]: { price: number; change: number; changePercent: number; high: number; low: number; volume: number; updatedAt: number } } = {
     BTC: { price: 0, change: 0, changePercent: 0, high: 0, low: 0, volume: 0, updatedAt: 0 },
     ETH: { price: 0, change: 0, changePercent: 0, high: 0, low: 0, volume: 0, updatedAt: 0 }
   };
+
+  function getForexPrice(forexSymbol: string) {
+    const binanceKey = FOREX_TO_BINANCE[forexSymbol] || forexSymbol;
+    return binancePrices[binanceKey];
+  }
 
   // WebSocket 연결 상태
   let binanceWs: WebSocket | null = null;
@@ -2616,7 +2628,7 @@ export async function registerRoutes(
       for (const bet of expiredBets) {
         try {
           const symbol = bet.symbol.toUpperCase();
-          let closePrice = binancePrices[symbol]?.price;
+          let closePrice = getForexPrice(symbol)?.price;
           
           if (!closePrice || closePrice <= 0) {
             continue;
@@ -2733,12 +2745,12 @@ export async function registerRoutes(
       connected: isConnected,
       usingRestApi,
       messageCount,
-      btcUpdatedAt: binancePrices.BTC.updatedAt,
-      btcAge: now - binancePrices.BTC.updatedAt,
-      ethUpdatedAt: binancePrices.ETH.updatedAt,
-      ethAge: now - binancePrices.ETH.updatedAt,
-      btcPrice: binancePrices.BTC.price,
-      ethPrice: binancePrices.ETH.price,
+      btcUpdatedAt: binancePrices.BTC?.updatedAt,
+      btcAge: now - (binancePrices.BTC?.updatedAt || 0),
+      ethUpdatedAt: binancePrices.ETH?.updatedAt,
+      ethAge: now - (binancePrices.ETH?.updatedAt || 0),
+      btcPrice: binancePrices.BTC?.price,
+      ethPrice: binancePrices.ETH?.price,
       timestamp: now
     });
   });
@@ -2749,11 +2761,15 @@ export async function registerRoutes(
     const prices = [];
     let hasFallback = false;
 
-    for (const symbol of ['BTC', 'ETH']) {
-      const data = binancePrices[symbol];
-      if (data.price > 0 && (now - data.updatedAt) < 30000) {
+    const FOREX_DEFAULTS: Record<string, number> = { USD: 87500, JPY: 2930, EUR: 87500, AUD: 2930 };
+    const FOREX_HIGHS: Record<string, number> = { USD: 89500, JPY: 3000, EUR: 89500, AUD: 3000 };
+    const FOREX_LOWS: Record<string, number> = { USD: 86500, JPY: 2890, EUR: 86500, AUD: 2890 };
+
+    for (const forexSymbol of ['USD', 'JPY', 'EUR', 'AUD']) {
+      const data = getForexPrice(forexSymbol);
+      if (data && data.price > 0 && (now - data.updatedAt) < 30000) {
         prices.push({
-          symbol,
+          symbol: forexSymbol,
           price: Math.round(data.price * 100) / 100,
           change: Math.round(data.change * 100) / 100,
           changePercent: Math.round(data.changePercent * 100) / 100,
@@ -2763,14 +2779,13 @@ export async function registerRoutes(
         });
       } else {
         hasFallback = true;
-        // 데이터 없거나 오래된 경우 기본값
         prices.push({
-          symbol,
-          price: symbol === 'BTC' ? 87500 : 2930,
+          symbol: forexSymbol,
+          price: FOREX_DEFAULTS[forexSymbol],
           change: 0,
           changePercent: 0,
-          high: symbol === 'BTC' ? 89500 : 3000,
-          low: symbol === 'BTC' ? 86500 : 2890,
+          high: FOREX_HIGHS[forexSymbol],
+          low: FOREX_LOWS[forexSymbol],
           timestamp: now
         });
       }
@@ -2784,14 +2799,16 @@ export async function registerRoutes(
     const { symbol } = req.params;
     const upperSymbol = symbol.toUpperCase();
     
-    if (!['BTC', 'ETH'].includes(upperSymbol)) {
+    const VALID_FOREX = ['USD', 'JPY', 'EUR', 'AUD'];
+    if (!VALID_FOREX.includes(upperSymbol)) {
       return res.status(400).json({ error: "지원하지 않는 심볼입니다" });
     }
 
+    const FOREX_DEFAULTS: Record<string, number> = { USD: 87500, JPY: 2930, EUR: 87500, AUD: 2930 };
     const now = Date.now();
-    const data = binancePrices[upperSymbol];
+    const data = getForexPrice(upperSymbol);
     
-    if (data.price > 0 && (now - data.updatedAt) < 30000) {
+    if (data && data.price > 0 && (now - data.updatedAt) < 30000) {
       res.json({
         symbol: upperSymbol,
         price: Math.round(data.price * 100) / 100,
@@ -2804,11 +2821,11 @@ export async function registerRoutes(
     } else {
       res.json({
         symbol: upperSymbol,
-        price: upperSymbol === 'BTC' ? 87500 : 2930,
+        price: FOREX_DEFAULTS[upperSymbol] || 0,
         change: 0,
         changePercent: 0,
-        high: upperSymbol === 'BTC' ? 89500 : 3000,
-        low: upperSymbol === 'BTC' ? 86500 : 2890,
+        high: FOREX_DEFAULTS[upperSymbol] || 0,
+        low: FOREX_DEFAULTS[upperSymbol] || 0,
         timestamp: now
       });
     }

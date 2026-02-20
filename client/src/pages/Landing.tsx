@@ -25,8 +25,10 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
 const CRYPTO_ASSETS = [
-  { symbol: "USD/JPY", name: "달러/엔" },
-  { symbol: "EUR/USD", name: "유로/달러" },
+  { symbol: "USD", name: "달러 (USD)" },
+  { symbol: "JPY", name: "엔화 (JPY)" },
+  { symbol: "EUR", name: "유로 (EUR)" },
+  { symbol: "AUD", name: "호주달러 (AUD)" },
 ];
 
 const KOREAN_BANKS = [
@@ -57,17 +59,19 @@ interface LandingMarketData {
   priceHistory: number[];
 }
 
-const SYMBOL_API_MAP: Record<string, string> = { "USD/JPY": "BTC", "EUR/USD": "ETH" };
-
 function useLandingMarketData() {
   const [markets, setMarkets] = useState<LandingMarketData[]>([
-    { symbol: "USD/JPY", name: "달러/엔", price: 88700, changePercent: 0, priceHistory: [] },
-    { symbol: "EUR/USD", name: "유로/달러", price: 2960, changePercent: 0, priceHistory: [] },
+    { symbol: "USD", name: "달러 (USD)", price: 88700, changePercent: 0, priceHistory: [] },
+    { symbol: "JPY", name: "엔화 (JPY)", price: 2960, changePercent: 0, priceHistory: [] },
+    { symbol: "EUR", name: "유로 (EUR)", price: 88700, changePercent: 0, priceHistory: [] },
+    { symbol: "AUD", name: "호주달러 (AUD)", price: 2960, changePercent: 0, priceHistory: [] },
   ]);
   
   const historyRef = useRef<Record<string, number[]>>({
-    "USD/JPY": [],
-    "EUR/USD": [],
+    USD: [],
+    JPY: [],
+    EUR: [],
+    AUD: [],
   });
   
   const lastApiPrices = useRef<Record<string, { price: number; changePercent: number }>>({});
@@ -92,7 +96,7 @@ function useLandingMarketData() {
         
         if (result.prices && !result.fallback) {
           setMarkets(prev => prev.map(m => {
-            const apiPrice = result.prices.find((p: any) => p.symbol === SYMBOL_API_MAP[m.symbol]);
+            const apiPrice = result.prices.find((p: any) => p.symbol === m.symbol);
             if (apiPrice) {
               lastApiPrices.current[m.symbol] = {
                 price: apiPrice.price,

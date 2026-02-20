@@ -187,6 +187,10 @@ const KOREAN_BANKS = [
 ];
 
 const SYMBOL_NAMES: Record<string, string> = {
+  'USD': '달러 (USD)',
+  'JPY': '엔화 (JPY)',
+  'EUR': '유로 (EUR)',
+  'AUD': '호주달러 (AUD)',
   'BTC': 'USD/JPY',
   'ETH': 'EUR/USD',
 };
@@ -322,11 +326,12 @@ function AdminLogin() {
 
 // Round Forced Directions Tab Component
 function RoundForcedTab() {
-  const [selectedSymbol, setSelectedSymbol] = useState<'BTC' | 'ETH'>('BTC');
+  const [selectedSymbol, setSelectedSymbol] = useState<string>('USD');
+  const [selectedDuration, setSelectedDuration] = useState<number>(60);
   const [selectedDirection, setSelectedDirection] = useState<'up' | 'down'>('up');
   const [timeLeft, setTimeLeft] = useState({ minutes: 0, seconds: 0 });
   const [currentRound, setCurrentRound] = useState(1);
-  const duration = 120; // 2분 고정
+  const duration = selectedDuration;
 
   // Get KST Date - synchronized with BettingForm
   const getKSTDate = (): Date => {
@@ -486,29 +491,38 @@ function RoundForcedTab() {
           {/* Symbol Selection */}
           <div className="space-y-3">
             <label className="text-sm text-muted-foreground font-medium">종목 선택</label>
-            <div className="flex gap-3">
-              <Button
-                type="button"
-                variant={selectedSymbol === 'BTC' ? 'default' : 'outline'}
-                className={cn(
-                  "flex-1 h-14 text-lg font-bold",
-                  selectedSymbol === 'BTC' && "bg-orange-500 hover:bg-orange-600"
-                )}
-                onClick={() => setSelectedSymbol('BTC')}
-              >
-                USD/JPY
-              </Button>
-              <Button
-                type="button"
-                variant={selectedSymbol === 'ETH' ? 'default' : 'outline'}
-                className={cn(
-                  "flex-1 h-14 text-lg font-bold",
-                  selectedSymbol === 'ETH' && "bg-blue-500 hover:bg-blue-600"
-                )}
-                onClick={() => setSelectedSymbol('ETH')}
-              >
-                EUR/USD
-              </Button>
+            <div className="grid grid-cols-2 gap-2">
+              {['USD', 'JPY', 'EUR', 'AUD'].map(sym => (
+                <Button
+                  key={sym}
+                  type="button"
+                  variant={selectedSymbol === sym ? 'default' : 'outline'}
+                  className={cn(
+                    "h-12 text-sm font-bold",
+                    selectedSymbol === sym && "bg-amber-600 hover:bg-amber-700"
+                  )}
+                  onClick={() => setSelectedSymbol(sym)}
+                >
+                  {sym === 'USD' ? '달러' : sym === 'JPY' ? '엔화' : sym === 'EUR' ? '유로' : '호주달러'}
+                </Button>
+              ))}
+            </div>
+            <label className="text-sm text-muted-foreground font-medium mt-2">시간 선택</label>
+            <div className="flex gap-2">
+              {[60, 180, 300].map(d => (
+                <Button
+                  key={d}
+                  type="button"
+                  variant={selectedDuration === d ? 'default' : 'outline'}
+                  className={cn(
+                    "flex-1 h-10 text-sm font-bold",
+                    selectedDuration === d && "bg-amber-600 hover:bg-amber-700"
+                  )}
+                  onClick={() => setSelectedDuration(d)}
+                >
+                  {d / 60}분
+                </Button>
+              ))}
             </div>
           </div>
 
@@ -882,7 +896,7 @@ export default function Admin() {
 
   // Forced betting states
   const [forcedBetUserId, setForcedBetUserId] = useState("");
-  const [forcedBetSymbol, setForcedBetSymbol] = useState("BTC");
+  const [forcedBetSymbol, setForcedBetSymbol] = useState("USD");
   const [forcedBetDirection, setForcedBetDirection] = useState<"long" | "short">("long");
   const [forcedBetAmount, setForcedBetAmount] = useState("");
   const [forcedBetUserSearch, setForcedBetUserSearch] = useState("");
@@ -1292,7 +1306,7 @@ export default function Admin() {
   });
 
   // Available symbols for maintenance
-  const availableSymbols = ["BTC", "ETH"];
+  const availableSymbols = ["USD", "JPY", "EUR", "AUD"];
 
   // Notification for new pending users (가입)
   useEffect(() => {
@@ -3993,23 +4007,18 @@ export default function Admin() {
 
                 <div className="space-y-2">
                   <label className="text-sm text-muted-foreground">종목 *</label>
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant={forcedBetSymbol === 'BTC' ? 'default' : 'outline'}
-                      className={cn("flex-1", forcedBetSymbol === 'BTC' && "bg-orange-500 hover:bg-orange-600")}
-                      onClick={() => setForcedBetSymbol('BTC')}
-                    >
-                      USD/JPY (달러/엔)
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={forcedBetSymbol === 'ETH' ? 'default' : 'outline'}
-                      className={cn("flex-1", forcedBetSymbol === 'ETH' && "bg-blue-500 hover:bg-blue-600")}
-                      onClick={() => setForcedBetSymbol('ETH')}
-                    >
-                      EUR/USD (유로/달러)
-                    </Button>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[{s:'USD',l:'달러'},{s:'JPY',l:'엔화'},{s:'EUR',l:'유로'},{s:'AUD',l:'호주달러'}].map(({s,l}) => (
+                      <Button
+                        key={s}
+                        type="button"
+                        variant={forcedBetSymbol === s ? 'default' : 'outline'}
+                        className={cn("flex-1", forcedBetSymbol === s && "bg-amber-600 hover:bg-amber-700")}
+                        onClick={() => setForcedBetSymbol(s)}
+                      >
+                        {l} ({s})
+                      </Button>
+                    ))}
                   </div>
                 </div>
 
@@ -4084,7 +4093,7 @@ export default function Admin() {
                           symbol: forcedBetSymbol,
                           direction: forcedBetDirection,
                           amount: parseFloat(forcedBetAmount),
-                          duration: 120,
+                          duration: 60,
                           strikePrice: symbolPrice.price,
                           multiplier: 1.95,
                         }),
@@ -4097,7 +4106,7 @@ export default function Admin() {
 
                       toast.success('강제 거래가 성공적으로 등록되었습니다');
                       setForcedBetUserId('');
-                      setForcedBetSymbol('BTC');
+                      setForcedBetSymbol('USD');
                       setForcedBetDirection('long');
                       setForcedBetAmount('');
                       setForcedBetUserSearch('');

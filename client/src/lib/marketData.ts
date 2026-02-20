@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { INTERNAL_SYMBOL_MAP, type ForexSymbol } from './tradingGames';
 
 export interface MarketData {
   symbol: string;
@@ -13,11 +14,12 @@ export interface MarketData {
 }
 
 export const INITIAL_MARKET_DATA: MarketData[] = [
-  { symbol: 'BTC', name: 'USD/JPY', price: 87500, change: 0, changePercent: 0, high: 89000, low: 86500, volume: 0, category: '통화' },
-  { symbol: 'ETH', name: 'EUR/USD', price: 2930, change: 0, changePercent: 0, high: 2980, low: 2890, volume: 0, category: '통화' },
+  { symbol: 'USD', name: 'USD/KRW', price: 87500, change: 0, changePercent: 0, high: 89000, low: 86500, volume: 0, category: '통화' },
+  { symbol: 'JPY', name: 'JPY/KRW', price: 2930, change: 0, changePercent: 0, high: 2980, low: 2890, volume: 0, category: '통화' },
+  { symbol: 'EUR', name: 'EUR/KRW', price: 87500, change: 0, changePercent: 0, high: 89000, low: 86500, volume: 0, category: '통화' },
+  { symbol: 'AUD', name: 'AUD/KRW', price: 2930, change: 0, changePercent: 0, high: 2980, low: 2890, volume: 0, category: '통화' },
 ];
 
-// 직접 Binance API에서 가격 가져오기 (프로덕션 환경에서 서버 우회)
 async function fetchBinancePricesDirect(): Promise<{ btc: any; eth: any } | null> {
   try {
     const [btcRes, ethRes] = await Promise.all([
@@ -37,7 +39,58 @@ async function fetchBinancePricesDirect(): Promise<{ btc: any; eth: any } | null
   }
 }
 
-// Hook to manage real-time data with API integration
+function buildMarketDataFromBinance(btcData: any, ethData: any): MarketData[] {
+  const btcPrice = parseFloat(btcData.lastPrice);
+  const ethPrice = parseFloat(ethData.lastPrice);
+  
+  return [
+    {
+      symbol: 'USD',
+      name: 'USD/KRW',
+      price: btcPrice,
+      change: parseFloat(btcData.priceChange),
+      changePercent: parseFloat(btcData.priceChangePercent),
+      high: parseFloat(btcData.highPrice),
+      low: parseFloat(btcData.lowPrice),
+      volume: parseFloat(btcData.volume),
+      category: '통화',
+    },
+    {
+      symbol: 'JPY',
+      name: 'JPY/KRW',
+      price: ethPrice,
+      change: parseFloat(ethData.priceChange),
+      changePercent: parseFloat(ethData.priceChangePercent),
+      high: parseFloat(ethData.highPrice),
+      low: parseFloat(ethData.lowPrice),
+      volume: parseFloat(ethData.volume),
+      category: '통화',
+    },
+    {
+      symbol: 'EUR',
+      name: 'EUR/KRW',
+      price: btcPrice,
+      change: parseFloat(btcData.priceChange),
+      changePercent: parseFloat(btcData.priceChangePercent),
+      high: parseFloat(btcData.highPrice),
+      low: parseFloat(btcData.lowPrice),
+      volume: parseFloat(btcData.volume),
+      category: '통화',
+    },
+    {
+      symbol: 'AUD',
+      name: 'AUD/KRW',
+      price: ethPrice,
+      change: parseFloat(ethData.priceChange),
+      changePercent: parseFloat(ethData.priceChangePercent),
+      high: parseFloat(ethData.highPrice),
+      low: parseFloat(ethData.lowPrice),
+      volume: parseFloat(ethData.volume),
+      category: '통화',
+    },
+  ];
+}
+
 export function useMarketData() {
   const [data, setData] = useState<MarketData[]>(INITIAL_MARKET_DATA);
   const lastApiPrices = useRef<Record<string, { price: number; change: number; changePercent: number; high: number; low: number }>>({});
@@ -45,39 +98,14 @@ export function useMarketData() {
   const useDirectBinance = useRef(false);
 
   useEffect(() => {
-    // 직접 Binance API 호출 (프로덕션 환경 우회용)
     const fetchFromBinanceDirect = async () => {
       const binanceData = await fetchBinancePricesDirect();
       if (binanceData) {
         updateCounter.current++;
-        
-        const newData: MarketData[] = [
-          {
-            symbol: 'BTC',
-            name: 'USD/JPY',
-            price: parseFloat(binanceData.btc.lastPrice),
-            change: parseFloat(binanceData.btc.priceChange),
-            changePercent: parseFloat(binanceData.btc.priceChangePercent),
-            high: parseFloat(binanceData.btc.highPrice),
-            low: parseFloat(binanceData.btc.lowPrice),
-            volume: parseFloat(binanceData.btc.volume),
-            category: '통화',
-          },
-          {
-            symbol: 'ETH',
-            name: 'EUR/USD',
-            price: parseFloat(binanceData.eth.lastPrice),
-            change: parseFloat(binanceData.eth.priceChange),
-            changePercent: parseFloat(binanceData.eth.priceChangePercent),
-            high: parseFloat(binanceData.eth.highPrice),
-            low: parseFloat(binanceData.eth.lowPrice),
-            volume: parseFloat(binanceData.eth.volume),
-            category: '통화',
-          }
-        ];
+        const newData = buildMarketDataFromBinance(binanceData.btc, binanceData.eth);
         
         if (updateCounter.current <= 3 || updateCounter.current % 30 === 0) {
-          console.log('[MarketData Direct] BTC: $' + newData[0].price.toFixed(2) + ', ETH: $' + newData[1].price.toFixed(2));
+          console.log('[MarketData Direct] USD: $' + newData[0].price.toFixed(2) + ', JPY: $' + newData[1].price.toFixed(2));
         }
         
         setData(newData);
@@ -86,7 +114,6 @@ export function useMarketData() {
       return false;
     };
 
-    // 서버 API에서 가격 가져오기
     const fetchFromServerApi = async () => {
       try {
         const controller = new AbortController();
@@ -143,19 +170,15 @@ export function useMarketData() {
       }
     };
 
-    // 메인 가격 가져오기 함수: 서버 API 먼저 시도, 실패하면 직접 Binance 호출
     const fetchRealPrices = async () => {
-      // 이미 직접 호출 모드면 계속 직접 호출
       if (useDirectBinance.current) {
         await fetchFromBinanceDirect();
         return;
       }
       
-      // 서버 API 먼저 시도
       const serverSuccess = await fetchFromServerApi();
       
       if (!serverSuccess) {
-        // 서버 실패 시 직접 Binance 호출
         const directSuccess = await fetchFromBinanceDirect();
         if (directSuccess) {
           console.log('[MarketData] 서버 API 실패, Binance 직접 호출 모드로 전환');
@@ -164,10 +187,7 @@ export function useMarketData() {
       }
     };
 
-    // Initial API fetch
     fetchRealPrices();
-
-    // Fetch from API every 500ms for real-time updates
     const apiInterval = setInterval(fetchRealPrices, 500);
 
     return () => {
@@ -178,7 +198,6 @@ export function useMarketData() {
   return data;
 }
 
-// Generate initial chart data
 function generateInitialChartData(price: number, count: number = 60): ChartDataPoint[] {
   const data: ChartDataPoint[] = [];
   let current = price * 0.995;
@@ -206,7 +225,6 @@ interface ChartDataPoint {
   timestamp: number;
 }
 
-// Real-time chart data hook
 export function useChartData(symbol: string, currentPrice: number): ChartDataPoint[] {
   const [chartData, setChartData] = useState<ChartDataPoint[]>(() => 
     generateInitialChartData(currentPrice)
@@ -214,7 +232,6 @@ export function useChartData(symbol: string, currentPrice: number): ChartDataPoi
   const lastSymbolRef = useRef<string>(symbol);
   const lastPriceRef = useRef<number>(currentPrice);
 
-  // Reset chart data when symbol changes
   useEffect(() => {
     if (symbol !== lastSymbolRef.current) {
       setChartData(generateInitialChartData(currentPrice));
@@ -222,7 +239,6 @@ export function useChartData(symbol: string, currentPrice: number): ChartDataPoi
     }
   }, [symbol, currentPrice]);
 
-  // Update chart with live price
   useEffect(() => {
     lastPriceRef.current = currentPrice;
   }, [currentPrice]);
@@ -237,7 +253,6 @@ export function useChartData(symbol: string, currentPrice: number): ChartDataPoi
         const timeDiff = now.getTime() - lastPoint.timestamp;
         
         if (timeDiff >= 60000) {
-          // Add new data point every minute
           const newPoint: ChartDataPoint = {
             time: now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
             close: lastPriceRef.current,
@@ -245,7 +260,6 @@ export function useChartData(symbol: string, currentPrice: number): ChartDataPoi
           };
           return [...prev.slice(1), newPoint];
         } else {
-          // Update last point with current price
           const updatedLast = { ...lastPoint, close: lastPriceRef.current };
           return [...prev.slice(0, -1), updatedLast];
         }
@@ -258,7 +272,6 @@ export function useChartData(symbol: string, currentPrice: number): ChartDataPoi
   return chartData;
 }
 
-// Legacy function for backwards compatibility
 export function generateCandleData(currentPrice: number, count: number = 50) {
   const data = [];
   let current = currentPrice * 0.995;
