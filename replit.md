@@ -1,14 +1,13 @@
-# COINONE - Cryptocurrency Trading Platform
+# VALUE-OPTION - Forex Trading Platform
 
 ## Overview
 
-This is a real-time cryptocurrency trading platform styled after Coinone's interface. Users can place 2-minute bets on price movements (long/short) for Bitcoin (BTC) and Ethereum (ETH). The platform features live market data via Binance REST API, interactive candlestick charts using lightweight-charts, and an account system with virtual balance.
+This is a real-time forex trading platform. Users can place bets on price movements (long/short) for major forex pairs: EUR/USD (labeled USD), USD/JPY (labeled JPY), GBP/USD (labeled EUR), and AUD/USD (labeled AUD). The platform features live market data via Tiingo forex API, interactive candlestick charts using lightweight-charts, and an account system with virtual balance.
 
 ## Trading Rules
-- **Operating Hours**: 24/7 (No time restrictions)
-- **Bitcoin (BTC)**: Available 24/7
-- **Ethereum (ETH)**: Available 24/7
-- **Trading Duration**: 2 minutes only
+- **Operating Hours**: 24/7 (forex markets closed on weekends)
+- **Trading Assets**: USD (EUR/USD), JPY (USD/JPY), EUR (GBP/USD), AUD (AUD/USD)
+- **Trading Durations**: 1분 (60s), 3분 (180s), 5분 (300s)
 - **New User Balance**: Starts at 0원 (deposit required)
 
 ## User Preferences
@@ -32,14 +31,23 @@ Preferred communication style: Simple, everyday language.
 - **Development**: Hot module replacement via Vite middleware
 
 ### Data Flow
-- Real-time crypto prices from Binance WebSocket (`wss://stream.binance.com`)
-- Frontend maintains local market price state and syncs with backend
+- Real-time forex prices from Tiingo WebSocket (`wss://api.tiingo.com/fx`) with REST API fallback
+- Frontend fetches prices from server API (`/api/market/prices`, `/api/market/candles`)
 - Bets are created with strike price, settled when timer expires based on current price
+- Price formatting: JPY uses 3 decimal places, all other pairs use 5 decimal places
+
+### Tiingo API Integration
+- **WebSocket**: Primary real-time data source for forex prices
+- **REST API**: Fallback polling every 5 seconds when WebSocket is inactive
+- **Ticker mapping**: USD→eurusd, JPY→usdjpy, EUR→gbpusd, AUD→audusd
+- **API Key**: Stored as TIINGO_API_KEY secret
+- **Rate limits**: Free tier - 50 req/hour, 1000/day, 1GB bandwidth/month
 
 ### Key Design Patterns
 - Shared schema definitions between frontend and backend (`shared/schema.ts`)
 - Demo user auto-created on first request (no authentication required)
 - Path aliases: `@/` for client source, `@shared/` for shared code
+- Forex price formatting utility: `formatForexPrice()` in `client/src/lib/utils.ts`
 
 ## External Dependencies
 
@@ -54,8 +62,8 @@ Preferred communication style: Simple, everyday language.
 - **Affiliates**: Complete affiliate/distributor system with referral codes, commission tracking, and analytics
 
 ### Third-Party APIs
-- **Binance WebSocket**: Live BTC/USDT and ETH/USDT ticker data
-- No authentication required for public market data streams
+- **Tiingo Forex WebSocket/REST**: Live forex price data for EUR/USD, USD/JPY, GBP/USD, AUD/USD
+- **API Key**: TIINGO_API_KEY (stored as secret)
 
 ### Key NPM Packages
 - `drizzle-orm` / `drizzle-zod`: Database ORM with Zod schema validation

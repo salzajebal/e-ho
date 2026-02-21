@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { cn } from "@/lib/utils";
+import { cn, formatForexPrice } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -741,7 +741,7 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">진입가</span>
-                <span className="text-foreground font-mono">{betConfirmation.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                <span className="text-foreground font-mono">{formatForexPrice(betConfirmation.price, game.symbol)}</span>
               </div>
             </div>
 

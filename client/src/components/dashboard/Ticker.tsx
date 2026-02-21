@@ -1,5 +1,5 @@
 import { MarketData } from "@/lib/mockData";
-import { cn } from "@/lib/utils";
+import { cn, formatForexPrice } from "@/lib/utils";
 import { memo, useMemo, useRef, useEffect } from "react";
 
 // Memoized individual ticker item to prevent re-renders
@@ -20,7 +20,7 @@ const TickerItem = memo(function TickerItem({
     <div className="flex items-center px-4 gap-2 text-xs border-r border-border/50 flex-shrink-0">
       <span className="font-semibold text-foreground">{symbol}</span>
       <span className={cn("font-mono", isPositive ? "text-up" : "text-down")}>
-        {price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        {formatForexPrice(price, symbol)}
       </span>
       <span className={cn("font-mono", isPositive ? "text-up" : "text-down")}>
         {changePercent > 0 ? "+" : ""}{changePercent.toFixed(2)}%

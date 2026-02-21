@@ -1,5 +1,5 @@
 import { MarketData } from "@/lib/mockData";
-import { cn } from "@/lib/utils";
+import { cn, formatForexPrice } from "@/lib/utils";
 import { Clock } from "lucide-react";
 
 interface Game {
@@ -64,7 +64,7 @@ export function MarketOverview({ data, games, onSelectGame, selectedGameId }: Ma
                 </span>
               </div>
               <div className="w-24 text-right font-mono font-medium text-foreground">
-                {market.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {formatForexPrice(market.price, game.symbol)}
               </div>
             </button>
           );

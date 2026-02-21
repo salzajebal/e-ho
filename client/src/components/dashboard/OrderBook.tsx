@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { cn } from "@/lib/utils";
+import { cn, formatForexPrice } from "@/lib/utils";
 
 interface OrderBookProps {
   currentPrice: number;
+  symbol?: string;
 }
 
-export function OrderBook({ currentPrice }: OrderBookProps) {
+export function OrderBook({ currentPrice, symbol }: OrderBookProps) {
   const [bids, setBids] = useState<any[]>([]);
   const [asks, setAsks] = useState<any[]>([]);
 
@@ -50,7 +51,7 @@ export function OrderBook({ currentPrice }: OrderBookProps) {
           {asks.map((ask, i) => (
             <div key={i} className="flex px-4 py-0.5 text-xs font-mono hover:bg-muted/30 cursor-pointer relative group">
               <div className="absolute inset-0 bg-down-10 w-[30%] ml-auto opacity-20 group-hover:opacity-30"></div>
-              <span className="flex-1 text-left text-down">{ask.price.toFixed(2)}</span>
+              <span className="flex-1 text-left text-down">{formatForexPrice(ask.price, symbol)}</span>
               <span className="flex-1 text-right text-foreground">{ask.amount.toFixed(4)}</span>
               <span className="flex-1 text-right text-muted-foreground">{(ask.price * ask.amount).toFixed(2)}</span>
             </div>
@@ -59,8 +60,7 @@ export function OrderBook({ currentPrice }: OrderBookProps) {
 
         {/* Current Price */}
         <div className="py-3 px-4 flex items-center justify-center gap-2 border-y border-border/50 bg-muted/10">
-          <span className="text-xl font-mono font-bold text-up">{currentPrice.toFixed(2)}</span>
-          <span className="text-xs text-muted-foreground">≈ ${currentPrice.toFixed(2)}</span>
+          <span className="text-xl font-mono font-bold text-up">{formatForexPrice(currentPrice, symbol)}</span>
         </div>
 
         {/* Bids (Green) */}
@@ -68,7 +68,7 @@ export function OrderBook({ currentPrice }: OrderBookProps) {
           {bids.map((bid, i) => (
             <div key={i} className="flex px-4 py-0.5 text-xs font-mono hover:bg-muted/30 cursor-pointer relative group">
               <div className="absolute inset-0 bg-up-10 w-[40%] ml-auto opacity-20 group-hover:opacity-30"></div>
-              <span className="flex-1 text-left text-up">{bid.price.toFixed(2)}</span>
+              <span className="flex-1 text-left text-up">{formatForexPrice(bid.price, symbol)}</span>
               <span className="flex-1 text-right text-foreground">{bid.amount.toFixed(4)}</span>
               <span className="flex-1 text-right text-muted-foreground">{(bid.price * bid.amount).toFixed(2)}</span>
             </div>

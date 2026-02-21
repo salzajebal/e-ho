@@ -25,10 +25,10 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
 const CRYPTO_ASSETS = [
-  { symbol: "USD", name: "달러 (USD)" },
-  { symbol: "JPY", name: "엔화 (JPY)" },
-  { symbol: "EUR", name: "유로 (EUR)" },
-  { symbol: "AUD", name: "호주달러 (AUD)" },
+  { symbol: "USD", name: "유로/달러 (EUR/USD)" },
+  { symbol: "JPY", name: "달러/엔 (USD/JPY)" },
+  { symbol: "EUR", name: "파운드/달러 (GBP/USD)" },
+  { symbol: "AUD", name: "호주달러 (AUD/USD)" },
 ];
 
 const KOREAN_BANKS = [
@@ -61,10 +61,10 @@ interface LandingMarketData {
 
 function useLandingMarketData() {
   const [markets, setMarkets] = useState<LandingMarketData[]>([
-    { symbol: "USD", name: "달러 (USD)", price: 88700, changePercent: 0, priceHistory: [] },
-    { symbol: "JPY", name: "엔화 (JPY)", price: 2960, changePercent: 0, priceHistory: [] },
-    { symbol: "EUR", name: "유로 (EUR)", price: 88700, changePercent: 0, priceHistory: [] },
-    { symbol: "AUD", name: "호주달러 (AUD)", price: 2960, changePercent: 0, priceHistory: [] },
+    { symbol: "USD", name: "유로/달러 (EUR/USD)", price: 1.0500, changePercent: 0, priceHistory: [] },
+    { symbol: "JPY", name: "달러/엔 (USD/JPY)", price: 150.000, changePercent: 0, priceHistory: [] },
+    { symbol: "EUR", name: "파운드/달러 (GBP/USD)", price: 1.2700, changePercent: 0, priceHistory: [] },
+    { symbol: "AUD", name: "호주달러 (AUD/USD)", price: 0.6500, changePercent: 0, priceHistory: [] },
   ]);
   
   const historyRef = useRef<Record<string, number[]>>({
@@ -860,7 +860,8 @@ export default function Landing() {
             {marketData.map((item, index) => {
               const isPositive = item.changePercent >= 0;
               const chartPath = generateSparklinePath(item.priceHistory);
-              const formattedPrice = item.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+              const forexDecimals = item.symbol === 'JPY' ? 3 : 5;
+              const formattedPrice = item.price.toFixed(forexDecimals);
               const formattedChange = `${isPositive ? '+' : ''}${item.changePercent.toFixed(2)}%`;
               
               return (
@@ -872,7 +873,7 @@ export default function Landing() {
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-gradient-to-br from-amber-500/30 to-amber-600/10 rounded-full flex items-center justify-center group-hover:from-amber-500/40 group-hover:to-amber-600/20 transition-colors border border-amber-500/20">
-                        <span className="text-lg font-bold text-amber-400">{item.symbol === 'USD/JPY' ? '$' : '€'}</span>
+                        <span className="text-lg font-bold text-amber-400">{item.symbol === 'JPY' ? '¥' : item.symbol === 'EUR' ? '£' : item.symbol === 'AUD' ? 'A$' : '€'}</span>
                       </div>
                       <div>
                         <h3 className="font-semibold text-white">{item.name}</h3>
@@ -912,7 +913,7 @@ export default function Landing() {
                   <div className="flex items-end justify-between">
                     <div>
                       <p className="text-xs text-gray-500 mb-1">현재가</p>
-                      <p className="text-lg font-bold text-white transition-all">${formattedPrice}</p>
+                      <p className="text-lg font-bold text-white transition-all">{formattedPrice}</p>
                     </div>
                     <Link href="/trade">
                       <Button size="sm" className="bg-amber-500/20 hover:bg-amber-500 text-amber-400 hover:text-white text-xs transition-all" data-testid={`button-trade-${item.symbol}`}>

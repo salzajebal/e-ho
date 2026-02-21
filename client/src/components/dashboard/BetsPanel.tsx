@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { cn } from "@/lib/utils";
+import { cn, formatForexPrice } from "@/lib/utils";
 import { Bet } from "@/hooks/use-bets";
 import { TrendingUp, TrendingDown, Clock, Trophy, XCircle, Calendar } from "lucide-react";
 
@@ -103,7 +103,7 @@ function BetRow({ bet, currentPrice, onExpire }: { bet: Bet; currentPrice: numbe
             )}
           </div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span>{parseFloat(bet.strikePrice).toLocaleString()} → {parseFloat(bet.closePrice || '0').toLocaleString()}</span>
+            <span>{formatForexPrice(parseFloat(bet.strikePrice), bet.symbol)} → {formatForexPrice(parseFloat(bet.closePrice || '0'), bet.symbol)}</span>
             <span className="text-muted-foreground/70">|</span>
             <span className="font-mono">{formattedDate}</span>
           </div>
@@ -155,7 +155,7 @@ function BetRow({ bet, currentPrice, onExpire }: { bet: Bet; currentPrice: numbe
           )}
         </div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span>진입가: {strikePrice.toLocaleString()}</span>
+          <span>진입가: {formatForexPrice(strikePrice, bet.symbol)}</span>
           <span className={cn("font-mono", isWinning ? "text-up" : "text-down")}>
             ({percentChange >= 0 ? '+' : ''}{percentChange.toFixed(3)}%)
           </span>

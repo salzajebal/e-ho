@@ -11,10 +11,10 @@ export interface MarketData {
 }
 
 export const INITIAL_MARKET_DATA: MarketData[] = [
-  { symbol: 'USD', name: 'USD/KRW', price: 87500.00, change: 0, changePercent: 0, high: 89500.00, low: 86500.00, volume: 0, category: '통화' },
-  { symbol: 'JPY', name: 'JPY/KRW', price: 2930.00, change: 0, changePercent: 0, high: 3000.00, low: 2890.00, volume: 0, category: '통화' },
-  { symbol: 'EUR', name: 'EUR/KRW', price: 87500.00, change: 0, changePercent: 0, high: 89500.00, low: 86500.00, volume: 0, category: '통화' },
-  { symbol: 'AUD', name: 'AUD/KRW', price: 2930.00, change: 0, changePercent: 0, high: 3000.00, low: 2890.00, volume: 0, category: '통화' },
+  { symbol: 'USD', name: 'EUR/USD', price: 1.0500, change: 0, changePercent: 0, high: 1.0600, low: 1.0400, volume: 0, category: '통화' },
+  { symbol: 'JPY', name: 'USD/JPY', price: 150.000, change: 0, changePercent: 0, high: 151.000, low: 149.000, volume: 0, category: '통화' },
+  { symbol: 'EUR', name: 'GBP/USD', price: 1.2700, change: 0, changePercent: 0, high: 1.2800, low: 1.2600, volume: 0, category: '통화' },
+  { symbol: 'AUD', name: 'AUD/USD', price: 0.6500, change: 0, changePercent: 0, high: 0.6600, low: 0.6400, volume: 0, category: '통화' },
 ];
 
 export function generatePriceUpdate(currentPrice: number): number {

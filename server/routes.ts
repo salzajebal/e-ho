@@ -2406,44 +2406,50 @@ export async function registerRoutes(
     }
   });
 
-  // ==================== 바이낸스 실시간 시세 (WebSocket + REST API 폴백) ====================
-  
-  // 실시간 가격 저장소
-  const FOREX_TO_BINANCE: Record<string, string> = {
-    USD: 'BTC',
-    JPY: 'ETH',
-    EUR: 'SOL',
-    AUD: 'XRP',
+  // ==================== TIINGO FOREX REAL-TIME PRICES ====================
+  const TIINGO_API_KEY = process.env.TIINGO_API_KEY || '';
+
+  const FOREX_TO_TIINGO: Record<string, string> = {
+    USD: 'eurusd',
+    JPY: 'usdjpy',
+    EUR: 'gbpusd',
+    AUD: 'audusd',
   };
 
-  const binancePrices: { [key: string]: { price: number; change: number; changePercent: number; high: number; low: number; volume: number; updatedAt: number } } = {
-    BTC: { price: 0, change: 0, changePercent: 0, high: 0, low: 0, volume: 0, updatedAt: 0 },
-    ETH: { price: 0, change: 0, changePercent: 0, high: 0, low: 0, volume: 0, updatedAt: 0 },
-    SOL: { price: 0, change: 0, changePercent: 0, high: 0, low: 0, volume: 0, updatedAt: 0 },
-    XRP: { price: 0, change: 0, changePercent: 0, high: 0, low: 0, volume: 0, updatedAt: 0 }
+  const TIINGO_TO_FOREX: Record<string, string> = {
+    eurusd: 'USD',
+    usdjpy: 'JPY',
+    gbpusd: 'EUR',
+    audusd: 'AUD',
+  };
+
+  const forexPrices: { [key: string]: { price: number; change: number; changePercent: number; high: number; low: number; volume: number; updatedAt: number; openPrice: number } } = {
+    USD: { price: 0, change: 0, changePercent: 0, high: 0, low: 0, volume: 0, updatedAt: 0, openPrice: 0 },
+    JPY: { price: 0, change: 0, changePercent: 0, high: 0, low: 0, volume: 0, updatedAt: 0, openPrice: 0 },
+    EUR: { price: 0, change: 0, changePercent: 0, high: 0, low: 0, volume: 0, updatedAt: 0, openPrice: 0 },
+    AUD: { price: 0, change: 0, changePercent: 0, high: 0, low: 0, volume: 0, updatedAt: 0, openPrice: 0 },
   };
 
   function getForexPrice(forexSymbol: string) {
-    const binanceKey = FOREX_TO_BINANCE[forexSymbol] || forexSymbol;
-    return binancePrices[binanceKey];
+    return forexPrices[forexSymbol] || null;
   }
 
-  // WebSocket 연결 상태
-  let binanceWs: WebSocket | null = null;
+  let tiingoWs: WebSocket | null = null;
   let reconnectTimer: NodeJS.Timeout | null = null;
   let restApiTimer: NodeJS.Timeout | null = null;
   let isConnected = false;
   let messageCount = 0;
   let usingRestApi = false;
 
-  // REST API 폴백 - https 모듈 사용
-  function fetchBinancePrice(symbol: string): Promise<any> {
+  function fetchTiingoRestPrice(ticker: string): Promise<any> {
     return new Promise((resolve, reject) => {
-      const url = `https://api.binance.com/api/v3/ticker/24hr?symbol=${symbol}USDT`;
+      const url = `https://api.tiingo.com/tiingo/fx/${ticker}/top?token=${TIINGO_API_KEY}`;
       
-      https.get(url, (res) => {
+      https.get(url, {
+        headers: { 'Content-Type': 'application/json' }
+      }, (res) => {
         let data = '';
-        res.on('data', (chunk) => { data += chunk; });
+        res.on('data', (chunk: string) => { data += chunk; });
         res.on('end', () => {
           try {
             resolve(JSON.parse(data));
@@ -2457,167 +2463,185 @@ export async function registerRoutes(
 
   async function fetchPricesFromRestApi() {
     try {
-      const [btcData, ethData, solData, xrpData] = await Promise.all([
-        fetchBinancePrice('BTC'),
-        fetchBinancePrice('ETH'),
-        fetchBinancePrice('SOL'),
-        fetchBinancePrice('XRP')
-      ]);
+      const tickers = Object.values(FOREX_TO_TIINGO);
+      const results = await Promise.all(tickers.map(t => fetchTiingoRestPrice(t)));
       
-      const updateCoin = (key: string, data: any) => {
-        if (data && data.lastPrice) {
-          binancePrices[key] = {
-            price: parseFloat(data.lastPrice),
-            change: parseFloat(data.priceChange),
-            changePercent: parseFloat(data.priceChangePercent),
-            high: parseFloat(data.highPrice),
-            low: parseFloat(data.lowPrice),
-            volume: parseFloat(data.volume),
-            updatedAt: Date.now()
+      for (let i = 0; i < tickers.length; i++) {
+        const ticker = tickers[i];
+        const forexSymbol = TIINGO_TO_FOREX[ticker];
+        const data = results[i];
+        
+        if (data && Array.isArray(data) && data.length > 0) {
+          const quote = data[0];
+          const midPrice = quote.midPrice || ((quote.bidPrice + quote.askPrice) / 2);
+          const prevClose = forexPrices[forexSymbol].openPrice || midPrice;
+          const change = midPrice - prevClose;
+          const changePercent = prevClose > 0 ? (change / prevClose) * 100 : 0;
+          
+          forexPrices[forexSymbol] = {
+            price: midPrice,
+            change: change,
+            changePercent: changePercent,
+            high: Math.max(forexPrices[forexSymbol].high || midPrice, midPrice),
+            low: forexPrices[forexSymbol].low > 0 ? Math.min(forexPrices[forexSymbol].low, midPrice) : midPrice,
+            volume: 0,
+            updatedAt: Date.now(),
+            openPrice: forexPrices[forexSymbol].openPrice || midPrice,
           };
         }
-      };
-      
-      updateCoin('BTC', btcData);
-      updateCoin('ETH', ethData);
-      updateCoin('SOL', solData);
-      updateCoin('XRP', xrpData);
+      }
         
       if (!usingRestApi) {
         usingRestApi = true;
-        console.log('📡 [Binance] REST API 폴백 모드로 전환');
+        console.log('📡 [Tiingo] REST API 폴백 모드로 전환');
       }
       
       messageCount++;
       if (messageCount <= 5 || messageCount % 60 === 0) {
-        console.log(`📊 [Binance REST] BTC: $${binancePrices.BTC.price.toFixed(2)}, ETH: $${binancePrices.ETH.price.toFixed(2)}, SOL: $${binancePrices.SOL.price.toFixed(2)}, XRP: $${binancePrices.XRP.price.toFixed(2)}`);
+        const usd = forexPrices.USD;
+        const jpy = forexPrices.JPY;
+        console.log(`📊 [Tiingo REST] EUR/USD: ${usd.price.toFixed(5)}, USD/JPY: ${jpy.price.toFixed(3)}`);
       }
     } catch (err) {
-      console.error('❌ [Binance REST] API 호출 실패:', err);
+      console.error('❌ [Tiingo REST] API 호출 실패:', err);
     }
   }
 
-  // REST API 폴링 시작 (1초마다)
   function startRestApiPolling() {
     if (restApiTimer) {
       clearInterval(restApiTimer);
     }
-    // 즉시 한번 호출
     fetchPricesFromRestApi();
-    // 1초마다 폴링
-    restApiTimer = setInterval(fetchPricesFromRestApi, 1000);
-    console.log('🔄 [Binance] REST API 폴링 시작 (1초 간격)');
+    restApiTimer = setInterval(fetchPricesFromRestApi, 5000);
+    console.log('🔄 [Tiingo] REST API 폴링 시작 (5초 간격)');
   }
 
-  function startBinanceWebSocket() {
-    if (binanceWs) {
-      try { binanceWs.close(); } catch (e) {}
+  function startTiingoWebSocket() {
+    if (tiingoWs) {
+      try { tiingoWs.close(); } catch (e) {}
     }
     if (reconnectTimer) {
       clearTimeout(reconnectTimer);
       reconnectTimer = null;
     }
 
-    const wsUrl = 'wss://stream.binance.com:9443/ws';
+    if (!TIINGO_API_KEY) {
+      console.error('❌ [Tiingo] API 키가 설정되지 않았습니다. TIINGO_API_KEY 환경변수를 확인하세요.');
+      startRestApiPolling();
+      return;
+    }
+
+    const wsUrl = 'wss://api.tiingo.com/fx';
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('🔗 [Binance] WebSocket 연결 시작...');
+    console.log('🔗 [Tiingo] Forex WebSocket 연결 시작...');
     console.log('📡 URL:', wsUrl);
     
     try {
-      binanceWs = new WebSocket(wsUrl);
+      tiingoWs = new WebSocket(wsUrl);
 
-      binanceWs.on('open', () => {
+      tiingoWs.on('open', () => {
         isConnected = true;
         usingRestApi = false;
         messageCount = 0;
-        console.log('✅ [Binance] WebSocket 연결 성공!');
+        console.log('✅ [Tiingo] WebSocket 연결 성공!');
         
-        // REST API 폴링 중지 (WebSocket이 작동하면)
         if (restApiTimer) {
           clearInterval(restApiTimer);
           restApiTimer = null;
-          console.log('🛑 [Binance] REST API 폴링 중지 (WebSocket 활성화)');
+          console.log('🛑 [Tiingo] REST API 폴링 중지 (WebSocket 활성화)');
         }
         
-        // BTC, ETH 실시간 티커 구독
+        const tickers = Object.values(FOREX_TO_TIINGO);
         const subscribeMsg = JSON.stringify({
-          method: 'SUBSCRIBE',
-          params: ['btcusdt@ticker', 'ethusdt@ticker', 'solusdt@ticker', 'xrpusdt@ticker'],
-          id: 1
+          eventName: 'subscribe',
+          authorization: TIINGO_API_KEY,
+          eventData: {
+            thresholdLevel: 5,
+            tickers: tickers
+          }
         });
-        binanceWs!.send(subscribeMsg);
-        console.log('📨 [Binance] 구독 요청 전송: btcusdt@ticker, ethusdt@ticker, solusdt@ticker, xrpusdt@ticker');
+        tiingoWs!.send(subscribeMsg);
+        console.log(`📨 [Tiingo] 구독 요청 전송: ${tickers.join(', ')}`);
       });
 
-      binanceWs.on('message', (data: Buffer) => {
+      tiingoWs.on('message', (rawData: Buffer) => {
         try {
-          const msg = JSON.parse(data.toString());
+          const msg = JSON.parse(rawData.toString());
           
-          // 구독 응답 로그
-          if (msg.result === null && msg.id === 1) {
-            console.log('✅ [Binance] 구독 완료! 실시간 데이터 수신 시작');
+          if (msg.messageType === 'I') {
+            console.log('✅ [Tiingo] 정보 메시지:', msg.data?.message || msg.response?.message || 'Connected');
           }
           
-          // 티커 데이터 처리
-          if (msg.e === '24hrTicker') {
-            const symbolMap: Record<string, string> = { 'BTCUSDT': 'BTC', 'ETHUSDT': 'ETH', 'SOLUSDT': 'SOL', 'XRPUSDT': 'XRP' };
-            const symbol = symbolMap[msg.s] || null;
-            if (symbol) {
-              messageCount++;
-              binancePrices[symbol] = {
-                price: parseFloat(msg.c),
-                change: parseFloat(msg.p),
-                changePercent: parseFloat(msg.P),
-                high: parseFloat(msg.h),
-                low: parseFloat(msg.l),
-                volume: parseFloat(msg.v),
-                updatedAt: Date.now()
-              };
+          if (msg.messageType === 'A' && msg.data) {
+            const dataArr = msg.data;
+            if (Array.isArray(dataArr) && dataArr.length >= 6) {
+              const ticker = dataArr[1];
+              const midPrice = dataArr[3];
+              const bidPrice = dataArr[4];
+              const askPrice = dataArr[5];
               
-              // 처음 10개 메시지만 로그
-              if (messageCount <= 10) {
-                console.log(`💹 [Binance] ${symbol}: $${binancePrices[symbol].price.toFixed(2)} (${binancePrices[symbol].changePercent > 0 ? '+' : ''}${binancePrices[symbol].changePercent.toFixed(2)}%)`);
-              } else if (messageCount === 11) {
-                console.log('📊 [Binance] 실시간 데이터 수신 중... (로그 생략)');
+              const forexSymbol = TIINGO_TO_FOREX[ticker];
+              if (forexSymbol && midPrice > 0) {
+                messageCount++;
+                const prev = forexPrices[forexSymbol];
+                const openPrice = prev.openPrice > 0 ? prev.openPrice : midPrice;
+                const change = midPrice - openPrice;
+                const changePercent = openPrice > 0 ? (change / openPrice) * 100 : 0;
+                
+                forexPrices[forexSymbol] = {
+                  price: midPrice,
+                  change: change,
+                  changePercent: changePercent,
+                  high: Math.max(prev.high || midPrice, midPrice),
+                  low: prev.low > 0 ? Math.min(prev.low, midPrice) : midPrice,
+                  volume: 0,
+                  updatedAt: Date.now(),
+                  openPrice: openPrice,
+                };
+                
+                if (messageCount <= 10) {
+                  console.log(`💹 [Tiingo] ${forexSymbol} (${ticker}): ${midPrice.toFixed(5)} (${changePercent > 0 ? '+' : ''}${changePercent.toFixed(4)}%)`);
+                } else if (messageCount === 11) {
+                  console.log('📊 [Tiingo] 실시간 데이터 수신 중... (로그 생략)');
+                }
               }
             }
+          }
+          
+          if (msg.messageType === 'H') {
+            // Heartbeat - connection is alive
           }
         } catch (e) {
           // 파싱 에러 무시
         }
       });
 
-      binanceWs.on('error', (err) => {
+      tiingoWs.on('error', (err) => {
         isConnected = false;
-        console.error('❌ [Binance] WebSocket 에러:', err.message);
-        // WebSocket 에러 시 REST API 폴백
+        console.error('❌ [Tiingo] WebSocket 에러:', err.message);
         if (!restApiTimer) {
           startRestApiPolling();
         }
       });
 
-      binanceWs.on('close', () => {
+      tiingoWs.on('close', () => {
         isConnected = false;
-        console.log('⚠️ [Binance] WebSocket 연결 종료, REST API 폴백 및 3초 후 재연결...');
-        // REST API 폴백 시작
+        console.log('⚠️ [Tiingo] WebSocket 연결 종료, REST API 폴백 및 5초 후 재연결...');
         if (!restApiTimer) {
           startRestApiPolling();
         }
-        reconnectTimer = setTimeout(startBinanceWebSocket, 3000);
+        reconnectTimer = setTimeout(startTiingoWebSocket, 5000);
       });
     } catch (err) {
-      console.error('❌ [Binance] WebSocket 생성 실패:', err);
-      // WebSocket 생성 실패 시 REST API로 폴백
+      console.error('❌ [Tiingo] WebSocket 생성 실패:', err);
       startRestApiPolling();
     }
   }
 
-  // 서버 시작 시 REST API 즉시 시작 (항상 가격 데이터 확보)
-  console.log('🚀 [Binance] 서버 시작 - REST API 즉시 시작');
+  console.log('🚀 [Tiingo] 서버 시작 - REST API 즉시 시작');
   startRestApiPolling();
   
-  // WebSocket 연결도 시도 (성공하면 REST API 폴링 중지됨)
-  startBinanceWebSocket();
+  startTiingoWebSocket();
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
   // ==================== AUTO-SETTLEMENT FOR EXPIRED BETS ====================
@@ -2745,12 +2769,14 @@ export async function registerRoutes(
       connected: isConnected,
       usingRestApi,
       messageCount,
-      btcUpdatedAt: binancePrices.BTC?.updatedAt,
-      btcAge: now - (binancePrices.BTC?.updatedAt || 0),
-      ethUpdatedAt: binancePrices.ETH?.updatedAt,
-      ethAge: now - (binancePrices.ETH?.updatedAt || 0),
-      btcPrice: binancePrices.BTC?.price,
-      ethPrice: binancePrices.ETH?.price,
+      source: 'tiingo',
+      prices: Object.entries(forexPrices).map(([symbol, data]) => ({
+        symbol,
+        ticker: FOREX_TO_TIINGO[symbol],
+        price: data.price,
+        updatedAt: data.updatedAt,
+        age: now - data.updatedAt,
+      })),
       timestamp: now
     });
   });
@@ -2761,20 +2787,20 @@ export async function registerRoutes(
     const prices = [];
     let hasFallback = false;
 
-    const FOREX_DEFAULTS: Record<string, number> = { USD: 87500, JPY: 2930, EUR: 170, AUD: 2.5 };
-    const FOREX_HIGHS: Record<string, number> = { USD: 89500, JPY: 3000, EUR: 175, AUD: 2.6 };
-    const FOREX_LOWS: Record<string, number> = { USD: 86500, JPY: 2890, EUR: 165, AUD: 2.4 };
+    const FOREX_DEFAULTS: Record<string, number> = { USD: 1.0500, JPY: 150.000, EUR: 1.2700, AUD: 0.6500 };
+    const FOREX_HIGHS: Record<string, number> = { USD: 1.0600, JPY: 151.000, EUR: 1.2800, AUD: 0.6600 };
+    const FOREX_LOWS: Record<string, number> = { USD: 1.0400, JPY: 149.000, EUR: 1.2600, AUD: 0.6400 };
 
     for (const forexSymbol of ['USD', 'JPY', 'EUR', 'AUD']) {
       const data = getForexPrice(forexSymbol);
-      if (data && data.price > 0 && (now - data.updatedAt) < 30000) {
+      if (data && data.price > 0 && (now - data.updatedAt) < 60000) {
         prices.push({
           symbol: forexSymbol,
-          price: Math.round(data.price * 100) / 100,
-          change: Math.round(data.change * 100) / 100,
-          changePercent: Math.round(data.changePercent * 100) / 100,
-          high: Math.round(data.high * 100) / 100,
-          low: Math.round(data.low * 100) / 100,
+          price: data.price,
+          change: data.change,
+          changePercent: data.changePercent,
+          high: data.high,
+          low: data.low,
           timestamp: data.updatedAt
         });
       } else {
@@ -2804,18 +2830,18 @@ export async function registerRoutes(
       return res.status(400).json({ error: "지원하지 않는 심볼입니다" });
     }
 
-    const FOREX_DEFAULTS: Record<string, number> = { USD: 87500, JPY: 2930, EUR: 87500, AUD: 2930 };
+    const FOREX_DEFAULTS: Record<string, number> = { USD: 1.0500, JPY: 150.000, EUR: 1.2700, AUD: 0.6500 };
     const now = Date.now();
     const data = getForexPrice(upperSymbol);
     
-    if (data && data.price > 0 && (now - data.updatedAt) < 30000) {
+    if (data && data.price > 0 && (now - data.updatedAt) < 60000) {
       res.json({
         symbol: upperSymbol,
-        price: Math.round(data.price * 100) / 100,
-        change: Math.round(data.change * 100) / 100,
-        changePercent: Math.round(data.changePercent * 100) / 100,
-        high: Math.round(data.high * 100) / 100,
-        low: Math.round(data.low * 100) / 100,
+        price: data.price,
+        change: data.change,
+        changePercent: data.changePercent,
+        high: data.high,
+        low: data.low,
         timestamp: data.updatedAt
       });
     } else {
@@ -2828,6 +2854,67 @@ export async function registerRoutes(
         low: FOREX_DEFAULTS[upperSymbol] || 0,
         timestamp: now
       });
+    }
+  });
+
+  // Tiingo 과거 캔들 데이터 조회 API (차트용)
+  app.get("/api/market/candles/:symbol", async (req, res) => {
+    const { symbol } = req.params;
+    const upperSymbol = symbol.toUpperCase();
+    const duration = parseInt(req.query.duration as string) || 60;
+    
+    const VALID_FOREX = ['USD', 'JPY', 'EUR', 'AUD'];
+    if (!VALID_FOREX.includes(upperSymbol)) {
+      return res.status(400).json({ error: "지원하지 않는 심볼입니다" });
+    }
+
+    const ticker = FOREX_TO_TIINGO[upperSymbol];
+    if (!ticker) {
+      return res.status(400).json({ error: "심볼 매핑 없음" });
+    }
+
+    try {
+      let resampleFreq = '1min';
+      if (duration === 180) resampleFreq = '3min';
+      else if (duration === 300) resampleFreq = '5min';
+      
+      const now = new Date();
+      const startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      const startStr = startDate.toISOString().split('T')[0];
+      
+      const url = `https://api.tiingo.com/tiingo/fx/${ticker}/prices?startDate=${startStr}&resampleFreq=${resampleFreq}&token=${TIINGO_API_KEY}`;
+      
+      const data: any = await new Promise((resolve, reject) => {
+        https.get(url, {
+          headers: { 'Content-Type': 'application/json' }
+        }, (response) => {
+          let body = '';
+          response.on('data', (chunk: string) => { body += chunk; });
+          response.on('end', () => {
+            try {
+              resolve(JSON.parse(body));
+            } catch (e) {
+              reject(e);
+            }
+          });
+        }).on('error', reject);
+      });
+
+      if (Array.isArray(data) && data.length > 0) {
+        const candles = data.map((d: any) => ({
+          time: new Date(d.date).getTime() / 1000,
+          open: d.open,
+          high: d.high,
+          low: d.low,
+          close: d.close,
+        }));
+        res.json({ candles, ticker, symbol: upperSymbol });
+      } else {
+        res.json({ candles: [], ticker, symbol: upperSymbol });
+      }
+    } catch (error) {
+      console.error(`[Tiingo Candles] Error fetching ${ticker}:`, error);
+      res.json({ candles: [], ticker, symbol: upperSymbol });
     }
   });
 

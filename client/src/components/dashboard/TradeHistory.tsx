@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { cn } from "@/lib/utils";
+import { cn, formatForexPrice } from "@/lib/utils";
 
-export function TradeHistory({ currentPrice }: { currentPrice: number }) {
+export function TradeHistory({ currentPrice, symbol }: { currentPrice: number; symbol?: string }) {
   const [trades, setTrades] = useState<any[]>([]);
 
   useEffect(() => {
@@ -45,7 +45,7 @@ export function TradeHistory({ currentPrice }: { currentPrice: number }) {
             <span className={cn(
               "flex-1 text-left",
               trade.isBuyerMaker ? "text-down" : "text-up"
-            )}>{trade.price.toFixed(2)}</span>
+            )}>{formatForexPrice(trade.price, symbol)}</span>
             <span className="flex-1 text-right text-foreground opacity-90">{trade.amount.toFixed(4)}</span>
             <span className="flex-1 text-right text-muted-foreground">{trade.time}</span>
           </div>
