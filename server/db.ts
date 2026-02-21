@@ -155,6 +155,21 @@ export async function initializeDatabase(): Promise<void> {
     `);
     console.log('Login history table ready');
 
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS forex_candles (
+        id SERIAL PRIMARY KEY,
+        symbol TEXT NOT NULL,
+        duration INTEGER NOT NULL,
+        time INTEGER NOT NULL,
+        open DECIMAL(15, 6) NOT NULL,
+        high DECIMAL(15, 6) NOT NULL,
+        low DECIMAL(15, 6) NOT NULL,
+        close DECIMAL(15, 6) NOT NULL,
+        UNIQUE(symbol, duration, time)
+      )
+    `);
+    console.log('Forex candles table ready');
+
     // Ensure all admin users are approved (migration for existing data)
     await client.query(`
       UPDATE users SET approval_status = 'approved' WHERE role = 'admin' AND approval_status != 'approved'

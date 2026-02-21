@@ -380,6 +380,22 @@ export const insertInquiryTemplateSchema = createInsertSchema(inquiryTemplates).
 export type InsertInquiryTemplate = z.infer<typeof insertInquiryTemplateSchema>;
 export type InquiryTemplate = typeof inquiryTemplates.$inferSelect;
 
+// Forex candle data table (persistent candle storage)
+export const forexCandles = pgTable("forex_candles", {
+  id: serial("id").primaryKey(),
+  symbol: text("symbol").notNull(),
+  duration: integer("duration").notNull(),
+  time: integer("time").notNull(),
+  open: decimal("open", { precision: 15, scale: 6 }).notNull(),
+  high: decimal("high", { precision: 15, scale: 6 }).notNull(),
+  low: decimal("low", { precision: 15, scale: 6 }).notNull(),
+  close: decimal("close", { precision: 15, scale: 6 }).notNull(),
+});
+
+export const insertForexCandleSchema = createInsertSchema(forexCandles).omit({ id: true });
+export type InsertForexCandle = z.infer<typeof insertForexCandleSchema>;
+export type ForexCandle = typeof forexCandles.$inferSelect;
+
 // Korean banks list
 export const KOREAN_BANKS = [
   "KB국민은행",

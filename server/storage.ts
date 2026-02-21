@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Bet, type InsertBet, type Setting, type Message, type InsertMessage, type Affiliate, type InsertAffiliate, type AffiliateCommission, type AffiliateSettlement, type InsertAffiliateSettlement, type Announcement, type InsertAnnouncement, type BlockedIp, type InsertBlockedIp, type MaintenanceSymbol, type InsertMaintenanceSymbol, type TransactionRequest, type InsertTransactionRequest, type Inquiry, type InsertInquiry, type RoundResult, type InsertRoundResult, type LoginHistory, type InsertLoginHistory, type InquiryTemplate, type InsertInquiryTemplate, type RoundForcedDirection, type InsertRoundForcedDirection, users, bets, settings, messages, affiliates, affiliateCommissions, affiliateSettlements, announcements, blockedIps, maintenanceSymbols, transactionRequests, inquiries, roundResults, loginHistory, inquiryTemplates, roundForcedDirections } from "@shared/schema";
+import { type User, type InsertUser, type Bet, type InsertBet, type Setting, type Message, type InsertMessage, type Affiliate, type InsertAffiliate, type AffiliateCommission, type AffiliateSettlement, type InsertAffiliateSettlement, type Announcement, type InsertAnnouncement, type BlockedIp, type InsertBlockedIp, type MaintenanceSymbol, type InsertMaintenanceSymbol, type TransactionRequest, type InsertTransactionRequest, type Inquiry, type InsertInquiry, type RoundResult, type InsertRoundResult, type LoginHistory, type InsertLoginHistory, type InquiryTemplate, type InsertInquiryTemplate, type RoundForcedDirection, type InsertRoundForcedDirection, type ForexCandle, type InsertForexCandle, users, bets, settings, messages, affiliates, affiliateCommissions, affiliateSettlements, announcements, blockedIps, maintenanceSymbols, transactionRequests, inquiries, roundResults, loginHistory, inquiryTemplates, roundForcedDirections, forexCandles } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, lt, sql, gte } from "drizzle-orm";
 
@@ -173,6 +173,11 @@ export interface IStorage {
   getRoundForcedDirection(symbol: string, duration: number, roundNumber: number, dateKey: string): Promise<RoundForcedDirection | undefined>;
   getRoundForcedDirectionsForDate(dateKey: string): Promise<RoundForcedDirection[]>;
   deleteRoundForcedDirection(symbol: string, duration: number, roundNumber: number, dateKey: string): Promise<void>;
+
+  // Forex candle methods (캔들 데이터 영구 저장)
+  getForexCandles(symbol: string, duration: number, limit?: number): Promise<ForexCandle[]>;
+  upsertForexCandle(symbol: string, duration: number, time: number, open: number, high: number, low: number, close: number): Promise<void>;
+  deleteOldForexCandles(symbol: string, duration: number, keepCount: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1267,6 +1272,44 @@ export class DatabaseStorage implements IStorage {
         eq(roundForcedDirections.roundNumber, roundNumber),
         eq(roundForcedDirections.dateKey, dateKey)
       ));
+  }
+
+  async getForexCandles(symbol: string, duration: number, limit: number = 200): Promise<ForexCandle[]> {
+    return await db.select().from(forexCandles)
+      .where(and(
+        eq(forexCandles.symbol, symbol),
+        eq(forexCandles.duration, duration)
+      ))
+      .orderBy(forexCandles.time)
+      .limit(limit);
+  }
+
+  async upsertForexCandle(symbol: string, duration: number, time: number, open: number, high: number, low: number, close: number): Promise<void> {
+    const openStr = open.toString();
+    const highStr = high.toString();
+    const lowStr = low.toString();
+    const closeStr = close.toString();
+
+    await db.execute(sql`
+      INSERT INTO forex_candles (symbol, duration, time, open, high, low, close)
+      VALUES (${symbol}, ${duration}, ${time}, ${openStr}, ${highStr}, ${lowStr}, ${closeStr})
+      ON CONFLICT (symbol, duration, time) DO UPDATE SET
+        high = GREATEST(forex_candles.high::numeric, ${highStr}::numeric),
+        low = LEAST(forex_candles.low::numeric, ${lowStr}::numeric),
+        close = ${closeStr}
+    `);
+  }
+
+  async deleteOldForexCandles(symbol: string, duration: number, keepCount: number): Promise<void> {
+    await db.execute(sql`
+      DELETE FROM forex_candles
+      WHERE symbol = ${symbol} AND duration = ${duration}
+      AND id NOT IN (
+        SELECT id FROM forex_candles
+        WHERE symbol = ${symbol} AND duration = ${duration}
+        ORDER BY time DESC LIMIT ${keepCount}
+      )
+    `);
   }
 }
 

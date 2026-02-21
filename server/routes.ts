@@ -2433,7 +2433,7 @@ export async function registerRoutes(
     return forexPrices[forexSymbol] || null;
   }
 
-  // Server-side candle accumulation from WebSocket ticks
+  // Server-side candle accumulation from WebSocket ticks (with DB persistence)
   interface CandleData {
     time: number;
     open: number;
@@ -2449,6 +2449,62 @@ export async function registerRoutes(
   };
   const MAX_CANDLES = 200;
 
+  async function loadCandlesFromDB() {
+    const symbols = ['USD', 'JPY', 'EUR', 'AUD'];
+    const durations = [60, 180, 300];
+    for (const symbol of symbols) {
+      for (const dur of durations) {
+        try {
+          const dbCandles = await storage.getForexCandles(symbol, dur, MAX_CANDLES);
+          candleStore[symbol][dur] = dbCandles.map(c => ({
+            time: c.time,
+            open: parseFloat(c.open),
+            high: parseFloat(c.high),
+            low: parseFloat(c.low),
+            close: parseFloat(c.close),
+          }));
+        } catch (e) {
+          console.warn(`[Candle] DB에서 ${symbol}/${dur} 캔들 로딩 실패:`, e);
+        }
+      }
+    }
+    const totalCandles = symbols.reduce((sum, s) => sum + durations.reduce((s2, d) => s2 + candleStore[s][d].length, 0), 0);
+    console.log(`📊 [Candle] DB에서 총 ${totalCandles}개 캔들 로딩 완료`);
+  }
+
+  let dbSaveTimer: NodeJS.Timeout | null = null;
+  const pendingDbSaves: Map<string, CandleData> = new Map();
+
+  function scheduleCandleDbSave(symbol: string, dur: number, candle: CandleData) {
+    const key = `${symbol}-${dur}-${candle.time}`;
+    pendingDbSaves.set(key, { ...candle });
+
+    if (!dbSaveTimer) {
+      dbSaveTimer = setTimeout(async () => {
+        dbSaveTimer = null;
+        const saves = Array.from(pendingDbSaves.entries());
+        pendingDbSaves.clear();
+
+        for (const [k, c] of saves) {
+          const [sym, durStr] = k.split('-');
+          try {
+            await storage.upsertForexCandle(sym, parseInt(durStr), c.time, c.open, c.high, c.low, c.close);
+          } catch (e) {
+            console.warn(`[Candle] DB 저장 실패 ${k}:`, e instanceof Error ? e.message : e);
+          }
+        }
+
+        for (const sym of ['USD', 'JPY', 'EUR', 'AUD']) {
+          for (const d of [60, 180, 300]) {
+            if (candleStore[sym][d].length > MAX_CANDLES + 50) {
+              try { await storage.deleteOldForexCandles(sym, d, MAX_CANDLES); } catch (e) {}
+            }
+          }
+        }
+      }, 5000);
+    }
+  }
+
   function updateCandles(symbol: string, price: number, timestamp: number) {
     const durations = [60, 180, 300];
     for (const dur of durations) {
@@ -2458,19 +2514,24 @@ export async function registerRoutes(
       if (candles.length === 0 || candles[candles.length - 1].time !== candleTime) {
         candles.push({ time: candleTime, open: price, high: price, low: price, close: price });
         if (candles.length > MAX_CANDLES) candles.shift();
+        scheduleCandleDbSave(symbol, dur, candles[candles.length - 1]);
       } else {
         const last = candles[candles.length - 1];
         last.high = Math.max(last.high, price);
         last.low = Math.min(last.low, price);
         last.close = price;
+        scheduleCandleDbSave(symbol, dur, last);
       }
     }
   }
+
+  loadCandlesFromDB();
 
   let finnhubWs: WebSocket | null = null;
   let reconnectTimer: NodeJS.Timeout | null = null;
   let isConnected = false;
   let messageCount = 0;
+  let reconnectAttempts = 0;
 
   function startFinnhubWebSocket() {
     if (finnhubWs) {
@@ -2496,6 +2557,7 @@ export async function registerRoutes(
       finnhubWs.on('open', () => {
         isConnected = true;
         messageCount = 0;
+        reconnectAttempts = 0;
         console.log('✅ [Finnhub] WebSocket 연결 성공!');
         
         const symbols = Object.values(FOREX_TO_FINNHUB);
@@ -2560,12 +2622,16 @@ export async function registerRoutes(
 
       finnhubWs.on('close', () => {
         isConnected = false;
-        console.log('⚠️ [Finnhub] WebSocket 연결 종료, 5초 후 재연결...');
-        reconnectTimer = setTimeout(startFinnhubWebSocket, 5000);
+        reconnectAttempts++;
+        const delay = Math.min(5000 * Math.pow(2, reconnectAttempts - 1), 60000);
+        console.log(`⚠️ [Finnhub] WebSocket 연결 종료, ${delay / 1000}초 후 재연결... (시도 #${reconnectAttempts})`);
+        reconnectTimer = setTimeout(startFinnhubWebSocket, delay);
       });
     } catch (err) {
       console.error('❌ [Finnhub] WebSocket 생성 실패:', err);
-      reconnectTimer = setTimeout(startFinnhubWebSocket, 10000);
+      reconnectAttempts++;
+      const delay = Math.min(10000 * Math.pow(2, reconnectAttempts - 1), 60000);
+      reconnectTimer = setTimeout(startFinnhubWebSocket, delay);
     }
   }
 
