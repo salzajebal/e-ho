@@ -8,11 +8,11 @@ export const FOREX_DISPLAY: Record<ForexSymbol, { name: string; pair: string; fl
   AUD: { name: '호주달러', pair: 'AUD/USD', flag: '🇦🇺' },
 };
 
-export const TIINGO_TICKER_MAP: Record<ForexSymbol, string> = {
-  USD: 'eurusd',
-  JPY: 'usdjpy',
-  EUR: 'gbpusd',
-  AUD: 'audusd',
+export const FINNHUB_TICKER_MAP: Record<ForexSymbol, string> = {
+  USD: 'OANDA:EUR_USD',
+  JPY: 'OANDA:USD_JPY',
+  EUR: 'OANDA:GBP_USD',
+  AUD: 'OANDA:AUD_USD',
 };
 
 export const TRADING_GAMES = [

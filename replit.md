@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is a real-time forex trading platform. Users can place bets on price movements (long/short) for major forex pairs: EUR/USD (labeled USD), USD/JPY (labeled JPY), GBP/USD (labeled EUR), and AUD/USD (labeled AUD). The platform features live market data via Tiingo forex API, interactive candlestick charts using lightweight-charts, and an account system with virtual balance.
+This is a real-time forex trading platform. Users can place bets on price movements (long/short) for major forex pairs: EUR/USD (labeled USD), USD/JPY (labeled JPY), GBP/USD (labeled EUR), and AUD/USD (labeled AUD). The platform features live market data via Finnhub forex WebSocket API, interactive candlestick charts using lightweight-charts, and an account system with virtual balance.
 
 ## Trading Rules
 - **Operating Hours**: 24/7 (forex markets closed on weekends)
@@ -31,17 +31,19 @@ Preferred communication style: Simple, everyday language.
 - **Development**: Hot module replacement via Vite middleware
 
 ### Data Flow
-- Real-time forex prices from Tiingo WebSocket (`wss://api.tiingo.com/fx`) with REST API fallback
+- Real-time forex prices from Finnhub WebSocket (`wss://ws.finnhub.io`)
+- Candle data generated server-side from WebSocket tick data (no REST API dependency)
 - Frontend fetches prices from server API (`/api/market/prices`, `/api/market/candles`)
 - Bets are created with strike price, settled when timer expires based on current price
 - Price formatting: JPY uses 3 decimal places, all other pairs use 5 decimal places
 
-### Tiingo API Integration
-- **WebSocket**: Primary real-time data source for forex prices
-- **REST API**: Fallback polling every 5 seconds when WebSocket is inactive
-- **Ticker mapping**: USD→eurusd, JPY→usdjpy, EUR→gbpusd, AUD→audusd
-- **API Key**: Stored as TIINGO_API_KEY secret
-- **Rate limits**: Free tier - 50 req/hour, 1000/day, 1GB bandwidth/month
+### Finnhub API Integration
+- **WebSocket**: Real-time forex price streaming via OANDA feed
+- **Candle Generation**: Server accumulates tick data into OHLC candles (no external candle API needed)
+- **Symbol mapping**: USD→OANDA:EUR_USD, JPY→OANDA:USD_JPY, EUR→OANDA:GBP_USD, AUD→OANDA:AUD_USD
+- **API Key**: Stored as FINNHUB_API_KEY secret
+- **Rate limits**: Free tier - 60 req/min for REST, unlimited WebSocket streaming
+- **Market hours**: Forex markets open Sunday 5pm EST to Friday 5pm EST (closed weekends)
 
 ### Key Design Patterns
 - Shared schema definitions between frontend and backend (`shared/schema.ts`)
@@ -62,8 +64,8 @@ Preferred communication style: Simple, everyday language.
 - **Affiliates**: Complete affiliate/distributor system with referral codes, commission tracking, and analytics
 
 ### Third-Party APIs
-- **Tiingo Forex WebSocket/REST**: Live forex price data for EUR/USD, USD/JPY, GBP/USD, AUD/USD
-- **API Key**: TIINGO_API_KEY (stored as secret)
+- **Finnhub Forex WebSocket**: Live forex price data for EUR/USD, USD/JPY, GBP/USD, AUD/USD
+- **API Key**: FINNHUB_API_KEY (stored as secret)
 
 ### Key NPM Packages
 - `drizzle-orm` / `drizzle-zod`: Database ORM with Zod schema validation

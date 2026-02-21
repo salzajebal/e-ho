@@ -1,6 +1,5 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
-import https from "https";
 import { storage } from "./storage";
 import { insertBetSchema, loginSchema } from "@shared/schema";
 import { z } from "zod";
@@ -2406,21 +2405,21 @@ export async function registerRoutes(
     }
   });
 
-  // ==================== TIINGO FOREX REAL-TIME PRICES ====================
-  const TIINGO_API_KEY = process.env.TIINGO_API_KEY || '';
+  // ==================== FINNHUB FOREX REAL-TIME PRICES ====================
+  const FINNHUB_API_KEY = process.env.FINNHUB_API_KEY || '';
 
-  const FOREX_TO_TIINGO: Record<string, string> = {
-    USD: 'eurusd',
-    JPY: 'usdjpy',
-    EUR: 'gbpusd',
-    AUD: 'audusd',
+  const FOREX_TO_FINNHUB: Record<string, string> = {
+    USD: 'OANDA:EUR_USD',
+    JPY: 'OANDA:USD_JPY',
+    EUR: 'OANDA:GBP_USD',
+    AUD: 'OANDA:AUD_USD',
   };
 
-  const TIINGO_TO_FOREX: Record<string, string> = {
-    eurusd: 'USD',
-    usdjpy: 'JPY',
-    gbpusd: 'EUR',
-    audusd: 'AUD',
+  const FINNHUB_TO_FOREX: Record<string, string> = {
+    'OANDA:EUR_USD': 'USD',
+    'OANDA:USD_JPY': 'JPY',
+    'OANDA:GBP_USD': 'EUR',
+    'OANDA:AUD_USD': 'AUD',
   };
 
   const forexPrices: { [key: string]: { price: number; change: number; changePercent: number; high: number; low: number; volume: number; updatedAt: number; openPrice: number } } = {
@@ -2434,224 +2433,144 @@ export async function registerRoutes(
     return forexPrices[forexSymbol] || null;
   }
 
-  let tiingoWs: WebSocket | null = null;
+  // Server-side candle accumulation from WebSocket ticks
+  interface CandleData {
+    time: number;
+    open: number;
+    high: number;
+    low: number;
+    close: number;
+  }
+  const candleStore: Record<string, Record<number, CandleData[]>> = {
+    USD: { 60: [], 180: [], 300: [] },
+    JPY: { 60: [], 180: [], 300: [] },
+    EUR: { 60: [], 180: [], 300: [] },
+    AUD: { 60: [], 180: [], 300: [] },
+  };
+  const MAX_CANDLES = 200;
+
+  function updateCandles(symbol: string, price: number, timestamp: number) {
+    const durations = [60, 180, 300];
+    for (const dur of durations) {
+      const candles = candleStore[symbol][dur];
+      const candleTime = Math.floor(timestamp / (dur * 1000)) * dur;
+      
+      if (candles.length === 0 || candles[candles.length - 1].time !== candleTime) {
+        candles.push({ time: candleTime, open: price, high: price, low: price, close: price });
+        if (candles.length > MAX_CANDLES) candles.shift();
+      } else {
+        const last = candles[candles.length - 1];
+        last.high = Math.max(last.high, price);
+        last.low = Math.min(last.low, price);
+        last.close = price;
+      }
+    }
+  }
+
+  let finnhubWs: WebSocket | null = null;
   let reconnectTimer: NodeJS.Timeout | null = null;
-  let restApiTimer: NodeJS.Timeout | null = null;
   let isConnected = false;
   let messageCount = 0;
-  let usingRestApi = false;
 
-  function fetchTiingoForexBatch(): Promise<any[]> {
-    return new Promise((resolve, reject) => {
-      const tickers = Object.values(FOREX_TO_TIINGO).join(',');
-      const url = `https://api.tiingo.com/tiingo/fx/top?tickers=${tickers}&token=${TIINGO_API_KEY}`;
-      
-      https.get(url, {
-        headers: { 'Content-Type': 'application/json' }
-      }, (res) => {
-        let data = '';
-        res.on('data', (chunk: string) => { data += chunk; });
-        res.on('end', () => {
-          try {
-            const parsed = JSON.parse(data);
-            if (parsed.detail) {
-              console.error('⚠️ [Tiingo REST] API 응답 에러:', parsed.detail);
-              resolve([]);
-              return;
-            }
-            resolve(Array.isArray(parsed) ? parsed : []);
-          } catch (e) {
-            reject(e);
-          }
-        });
-      }).on('error', reject);
-    });
-  }
-
-  async function fetchPricesFromRestApi() {
-    try {
-      const results = await fetchTiingoForexBatch();
-      
-      for (const quote of results) {
-        const ticker = (quote.ticker || '').toLowerCase();
-        const forexSymbol = TIINGO_TO_FOREX[ticker];
-        if (!forexSymbol) continue;
-        
-        const midPrice = quote.midPrice || ((quote.bidPrice || 0) + (quote.askPrice || 0)) / 2 || 0;
-        if (midPrice <= 0) continue;
-        
-        const prevClose = forexPrices[forexSymbol].openPrice || midPrice;
-        const change = midPrice - prevClose;
-        const changePercent = prevClose > 0 ? (change / prevClose) * 100 : 0;
-        
-        forexPrices[forexSymbol] = {
-          price: midPrice,
-          change: change,
-          changePercent: changePercent,
-          high: Math.max(forexPrices[forexSymbol].high || midPrice, midPrice),
-          low: forexPrices[forexSymbol].low > 0 ? Math.min(forexPrices[forexSymbol].low, midPrice) : midPrice,
-          volume: 0,
-          updatedAt: Date.now(),
-          openPrice: forexPrices[forexSymbol].openPrice || midPrice,
-        };
-      }
-        
-      if (!usingRestApi) {
-        usingRestApi = true;
-        console.log('📡 [Tiingo] REST API 폴백 모드로 전환');
-      }
-      
-      messageCount++;
-      if (messageCount <= 5 || messageCount % 60 === 0) {
-        const usd = forexPrices.USD;
-        const jpy = forexPrices.JPY;
-        if (usd.price > 0) {
-          console.log(`📊 [Tiingo REST] EUR/USD: ${usd.price.toFixed(5)}, USD/JPY: ${jpy.price.toFixed(3)}`);
-        } else {
-          console.log('⏸️ [Tiingo REST] 시장 데이터 없음 (주말/휴장일 가능성)');
-        }
-      }
-    } catch (err) {
-      console.error('❌ [Tiingo REST] API 호출 실패:', err);
-    }
-  }
-
-  function startRestApiPolling() {
-    if (restApiTimer) {
-      clearInterval(restApiTimer);
-    }
-    fetchPricesFromRestApi();
-    restApiTimer = setInterval(fetchPricesFromRestApi, 90000);
-    console.log('🔄 [Tiingo] REST API 폴링 시작 (90초 간격, 시간당 ~40요청)');
-  }
-
-  function startTiingoWebSocket() {
-    if (tiingoWs) {
-      try { tiingoWs.close(); } catch (e) {}
+  function startFinnhubWebSocket() {
+    if (finnhubWs) {
+      try { finnhubWs.close(); } catch (e) {}
     }
     if (reconnectTimer) {
       clearTimeout(reconnectTimer);
       reconnectTimer = null;
     }
 
-    if (!TIINGO_API_KEY) {
-      console.error('❌ [Tiingo] API 키가 설정되지 않았습니다. TIINGO_API_KEY 환경변수를 확인하세요.');
-      startRestApiPolling();
+    if (!FINNHUB_API_KEY) {
+      console.error('❌ [Finnhub] API 키가 설정되지 않았습니다. FINNHUB_API_KEY 환경변수를 확인하세요.');
       return;
     }
 
-    const wsUrl = 'wss://api.tiingo.com/fx';
+    const wsUrl = `wss://ws.finnhub.io?token=${FINNHUB_API_KEY}`;
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('🔗 [Tiingo] Forex WebSocket 연결 시작...');
-    console.log('📡 URL:', wsUrl);
+    console.log('🔗 [Finnhub] Forex WebSocket 연결 시작...');
     
     try {
-      tiingoWs = new WebSocket(wsUrl);
+      finnhubWs = new WebSocket(wsUrl);
 
-      tiingoWs.on('open', () => {
+      finnhubWs.on('open', () => {
         isConnected = true;
         messageCount = 0;
-        console.log('✅ [Tiingo] WebSocket 연결 성공!');
+        console.log('✅ [Finnhub] WebSocket 연결 성공!');
         
-        const tickers = Object.values(FOREX_TO_TIINGO);
-        const subscribeMsg = JSON.stringify({
-          eventName: 'subscribe',
-          authorization: TIINGO_API_KEY,
-          eventData: {
-            thresholdLevel: 5,
-            tickers: tickers
-          }
-        });
-        tiingoWs!.send(subscribeMsg);
-        console.log(`📨 [Tiingo] 구독 요청 전송: ${tickers.join(', ')}`);
+        const symbols = Object.values(FOREX_TO_FINNHUB);
+        for (const symbol of symbols) {
+          finnhubWs!.send(JSON.stringify({ type: 'subscribe', symbol }));
+        }
+        console.log(`📨 [Finnhub] 구독 요청 전송: ${symbols.join(', ')}`);
       });
 
-      tiingoWs.on('message', (rawData: Buffer) => {
+      finnhubWs.on('message', (rawData: Buffer) => {
         try {
           const msg = JSON.parse(rawData.toString());
           
-          if (msg.messageType === 'I') {
-            console.log('✅ [Tiingo] 정보 메시지:', msg.data?.message || msg.response?.message || 'Connected');
+          if (msg.type === 'ping') {
+            return;
           }
           
-          if (msg.messageType === 'A' && msg.data) {
-            const dataArr = msg.data;
-            if (Array.isArray(dataArr) && dataArr.length >= 6) {
-              const ticker = dataArr[1];
-              const midPrice = dataArr[3];
-              const bidPrice = dataArr[4];
-              const askPrice = dataArr[5];
+          if (msg.type === 'trade' && Array.isArray(msg.data)) {
+            for (const trade of msg.data) {
+              const finnhubSymbol = trade.s;
+              const price = trade.p;
+              const timestamp = trade.t;
               
-              const forexSymbol = TIINGO_TO_FOREX[ticker];
-              if (forexSymbol && midPrice > 0) {
-                if (usingRestApi) {
-                  usingRestApi = false;
-                  if (restApiTimer) {
-                    clearInterval(restApiTimer);
-                    restApiTimer = null;
-                    console.log('🛑 [Tiingo] REST API 폴링 중지 (WebSocket 실시간 데이터 수신 확인)');
-                  }
-                }
+              const forexSymbol = FINNHUB_TO_FOREX[finnhubSymbol];
+              if (forexSymbol && price > 0) {
                 messageCount++;
                 const prev = forexPrices[forexSymbol];
-                const openPrice = prev.openPrice > 0 ? prev.openPrice : midPrice;
-                const change = midPrice - openPrice;
+                const openPrice = prev.openPrice > 0 ? prev.openPrice : price;
+                const change = price - openPrice;
                 const changePercent = openPrice > 0 ? (change / openPrice) * 100 : 0;
                 
                 forexPrices[forexSymbol] = {
-                  price: midPrice,
+                  price: price,
                   change: change,
                   changePercent: changePercent,
-                  high: Math.max(prev.high || midPrice, midPrice),
-                  low: prev.low > 0 ? Math.min(prev.low, midPrice) : midPrice,
+                  high: Math.max(prev.high || price, price),
+                  low: prev.low > 0 ? Math.min(prev.low, price) : price,
                   volume: 0,
                   updatedAt: Date.now(),
                   openPrice: openPrice,
                 };
                 
+                updateCandles(forexSymbol, price, timestamp || Date.now());
+                
                 if (messageCount <= 10) {
-                  console.log(`💹 [Tiingo] ${forexSymbol} (${ticker}): ${midPrice.toFixed(5)} (${changePercent > 0 ? '+' : ''}${changePercent.toFixed(4)}%)`);
+                  console.log(`💹 [Finnhub] ${forexSymbol} (${finnhubSymbol}): ${price} (${changePercent > 0 ? '+' : ''}${changePercent.toFixed(4)}%)`);
                 } else if (messageCount === 11) {
-                  console.log('📊 [Tiingo] 실시간 데이터 수신 중... (로그 생략)');
+                  console.log('📊 [Finnhub] 실시간 데이터 수신 중... (로그 생략)');
                 }
               }
             }
-          }
-          
-          if (msg.messageType === 'H') {
-            // Heartbeat - connection is alive
           }
         } catch (e) {
           // 파싱 에러 무시
         }
       });
 
-      tiingoWs.on('error', (err) => {
+      finnhubWs.on('error', (err) => {
         isConnected = false;
-        console.error('❌ [Tiingo] WebSocket 에러:', err.message);
-        if (!restApiTimer) {
-          startRestApiPolling();
-        }
+        console.error('❌ [Finnhub] WebSocket 에러:', err.message);
       });
 
-      tiingoWs.on('close', () => {
+      finnhubWs.on('close', () => {
         isConnected = false;
-        console.log('⚠️ [Tiingo] WebSocket 연결 종료, REST API 폴백 및 5초 후 재연결...');
-        if (!restApiTimer) {
-          startRestApiPolling();
-        }
-        reconnectTimer = setTimeout(startTiingoWebSocket, 5000);
+        console.log('⚠️ [Finnhub] WebSocket 연결 종료, 5초 후 재연결...');
+        reconnectTimer = setTimeout(startFinnhubWebSocket, 5000);
       });
     } catch (err) {
-      console.error('❌ [Tiingo] WebSocket 생성 실패:', err);
-      startRestApiPolling();
+      console.error('❌ [Finnhub] WebSocket 생성 실패:', err);
+      reconnectTimer = setTimeout(startFinnhubWebSocket, 10000);
     }
   }
 
-  console.log('🚀 [Tiingo] 서버 시작 - REST API 즉시 시작');
-  startRestApiPolling();
-  
-  startTiingoWebSocket();
+  console.log('🚀 [Finnhub] 서버 시작 - WebSocket 실시간 연결');
+  startFinnhubWebSocket();
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
   // ==================== AUTO-SETTLEMENT FOR EXPIRED BETS ====================
@@ -2777,12 +2696,11 @@ export async function registerRoutes(
     const now = Date.now();
     res.json({
       connected: isConnected,
-      usingRestApi,
       messageCount,
-      source: 'tiingo',
+      source: 'finnhub',
       prices: Object.entries(forexPrices).map(([symbol, data]) => ({
         symbol,
-        ticker: FOREX_TO_TIINGO[symbol],
+        ticker: FOREX_TO_FINNHUB[symbol],
         price: data.price,
         updatedAt: data.updatedAt,
         age: now - data.updatedAt,
@@ -2864,11 +2782,8 @@ export async function registerRoutes(
     }
   });
 
-  // Tiingo 과거 캔들 데이터 조회 API (차트용) - 캐시 적용
-  const candleCache: Record<string, { data: any; fetchedAt: number }> = {};
-  const CANDLE_CACHE_TTL = 120000; // 2분 캐시
-
-  app.get("/api/market/candles/:symbol", async (req, res) => {
+  // 캔들 데이터 조회 API (차트용) - WebSocket 틱 데이터에서 서버 자체 생성
+  app.get("/api/market/candles/:symbol", (req, res) => {
     const { symbol } = req.params;
     const upperSymbol = symbol.toUpperCase();
     const duration = parseInt(req.query.duration as string) || 60;
@@ -2878,73 +2793,13 @@ export async function registerRoutes(
       return res.status(400).json({ error: "지원하지 않는 심볼입니다" });
     }
 
-    const ticker = FOREX_TO_TIINGO[upperSymbol];
-    if (!ticker) {
-      return res.status(400).json({ error: "심볼 매핑 없음" });
-    }
+    const validDurations = [60, 180, 300];
+    const dur = validDurations.includes(duration) ? duration : 60;
 
-    const cacheKey = `${ticker}_${duration}`;
-    const cached = candleCache[cacheKey];
-    if (cached && (Date.now() - cached.fetchedAt) < CANDLE_CACHE_TTL) {
-      return res.json(cached.data);
-    }
-
-    try {
-      let resampleFreq = '1min';
-      if (duration === 180) resampleFreq = '3min';
-      else if (duration === 300) resampleFreq = '5min';
-      
-      const now = new Date();
-      const startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-      const startStr = startDate.toISOString().split('T')[0];
-      
-      const url = `https://api.tiingo.com/tiingo/fx/${ticker}/prices?startDate=${startStr}&resampleFreq=${resampleFreq}&token=${TIINGO_API_KEY}`;
-      
-      const data: any = await new Promise((resolve, reject) => {
-        https.get(url, {
-          headers: { 'Content-Type': 'application/json' }
-        }, (response) => {
-          let body = '';
-          response.on('data', (chunk: string) => { body += chunk; });
-          response.on('end', () => {
-            try {
-              const parsed = JSON.parse(body);
-              if (parsed.detail) {
-                console.error('⚠️ [Tiingo Candles] API 에러:', parsed.detail);
-                resolve([]);
-                return;
-              }
-              resolve(parsed);
-            } catch (e) {
-              reject(e);
-            }
-          });
-        }).on('error', reject);
-      });
-
-      let result;
-      if (Array.isArray(data) && data.length > 0) {
-        const candles = data.map((d: any) => ({
-          time: new Date(d.date).getTime() / 1000,
-          open: d.open,
-          high: d.high,
-          low: d.low,
-          close: d.close,
-        }));
-        result = { candles, ticker, symbol: upperSymbol };
-      } else {
-        result = { candles: [], ticker, symbol: upperSymbol };
-      }
-      
-      candleCache[cacheKey] = { data: result, fetchedAt: Date.now() };
-      res.json(result);
-    } catch (error) {
-      console.error(`[Tiingo Candles] Error fetching ${ticker}:`, error);
-      if (cached) {
-        return res.json(cached.data);
-      }
-      res.json({ candles: [], ticker, symbol: upperSymbol });
-    }
+    const ticker = FOREX_TO_FINNHUB[upperSymbol];
+    const candles = candleStore[upperSymbol]?.[dur] || [];
+    
+    res.json({ candles, ticker, symbol: upperSymbol });
   });
 
   // ==================== IP BLOCKING ROUTES ====================
