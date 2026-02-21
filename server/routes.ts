@@ -2441,9 +2441,10 @@ export async function registerRoutes(
   let messageCount = 0;
   let usingRestApi = false;
 
-  function fetchTiingoRestPrice(ticker: string): Promise<any> {
+  function fetchTiingoForexBatch(): Promise<any[]> {
     return new Promise((resolve, reject) => {
-      const url = `https://api.tiingo.com/tiingo/fx/${ticker}/top?token=${TIINGO_API_KEY}`;
+      const tickers = Object.values(FOREX_TO_TIINGO).join(',');
+      const url = `https://api.tiingo.com/tiingo/fx/top?tickers=${tickers}&token=${TIINGO_API_KEY}`;
       
       https.get(url, {
         headers: { 'Content-Type': 'application/json' }
@@ -2452,7 +2453,13 @@ export async function registerRoutes(
         res.on('data', (chunk: string) => { data += chunk; });
         res.on('end', () => {
           try {
-            resolve(JSON.parse(data));
+            const parsed = JSON.parse(data);
+            if (parsed.detail) {
+              console.error('⚠️ [Tiingo REST] API 응답 에러:', parsed.detail);
+              resolve([]);
+              return;
+            }
+            resolve(Array.isArray(parsed) ? parsed : []);
           } catch (e) {
             reject(e);
           }
@@ -2463,32 +2470,30 @@ export async function registerRoutes(
 
   async function fetchPricesFromRestApi() {
     try {
-      const tickers = Object.values(FOREX_TO_TIINGO);
-      const results = await Promise.all(tickers.map(t => fetchTiingoRestPrice(t)));
+      const results = await fetchTiingoForexBatch();
       
-      for (let i = 0; i < tickers.length; i++) {
-        const ticker = tickers[i];
+      for (const quote of results) {
+        const ticker = (quote.ticker || '').toLowerCase();
         const forexSymbol = TIINGO_TO_FOREX[ticker];
-        const data = results[i];
+        if (!forexSymbol) continue;
         
-        if (data && Array.isArray(data) && data.length > 0) {
-          const quote = data[0];
-          const midPrice = quote.midPrice || ((quote.bidPrice + quote.askPrice) / 2);
-          const prevClose = forexPrices[forexSymbol].openPrice || midPrice;
-          const change = midPrice - prevClose;
-          const changePercent = prevClose > 0 ? (change / prevClose) * 100 : 0;
-          
-          forexPrices[forexSymbol] = {
-            price: midPrice,
-            change: change,
-            changePercent: changePercent,
-            high: Math.max(forexPrices[forexSymbol].high || midPrice, midPrice),
-            low: forexPrices[forexSymbol].low > 0 ? Math.min(forexPrices[forexSymbol].low, midPrice) : midPrice,
-            volume: 0,
-            updatedAt: Date.now(),
-            openPrice: forexPrices[forexSymbol].openPrice || midPrice,
-          };
-        }
+        const midPrice = quote.midPrice || ((quote.bidPrice || 0) + (quote.askPrice || 0)) / 2 || 0;
+        if (midPrice <= 0) continue;
+        
+        const prevClose = forexPrices[forexSymbol].openPrice || midPrice;
+        const change = midPrice - prevClose;
+        const changePercent = prevClose > 0 ? (change / prevClose) * 100 : 0;
+        
+        forexPrices[forexSymbol] = {
+          price: midPrice,
+          change: change,
+          changePercent: changePercent,
+          high: Math.max(forexPrices[forexSymbol].high || midPrice, midPrice),
+          low: forexPrices[forexSymbol].low > 0 ? Math.min(forexPrices[forexSymbol].low, midPrice) : midPrice,
+          volume: 0,
+          updatedAt: Date.now(),
+          openPrice: forexPrices[forexSymbol].openPrice || midPrice,
+        };
       }
         
       if (!usingRestApi) {
@@ -2500,7 +2505,11 @@ export async function registerRoutes(
       if (messageCount <= 5 || messageCount % 60 === 0) {
         const usd = forexPrices.USD;
         const jpy = forexPrices.JPY;
-        console.log(`📊 [Tiingo REST] EUR/USD: ${usd.price.toFixed(5)}, USD/JPY: ${jpy.price.toFixed(3)}`);
+        if (usd.price > 0) {
+          console.log(`📊 [Tiingo REST] EUR/USD: ${usd.price.toFixed(5)}, USD/JPY: ${jpy.price.toFixed(3)}`);
+        } else {
+          console.log('⏸️ [Tiingo REST] 시장 데이터 없음 (주말/휴장일 가능성)');
+        }
       }
     } catch (err) {
       console.error('❌ [Tiingo REST] API 호출 실패:', err);
@@ -2512,8 +2521,8 @@ export async function registerRoutes(
       clearInterval(restApiTimer);
     }
     fetchPricesFromRestApi();
-    restApiTimer = setInterval(fetchPricesFromRestApi, 5000);
-    console.log('🔄 [Tiingo] REST API 폴링 시작 (5초 간격)');
+    restApiTimer = setInterval(fetchPricesFromRestApi, 90000);
+    console.log('🔄 [Tiingo] REST API 폴링 시작 (90초 간격, 시간당 ~40요청)');
   }
 
   function startTiingoWebSocket() {
@@ -2541,15 +2550,8 @@ export async function registerRoutes(
 
       tiingoWs.on('open', () => {
         isConnected = true;
-        usingRestApi = false;
         messageCount = 0;
         console.log('✅ [Tiingo] WebSocket 연결 성공!');
-        
-        if (restApiTimer) {
-          clearInterval(restApiTimer);
-          restApiTimer = null;
-          console.log('🛑 [Tiingo] REST API 폴링 중지 (WebSocket 활성화)');
-        }
         
         const tickers = Object.values(FOREX_TO_TIINGO);
         const subscribeMsg = JSON.stringify({
@@ -2582,6 +2584,14 @@ export async function registerRoutes(
               
               const forexSymbol = TIINGO_TO_FOREX[ticker];
               if (forexSymbol && midPrice > 0) {
+                if (usingRestApi) {
+                  usingRestApi = false;
+                  if (restApiTimer) {
+                    clearInterval(restApiTimer);
+                    restApiTimer = null;
+                    console.log('🛑 [Tiingo] REST API 폴링 중지 (WebSocket 실시간 데이터 수신 확인)');
+                  }
+                }
                 messageCount++;
                 const prev = forexPrices[forexSymbol];
                 const openPrice = prev.openPrice > 0 ? prev.openPrice : midPrice;
@@ -2787,13 +2797,11 @@ export async function registerRoutes(
     const prices = [];
     let hasFallback = false;
 
-    const FOREX_DEFAULTS: Record<string, number> = { USD: 1.0500, JPY: 150.000, EUR: 1.2700, AUD: 0.6500 };
-    const FOREX_HIGHS: Record<string, number> = { USD: 1.0600, JPY: 151.000, EUR: 1.2800, AUD: 0.6600 };
-    const FOREX_LOWS: Record<string, number> = { USD: 1.0400, JPY: 149.000, EUR: 1.2600, AUD: 0.6400 };
-
     for (const forexSymbol of ['USD', 'JPY', 'EUR', 'AUD']) {
       const data = getForexPrice(forexSymbol);
-      if (data && data.price > 0 && (now - data.updatedAt) < 60000) {
+      if (data && data.price > 0) {
+        const isStale = (now - data.updatedAt) > 60000;
+        if (isStale) hasFallback = true;
         prices.push({
           symbol: forexSymbol,
           price: data.price,
@@ -2807,11 +2815,11 @@ export async function registerRoutes(
         hasFallback = true;
         prices.push({
           symbol: forexSymbol,
-          price: FOREX_DEFAULTS[forexSymbol],
+          price: 0,
           change: 0,
           changePercent: 0,
-          high: FOREX_HIGHS[forexSymbol],
-          low: FOREX_LOWS[forexSymbol],
+          high: 0,
+          low: 0,
           timestamp: now
         });
       }
@@ -2830,11 +2838,10 @@ export async function registerRoutes(
       return res.status(400).json({ error: "지원하지 않는 심볼입니다" });
     }
 
-    const FOREX_DEFAULTS: Record<string, number> = { USD: 1.0500, JPY: 150.000, EUR: 1.2700, AUD: 0.6500 };
     const now = Date.now();
     const data = getForexPrice(upperSymbol);
     
-    if (data && data.price > 0 && (now - data.updatedAt) < 60000) {
+    if (data && data.price > 0) {
       res.json({
         symbol: upperSymbol,
         price: data.price,
@@ -2847,17 +2854,20 @@ export async function registerRoutes(
     } else {
       res.json({
         symbol: upperSymbol,
-        price: FOREX_DEFAULTS[upperSymbol] || 0,
+        price: 0,
         change: 0,
         changePercent: 0,
-        high: FOREX_DEFAULTS[upperSymbol] || 0,
-        low: FOREX_DEFAULTS[upperSymbol] || 0,
+        high: 0,
+        low: 0,
         timestamp: now
       });
     }
   });
 
-  // Tiingo 과거 캔들 데이터 조회 API (차트용)
+  // Tiingo 과거 캔들 데이터 조회 API (차트용) - 캐시 적용
+  const candleCache: Record<string, { data: any; fetchedAt: number }> = {};
+  const CANDLE_CACHE_TTL = 120000; // 2분 캐시
+
   app.get("/api/market/candles/:symbol", async (req, res) => {
     const { symbol } = req.params;
     const upperSymbol = symbol.toUpperCase();
@@ -2871,6 +2881,12 @@ export async function registerRoutes(
     const ticker = FOREX_TO_TIINGO[upperSymbol];
     if (!ticker) {
       return res.status(400).json({ error: "심볼 매핑 없음" });
+    }
+
+    const cacheKey = `${ticker}_${duration}`;
+    const cached = candleCache[cacheKey];
+    if (cached && (Date.now() - cached.fetchedAt) < CANDLE_CACHE_TTL) {
+      return res.json(cached.data);
     }
 
     try {
@@ -2892,7 +2908,13 @@ export async function registerRoutes(
           response.on('data', (chunk: string) => { body += chunk; });
           response.on('end', () => {
             try {
-              resolve(JSON.parse(body));
+              const parsed = JSON.parse(body);
+              if (parsed.detail) {
+                console.error('⚠️ [Tiingo Candles] API 에러:', parsed.detail);
+                resolve([]);
+                return;
+              }
+              resolve(parsed);
             } catch (e) {
               reject(e);
             }
@@ -2900,6 +2922,7 @@ export async function registerRoutes(
         }).on('error', reject);
       });
 
+      let result;
       if (Array.isArray(data) && data.length > 0) {
         const candles = data.map((d: any) => ({
           time: new Date(d.date).getTime() / 1000,
@@ -2908,12 +2931,18 @@ export async function registerRoutes(
           low: d.low,
           close: d.close,
         }));
-        res.json({ candles, ticker, symbol: upperSymbol });
+        result = { candles, ticker, symbol: upperSymbol };
       } else {
-        res.json({ candles: [], ticker, symbol: upperSymbol });
+        result = { candles: [], ticker, symbol: upperSymbol };
       }
+      
+      candleCache[cacheKey] = { data: result, fetchedAt: Date.now() };
+      res.json(result);
     } catch (error) {
       console.error(`[Tiingo Candles] Error fetching ${ticker}:`, error);
+      if (cached) {
+        return res.json(cached.data);
+      }
       res.json({ candles: [], ticker, symbol: upperSymbol });
     }
   });
