@@ -530,7 +530,7 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
         <span className="text-xs text-muted-foreground">배당률: {MULTIPLIER}배</span>
       </div>
 
-      <div className="p-3 lg:p-4 space-y-3 lg:space-y-5 lg:flex-1 lg:overflow-y-auto">
+      <div className="p-3 lg:p-4 space-y-3 lg:space-y-3 lg:flex-1 lg:overflow-y-auto lg:flex lg:flex-col">
         <div className="bg-primary/10 rounded-lg p-2 lg:p-3 border border-primary/20">
           <div className="flex items-center justify-between mb-2">
             <span className="font-semibold text-foreground text-sm lg:text-base">{game.label}</span>
@@ -564,9 +564,6 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 lg:space-y-3 lg:block">
-        </div>
-
         <div className="space-y-2">
           <label className="text-xs text-muted-foreground">주문금액 (원)</label>
           <div className="relative">
@@ -594,59 +591,59 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-2 lg:gap-3 pt-1 lg:pt-2">
-          <div className="flex gap-0">
+        <div className="flex gap-2 pt-1 lg:pt-2">
+          <div className="flex flex-1 min-w-0">
             <Button 
               onClick={() => handleBetClick('long')}
               disabled={isBettingLocked}
               className={cn(
-                "h-11 lg:h-14 text-base lg:text-lg font-bold text-white flex items-center justify-center gap-2 flex-1 rounded-r-none",
+                "h-11 lg:h-14 text-sm lg:text-base font-bold text-white flex items-center justify-center gap-1.5 flex-1 rounded-r-none",
                 isBettingLocked 
                   ? "bg-gray-500 hover:bg-gray-500 cursor-not-allowed opacity-50" 
                   : "bg-up hover:bg-up/90"
               )}
               data-testid="button-long"
             >
-              <TrendingUp className="w-5 h-5 shrink-0" />
-              <span>LONG</span>
+              <TrendingUp className="w-4 h-4 shrink-0" />
+              LONG
             </Button>
             <Button 
               onClick={() => handleMaxBetClick('long')}
               disabled={isBettingLocked}
               className={cn(
-                "h-11 lg:h-14 text-xs font-bold text-white px-2 lg:px-3 rounded-l-none border-l border-white/20",
+                "h-11 lg:h-14 text-[10px] lg:text-xs font-bold text-white/90 px-2 rounded-l-none border-l border-white/20 shrink-0",
                 isBettingLocked 
                   ? "bg-gray-500 hover:bg-gray-500 cursor-not-allowed opacity-50" 
-                  : "bg-up hover:bg-up/90"
+                  : "bg-up/80 hover:bg-up/70"
               )}
               data-testid="button-long-max"
             >
               MAX
             </Button>
           </div>
-          <div className="flex gap-0">
+          <div className="flex flex-1 min-w-0">
             <Button 
               onClick={() => handleBetClick('short')}
               disabled={isBettingLocked}
               className={cn(
-                "h-11 lg:h-14 text-base lg:text-lg font-bold text-white flex items-center justify-center gap-2 flex-1 rounded-r-none",
+                "h-11 lg:h-14 text-sm lg:text-base font-bold text-white flex items-center justify-center gap-1.5 flex-1 rounded-r-none",
                 isBettingLocked 
                   ? "bg-gray-500 hover:bg-gray-500 cursor-not-allowed opacity-50" 
                   : "bg-down hover:bg-down/90"
               )}
               data-testid="button-short"
             >
-              <TrendingDown className="w-5 h-5 shrink-0" />
-              <span>SHORT</span>
+              <TrendingDown className="w-4 h-4 shrink-0" />
+              SHORT
             </Button>
             <Button 
               onClick={() => handleMaxBetClick('short')}
               disabled={isBettingLocked}
               className={cn(
-                "h-11 lg:h-14 text-xs font-bold text-white px-2 lg:px-3 rounded-l-none border-l border-white/20",
+                "h-11 lg:h-14 text-[10px] lg:text-xs font-bold text-white/90 px-2 rounded-l-none border-l border-white/20 shrink-0",
                 isBettingLocked 
                   ? "bg-gray-500 hover:bg-gray-500 cursor-not-allowed opacity-50" 
-                  : "bg-down hover:bg-down/90"
+                  : "bg-down/80 hover:bg-down/70"
               )}
               data-testid="button-short-max"
             >
@@ -656,7 +653,7 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
         </div>
 
         {/* Game Results Section */}
-        <div className="mt-4 border-t border-border pt-3">
+        <div className="border-t border-border pt-3 lg:flex-1 lg:flex lg:flex-col lg:min-h-0">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-1.5">
               <History className="w-3.5 h-3.5 text-muted-foreground" />
@@ -670,7 +667,7 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
               아직 기록된 게임이 없습니다
             </div>
           ) : (
-            <ScrollArea className="h-[140px] lg:h-[180px]">
+            <ScrollArea className="h-[200px] lg:flex-1 lg:h-0 lg:min-h-[120px]">
               <div className="space-y-1">
                 {gameResults.map((result, idx) => (
                   <div
