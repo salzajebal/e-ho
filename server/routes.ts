@@ -935,6 +935,39 @@ export async function registerRoutes(
     }
   });
 
+  // Set forced outcome on a specific pending bet (directly forces win/lose on this bet)
+  app.post("/api/admin/bets/:id/force-outcome", requireAdmin, async (req, res) => {
+    try {
+      const betId = parseInt(req.params.id);
+      const { forcedOutcome } = req.body; // 'win', 'lose', or null
+
+      if (forcedOutcome !== null && forcedOutcome !== 'win' && forcedOutcome !== 'lose') {
+        return res.status(400).json({ error: "결과는 'win', 'lose', 또는 null이어야 합니다" });
+      }
+
+      const bet = await storage.getBet(betId);
+      if (!bet) {
+        return res.status(404).json({ error: "거래를 찾을 수 없습니다" });
+      }
+
+      if (bet.outcome !== 'pending') {
+        return res.status(400).json({ error: "이미 정산된 거래입니다" });
+      }
+
+      await storage.setForcedOutcome(betId, forcedOutcome);
+      
+      const outcomeText = forcedOutcome === 'win' ? '적중' : forcedOutcome === 'lose' ? '미적중' : '해제';
+      console.log(`🎯 [Force] Bet #${betId}: 강제결과 '${outcomeText}' 설정됨`);
+      res.json({ 
+        success: true, 
+        message: `거래 #${betId} 강제결과가 '${outcomeText}'로 설정되었습니다`
+      });
+    } catch (error) {
+      console.error("Set forced outcome error:", error);
+      res.status(500).json({ error: "강제 결과 설정에 실패했습니다" });
+    }
+  });
+
   // Set forced bet direction for user (pre-set display direction for next bet)
   app.post("/api/admin/users/:id/forced-bet-direction", requireAdmin, async (req, res) => {
     try {

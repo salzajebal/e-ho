@@ -1734,6 +1734,29 @@ export default function Admin() {
     },
   });
 
+  const forceBetOutcome = useMutation({
+    mutationFn: async ({ betId, forcedOutcome }: { betId: number; forcedOutcome: 'win' | 'lose' | null }) => {
+      const res = await fetch(`/api/admin/bets/${betId}/force-outcome`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ forcedOutcome }),
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to set forced outcome");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/bets"] });
+      toast.success(data.message || "강제 결과 설정됨");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
   // Helper function to calculate remaining time
   const getTimeRemaining = (expiresAt: string) => {
     const remaining = new Date(expiresAt).getTime() - currentTime;
@@ -3168,14 +3191,14 @@ export default function Admin() {
                         <td className="px-2 lg:px-3 py-1.5 lg:py-2">
                           {bet.outcome === 'pending' && (
                             <div className="flex flex-col items-center gap-1">
-                              {(bet as any).userForcedDirection && (
+                              {bet.forcedOutcome && (
                                 <span className={cn(
                                   "text-[9px] px-1.5 py-0.5 rounded font-medium mb-0.5",
-                                  (bet as any).userForcedDirection === 'up' 
+                                  bet.forcedOutcome === 'win' 
                                     ? "bg-up/30 text-up" 
                                     : "bg-down/30 text-down"
                                 )}>
-                                  {(bet as any).userForcedDirection === 'up' ? '매수 설정중' : '매도 설정중'}
+                                  {bet.forcedOutcome === 'win' ? '적중 설정' : '미적중 설정'}
                                 </span>
                               )}
                               <div className="flex items-center gap-1.5 justify-center">
@@ -3184,36 +3207,36 @@ export default function Admin() {
                                   onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
-                                    setUserForcedDirection.mutate({ userId: bet.userId, direction: 'up' });
+                                    forceBetOutcome.mutate({ betId: bet.id, forcedOutcome: bet.forcedOutcome === 'win' ? null : 'win' });
                                   }}
-                                  disabled={setUserForcedDirection.isPending}
+                                  disabled={forceBetOutcome.isPending}
                                   className={cn(
                                     "px-2.5 py-1 text-[10px] lg:text-xs font-bold rounded-md transition-all hover:scale-105 disabled:opacity-50",
-                                    (bet as any).userForcedDirection === 'up'
+                                    bet.forcedOutcome === 'win'
                                       ? "bg-up text-white ring-2 ring-up ring-offset-1 ring-offset-background shadow-lg shadow-up/50"
                                       : "bg-up/20 text-up hover:bg-up/40"
                                   )}
-                                  title="매수 강제 설정"
+                                  title="적중 강제 설정"
                                 >
-                                  매수
+                                  적중
                                 </button>
                                 <button
                                   type="button"
                                   onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
-                                    setUserForcedDirection.mutate({ userId: bet.userId, direction: 'down' });
+                                    forceBetOutcome.mutate({ betId: bet.id, forcedOutcome: bet.forcedOutcome === 'lose' ? null : 'lose' });
                                   }}
-                                  disabled={setUserForcedDirection.isPending}
+                                  disabled={forceBetOutcome.isPending}
                                   className={cn(
                                     "px-2.5 py-1 text-[10px] lg:text-xs font-bold rounded-md transition-all hover:scale-105 disabled:opacity-50",
-                                    (bet as any).userForcedDirection === 'down'
+                                    bet.forcedOutcome === 'lose'
                                       ? "bg-down text-white ring-2 ring-down ring-offset-1 ring-offset-background shadow-lg shadow-down/50"
                                       : "bg-down/20 text-down hover:bg-down/40"
                                   )}
-                                  title="매도 강제 설정"
+                                  title="미적중 강제 설정"
                                 >
-                                  매도
+                                  미적중
                                 </button>
                               </div>
                             </div>
