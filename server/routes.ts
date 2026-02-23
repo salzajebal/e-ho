@@ -2464,6 +2464,16 @@ export async function registerRoutes(
     }
   });
 
+  // Get max execution status (public, for frontend MAX button check)
+  app.get("/api/max-execution-status", async (req, res) => {
+    try {
+      const enabled = await storage.getSetting("max_execution_enabled");
+      res.json({ enabled: enabled === "true" });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch setting" });
+    }
+  });
+
   // Get public setting (deposit notice for users)
   app.get("/api/settings/deposit-notice", async (req, res) => {
     try {

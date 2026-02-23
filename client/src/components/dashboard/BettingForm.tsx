@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { cn, formatForexPrice } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -231,6 +232,16 @@ interface ForcedDirection {
 }
 
 export function BettingForm({ currentPrice, game, balance, onBet, userBets = [], allPrices = {} }: BettingFormProps) {
+  const { data: maxExecutionData } = useQuery<{ enabled: boolean }>({
+    queryKey: ["/api/admin/max-execution-status"],
+    queryFn: async () => {
+      const res = await fetch("/api/max-execution-status");
+      if (!res.ok) return { enabled: false };
+      return res.json();
+    },
+    refetchInterval: 3000,
+  });
+
   const [amount, setAmount] = useState<string>("");
   const [currentRound, setCurrentRound] = useState(calculateRoundNumber(game.duration));
   const [timeRemaining, setTimeRemaining] = useState(getRoundTimeRemaining(game.duration));
@@ -485,7 +496,13 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
     }
   };
 
+  const [maxExecutionAlert, setMaxExecutionAlert] = useState(false);
+
   const handleMaxBetClick = (direction: 'long' | 'short') => {
+    if (!maxExecutionData?.enabled) {
+      setMaxExecutionAlert(true);
+      return;
+    }
     if (isBettingLocked) {
       toast.error("거래 마감 임박으로 주문이 불가합니다.");
       return;
@@ -786,6 +803,35 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
             
             <Button 
               onClick={() => setTimeAlert({ show: false, message: '' })}
+              className="w-full bg-primary hover:bg-primary/90"
+            >
+              확인
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Max Execution Alert Dialog */}
+      <Dialog open={maxExecutionAlert} onOpenChange={setMaxExecutionAlert}>
+        <DialogContent className="bg-card border-border max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-center gap-2 text-center">
+              <AlertCircle className="w-8 h-8 text-red-500" />
+            </DialogTitle>
+          </DialogHeader>
+          <div className="text-center space-y-4 py-4">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-lg font-bold bg-red-500/20 text-red-500">
+              맥스체결 안내
+            </div>
+            
+            <div className="space-y-2">
+              <p className="text-foreground leading-relaxed">
+                맥스체결이 활성화되어 있지 않습니다.
+              </p>
+            </div>
+            
+            <Button 
+              onClick={() => setMaxExecutionAlert(false)}
               className="w-full bg-primary hover:bg-primary/90"
             >
               확인
