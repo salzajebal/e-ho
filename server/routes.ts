@@ -180,10 +180,6 @@ export async function registerRoutes(
         return res.status(400).json({ error: "올바른 휴대폰 번호를 입력해주세요" });
       }
 
-      if (!birthDate) {
-        return res.status(400).json({ error: "생년월일을 선택해주세요" });
-      }
-
       if (!bankName) {
         return res.status(400).json({ error: "은행을 선택해주세요" });
       }

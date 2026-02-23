@@ -2851,7 +2851,6 @@ export default function Admin() {
                         <th className="px-2 lg:px-4 py-3 text-left font-medium">이름</th>
                         <th className="px-2 lg:px-4 py-3 text-left font-medium">전화번호</th>
                         <th className="px-2 lg:px-4 py-3 text-left font-medium">주민번호</th>
-                        <th className="px-2 lg:px-4 py-3 text-left font-medium">지역</th>
                         <th className="px-2 lg:px-4 py-3 text-left font-medium">은행</th>
                         <th className="px-2 lg:px-4 py-3 text-left font-medium">예금주</th>
                         <th className="px-2 lg:px-4 py-3 text-left font-medium">계좌번호</th>
@@ -2886,7 +2885,6 @@ export default function Admin() {
                           <td className="px-2 lg:px-4 py-3">{user.name || '-'}</td>
                           <td className="px-2 lg:px-4 py-3">{user.phone || '-'}</td>
                           <td className="px-2 lg:px-4 py-3 font-mono text-xs">{user.residentNumber || '-'}</td>
-                          <td className="px-2 lg:px-4 py-3">{user.region || '-'}</td>
                           <td className="px-2 lg:px-4 py-3">{user.bankName || '-'}</td>
                           <td className="px-2 lg:px-4 py-3">{user.accountHolder || '-'}</td>
                           <td className="px-2 lg:px-4 py-3 font-mono text-xs">{user.accountNumber || '-'}</td>
@@ -4814,12 +4812,6 @@ export default function Admin() {
                     <label className="text-xs text-muted-foreground">주민번호</label>
                     <div className="p-2 bg-background/50 rounded-md border border-border">
                       <span className="font-mono text-sm">{editingUser.residentNumber || '-'}</span>
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs text-muted-foreground">지역</label>
-                    <div className="p-2 bg-background/50 rounded-md border border-border">
-                      <span className="text-sm">{editingUser.region || '-'}</span>
                     </div>
                   </div>
                 </div>

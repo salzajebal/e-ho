@@ -345,14 +345,6 @@ export default function Landing() {
       toast.error("올바른 휴대폰 번호를 입력해주세요");
       return;
     }
-    if (!birthDate) {
-      toast.error("생년월일을 선택해주세요");
-      return;
-    }
-    if (!region) {
-      toast.error("지역을 선택해주세요");
-      return;
-    }
     if (!bankName) {
       toast.error("은행을 선택해주세요");
       return;
@@ -366,15 +358,11 @@ export default function Landing() {
       return;
     }
     
-    const birthDateStr = birthDate.toISOString().split('T')[0];
-    
     register.mutate({ 
       username: regUsername, 
       password: regPassword, 
       name, 
       phone,
-      birthDate: birthDateStr,
-      region,
       bankName, 
       accountHolder, 
       accountNumber,
@@ -1422,53 +1410,6 @@ export default function Landing() {
                     data-testid="input-reg-phone"
                     required
                   />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs text-gray-300 font-medium">생년월일</label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full h-10 bg-white/5 border-white/10 text-white justify-start text-left font-normal text-sm",
-                          !birthDate && "text-gray-500"
-                        )}
-                        data-testid="input-reg-birth-date"
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {birthDate ? format(birthDate, "yyyy년 MM월 dd일") : "생년월일 선택"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 bg-gray-900 border-white/20" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={birthDate}
-                        onSelect={setBirthDate}
-                        defaultMonth={new Date(1990, 0)}
-                        fromYear={1950}
-                        toYear={new Date().getFullYear()}
-                        captionLayout="dropdown"
-                        className="bg-gray-900 text-white"
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs text-gray-300 font-medium">지역</label>
-                  <Select value={region} onValueChange={setRegion}>
-                    <SelectTrigger className="h-10 bg-white/5 border-white/10 text-white text-sm" data-testid="input-reg-region">
-                      <SelectValue placeholder="지역을 선택하세요" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-900 border-white/20 max-h-60 overflow-y-auto">
-                      {KOREAN_REGIONS.map((reg) => (
-                        <SelectItem key={reg} value={reg} className="text-white hover:bg-white/10">
-                          {reg}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
                 </div>
 
                 <div className="pt-2 border-t border-white/10">
