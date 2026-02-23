@@ -335,7 +335,6 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
       <div className="flex items-center justify-between px-3 py-2 border-b border-[#1e222d] shrink-0">
         <div className="flex items-center gap-3">
           <span className="text-white font-bold text-lg">{displayInfo?.name || symbol}</span>
-          <span className="text-xs text-gray-400">FX</span>
         </div>
         <div className="flex items-center gap-3">
           <span className={`text-xl font-bold ${isUp ? 'text-[#26a69a]' : 'text-[#ef5350]'}`}>
