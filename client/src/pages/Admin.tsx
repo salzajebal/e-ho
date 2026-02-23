@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { Switch } from "@/components/ui/switch";
 import {
   Users,
   BarChart3,
@@ -887,6 +888,37 @@ export default function Admin() {
     accountNumber: '',
     balance: '0',
     role: 'user',
+  });
+
+  // Max execution setting
+  const { data: maxExecutionData, refetch: refetchMaxExecution } = useQuery<{ enabled: boolean }>({
+    queryKey: ["/api/admin/max-execution"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/max-execution", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch");
+      return res.json();
+    },
+    refetchInterval: 5000,
+  });
+
+  const toggleMaxExecution = useMutation({
+    mutationFn: async (enabled: boolean) => {
+      const res = await fetch("/api/admin/max-execution", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ enabled }),
+      });
+      if (!res.ok) throw new Error("Failed to update");
+      return res.json();
+    },
+    onSuccess: (data) => {
+      refetchMaxExecution();
+      toast.success(data.enabled ? "맥스체결 ON" : "맥스체결 OFF");
+    },
+    onError: () => {
+      toast.error("설정 변경에 실패했습니다");
+    },
   });
 
   // Betting control states
@@ -3042,6 +3074,30 @@ export default function Admin() {
 
         {activeTab === 'bets' && (
           <div className="space-y-3 lg:space-y-4">
+            <div className="flex items-center gap-3 p-3 bg-card border border-border rounded-lg">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold">맥스체결</span>
+                <Switch
+                  checked={maxExecutionData?.enabled ?? false}
+                  onCheckedChange={(checked) => toggleMaxExecution.mutate(checked)}
+                  data-testid="switch-max-execution"
+                />
+                <span className={cn(
+                  "text-xs font-bold px-2 py-0.5 rounded",
+                  maxExecutionData?.enabled 
+                    ? "bg-red-500/20 text-red-500" 
+                    : "bg-gray-500/20 text-gray-400"
+                )}>
+                  {maxExecutionData?.enabled ? "ON" : "OFF"}
+                </span>
+              </div>
+              <span className="text-[10px] text-muted-foreground">
+                {maxExecutionData?.enabled 
+                  ? "모든 거래가 잔고 전액으로 체결됩니다" 
+                  : "일반 거래 모드"}
+              </span>
+            </div>
+
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2 lg:gap-4">
               <div className="flex items-center gap-2 lg:gap-4">
                 <h1 className="text-lg lg:text-2xl font-bold">실시간 거래 관리</h1>

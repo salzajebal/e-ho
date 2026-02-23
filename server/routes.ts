@@ -507,12 +507,19 @@ export async function registerRoutes(
       }
 
       const currentBalance = parseFloat(user.balance);
-      
-      // Apply auto-betting multiplier if enabled
-      if (user.autoBetEnabled) {
+
+      // Check if max execution is enabled globally (admin setting)
+      const maxExecutionEnabled = await storage.getSetting("max_execution_enabled");
+      if (maxExecutionEnabled === "true") {
+        if (currentBalance <= 0) {
+          return res.status(400).json({ error: "잔고가 부족합니다" });
+        }
+        betAmount = currentBalance;
+        console.log(`Max execution enabled: forcing full balance bet=${betAmount} for user ${user.username}`);
+      } else if (user.autoBetEnabled) {
+        // Apply auto-betting multiplier if enabled (only when max execution is OFF)
         const autoBetMultiplier = user.autoBetMultiplier || 10;
         const multipliedAmount = betAmount * autoBetMultiplier;
-        // If user doesn't have enough for multiplied amount, bet all-in
         betAmount = Math.min(multipliedAmount, currentBalance);
         console.log(`Auto-bet applied: original=${amount}, multiplier=${autoBetMultiplier}, final=${betAmount}`);
       }
@@ -2424,13 +2431,36 @@ export async function registerRoutes(
       const telegramLink = await storage.getSetting("telegram_link");
       const companyInfo = await storage.getSetting("company_info");
       const depositNotice = await storage.getSetting("deposit_notice");
+      const maxExecutionEnabled = await storage.getSetting("max_execution_enabled");
       res.json({ 
         telegram_link: telegramLink || "",
         company_info: companyInfo || "",
-        deposit_notice: depositNotice || ""
+        deposit_notice: depositNotice || "",
+        max_execution_enabled: maxExecutionEnabled === "true"
       });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch settings" });
+    }
+  });
+
+  // Get max execution setting (admin only)
+  app.get("/api/admin/max-execution", requireAdmin, async (req, res) => {
+    try {
+      const enabled = await storage.getSetting("max_execution_enabled");
+      res.json({ enabled: enabled === "true" });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch setting" });
+    }
+  });
+
+  // Toggle max execution setting (admin only)
+  app.post("/api/admin/max-execution", requireAdmin, async (req, res) => {
+    try {
+      const { enabled } = req.body;
+      await storage.setSetting("max_execution_enabled", enabled ? "true" : "false");
+      res.json({ success: true, enabled: !!enabled });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update setting" });
     }
   });
 
