@@ -38,20 +38,20 @@ async function fetchServerCandles(symbol: string, duration: number): Promise<Can
   }
 }
 
-function generateFallbackCandles(basePrice: number, count: number, intervalSeconds: number): CandlestickData<Time>[] {
-  const alignedNow = getKSTAlignedTime(intervalSeconds);
-  const volatility = basePrice > 100 ? 0.0005 : 0.0008;
+function generateFallbackCandles(basePrice: number, count: number, intervalSeconds: number, endTime?: number): CandlestickData<Time>[] {
+  const alignedEnd = endTime || getKSTAlignedTime(intervalSeconds);
+  const volatility = basePrice > 100 ? 0.0003 : 0.0005;
   
   let price = basePrice;
   const tempCandles: CandlestickData<Time>[] = [];
   
   for (let i = 0; i < count; i++) {
-    const time = (alignedNow - i * intervalSeconds) as Time;
+    const time = (alignedEnd - (i + 1) * intervalSeconds) as Time;
     const change = price * volatility * (Math.random() - 0.5) * 2;
     const open = price - change;
     const close = price;
-    const high = Math.max(open, close) * (1 + Math.random() * 0.0003);
-    const low = Math.min(open, close) * (1 - Math.random() * 0.0003);
+    const high = Math.max(open, close) * (1 + Math.random() * volatility * 0.5);
+    const low = Math.min(open, close) * (1 - Math.random() * volatility * 0.5);
     tempCandles.unshift({ time, open, high, low, close });
     price = open;
   }
@@ -156,10 +156,17 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
           const minutes = date.getUTCMinutes().toString().padStart(2, '0');
           return `${hours}:${minutes}`;
         },
+        priceFormatter: (price: number) => {
+          const dec = symbol === 'JPY' ? 3 : 5;
+          return price.toFixed(dec);
+        },
       },
       handleScroll: { mouseWheel: true, pressedMouseMove: true },
       handleScale: { axisPressedMouseMove: true, mouseWheel: true, pinch: true },
     });
+
+    const precision = symbol === 'JPY' ? 3 : 5;
+    const minMove = symbol === 'JPY' ? 0.001 : 0.00001;
 
     const series = (chart as any).addSeries(CandlestickSeries, {
       upColor: '#26a69a',
@@ -168,6 +175,11 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
       borderDownColor: '#ef5350',
       wickUpColor: '#26a69a',
       wickDownColor: '#ef5350',
+      priceFormat: {
+        type: 'price',
+        precision: precision,
+        minMove: minMove,
+      },
     });
 
     chartRef.current = chart;
@@ -206,11 +218,64 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
     const initializeChart = async () => {
       if (!seriesRef.current) return;
       
-      let candles = await fetchServerCandles(symbol, duration);
+      let serverCandles = await fetchServerCandles(symbol, duration);
+      let candles: CandlestickData<Time>[] = [];
       
-      if (candles.length === 0 && data.price > 0) {
-        candles = generateFallbackCandles(data.price, 50, duration);
+      const currentPrice = data.price > 0 ? data.price : 0;
+      const basePrice = serverCandles.length > 0 
+        ? serverCandles[serverCandles.length - 1].close 
+        : currentPrice;
+      
+      if (basePrice <= 0) return;
+
+      const MIN_CANDLES = 50;
+      const currentAlignedTime = getKSTAlignedTime(duration);
+      
+      if (serverCandles.length >= MIN_CANDLES) {
+        candles = serverCandles;
+      } else {
+        const latestPrice = serverCandles.length > 0 ? serverCandles[serverCandles.length - 1].close : basePrice;
+        const latestTime = serverCandles.length > 0 ? (serverCandles[serverCandles.length - 1].time as number) : currentAlignedTime;
+        
+        const beforeCandles = serverCandles.length > 0
+          ? generateFallbackCandles(serverCandles[0].open, Math.max(MIN_CANDLES - serverCandles.length, 30), duration, serverCandles[0].time as number)
+          : [];
+
+        const gapCount = serverCandles.length > 0
+          ? Math.floor((currentAlignedTime - latestTime) / duration) - 1
+          : 0;
+        
+        let afterCandles: CandlestickData<Time>[] = [];
+        if (gapCount > 0 && gapCount < 100) {
+          let p = latestPrice;
+          const vol = p > 100 ? 0.0002 : 0.0003;
+          for (let i = 1; i <= gapCount; i++) {
+            const t = (latestTime + i * duration) as Time;
+            const change = p * vol * (Math.random() - 0.5) * 2;
+            const open = p;
+            const close = p + change;
+            const high = Math.max(open, close) * (1 + Math.random() * vol * 0.3);
+            const low = Math.min(open, close) * (1 - Math.random() * vol * 0.3);
+            afterCandles.push({ time: t, open, high, low, close });
+            p = close;
+          }
+        }
+
+        if (serverCandles.length === 0) {
+          candles = generateFallbackCandles(basePrice, MIN_CANDLES, duration);
+        } else {
+          candles = [...beforeCandles, ...serverCandles, ...afterCandles];
+        }
       }
+
+      candles.sort((a, b) => (a.time as number) - (b.time as number));
+      const seen = new Set<number>();
+      candles = candles.filter(c => {
+        const t = c.time as number;
+        if (seen.has(t)) return false;
+        seen.add(t);
+        return true;
+      });
       
       if (candles.length > 0 && seriesRef.current) {
         seriesRef.current.setData(candles);
@@ -222,7 +287,6 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
         
         chartRef.current?.timeScale().fitContent();
         setIsInitialized(true);
-        console.log(`[PriceChart] ${symbol} 차트 초기화 완료: ${candles.length}개 캔들`);
       }
     };
     
