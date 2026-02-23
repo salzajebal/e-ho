@@ -486,6 +486,24 @@ export default function Landing() {
               >
                 고객센터
               </button>
+              <button 
+                onClick={() => {
+                  if (user) {
+                    setShowMessagesModal(true);
+                  } else {
+                    setShowLoginModal(true);
+                  }
+                }}
+                className="text-gray-300 hover:text-amber-500 transition-colors text-sm font-medium relative" 
+                data-testid="nav-messages"
+              >
+                쪽지함
+                {user && messages.filter(m => !m.isRead).length > 0 && (
+                  <span className="absolute -top-1 -right-3 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
+                    {messages.filter(m => !m.isRead).length}
+                  </span>
+                )}
+              </button>
             </nav>
           </div>
           
@@ -675,6 +693,20 @@ export default function Landing() {
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   고객센터
+                </button>
+                <button 
+                  onClick={() => {
+                    if (user) {
+                      setShowMessagesModal(true);
+                    } else {
+                      setShowLoginModal(true);
+                    }
+                    setMobileMenuOpen(false);
+                  }}
+                  className="text-left text-gray-300 hover:text-amber-500 py-3 border-b border-white/10 w-full touch-manipulation"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                >
+                  쪽지함
                 </button>
                 
                 <div className="mt-4 flex flex-col gap-2">
