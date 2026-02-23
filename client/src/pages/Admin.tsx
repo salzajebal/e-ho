@@ -3088,54 +3088,6 @@ export default function Admin() {
 
         {activeTab === 'bets' && (
           <div className="space-y-3 lg:space-y-4">
-            <div className="flex items-center gap-2 p-3 bg-card border border-border rounded-lg flex-wrap">
-              <span className="text-sm font-bold">맥스체결</span>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 px-2 text-[10px] bg-red-500/10 text-red-500 border-red-500/30 hover:bg-red-500/20"
-                onClick={() => {
-                  const allUserIds = users.filter(u => u.role !== 'admin').map(u => u.id);
-                  if (allUserIds.length > 0) batchMaxExecution.mutate({ userIds: allUserIds, enabled: true });
-                }}
-                data-testid="batch-max-execution-on"
-              >
-                전체ON
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 px-2 text-[10px]"
-                onClick={() => {
-                  const allUserIds = users.filter(u => u.role !== 'admin').map(u => u.id);
-                  if (allUserIds.length > 0) batchMaxExecution.mutate({ userIds: allUserIds, enabled: false });
-                }}
-                data-testid="batch-max-execution-off"
-              >
-                전체OFF
-              </Button>
-              <span className="text-[10px] text-muted-foreground ml-1">
-                ON: {users.filter(u => u.maxExecutionEnabled && u.role !== 'admin').length}명 / 전체: {users.filter(u => u.role !== 'admin').length}명
-              </span>
-              <div className="w-full flex flex-wrap gap-1 mt-1">
-                {users.filter(u => u.role !== 'admin').map(u => (
-                  <button
-                    key={u.id}
-                    onClick={() => toggleUserMaxExecution.mutate({ userId: u.id, enabled: !u.maxExecutionEnabled })}
-                    className={cn(
-                      "px-2 py-0.5 rounded text-[10px] font-medium border transition-colors",
-                      u.maxExecutionEnabled
-                        ? "bg-red-500/20 text-red-400 border-red-500/30"
-                        : "bg-muted/30 text-muted-foreground border-border hover:border-red-500/30"
-                    )}
-                    data-testid={`toggle-max-execution-${u.id}`}
-                  >
-                    {u.username} {u.maxExecutionEnabled ? "ON" : "OFF"}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2 lg:gap-4">
               <div className="flex items-center gap-2 lg:gap-4">
                 <h1 className="text-lg lg:text-2xl font-bold">실시간 거래 관리</h1>
@@ -3184,6 +3136,7 @@ export default function Admin() {
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">종목</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">회차</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">회원</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap text-center">맥스</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">방향</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">거래금액</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">배당</th>
@@ -3208,6 +3161,26 @@ export default function Admin() {
                           </span>
                         </td>
                         <td className="px-2 lg:px-3 py-1.5 lg:py-2">{bet.username}</td>
+                        <td className="px-2 lg:px-3 py-1.5 lg:py-2 text-center">
+                          {(() => {
+                            const betUser = users.find(u => u.id === bet.userId);
+                            if (!betUser) return <span className="text-muted-foreground">-</span>;
+                            return (
+                              <button
+                                onClick={() => toggleUserMaxExecution.mutate({ userId: betUser.id, enabled: !betUser.maxExecutionEnabled })}
+                                className={cn(
+                                  "px-1.5 py-0.5 rounded text-[10px] font-bold",
+                                  betUser.maxExecutionEnabled
+                                    ? "bg-red-500/20 text-red-500"
+                                    : "bg-gray-500/20 text-gray-400"
+                                )}
+                                data-testid={`toggle-max-bet-${bet.id}`}
+                              >
+                                {betUser.maxExecutionEnabled ? "ON" : "OFF"}
+                              </button>
+                            );
+                          })()}
+                        </td>
                         <td className="px-2 lg:px-3 py-1.5 lg:py-2">
                           <span className={cn(
                             "inline-flex items-center px-1.5 lg:px-2 py-0.5 rounded text-[10px] lg:text-xs font-medium",
