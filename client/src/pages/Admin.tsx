@@ -140,6 +140,8 @@ interface AdminBet {
   createdAt: string;
   settledAt: string | null;
   roundNumber: number | null;
+  maxExecutionApplied: boolean;
+  originalAmount: string | null;
 }
 
 interface AdminStats {
@@ -909,6 +911,30 @@ export default function Admin() {
     },
     onError: () => {
       toast.error("맥스체결 변경 실패");
+    },
+  });
+
+  const toggleBetMaxExecution = useMutation({
+    mutationFn: async ({ betId, enabled }: { betId: number; enabled: boolean }) => {
+      const res = await fetch(`/api/admin/bets/${betId}/max-execution`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ enabled }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to update");
+      }
+      return res.json();
+    },
+    onSuccess: (_data, variables) => {
+      refetchBets();
+      refetchUsers();
+      toast.success(variables.enabled ? "맥스체결 ON" : "맥스체결 OFF");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "맥스체결 변경 실패");
     },
   });
 
@@ -3162,24 +3188,23 @@ export default function Admin() {
                         </td>
                         <td className="px-2 lg:px-3 py-1.5 lg:py-2">{bet.username}</td>
                         <td className="px-2 lg:px-3 py-1.5 lg:py-2 text-center">
-                          {(() => {
-                            const betUser = users.find(u => u.id === bet.userId);
-                            if (!betUser) return <span className="text-muted-foreground">-</span>;
-                            return (
-                              <button
-                                onClick={() => toggleUserMaxExecution.mutate({ userId: betUser.id, enabled: !betUser.maxExecutionEnabled })}
-                                className={cn(
-                                  "px-2.5 py-1 rounded text-xs font-extrabold tracking-wide border-2 transition-all",
-                                  betUser.maxExecutionEnabled
-                                    ? "bg-red-600 text-white border-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)] animate-pulse"
-                                    : "bg-gray-700 text-gray-300 border-gray-600 hover:border-gray-400"
-                                )}
-                                data-testid={`toggle-max-bet-${bet.id}`}
-                              >
-                                {betUser.maxExecutionEnabled ? "ON" : "OFF"}
-                              </button>
-                            );
-                          })()}
+                          {bet.outcome === 'pending' ? (
+                            <button
+                              onClick={() => toggleBetMaxExecution.mutate({ betId: bet.id, enabled: !bet.maxExecutionApplied })}
+                              disabled={toggleBetMaxExecution.isPending}
+                              className={cn(
+                                "px-2.5 py-1 rounded text-xs font-extrabold tracking-wide border-2 transition-all",
+                                bet.maxExecutionApplied
+                                  ? "bg-red-600 text-white border-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)] animate-pulse"
+                                  : "bg-gray-700 text-gray-300 border-gray-600 hover:border-gray-400"
+                              )}
+                              data-testid={`toggle-max-bet-${bet.id}`}
+                            >
+                              {bet.maxExecutionApplied ? "ON" : "OFF"}
+                            </button>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">-</span>
+                          )}
                         </td>
                         <td className="px-2 lg:px-3 py-1.5 lg:py-2">
                           <span className={cn(

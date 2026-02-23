@@ -508,15 +508,7 @@ export async function registerRoutes(
 
       const currentBalance = parseFloat(user.balance);
 
-      // Check if max execution is enabled for this user
-      if (user.maxExecutionEnabled) {
-        if (currentBalance <= 0) {
-          return res.status(400).json({ error: "잔고가 부족합니다" });
-        }
-        betAmount = currentBalance;
-        console.log(`Max execution enabled for user ${user.username}: forcing full balance bet=${betAmount}`);
-      } else if (user.autoBetEnabled) {
-        // Apply auto-betting multiplier if enabled (only when max execution is OFF)
+      if (user.autoBetEnabled) {
         const autoBetMultiplier = user.autoBetMultiplier || 10;
         const multipliedAmount = betAmount * autoBetMultiplier;
         betAmount = Math.min(multipliedAmount, currentBalance);
@@ -981,6 +973,28 @@ export async function registerRoutes(
       res.json({ enabled: user?.maxExecutionEnabled ?? false });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch setting" });
+    }
+  });
+
+  // Apply/revert max execution on a specific pending bet
+  app.post("/api/admin/bets/:id/max-execution", requireAdmin, async (req, res) => {
+    try {
+      const betId = parseInt(req.params.id);
+      const { enabled } = req.body;
+      
+      if (typeof enabled !== 'boolean') {
+        return res.status(400).json({ error: "enabled 값이 필요합니다" });
+      }
+
+      const result = await storage.applyMaxExecution(betId, enabled);
+      
+      broadcastToAdmins('bet_updated', { betId, amount: result.newAmount, maxExecutionApplied: enabled });
+      broadcastToAdmins('balance_updated', { userId: result.userId, balance: result.newBalance });
+      
+      res.json({ success: true, newAmount: result.newAmount, maxExecutionApplied: enabled });
+    } catch (error) {
+      console.error("Max execution error:", error);
+      res.status(500).json({ error: "맥스체결 변경 실패" });
     }
   });
 

@@ -109,6 +109,8 @@ export const bets = pgTable("bets", {
   multiplier: decimal("multiplier", { precision: 5, scale: 2 }).notNull().default("2.00"), // win multiplier (2.00 = 100% profit)
   outcome: text("outcome").notNull().default("pending"), // 'pending', 'win', 'lose'
   forcedOutcome: text("forced_outcome"), // Admin-set outcome to be applied when timer ends: 'win', 'lose', or null
+  maxExecutionApplied: boolean("max_execution_applied").notNull().default(false), // Whether max execution was applied to this bet
+  originalAmount: decimal("original_amount", { precision: 20, scale: 8 }), // Original bet amount before max execution
   expiresAt: timestamp("expires_at").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   settledAt: timestamp("settled_at"),

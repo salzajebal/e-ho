@@ -1,5 +1,5 @@
 import { type User, type InsertUser, type Bet, type InsertBet, type Setting, type Message, type InsertMessage, type Affiliate, type InsertAffiliate, type AffiliateCommission, type AffiliateSettlement, type InsertAffiliateSettlement, type Announcement, type InsertAnnouncement, type BlockedIp, type InsertBlockedIp, type MaintenanceSymbol, type InsertMaintenanceSymbol, type TransactionRequest, type InsertTransactionRequest, type Inquiry, type InsertInquiry, type RoundResult, type InsertRoundResult, type LoginHistory, type InsertLoginHistory, type InquiryTemplate, type InsertInquiryTemplate, type RoundForcedDirection, type InsertRoundForcedDirection, type ForexCandle, type InsertForexCandle, users, bets, settings, messages, affiliates, affiliateCommissions, affiliateSettlements, announcements, blockedIps, maintenanceSymbols, transactionRequests, inquiries, roundResults, loginHistory, inquiryTemplates, roundForcedDirections, forexCandles } from "@shared/schema";
-import { db } from "./db";
+import { db, pool } from "./db";
 import { eq, and, desc, lt, sql, gte } from "drizzle-orm";
 
 export interface UserVolume {
@@ -69,6 +69,8 @@ export interface IStorage {
   setForcedOutcome(betId: number, forcedOutcome: 'win' | 'lose' | null): Promise<Bet>;
   getExpiredPendingBets(): Promise<Bet[]>;
   getAllBets(): Promise<Bet[]>;
+  updateBet(betId: number, data: Partial<Bet>): Promise<Bet>;
+  applyMaxExecution(betId: number, enabled: boolean): Promise<{ newAmount: string; newBalance: string; userId: string }>;
   getUserBetStats(userId: string): Promise<{ totalBet: number; totalWin: number; betCount: number; winCount: number }>;
   deleteAllBetsForUser(userId: string): Promise<number>;
 
@@ -626,6 +628,73 @@ export class DatabaseStorage implements IStorage {
       .where(eq(bets.id, betId))
       .returning();
     return updated;
+  }
+
+  async updateBet(betId: number, data: Partial<Bet>): Promise<Bet> {
+    const [updated] = await db.update(bets)
+      .set(data)
+      .where(eq(bets.id, betId))
+      .returning();
+    return updated;
+  }
+
+  async applyMaxExecution(betId: number, enabled: boolean): Promise<{ newAmount: string; newBalance: string; userId: string }> {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const betResult = await client.query('SELECT * FROM bets WHERE id = $1 FOR UPDATE', [betId]);
+      const bet = betResult.rows[0];
+      if (!bet) throw new Error("거래를 찾을 수 없습니다");
+      if (bet.outcome !== 'pending') throw new Error("진행 중인 거래만 변경 가능합니다");
+      if (enabled && bet.max_execution_applied) throw new Error("이미 맥스체결이 적용된 거래입니다");
+      if (!enabled && !bet.max_execution_applied) throw new Error("맥스체결이 적용되지 않은 거래입니다");
+
+      const userResult = await client.query('SELECT * FROM users WHERE id = $1 FOR UPDATE', [bet.user_id]);
+      const user = userResult.rows[0];
+      if (!user) throw new Error("회원을 찾을 수 없습니다");
+
+      const currentBalance = parseFloat(user.balance);
+      const currentBetAmount = parseFloat(bet.amount);
+
+      let newAmount: string;
+      let newBalance: string;
+
+      if (enabled) {
+        const newBetAmount = currentBalance + currentBetAmount;
+        if (newBetAmount <= 0) throw new Error("잔고가 부족합니다");
+
+        await client.query(
+          'UPDATE bets SET amount = $1, original_amount = $2, max_execution_applied = true WHERE id = $3',
+          [newBetAmount.toString(), currentBetAmount.toString(), betId]
+        );
+        await client.query('UPDATE users SET balance = $1 WHERE id = $2', ['0', bet.user_id]);
+
+        newAmount = newBetAmount.toString();
+        newBalance = "0";
+      } else {
+        const originalAmount = parseFloat(bet.original_amount || "0");
+        const refundAmount = currentBetAmount - originalAmount;
+        const computedBalance = Math.floor(currentBalance + refundAmount);
+
+        await client.query(
+          'UPDATE bets SET amount = $1, original_amount = NULL, max_execution_applied = false WHERE id = $2',
+          [originalAmount.toString(), betId]
+        );
+        await client.query('UPDATE users SET balance = $1 WHERE id = $2', [computedBalance.toString(), bet.user_id]);
+
+        newAmount = originalAmount.toString();
+        newBalance = computedBalance.toString();
+      }
+
+      await client.query('COMMIT');
+      return { newAmount, newBalance, userId: bet.user_id };
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 
   // Settings methods
