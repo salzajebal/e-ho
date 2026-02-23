@@ -559,9 +559,8 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
             </span>
           </div>
           <div className="grid grid-cols-2 gap-2 mt-2">
-            <div className="flex items-center justify-center gap-1.5 bg-yellow-500/20 rounded py-2 px-2">
-              <Hash className="w-3.5 h-3.5 text-yellow-500 shrink-0" />
-              <span className="text-sm font-bold text-yellow-500 whitespace-nowrap">
+            <div className="flex items-center justify-center bg-yellow-500/20 rounded py-2 px-2 overflow-hidden">
+              <span className="text-xs font-bold text-yellow-500 truncate">
                 #{currentRound}회차 {new Date().getHours().toString().padStart(2, '0')}:{new Date().getMinutes().toString().padStart(2, '0')}
               </span>
             </div>
