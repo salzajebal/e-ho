@@ -25,9 +25,9 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
 const CRYPTO_ASSETS = [
-  { symbol: "USD", name: "유로/달러 (EUR/USD)" },
-  { symbol: "JPY", name: "달러/엔 (USD/JPY)" },
-  { symbol: "EUR", name: "파운드/달러 (GBP/USD)" },
+  { symbol: "USD", name: "달러 (EUR/USD)" },
+  { symbol: "EUR", name: "유로 (GBP/USD)" },
+  { symbol: "JPY", name: "엔화 (USD/JPY)" },
   { symbol: "AUD", name: "호주달러 (AUD/USD)" },
 ];
 
@@ -64,9 +64,9 @@ interface LandingMarketData {
 
 function useLandingMarketData() {
   const [markets, setMarkets] = useState<LandingMarketData[]>([
-    { symbol: "USD", name: "유로/달러 (EUR/USD)", price: 1.0500, changePercent: 0, priceHistory: [] },
-    { symbol: "JPY", name: "달러/엔 (USD/JPY)", price: 150.000, changePercent: 0, priceHistory: [] },
-    { symbol: "EUR", name: "파운드/달러 (GBP/USD)", price: 1.2700, changePercent: 0, priceHistory: [] },
+    { symbol: "USD", name: "달러 (EUR/USD)", price: 1.0500, changePercent: 0, priceHistory: [] },
+    { symbol: "EUR", name: "유로 (GBP/USD)", price: 1.2700, changePercent: 0, priceHistory: [] },
+    { symbol: "JPY", name: "엔화 (USD/JPY)", price: 150.000, changePercent: 0, priceHistory: [] },
     { symbol: "AUD", name: "호주달러 (AUD/USD)", price: 0.6500, changePercent: 0, priceHistory: [] },
   ]);
   
@@ -1166,8 +1166,10 @@ export default function Landing() {
             <div>
               <h4 className="font-semibold mb-4 text-gray-300">통화 거래</h4>
               <ul className="space-y-2 text-gray-500 text-sm">
-                <li><Link href="/trade" className="hover:text-amber-500 transition-colors" data-testid="link-trade-btc">USD/JPY (달러/엔)</Link></li>
-                <li><Link href="/trade" className="hover:text-amber-500 transition-colors" data-testid="link-trade-eth">EUR/USD (유로/달러)</Link></li>
+                <li><Link href="/trade" className="hover:text-amber-500 transition-colors" data-testid="link-trade-usd">USD (달러)</Link></li>
+                <li><Link href="/trade" className="hover:text-amber-500 transition-colors" data-testid="link-trade-eur">EUR (유로)</Link></li>
+                <li><Link href="/trade" className="hover:text-amber-500 transition-colors" data-testid="link-trade-jpy">JPY (엔화)</Link></li>
+                <li><Link href="/trade" className="hover:text-amber-500 transition-colors" data-testid="link-trade-aud">AUD (호주달러)</Link></li>
               </ul>
             </div>
             <div>

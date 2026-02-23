@@ -187,10 +187,10 @@ const KOREAN_BANKS = [
 ];
 
 const SYMBOL_NAMES: Record<string, string> = {
-  'USD': '달러 (USD)',
-  'JPY': '엔화 (JPY)',
-  'EUR': '유로 (EUR)',
-  'AUD': '호주달러 (AUD)',
+  'USD': 'USD (달러)',
+  'EUR': 'EUR (유로)',
+  'JPY': 'JPY (엔화)',
+  'AUD': 'AUD (호주달러)',
 };
 
 const DURATION_NAMES: Record<number, string> = {
@@ -496,7 +496,7 @@ function RoundForcedTab() {
           <div className="space-y-3">
             <label className="text-sm text-muted-foreground font-medium">종목 선택</label>
             <div className="grid grid-cols-2 gap-2">
-              {['USD', 'JPY', 'EUR', 'AUD'].map(sym => (
+              {['USD', 'EUR', 'JPY', 'AUD'].map(sym => (
                 <Button
                   key={sym}
                   type="button"
@@ -507,7 +507,7 @@ function RoundForcedTab() {
                   )}
                   onClick={() => setSelectedSymbol(sym)}
                 >
-                  {sym === 'USD' ? '달러' : sym === 'JPY' ? '엔화' : sym === 'EUR' ? '유로' : '호주달러'}
+                  {sym === 'USD' ? '달러' : sym === 'EUR' ? '유로' : sym === 'JPY' ? '엔화' : '호주달러'}
                 </Button>
               ))}
             </div>
@@ -1298,7 +1298,7 @@ export default function Admin() {
   });
 
   // Available symbols for maintenance
-  const availableSymbols = ["USD", "JPY", "EUR", "AUD"];
+  const availableSymbols = ["USD", "EUR", "JPY", "AUD"];
 
   // Notification for new pending users (가입)
   useEffect(() => {
@@ -4067,7 +4067,7 @@ export default function Admin() {
                 <div className="space-y-2">
                   <label className="text-sm text-muted-foreground">종목 *</label>
                   <div className="grid grid-cols-2 gap-2">
-                    {[{s:'USD',l:'달러'},{s:'JPY',l:'엔화'},{s:'EUR',l:'유로'},{s:'AUD',l:'호주달러'}].map(({s,l}) => (
+                    {[{s:'USD',l:'달러'},{s:'EUR',l:'유로'},{s:'JPY',l:'엔화'},{s:'AUD',l:'호주달러'}].map(({s,l}) => (
                       <Button
                         key={s}
                         type="button"
