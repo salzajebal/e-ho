@@ -77,7 +77,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, BookOpen } from "lucide-react";
+import { Menu, BookOpen, Building2 } from "lucide-react";
 
 interface Message {
   id: number;
@@ -98,6 +98,7 @@ interface AdminUser {
   phone: string | null;
   residentNumber: string | null;
   region: string | null;
+  branchCode: string | null;
   bankName: string | null;
   accountHolder: string | null;
   accountNumber: string | null;
@@ -743,7 +744,7 @@ export default function Admin() {
     };
   }, []);
 
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'bets' | 'settings' | 'approvals' | 'messages' | 'affiliates' | 'announcements' | 'blocked-ips' | 'maintenance' | 'forced-bet' | 'round-forced' | 'deposits' | 'withdrawals' | 'inquiries'>('users');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'bets' | 'settings' | 'approvals' | 'messages' | 'affiliates' | 'announcements' | 'blocked-ips' | 'maintenance' | 'forced-bet' | 'round-forced' | 'deposits' | 'withdrawals' | 'inquiries' | 'branches'>('users');
   const [inquiryReplyId, setInquiryReplyId] = useState<number | null>(null);
   const [inquiryReplyContent, setInquiryReplyContent] = useState("");
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
@@ -1371,6 +1372,79 @@ export default function Admin() {
 
   // Available symbols for maintenance
   const availableSymbols = ["USD", "EUR", "JPY", "AUD"];
+
+  // Branch management (지점코드 관리)
+  const [newBranch, setNewBranch] = useState({ code: "", name: "" });
+  const [editingBranch, setEditingBranch] = useState<{ id: number; code: string; name: string; isActive: boolean } | null>(null);
+  const { data: branchesList = [] } = useQuery<{ id: number; code: string; name: string; isActive: boolean; createdAt: string }[]>({
+    queryKey: ["/api/admin/branches"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/branches");
+      if (!res.ok) throw new Error("Failed to fetch branches");
+      return res.json();
+    },
+    enabled: auth?.role === 'admin',
+  });
+
+  const createBranch = useMutation({
+    mutationFn: async (data: { code: string; name: string }) => {
+      const res = await fetch("/api/admin/branches", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to create branch");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/branches"] });
+      setNewBranch({ code: "", name: "" });
+      toast.success("지점코드가 생성되었습니다");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const updateBranch = useMutation({
+    mutationFn: async ({ id, ...data }: { id: number; code?: string; name?: string; isActive?: boolean }) => {
+      const res = await fetch(`/api/admin/branches/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to update branch");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/branches"] });
+      setEditingBranch(null);
+      toast.success("지점코드가 수정되었습니다");
+    },
+    onError: () => {
+      toast.error("지점코드 수정에 실패했습니다");
+    },
+  });
+
+  const deleteBranch = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/admin/branches/${id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to delete branch");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/branches"] });
+      toast.success("지점코드가 삭제되었습니다");
+    },
+    onError: () => {
+      toast.error("지점코드 삭제에 실패했습니다");
+    },
+  });
 
   // Notification for new pending users (가입)
   useEffect(() => {
@@ -2294,6 +2368,18 @@ export default function Admin() {
       >
         <Wrench className="w-4 h-4" />
         서버 점검
+      </button>
+      <button
+        onClick={() => { setActiveTab('branches'); setMobileMenuOpen(false); }}
+        className={cn(
+          "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+          activeTab === 'branches'
+            ? "bg-primary/10 text-primary"
+            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+        )}
+      >
+        <Building2 className="w-4 h-4" />
+        지점코드 관리
       </button>
       <button
         onClick={() => { setActiveTab('settings'); setMobileMenuOpen(false); }}
@@ -3417,6 +3503,179 @@ export default function Admin() {
                   </tbody>
                 </table>
               </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'branches' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold" data-testid="text-branches-title">지점코드 관리</h1>
+            </div>
+
+            <div className="bg-card border border-border rounded-lg p-6">
+              <h2 className="text-lg font-semibold mb-4">새 지점코드 추가</h2>
+              <div className="flex gap-3 items-end">
+                <div className="space-y-1 flex-1">
+                  <label className="text-xs text-muted-foreground">지점코드</label>
+                  <Input
+                    value={newBranch.code}
+                    onChange={(e) => setNewBranch(prev => ({ ...prev, code: e.target.value }))}
+                    placeholder="예: BR001"
+                    data-testid="input-branch-code"
+                  />
+                </div>
+                <div className="space-y-1 flex-1">
+                  <label className="text-xs text-muted-foreground">지점명</label>
+                  <Input
+                    value={newBranch.name}
+                    onChange={(e) => setNewBranch(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="예: 서울지점"
+                    data-testid="input-branch-name"
+                  />
+                </div>
+                <Button
+                  onClick={() => {
+                    if (!newBranch.code || !newBranch.name) {
+                      toast.error("지점코드와 지점명을 모두 입력해주세요");
+                      return;
+                    }
+                    createBranch.mutate(newBranch);
+                  }}
+                  disabled={createBranch.isPending}
+                  data-testid="button-create-branch"
+                >
+                  {createBranch.isPending ? "생성 중..." : "추가"}
+                </Button>
+              </div>
+            </div>
+
+            <div className="bg-card border border-border rounded-lg overflow-hidden">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-border bg-muted/30">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">지점코드</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">지점명</th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-muted-foreground">상태</th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-muted-foreground">생성일</th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-muted-foreground">관리</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {branchesList.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
+                        등록된 지점코드가 없습니다
+                      </td>
+                    </tr>
+                  ) : (
+                    branchesList.map((branch) => (
+                      <tr key={branch.id} className="border-b border-border hover:bg-muted/20" data-testid={`row-branch-${branch.id}`}>
+                        <td className="px-4 py-3">
+                          {editingBranch?.id === branch.id ? (
+                            <Input
+                              value={editingBranch.code}
+                              onChange={(e) => setEditingBranch(prev => prev ? { ...prev, code: e.target.value } : null)}
+                              className="h-8 w-32"
+                            />
+                          ) : (
+                            <span className="font-mono font-semibold text-amber-500">{branch.code}</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {editingBranch?.id === branch.id ? (
+                            <Input
+                              value={editingBranch.name}
+                              onChange={(e) => setEditingBranch(prev => prev ? { ...prev, name: e.target.value } : null)}
+                              className="h-8 w-40"
+                            />
+                          ) : (
+                            <span>{branch.name}</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          {editingBranch?.id === branch.id ? (
+                            <Button
+                              size="sm"
+                              variant={editingBranch.isActive ? "default" : "outline"}
+                              onClick={() => setEditingBranch(prev => prev ? { ...prev, isActive: !prev.isActive } : null)}
+                              className="h-7 text-xs"
+                            >
+                              {editingBranch.isActive ? "활성" : "비활성"}
+                            </Button>
+                          ) : (
+                            <span className={cn(
+                              "px-2 py-0.5 rounded-full text-xs font-medium",
+                              branch.isActive ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
+                            )}>
+                              {branch.isActive ? "활성" : "비활성"}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-center text-xs text-muted-foreground">
+                          {new Date(branch.createdAt).toLocaleDateString('ko-KR')}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          {editingBranch?.id === branch.id ? (
+                            <div className="flex gap-1 justify-center">
+                              <Button
+                                size="sm"
+                                className="h-7 text-xs"
+                                onClick={() => updateBranch.mutate({
+                                  id: editingBranch.id,
+                                  code: editingBranch.code,
+                                  name: editingBranch.name,
+                                  isActive: editingBranch.isActive,
+                                })}
+                                disabled={updateBranch.isPending}
+                              >
+                                저장
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 text-xs"
+                                onClick={() => setEditingBranch(null)}
+                              >
+                                취소
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="flex gap-1 justify-center">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 text-xs"
+                                onClick={() => setEditingBranch({
+                                  id: branch.id,
+                                  code: branch.code,
+                                  name: branch.name,
+                                  isActive: branch.isActive,
+                                })}
+                              >
+                                수정
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                className="h-7 text-xs"
+                                onClick={() => {
+                                  if (confirm("이 지점코드를 삭제하시겠습니까?")) {
+                                    deleteBranch.mutate(branch.id);
+                                  }
+                                }}
+                                disabled={deleteBranch.isPending}
+                              >
+                                삭제
+                              </Button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
@@ -4812,6 +5071,12 @@ export default function Admin() {
                     <label className="text-xs text-muted-foreground">주민번호</label>
                     <div className="p-2 bg-background/50 rounded-md border border-border">
                       <span className="font-mono text-sm">{editingUser.residentNumber || '-'}</span>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground">지점코드</label>
+                    <div className="p-2 bg-background/50 rounded-md border border-border">
+                      <span className="font-mono text-sm text-amber-500">{editingUser.branchCode || '-'}</span>
                     </div>
                   </div>
                 </div>

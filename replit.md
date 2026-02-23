@@ -57,12 +57,13 @@ Preferred communication style: Simple, everyday language.
 ### Database
 - **PostgreSQL** via `DATABASE_URL` environment variable
 - **ORM**: Drizzle ORM with drizzle-kit for migrations
-- **Schema**: Users, Bets, Messages, Affiliates, AffiliateCommissions, Settings, Announcements tables
+- **Schema**: Users, Bets, Messages, Affiliates, AffiliateCommissions, Settings, Announcements, Branches tables
 
 ### Key Features
 - **Announcements**: Admin-managed public announcements with pinned/active status, displayed on landing page
 - **Messages**: Private admin-to-user messaging system displayed on landing page for logged-in users
 - **Affiliates**: Complete affiliate/distributor system with referral codes, commission tracking, and analytics
+- **Branches**: Branch code (지점코드) system - admin creates branch codes, users must enter valid branch code during registration
 
 ### Third-Party APIs
 - **Finnhub Forex WebSocket**: Live forex price data for EUR/USD, USD/JPY, GBP/USD, AUD/USD

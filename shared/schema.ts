@@ -3,6 +3,23 @@ import { pgTable, text, varchar, serial, integer, decimal, timestamp, boolean } 
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Branches (지점코드) table
+export const branches = pgTable("branches", {
+  id: serial("id").primaryKey(),
+  code: text("code").notNull().unique(),
+  name: text("name").notNull(),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertBranchSchema = createInsertSchema(branches).pick({
+  code: true,
+  name: true,
+});
+
+export type InsertBranch = z.infer<typeof insertBranchSchema>;
+export type Branch = typeof branches.$inferSelect;
+
 // Affiliates (총판) table
 export const affiliates = pgTable("affiliates", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -49,6 +66,7 @@ export const users = pgTable("users", {
   totalBet: decimal("total_bet", { precision: 20, scale: 0 }).notNull().default("0"),
   totalWin: decimal("total_win", { precision: 20, scale: 0 }).notNull().default("0"),
   role: text("role").notNull().default("user"), // 'user', 'admin', or 'affiliate'
+  branchCode: text("branch_code"), // 지점코드
   affiliateId: varchar("affiliate_id"), // Reference to affiliate who referred this user
   isActive: boolean("is_active").notNull().default(true),
   approvalStatus: text("approval_status").notNull().default("pending"), // 'pending', 'approved', 'rejected'
@@ -70,6 +88,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   phone: true,
   birthDate: true,
   region: true,
+  branchCode: true,
   bankName: true,
   accountHolder: true,
   accountNumber: true,

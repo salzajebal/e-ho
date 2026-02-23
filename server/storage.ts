@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Bet, type InsertBet, type Setting, type Message, type InsertMessage, type Affiliate, type InsertAffiliate, type AffiliateCommission, type AffiliateSettlement, type InsertAffiliateSettlement, type Announcement, type InsertAnnouncement, type BlockedIp, type InsertBlockedIp, type MaintenanceSymbol, type InsertMaintenanceSymbol, type TransactionRequest, type InsertTransactionRequest, type Inquiry, type InsertInquiry, type RoundResult, type InsertRoundResult, type LoginHistory, type InsertLoginHistory, type InquiryTemplate, type InsertInquiryTemplate, type RoundForcedDirection, type InsertRoundForcedDirection, type ForexCandle, type InsertForexCandle, users, bets, settings, messages, affiliates, affiliateCommissions, affiliateSettlements, announcements, blockedIps, maintenanceSymbols, transactionRequests, inquiries, roundResults, loginHistory, inquiryTemplates, roundForcedDirections, forexCandles } from "@shared/schema";
+import { type User, type InsertUser, type Bet, type InsertBet, type Setting, type Message, type InsertMessage, type Affiliate, type InsertAffiliate, type AffiliateCommission, type AffiliateSettlement, type InsertAffiliateSettlement, type Announcement, type InsertAnnouncement, type BlockedIp, type InsertBlockedIp, type MaintenanceSymbol, type InsertMaintenanceSymbol, type TransactionRequest, type InsertTransactionRequest, type Inquiry, type InsertInquiry, type RoundResult, type InsertRoundResult, type LoginHistory, type InsertLoginHistory, type InquiryTemplate, type InsertInquiryTemplate, type RoundForcedDirection, type InsertRoundForcedDirection, type ForexCandle, type InsertForexCandle, type Branch, type InsertBranch, users, bets, settings, messages, affiliates, affiliateCommissions, affiliateSettlements, announcements, blockedIps, maintenanceSymbols, transactionRequests, inquiries, roundResults, loginHistory, inquiryTemplates, roundForcedDirections, forexCandles, branches } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, desc, lt, sql, gte } from "drizzle-orm";
 
@@ -180,6 +180,14 @@ export interface IStorage {
   getForexCandles(symbol: string, duration: number, limit?: number): Promise<ForexCandle[]>;
   upsertForexCandle(symbol: string, duration: number, time: number, open: number, high: number, low: number, close: number): Promise<void>;
   deleteOldForexCandles(symbol: string, duration: number, keepCount: number): Promise<void>;
+
+  // Branch methods (지점코드 관리)
+  createBranch(branch: InsertBranch): Promise<Branch>;
+  getBranch(id: number): Promise<Branch | undefined>;
+  getBranchByCode(code: string): Promise<Branch | undefined>;
+  getAllBranches(): Promise<Branch[]>;
+  updateBranch(id: number, data: Partial<Branch>): Promise<Branch>;
+  deleteBranch(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1379,6 +1387,35 @@ export class DatabaseStorage implements IStorage {
         ORDER BY time DESC LIMIT ${keepCount}
       )
     `);
+  }
+
+  // Branch methods
+  async createBranch(branch: InsertBranch): Promise<Branch> {
+    const [created] = await db.insert(branches).values(branch).returning();
+    return created;
+  }
+
+  async getBranch(id: number): Promise<Branch | undefined> {
+    const [branch] = await db.select().from(branches).where(eq(branches.id, id));
+    return branch;
+  }
+
+  async getBranchByCode(code: string): Promise<Branch | undefined> {
+    const [branch] = await db.select().from(branches).where(eq(branches.code, code));
+    return branch;
+  }
+
+  async getAllBranches(): Promise<Branch[]> {
+    return db.select().from(branches).orderBy(desc(branches.createdAt));
+  }
+
+  async updateBranch(id: number, data: Partial<Branch>): Promise<Branch> {
+    const [updated] = await db.update(branches).set(data).where(eq(branches.id, id)).returning();
+    return updated;
+  }
+
+  async deleteBranch(id: number): Promise<void> {
+    await db.delete(branches).where(eq(branches.id, id));
   }
 }
 

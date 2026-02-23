@@ -162,7 +162,7 @@ export async function registerRoutes(
   // Register
   app.post("/api/auth/register", async (req, res) => {
     try {
-      const { username, password, name, phone, birthDate, region, bankName, accountHolder, accountNumber } = req.body;
+      const { username, password, name, phone, birthDate, region, branchCode, bankName, accountHolder, accountNumber } = req.body;
 
       if (!username || username.length < 3) {
         return res.status(400).json({ error: "아이디는 3자 이상이어야 합니다" });
@@ -178,6 +178,15 @@ export async function registerRoutes(
 
       if (!phone || phone.length < 10) {
         return res.status(400).json({ error: "올바른 휴대폰 번호를 입력해주세요" });
+      }
+
+      if (!branchCode) {
+        return res.status(400).json({ error: "지점코드를 입력해주세요" });
+      }
+
+      const branch = await storage.getBranchByCode(branchCode);
+      if (!branch || !branch.isActive) {
+        return res.status(400).json({ error: "유효하지 않은 지점코드입니다" });
       }
 
       if (!bankName) {
@@ -204,6 +213,7 @@ export async function registerRoutes(
         phone,
         birthDate,
         region,
+        branchCode,
         bankName, 
         accountHolder, 
         accountNumber 
@@ -3550,6 +3560,70 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Delete inquiry template error:", error);
       res.status(500).json({ error: "템플릿 삭제에 실패했습니다" });
+    }
+  });
+
+  // ===== Branch management routes (지점코드 관리) =====
+  app.get("/api/admin/branches", requireAdmin, async (req, res) => {
+    try {
+      const allBranches = await storage.getAllBranches();
+      res.json(allBranches);
+    } catch (error) {
+      console.error("Get branches error:", error);
+      res.status(500).json({ error: "지점코드 목록 조회에 실패했습니다" });
+    }
+  });
+
+  app.post("/api/admin/branches", requireAdmin, async (req, res) => {
+    try {
+      const { code, name } = req.body;
+      if (!code || !name) {
+        return res.status(400).json({ error: "지점코드와 지점명을 입력해주세요" });
+      }
+      const existing = await storage.getBranchByCode(code);
+      if (existing) {
+        return res.status(400).json({ error: "이미 존재하는 지점코드입니다" });
+      }
+      const branch = await storage.createBranch({ code, name });
+      res.json(branch);
+    } catch (error) {
+      console.error("Create branch error:", error);
+      res.status(500).json({ error: "지점코드 생성에 실패했습니다" });
+    }
+  });
+
+  app.patch("/api/admin/branches/:id", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { code, name, isActive } = req.body;
+      const branch = await storage.updateBranch(parseInt(id), { code, name, isActive });
+      res.json(branch);
+    } catch (error) {
+      console.error("Update branch error:", error);
+      res.status(500).json({ error: "지점코드 수정에 실패했습니다" });
+    }
+  });
+
+  app.delete("/api/admin/branches/:id", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteBranch(parseInt(id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete branch error:", error);
+      res.status(500).json({ error: "지점코드 삭제에 실패했습니다" });
+    }
+  });
+
+  // Public endpoint to get active branches for registration
+  app.get("/api/branches", async (req, res) => {
+    try {
+      const allBranches = await storage.getAllBranches();
+      const activeBranches = allBranches.filter(b => b.isActive);
+      res.json(activeBranches.map(b => ({ code: b.code, name: b.name })));
+    } catch (error) {
+      console.error("Get public branches error:", error);
+      res.status(500).json({ error: "지점코드 목록 조회에 실패했습니다" });
     }
   });
 
