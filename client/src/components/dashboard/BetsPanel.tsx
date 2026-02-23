@@ -103,8 +103,6 @@ function BetRow({ bet, currentPrice, onExpire }: { bet: Bet; currentPrice: numbe
             )}
           </div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span>{formatForexPrice(parseFloat(bet.strikePrice), bet.symbol)} → {formatForexPrice(parseFloat(bet.closePrice || '0'), bet.symbol)}</span>
-            <span className="text-muted-foreground/70">|</span>
             <span className="font-mono">{formattedDate}</span>
           </div>
         </div>
@@ -241,13 +239,6 @@ export function BetsPanel({ bets, currentPrices, onBetExpire }: BetsPanelProps) 
             </span>
           </div>
         )}
-        {activeTab !== 'today' && settledBets.length > 0 && (
-          <div className="ml-auto flex items-center gap-2 text-xs">
-            <span className="text-up font-medium">{totalWins}승</span>
-            <span className="text-muted-foreground">/</span>
-            <span className="text-down font-medium">{totalLosses}패</span>
-          </div>
-        )}
       </div>
 
       <div className="flex-1 overflow-auto">
@@ -283,14 +274,6 @@ export function BetsPanel({ bets, currentPrices, onBetExpire }: BetsPanelProps) 
                   <div>
                     <div className="text-muted-foreground">총 거래</div>
                     <div className="font-bold text-foreground">{todayBets.length}건</div>
-                  </div>
-                  <div>
-                    <div className="text-muted-foreground">승/패</div>
-                    <div className="font-bold">
-                      <span className="text-up">{todayWins}</span>
-                      <span className="text-muted-foreground"> / </span>
-                      <span className="text-down">{todayLosses}</span>
-                    </div>
                   </div>
                   <div>
                     <div className="text-muted-foreground">손익</div>
