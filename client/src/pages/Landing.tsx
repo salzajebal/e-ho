@@ -413,7 +413,6 @@ export default function Landing() {
                   <span className="text-lg md:text-xl font-bold tracking-wide text-amber-500">
                     VALUE-OPTION
                   </span>
-                  <span className="hidden sm:block text-[10px] text-gray-400 tracking-widest uppercase">FX Trading</span>
                 </div>
               </div>
             </Link>
