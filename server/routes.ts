@@ -1323,7 +1323,7 @@ export async function registerRoutes(
         return res.status(400).json({ error: "수신자, 제목, 내용을 모두 입력해주세요" });
       }
 
-      const senderId = req.session.userId!;
+      const senderId = req.session.adminUserId!;
       const message = await storage.createMessage({
         senderId,
         receiverId,
@@ -1332,6 +1332,7 @@ export async function registerRoutes(
       });
 
       // Broadcast to user in real-time
+      console.log(`📩 [Message] 쪽지 전송: sender=${senderId}, receiver=${receiverId}, title="${title}"`);
       broadcastToUser(receiverId, 'message:new', {
         id: message.id,
         title: message.title,
