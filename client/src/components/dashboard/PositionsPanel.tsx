@@ -49,7 +49,6 @@ export function PositionsPanel({ positions, onClosePosition }: PositionsPanelPro
               <tr>
                 <th className="px-4 py-2">종목</th>
                 <th className="px-2 py-2">사이즈</th>
-                <th className="px-2 py-2">진입가</th>
                 <th className="px-2 py-2">현재가</th>
                 <th className="px-2 py-2">청산가</th>
                 <th className="px-2 py-2">증거금 비율</th>

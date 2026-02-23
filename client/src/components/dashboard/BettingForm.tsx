@@ -740,10 +740,6 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
                 <span className="text-muted-foreground">회차</span>
                 <span className="text-primary font-bold">{betConfirmation.round}회차</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">진입가</span>
-                <span className="text-foreground font-mono">{formatForexPrice(betConfirmation.price, game.symbol)}</span>
-              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3 pt-2">
