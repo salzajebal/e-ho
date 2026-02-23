@@ -24,7 +24,7 @@ async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     if (res.status === 401) {
       const currentPath = window.location.pathname;
-      if (currentPath !== "/login" && currentPath !== "/register" && currentPath !== "/") {
+      if (currentPath !== "/login" && currentPath !== "/register" && currentPath !== "/" && currentPath !== "/admin") {
         handleSessionExpired();
       }
     }
@@ -64,7 +64,7 @@ export const getQueryFn: <T>(options: {
         return null;
       }
       const currentPath = window.location.pathname;
-      if (currentPath !== "/login" && currentPath !== "/register" && currentPath !== "/") {
+      if (currentPath !== "/login" && currentPath !== "/register" && currentPath !== "/" && currentPath !== "/admin") {
         handleSessionExpired();
       }
     }

@@ -694,17 +694,15 @@ export default function Admin() {
     refetchInterval: 10000, // Check session every 10 seconds (faster detection)
   });
 
-  // Detect session expiration - immediately redirect to login
+  // Detect session expiration - show dialog and reset to login view
   useEffect(() => {
     if (!authLoading) {
       if (auth) {
         wasLoggedInRef.current = true;
+        setSessionExpiredDialogOpen(false);
       } else if (wasLoggedInRef.current && !auth) {
-        // Was logged in, now logged out = session expired
         wasLoggedInRef.current = false;
-        // Show alert and redirect to login
-        alert("세션이 만료되었습니다. 다시 로그인해 주세요.");
-        window.location.href = "/admin";
+        setSessionExpiredDialogOpen(true);
       }
     }
   }, [auth, authLoading]);
@@ -1083,8 +1081,7 @@ export default function Admin() {
           console.log('Admin WebSocket authenticated via session');
         } else if (msg.event === 'force_logout') {
           console.log('Admin force logout received');
-          alert("세션이 만료되었습니다. 다시 로그인해 주세요.");
-          window.location.href = "/admin";
+          queryClient.setQueryData(["/api/admin/auth/me"], null);
         } else if (msg.event === 'bet_placed' || msg.event === 'bet_updated' || msg.event === 'bet_settled') {
           refetchBets();
           if (msg.event === 'bet_placed') {
@@ -1118,14 +1115,9 @@ export default function Admin() {
 
     ws.onclose = (event) => {
       setWsConnected(false);
-      if (event.code === 4001) {
+      if (event.code === 4001 || event.code === 4003) {
         console.log('Admin WebSocket: Session invalid or expired');
-        alert("세션이 만료되었습니다. 다시 로그인해 주세요.");
-        window.location.href = "/admin";
-      } else if (event.code === 4003) {
-        console.log('Admin WebSocket: Admin access required');
-        alert("세션이 만료되었습니다. 다시 로그인해 주세요.");
-        window.location.href = "/admin";
+        queryClient.setQueryData(["/api/admin/auth/me"], null);
       } else {
         console.log('Admin WebSocket disconnected');
       }
@@ -1963,7 +1955,33 @@ export default function Admin() {
 
   // Show admin login if not logged in or not admin
   if (!auth || auth.role !== 'admin') {
-    return <AdminLogin />;
+    return (
+      <>
+        <AdminLogin />
+        <AlertDialog open={sessionExpiredDialogOpen} onOpenChange={() => {}}>
+          <AlertDialogContent className="bg-card border-border">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-foreground">
+                세션 만료
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-muted-foreground">
+                로그인 세션이 만료되었습니다. 다시 로그인해 주세요.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogAction
+                onClick={() => {
+                  setSessionExpiredDialogOpen(false);
+                }}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                확인
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </>
+    );
   }
 
   const toggleFreeze = (user: AdminUser) => {
@@ -5770,11 +5788,11 @@ export default function Admin() {
             <AlertDialogAction
               onClick={() => {
                 setSessionExpiredDialogOpen(false);
-                // 어드민 로그아웃 API 호출 후 로그인 페이지로 이동
-                fetch("/api/admin/auth/logout", { method: "POST", credentials: "include" })
-                  .finally(() => {
-                    window.location.href = "/admin";
-                  });
+                queryClient.setQueryData(["/api/admin/auth/me"], null);
+                queryClient.removeQueries({ predicate: (query) => {
+                  const key = query.queryKey[0] as string;
+                  return typeof key === 'string' && key.startsWith('/api/admin/') && key !== '/api/admin/auth/me';
+                }});
               }}
               className="bg-blue-600 hover:bg-blue-700"
             >
