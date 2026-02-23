@@ -562,7 +562,7 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
             <div className="flex items-center justify-center gap-1.5 bg-yellow-500/20 rounded py-2 px-2">
               <Hash className="w-3.5 h-3.5 text-yellow-500 shrink-0" />
               <span className="text-sm font-bold text-yellow-500 whitespace-nowrap">
-                {currentRound}회차
+                #{currentRound}회차 {new Date().getHours().toString().padStart(2, '0')}:{new Date().getMinutes().toString().padStart(2, '0')}
               </span>
             </div>
             <div className={cn(
@@ -753,7 +753,7 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">회차</span>
-                <span className="text-primary font-bold">{betConfirmation.round}회차</span>
+                <span className="text-primary font-bold">#{betConfirmation.round}회차 {new Date().getHours().toString().padStart(2, '0')}:{new Date().getMinutes().toString().padStart(2, '0')}</span>
               </div>
             </div>
 
