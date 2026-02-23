@@ -5169,6 +5169,41 @@ export default function Admin() {
                 </div>
               </div>
               <div className="border-t border-border pt-4">
+                <div className="flex items-center justify-between p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                  <div>
+                    <p className="text-sm font-medium">맥스체결</p>
+                    <p className="text-xs text-muted-foreground">활성화 시 해당 회원의 거래가 보유머니 전액으로 체결됩니다</p>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const res = await fetch(`/api/admin/users/${editingUser.id}/max-execution`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ enabled: !editingUser.maxExecutionEnabled }),
+                        });
+                        if (!res.ok) throw new Error("맥스체결 변경 실패");
+                        setEditingUser(p => p ? { ...p, maxExecutionEnabled: !p.maxExecutionEnabled } : null);
+                        toast.success(editingUser.maxExecutionEnabled ? "맥스체결 OFF" : "맥스체결 ON");
+                        refetchUsers();
+                      } catch (error: any) {
+                        toast.error(error.message || "맥스체결 변경 실패");
+                      }
+                    }}
+                    className={cn(
+                      "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
+                      editingUser.maxExecutionEnabled ? "bg-amber-500" : "bg-gray-600"
+                    )}
+                    data-testid="toggle-max-execution"
+                  >
+                    <span className={cn(
+                      "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
+                      editingUser.maxExecutionEnabled ? "translate-x-6" : "translate-x-1"
+                    )} />
+                  </button>
+                </div>
+              </div>
+              <div className="border-t border-border pt-4">
                 <p className="text-sm font-medium mb-3">금액 정보</p>
                 <div className="space-y-3">
                   <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg">
