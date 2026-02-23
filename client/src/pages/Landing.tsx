@@ -47,8 +47,11 @@ const KOREAN_REGIONS = [
 ];
 
 function isWithinOperatingHours(): boolean {
-  // 입출금 시간 제한 해제 - 24시간 이용 가능
-  return true;
+  const now = new Date();
+  const kstOffset = 9 * 60 * 60 * 1000;
+  const kstTime = new Date(now.getTime() + now.getTimezoneOffset() * 60 * 1000 + kstOffset);
+  const hour = kstTime.getHours();
+  return hour >= 10 && hour < 19;
 }
 
 interface LandingMarketData {
@@ -460,7 +463,7 @@ export default function Landing() {
                     return;
                   }
                   if (!isWithinOperatingHours()) {
-                    toast.error("입출금 신청은 오전 9시~오후 6시 사이에만 가능합니다");
+                    toast.error("입출금 신청은 오전 10시~오후 7시 사이에만 가능합니다");
                     return;
                   }
                   setShowDepositModal(true);
@@ -509,7 +512,7 @@ export default function Landing() {
                     data-testid="button-header-deposit"
                     onClick={() => { 
                       if (!isWithinOperatingHours()) {
-                        toast.error("입출금 신청은 오전 9시~오후 6시 사이에만 가능합니다");
+                        toast.error("입출금 신청은 오전 10시~오후 7시 사이에만 가능합니다");
                         return;
                       }
                       setTransactionType('deposit'); setShowDepositModal(true); 
@@ -524,7 +527,7 @@ export default function Landing() {
                     data-testid="button-header-withdraw"
                     onClick={() => { 
                       if (!isWithinOperatingHours()) {
-                        toast.error("입출금 신청은 오전 9시~오후 6시 사이에만 가능합니다");
+                        toast.error("입출금 신청은 오전 10시~오후 7시 사이에만 가능합니다");
                         return;
                       }
                       setTransactionType('withdrawal'); setShowDepositModal(true); 
@@ -642,7 +645,7 @@ export default function Landing() {
                       return;
                     }
                     if (!isWithinOperatingHours()) {
-                      toast.error("입출금 신청은 오전 9시~오후 6시 사이에만 가능합니다");
+                      toast.error("입출금 신청은 오전 10시~오후 7시 사이에만 가능합니다");
                       setMobileMenuOpen(false);
                       return;
                     }
@@ -1172,12 +1175,12 @@ export default function Landing() {
               <ul className="space-y-2 text-gray-500 text-sm">
                 <li><button onClick={() => { 
                   if (!user) { setShowLoginModal(true); return; }
-                  if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 9시~오후 6시 사이에만 가능합니다"); return; }
+                  if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 10시~오후 7시 사이에만 가능합니다"); return; }
                   setTransactionType('deposit'); setShowDepositModal(true); 
                 }} className="hover:text-amber-500 transition-colors" data-testid="link-deposit">입금신청</button></li>
                 <li><button onClick={() => { 
                   if (!user) { setShowLoginModal(true); return; }
-                  if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 9시~오후 6시 사이에만 가능합니다"); return; }
+                  if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 10시~오후 7시 사이에만 가능합니다"); return; }
                   setTransactionType('withdrawal'); setShowDepositModal(true); 
                 }} className="hover:text-amber-500 transition-colors" data-testid="link-withdraw">출금신청</button></li>
                 <li><button onClick={() => { if (user) { setShowHistoryModal(true); } else { setShowLoginModal(true); } }} className="hover:text-amber-500 transition-colors" data-testid="link-transaction-history">입출금내역</button></li>
