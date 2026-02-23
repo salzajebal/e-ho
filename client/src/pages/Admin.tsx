@@ -1116,9 +1116,12 @@ export default function Admin() {
           queryClient.setQueryData(["/api/admin/auth/me"], null);
         } else if (msg.event === 'bet_placed' || msg.event === 'bet_updated' || msg.event === 'bet_settled') {
           refetchBets();
+          refetchUsers();
           if (msg.event === 'bet_placed') {
             toast.info(`새 거래: ${msg.data.user?.username || 'Unknown'} - ${formatMoney(msg.data.bet.amount)}`);
           }
+        } else if (msg.event === 'balance_updated') {
+          refetchUsers();
         } else if (msg.event === 'transaction_request') {
           refetchTransactions();
           refetchUsers();

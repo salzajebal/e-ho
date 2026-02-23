@@ -1026,6 +1026,8 @@ export async function registerRoutes(
 
       await storage.updateUserBalance(id, String(newBalance));
 
+      broadcastToAdmins('balance_updated', { userId: id, balance: String(newBalance) });
+
       const updatedUser = await storage.getUser(id);
       res.json({ 
         success: true, 
@@ -1263,6 +1265,7 @@ export async function registerRoutes(
             const currentBalance = parseFloat(user.balance);
             const newBalance = Math.max(0, currentBalance + balanceChange).toString();
             await storage.updateUserBalance(bet.userId, newBalance);
+            broadcastToAdmins('balance_updated', { userId: bet.userId, balance: newBalance });
             console.log(`✅ [Admin Update Bet] Bet #${betId} 결과변경: 잔고 ${balanceChange > 0 ? '+' : ''}${balanceChange.toLocaleString()}원`);
           }
         }
@@ -2914,6 +2917,8 @@ export async function registerRoutes(
             closePrice: closePrice.toString(),
             payout: payout.toString(),
           });
+
+          broadcastToAdmins('balance_updated', { userId: bet.userId, balance: settleResult.newBalance });
           
           // Broadcast to user
           broadcastToUser(bet.userId, 'bet_settled', {
@@ -3339,10 +3344,12 @@ export async function registerRoutes(
         }
 
         // Notify user via WebSocket
+        const updatedUser = await storage.getUser(user.id);
         broadcastToUser(user.id, 'transaction_processed', {
           ...updated,
-          newBalance: (await storage.getUser(user.id))?.balance,
+          newBalance: updatedUser?.balance,
         });
+        broadcastToAdmins('balance_updated', { userId: user.id, balance: updatedUser?.balance });
       }
 
       // Send message to user if requested
