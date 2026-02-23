@@ -612,24 +612,14 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
           <div className="flex gap-2">
             <Button 
               onClick={() => handleMaxBetClick('long')}
-              className={cn(
-                "h-9 lg:h-10 text-xs lg:text-sm font-bold text-white flex items-center justify-center gap-1 flex-1",
-                (!maxExecutionData?.enabled || isBettingLocked)
-                  ? "bg-gray-500 hover:bg-gray-500 opacity-50" 
-                  : "bg-up/80 hover:bg-up/70"
-              )}
+              className="h-9 lg:h-10 text-xs lg:text-sm font-bold text-white flex items-center justify-center gap-1 flex-1 bg-gray-500 hover:bg-gray-400"
               data-testid="button-long-max"
             >
               LONG MAX
             </Button>
             <Button 
               onClick={() => handleMaxBetClick('short')}
-              className={cn(
-                "h-9 lg:h-10 text-xs lg:text-sm font-bold text-white flex items-center justify-center gap-1 flex-1",
-                (!maxExecutionData?.enabled || isBettingLocked)
-                  ? "bg-gray-500 hover:bg-gray-500 opacity-50" 
-                  : "bg-down/80 hover:bg-down/70"
-              )}
+              className="h-9 lg:h-10 text-xs lg:text-sm font-bold text-white flex items-center justify-center gap-1 flex-1 bg-gray-500 hover:bg-gray-400"
               data-testid="button-short-max"
             >
               SHORT MAX
