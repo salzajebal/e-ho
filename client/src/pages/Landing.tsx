@@ -25,10 +25,10 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
 const CRYPTO_ASSETS = [
-  { symbol: "USD", name: "달러 (EUR/USD)" },
-  { symbol: "EUR", name: "유로 (GBP/USD)" },
-  { symbol: "JPY", name: "엔화 (USD/JPY)" },
-  { symbol: "AUD", name: "호주달러 (AUD/USD)" },
+  { symbol: "USD", name: "달러" },
+  { symbol: "EUR", name: "유로" },
+  { symbol: "JPY", name: "엔화" },
+  { symbol: "AUD", name: "호주달러" },
 ];
 
 const KOREAN_BANKS = [
@@ -64,10 +64,10 @@ interface LandingMarketData {
 
 function useLandingMarketData() {
   const [markets, setMarkets] = useState<LandingMarketData[]>([
-    { symbol: "USD", name: "달러 (EUR/USD)", price: 1.0500, changePercent: 0, priceHistory: [] },
-    { symbol: "EUR", name: "유로 (GBP/USD)", price: 1.2700, changePercent: 0, priceHistory: [] },
-    { symbol: "JPY", name: "엔화 (USD/JPY)", price: 150.000, changePercent: 0, priceHistory: [] },
-    { symbol: "AUD", name: "호주달러 (AUD/USD)", price: 0.6500, changePercent: 0, priceHistory: [] },
+    { symbol: "USD", name: "달러", price: 1.0500, changePercent: 0, priceHistory: [] },
+    { symbol: "EUR", name: "유로", price: 1.2700, changePercent: 0, priceHistory: [] },
+    { symbol: "JPY", name: "엔화", price: 150.000, changePercent: 0, priceHistory: [] },
+    { symbol: "AUD", name: "호주달러", price: 0.6500, changePercent: 0, priceHistory: [] },
   ]);
   
   const historyRef = useRef<Record<string, number[]>>({
@@ -779,17 +779,22 @@ export default function Landing() {
           <div className="flex items-center justify-center gap-6 mb-10 text-sm">
             <div className="flex items-center gap-2 text-gray-400">
               <span className="text-xl font-bold text-amber-500">$</span>
-              <span>USD/JPY</span>
+              <span>달러</span>
             </div>
             <div className="w-1 h-1 rounded-full bg-gray-600" />
             <div className="flex items-center gap-2 text-gray-400">
               <span className="text-xl font-bold text-amber-500">€</span>
-              <span>EUR/USD</span>
+              <span>유로</span>
+            </div>
+            <div className="w-1 h-1 rounded-full bg-gray-600" />
+            <div className="flex items-center gap-2 text-gray-400">
+              <span className="text-xl font-bold text-amber-500">¥</span>
+              <span>엔화</span>
             </div>
             <div className="w-1 h-1 rounded-full bg-gray-600" />
             <div className="flex items-center gap-2 text-gray-400">
               <span className="text-xl font-bold text-amber-500">A$</span>
-              <span>AUD/USD</span>
+              <span>호주달러</span>
             </div>
           </div>
           
@@ -829,10 +834,10 @@ export default function Landing() {
           {[...Array(2)].map((_, repeatIdx) => (
             <div key={repeatIdx} className="flex gap-8 shrink-0">
               {[
-                { pair: 'USD/JPY', flag: '$' },
-                { pair: 'EUR/USD', flag: '€' },
-                { pair: 'GBP/USD', flag: '£' },
-                { pair: 'AUD/USD', flag: 'A$' },
+                { pair: '달러', flag: '$' },
+                { pair: '유로', flag: '€' },
+                { pair: '엔화', flag: '¥' },
+                { pair: '호주달러', flag: 'A$' },
                 { pair: 'USD/CHF', flag: '₣' },
                 { pair: 'NZD/USD', flag: 'NZ$' },
                 { pair: 'USD/CAD', flag: 'C$' },

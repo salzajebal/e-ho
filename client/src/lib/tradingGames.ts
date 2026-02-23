@@ -16,18 +16,18 @@ export const FINNHUB_TICKER_MAP: Record<ForexSymbol, string> = {
 };
 
 export const TRADING_GAMES = [
-  { id: 'USD-60', symbol: 'USD', duration: 60, label: 'USD 1분' },
-  { id: 'USD-180', symbol: 'USD', duration: 180, label: 'USD 3분' },
-  { id: 'USD-300', symbol: 'USD', duration: 300, label: 'USD 5분' },
-  { id: 'EUR-60', symbol: 'EUR', duration: 60, label: 'EUR 1분' },
-  { id: 'EUR-180', symbol: 'EUR', duration: 180, label: 'EUR 3분' },
-  { id: 'EUR-300', symbol: 'EUR', duration: 300, label: 'EUR 5분' },
-  { id: 'JPY-60', symbol: 'JPY', duration: 60, label: 'JPY 1분' },
-  { id: 'JPY-180', symbol: 'JPY', duration: 180, label: 'JPY 3분' },
-  { id: 'JPY-300', symbol: 'JPY', duration: 300, label: 'JPY 5분' },
-  { id: 'AUD-60', symbol: 'AUD', duration: 60, label: 'AUD 1분' },
-  { id: 'AUD-180', symbol: 'AUD', duration: 180, label: 'AUD 3분' },
-  { id: 'AUD-300', symbol: 'AUD', duration: 300, label: 'AUD 5분' },
+  { id: 'USD-60', symbol: 'USD', duration: 60, label: '달러1분' },
+  { id: 'USD-180', symbol: 'USD', duration: 180, label: '달러3분' },
+  { id: 'USD-300', symbol: 'USD', duration: 300, label: '달러5분' },
+  { id: 'EUR-60', symbol: 'EUR', duration: 60, label: '유로1분' },
+  { id: 'EUR-180', symbol: 'EUR', duration: 180, label: '유로3분' },
+  { id: 'EUR-300', symbol: 'EUR', duration: 300, label: '유로5분' },
+  { id: 'JPY-60', symbol: 'JPY', duration: 60, label: '엔화1분' },
+  { id: 'JPY-180', symbol: 'JPY', duration: 180, label: '엔화3분' },
+  { id: 'JPY-300', symbol: 'JPY', duration: 300, label: '엔화5분' },
+  { id: 'AUD-60', symbol: 'AUD', duration: 60, label: '호주달러1분' },
+  { id: 'AUD-180', symbol: 'AUD', duration: 180, label: '호주달러3분' },
+  { id: 'AUD-300', symbol: 'AUD', duration: 300, label: '호주달러5분' },
 ] as const;
 
 export type TradingGame = typeof TRADING_GAMES[number];
