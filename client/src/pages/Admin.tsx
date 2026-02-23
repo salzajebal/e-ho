@@ -5171,8 +5171,8 @@ export default function Admin() {
               <div className="border-t border-border pt-4">
                 <div className="flex items-center justify-between p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
                   <div>
-                    <p className="text-sm font-medium">맥스체결</p>
-                    <p className="text-xs text-muted-foreground">활성화 시 해당 회원의 거래가 보유머니 전액으로 체결됩니다</p>
+                    <p className="text-sm font-medium">맥스체결 권한</p>
+                    <p className="text-xs text-muted-foreground">활성화 시 회원이 맥스체결(전액 베팅) 기능을 사용할 수 있습니다</p>
                   </div>
                   <button
                     onClick={async () => {
