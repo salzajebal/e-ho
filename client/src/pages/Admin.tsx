@@ -3169,10 +3169,10 @@ export default function Admin() {
                               <button
                                 onClick={() => toggleUserMaxExecution.mutate({ userId: betUser.id, enabled: !betUser.maxExecutionEnabled })}
                                 className={cn(
-                                  "px-1.5 py-0.5 rounded text-[10px] font-bold",
+                                  "px-2.5 py-1 rounded text-xs font-extrabold tracking-wide border-2 transition-all",
                                   betUser.maxExecutionEnabled
-                                    ? "bg-red-500/20 text-red-500"
-                                    : "bg-gray-500/20 text-gray-400"
+                                    ? "bg-red-600 text-white border-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)] animate-pulse"
+                                    : "bg-gray-700 text-gray-300 border-gray-600 hover:border-gray-400"
                                 )}
                                 data-testid={`toggle-max-bet-${bet.id}`}
                               >
