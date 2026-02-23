@@ -592,13 +592,41 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
           </div>
         )}
 
-        <div className="flex gap-2 pt-1 lg:pt-2">
-          <div className="flex flex-1 min-w-0">
+        <div className="flex flex-col gap-1.5 pt-1 lg:pt-2">
+          <div className="flex gap-2">
+            <Button 
+              onClick={() => handleMaxBetClick('long')}
+              disabled={isBettingLocked}
+              className={cn(
+                "h-9 lg:h-10 text-xs lg:text-sm font-bold text-white flex items-center justify-center gap-1 flex-1",
+                isBettingLocked 
+                  ? "bg-gray-500 hover:bg-gray-500 cursor-not-allowed opacity-50" 
+                  : "bg-up/80 hover:bg-up/70"
+              )}
+              data-testid="button-long-max"
+            >
+              LONG MAX
+            </Button>
+            <Button 
+              onClick={() => handleMaxBetClick('short')}
+              disabled={isBettingLocked}
+              className={cn(
+                "h-9 lg:h-10 text-xs lg:text-sm font-bold text-white flex items-center justify-center gap-1 flex-1",
+                isBettingLocked 
+                  ? "bg-gray-500 hover:bg-gray-500 cursor-not-allowed opacity-50" 
+                  : "bg-down/80 hover:bg-down/70"
+              )}
+              data-testid="button-short-max"
+            >
+              SHORT MAX
+            </Button>
+          </div>
+          <div className="flex gap-2">
             <Button 
               onClick={() => handleBetClick('long')}
               disabled={isBettingLocked}
               className={cn(
-                "h-11 lg:h-14 text-sm lg:text-base font-bold text-white flex items-center justify-center gap-1.5 flex-1 rounded-r-none",
+                "h-11 lg:h-14 text-sm lg:text-base font-bold text-white flex items-center justify-center gap-1.5 flex-1",
                 isBettingLocked 
                   ? "bg-gray-500 hover:bg-gray-500 cursor-not-allowed opacity-50" 
                   : "bg-up hover:bg-up/90"
@@ -609,25 +637,10 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
               LONG
             </Button>
             <Button 
-              onClick={() => handleMaxBetClick('long')}
-              disabled={isBettingLocked}
-              className={cn(
-                "h-11 lg:h-14 text-[10px] lg:text-xs font-bold text-white/90 px-2 rounded-l-none border-l border-white/20 shrink-0",
-                isBettingLocked 
-                  ? "bg-gray-500 hover:bg-gray-500 cursor-not-allowed opacity-50" 
-                  : "bg-up/80 hover:bg-up/70"
-              )}
-              data-testid="button-long-max"
-            >
-              MAX
-            </Button>
-          </div>
-          <div className="flex flex-1 min-w-0">
-            <Button 
               onClick={() => handleBetClick('short')}
               disabled={isBettingLocked}
               className={cn(
-                "h-11 lg:h-14 text-sm lg:text-base font-bold text-white flex items-center justify-center gap-1.5 flex-1 rounded-r-none",
+                "h-11 lg:h-14 text-sm lg:text-base font-bold text-white flex items-center justify-center gap-1.5 flex-1",
                 isBettingLocked 
                   ? "bg-gray-500 hover:bg-gray-500 cursor-not-allowed opacity-50" 
                   : "bg-down hover:bg-down/90"
@@ -636,19 +649,6 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
             >
               <TrendingDown className="w-4 h-4 shrink-0" />
               SHORT
-            </Button>
-            <Button 
-              onClick={() => handleMaxBetClick('short')}
-              disabled={isBettingLocked}
-              className={cn(
-                "h-11 lg:h-14 text-[10px] lg:text-xs font-bold text-white/90 px-2 rounded-l-none border-l border-white/20 shrink-0",
-                isBettingLocked 
-                  ? "bg-gray-500 hover:bg-gray-500 cursor-not-allowed opacity-50" 
-                  : "bg-down/80 hover:bg-down/70"
-              )}
-              data-testid="button-short-max"
-            >
-              MAX
             </Button>
           </div>
         </div>
