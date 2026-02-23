@@ -98,7 +98,7 @@ function BetRow({ bet, currentPrice, onExpire }: { bet: Bet; currentPrice: numbe
             </span>
             {bet.roundNumber != null && (
               <span className="text-xs px-1.5 py-0.5 rounded bg-primary/20 text-primary font-mono">
-                {bet.roundNumber}회차
+                #{bet.roundNumber}회차 {betDate.getHours().toString().padStart(2, '0')}:{betDate.getMinutes().toString().padStart(2, '0')}
               </span>
             )}
           </div>
@@ -148,7 +148,7 @@ function BetRow({ bet, currentPrice, onExpire }: { bet: Bet; currentPrice: numbe
           </span>
           {bet.outcome === 'pending' && bet.roundNumber != null && (
             <span className="text-xs px-1.5 py-0.5 rounded shrink-0 bg-primary/20 text-primary font-mono">
-              {bet.roundNumber}회차
+              #{bet.roundNumber}회차 {new Date(bet.createdAt).getHours().toString().padStart(2, '0')}:{new Date(bet.createdAt).getMinutes().toString().padStart(2, '0')}
             </span>
           )}
         </div>

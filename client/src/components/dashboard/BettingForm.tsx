@@ -694,8 +694,8 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
                     )}
                   >
                     <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground font-mono w-12">{result.round}회차</span>
-                      <span className="text-muted-foreground/70 w-12">{result.time}</span>
+                      <span className="text-muted-foreground font-mono">#{result.round}회차</span>
+                      <span className="text-muted-foreground/70">{result.time}</span>
                     </div>
                     <div className={cn(
                       "flex items-center gap-1 px-2 py-0.5 rounded font-bold",
