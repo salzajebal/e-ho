@@ -2651,11 +2651,21 @@ export async function registerRoutes(
 
   let simulationTimer: NodeJS.Timeout | null = null;
   let simulationActive = false;
+  const simulationAnchorPrices: Record<string, number> = {};
+  const MAX_DRIFT_PERCENT = 0.3;
+  const MEAN_REVERSION_STRENGTH = 0.05;
 
   function startSimulation() {
     if (simulationActive) return;
     simulationActive = true;
-    console.log('🎲 [Simulation] 시뮬레이션 가격 변동 시작 (시장 미연결)');
+
+    for (const symbol of ['USD', 'JPY', 'EUR', 'AUD']) {
+      const currentPrice = forexPrices[symbol].price;
+      if (!simulationAnchorPrices[symbol] || currentPrice > 0) {
+        simulationAnchorPrices[symbol] = currentPrice > 0 ? currentPrice : DEFAULT_PRICES[symbol];
+      }
+    }
+    console.log('🎲 [Simulation] 시뮬레이션 가격 변동 시작 (시장 미연결) - 기준가격 고정, 최대 ±0.3% 범위');
 
     simulationTimer = setInterval(() => {
       const timeSinceLastTrade = Date.now() - lastTradeAt;
@@ -2667,13 +2677,28 @@ export async function registerRoutes(
       const now = Date.now();
       for (const symbol of ['USD', 'JPY', 'EUR', 'AUD']) {
         const prev = forexPrices[symbol];
-        let basePrice = prev.price > 0 ? prev.price : DEFAULT_PRICES[symbol];
+        const currentPrice = prev.price > 0 ? prev.price : DEFAULT_PRICES[symbol];
+        const anchorPrice = simulationAnchorPrices[symbol] || currentPrice;
 
-        const volatility = symbol === 'JPY' ? 0.0002 : 0.00004;
-        const change = basePrice * volatility * (Math.random() - 0.5) * 2;
-        const newPrice = basePrice + change;
+        const volatility = symbol === 'JPY' ? 0.00015 : 0.00003;
+        let randomChange = currentPrice * volatility * (Math.random() - 0.5) * 2;
 
-        const openPrice = prev.openPrice > 0 ? prev.openPrice : basePrice;
+        const drift = (currentPrice - anchorPrice) / anchorPrice;
+        const maxDrift = MAX_DRIFT_PERCENT / 100;
+        const reversionForce = -drift * MEAN_REVERSION_STRENGTH * currentPrice;
+        randomChange += reversionForce;
+
+        let newPrice = currentPrice + randomChange;
+
+        const upperBound = anchorPrice * (1 + maxDrift);
+        const lowerBound = anchorPrice * (1 - maxDrift);
+        if (newPrice > upperBound) {
+          newPrice = upperBound - Math.random() * anchorPrice * volatility;
+        } else if (newPrice < lowerBound) {
+          newPrice = lowerBound + Math.random() * anchorPrice * volatility;
+        }
+
+        const openPrice = prev.openPrice > 0 ? prev.openPrice : currentPrice;
         const totalChange = newPrice - openPrice;
         const changePercent = openPrice > 0 ? (totalChange / openPrice) * 100 : 0;
 
