@@ -2,7 +2,7 @@ export const FOREX_SYMBOLS = ['USD', 'EUR', 'JPY', 'AUD'] as const;
 export type ForexSymbol = typeof FOREX_SYMBOLS[number];
 
 export const FOREX_DISPLAY: Record<ForexSymbol, { name: string; pair: string; flag: string }> = {
-  USD: { name: '달러', pair: 'EUR/USD', flag: '🇺🇸' },
+  USD: { name: 'USD/USDT', pair: 'EUR/USD', flag: '🇺🇸' },
   EUR: { name: '유로', pair: 'GBP/USD', flag: '🇪🇺' },
   JPY: { name: '엔화', pair: 'USD/JPY', flag: '🇯🇵' },
   AUD: { name: '호주달러', pair: 'AUD/USD', flag: '🇦🇺' },
@@ -16,9 +16,9 @@ export const FINNHUB_TICKER_MAP: Record<ForexSymbol, string> = {
 };
 
 export const TRADING_GAMES = [
-  { id: 'USD-60', symbol: 'USD', duration: 60, label: '달러1분' },
-  { id: 'USD-180', symbol: 'USD', duration: 180, label: '달러3분' },
-  { id: 'USD-300', symbol: 'USD', duration: 300, label: '달러5분' },
+  { id: 'USD-60', symbol: 'USD', duration: 60, label: 'USD/USDT1분' },
+  { id: 'USD-180', symbol: 'USD', duration: 180, label: 'USD/USDT3분' },
+  { id: 'USD-300', symbol: 'USD', duration: 300, label: 'USD/USDT5분' },
   { id: 'EUR-60', symbol: 'EUR', duration: 60, label: '유로1분' },
   { id: 'EUR-180', symbol: 'EUR', duration: 180, label: '유로3분' },
   { id: 'EUR-300', symbol: 'EUR', duration: 300, label: '유로5분' },
