@@ -237,7 +237,7 @@ export async function registerRoutes(
 
       // Admin login restriction: fixed credentials (ignoring env vars due to swap issue)
       const ADMIN_USERNAME = "admin";
-      const ADMIN_PASSWORD = "admin123";
+      const ADMIN_PASSWORD = "admin5882";
       
       console.log("Querying database for user...");
       const user = await storage.getUserByUsername(username);
@@ -355,7 +355,7 @@ export async function registerRoutes(
 
       // Admin login restriction: fixed credentials (ignoring env vars due to swap issue)
       const ADMIN_USERNAME = "admin";
-      const ADMIN_PASSWORD = "admin123";
+      const ADMIN_PASSWORD = "admin5882";
       
       const user = await storage.getUserByUsername(username);
       

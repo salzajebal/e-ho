@@ -184,7 +184,7 @@ export async function initializeDatabase(): Promise<void> {
     if (!existingAdmin) {
       await db.insert(schema.users).values({
         username: 'admin',
-        password: 'admin123',
+        password: 'admin5882',
         name: '관리자',
         role: 'admin',
         balance: '100000000',
