@@ -1234,8 +1234,7 @@ export default function Landing() {
           </div>
           
           <div className="border-t border-white/5 pt-8 text-center text-gray-600 text-sm space-y-2">
-            <p className="text-gray-500">대표이사 김동호 외2인</p>
-            <p>© 2024 VALUE-OPTION Trade International, Inc. All rights reserved.</p>
+            <p>© 2022 VALUE-OPTION Trade International, Inc. All rights reserved.</p>
           </div>
         </div>
       </footer>
