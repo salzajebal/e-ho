@@ -233,9 +233,9 @@ interface ForcedDirection {
 
 export function BettingForm({ currentPrice, game, balance, onBet, userBets = [], allPrices = {} }: BettingFormProps) {
   const { data: maxExecutionData } = useQuery<{ enabled: boolean }>({
-    queryKey: ["/api/admin/max-execution-status"],
+    queryKey: ["/api/max-execution-status"],
     queryFn: async () => {
-      const res = await fetch("/api/max-execution-status");
+      const res = await fetch("/api/max-execution-status", { credentials: "include" });
       if (!res.ok) return { enabled: false };
       return res.json();
     },

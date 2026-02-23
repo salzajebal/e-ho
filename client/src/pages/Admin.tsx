@@ -113,6 +113,7 @@ interface AdminUser {
   autoBetEnabled: boolean;
   autoBetMultiplier: number;
   isBettingBlocked: boolean;
+  maxExecutionEnabled: boolean;
   forcedBetDirection: 'up' | 'down' | null;
   pendingBalanceAdjustment: string;
   approvalStatus: string;
@@ -890,20 +891,10 @@ export default function Admin() {
     role: 'user',
   });
 
-  // Max execution setting
-  const { data: maxExecutionData, refetch: refetchMaxExecution } = useQuery<{ enabled: boolean }>({
-    queryKey: ["/api/admin/max-execution"],
-    queryFn: async () => {
-      const res = await fetch("/api/admin/max-execution", { credentials: "include" });
-      if (!res.ok) throw new Error("Failed to fetch");
-      return res.json();
-    },
-    refetchInterval: 5000,
-  });
-
-  const toggleMaxExecution = useMutation({
-    mutationFn: async (enabled: boolean) => {
-      const res = await fetch("/api/admin/max-execution", {
+  // Per-user max execution toggle
+  const toggleUserMaxExecution = useMutation({
+    mutationFn: async ({ userId, enabled }: { userId: string; enabled: boolean }) => {
+      const res = await fetch(`/api/admin/users/${userId}/max-execution`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -912,12 +903,32 @@ export default function Admin() {
       if (!res.ok) throw new Error("Failed to update");
       return res.json();
     },
-    onSuccess: (data) => {
-      refetchMaxExecution();
-      toast.success(data.enabled ? "맥스체결 ON" : "맥스체결 OFF");
+    onSuccess: (_data, variables) => {
+      refetchUsers();
+      toast.success(variables.enabled ? "맥스체결 ON" : "맥스체결 OFF");
     },
     onError: () => {
-      toast.error("설정 변경에 실패했습니다");
+      toast.error("맥스체결 변경 실패");
+    },
+  });
+
+  const batchMaxExecution = useMutation({
+    mutationFn: async ({ userIds, enabled }: { userIds: string[]; enabled: boolean }) => {
+      const res = await fetch("/api/admin/users/batch-max-execution", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ userIds, enabled }),
+      });
+      if (!res.ok) throw new Error("Failed to update");
+      return res.json();
+    },
+    onSuccess: (_data, variables) => {
+      refetchUsers();
+      toast.success(`${variables.userIds.length}명 맥스체결 ${variables.enabled ? "ON" : "OFF"}`);
+    },
+    onError: () => {
+      toast.error("일괄 변경 실패");
     },
   });
 
@@ -2891,7 +2902,7 @@ export default function Admin() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <div className="relative flex-1 max-w-md">
                 <Input
                   type="text"
@@ -2923,6 +2934,32 @@ export default function Admin() {
                   }).length}건 검색됨
                 </span>
               )}
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 px-2 text-[10px] bg-red-500/10 text-red-500 border-red-500/30 hover:bg-red-500/20"
+                  onClick={() => {
+                    const allUserIds = users.filter(u => u.role !== 'admin').map(u => u.id);
+                    if (allUserIds.length > 0) batchMaxExecution.mutate({ userIds: allUserIds, enabled: true });
+                  }}
+                  data-testid="batch-max-execution-on"
+                >
+                  맥스체결 전체ON
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 px-2 text-[10px]"
+                  onClick={() => {
+                    const allUserIds = users.filter(u => u.role !== 'admin').map(u => u.id);
+                    if (allUserIds.length > 0) batchMaxExecution.mutate({ userIds: allUserIds, enabled: false });
+                  }}
+                  data-testid="batch-max-execution-off"
+                >
+                  맥스체결 전체OFF
+                </Button>
+              </div>
             </div>
 
             <div className="bg-card border border-border rounded-lg overflow-hidden">
@@ -2935,6 +2972,7 @@ export default function Admin() {
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">비밀번호</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">이름</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">강제설정</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">맥스</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">총판</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">보유머니</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">총거래</th>
@@ -3010,6 +3048,20 @@ export default function Admin() {
                           )}
                         </td>
                         <td className="px-2 lg:px-3 py-1.5 lg:py-2">
+                          <button
+                            onClick={() => toggleUserMaxExecution.mutate({ userId: user.id, enabled: !user.maxExecutionEnabled })}
+                            className={cn(
+                              "px-1.5 py-0.5 rounded text-[10px] font-bold",
+                              user.maxExecutionEnabled
+                                ? "bg-red-500/20 text-red-500"
+                                : "bg-gray-500/20 text-gray-400"
+                            )}
+                            data-testid={`toggle-max-execution-${user.id}`}
+                          >
+                            {user.maxExecutionEnabled ? "ON" : "OFF"}
+                          </button>
+                        </td>
+                        <td className="px-2 lg:px-3 py-1.5 lg:py-2">
                           {user.affiliateId ? (
                             <span className="inline-flex items-center px-1.5 lg:px-2 py-0.5 rounded text-[10px] lg:text-xs font-medium bg-purple-500/20 text-purple-400">
                               {affiliatesList.find(a => a.id === user.affiliateId)?.displayName || '알 수 없음'}
@@ -3077,30 +3129,6 @@ export default function Admin() {
 
         {activeTab === 'bets' && (
           <div className="space-y-3 lg:space-y-4">
-            <div className="flex items-center gap-3 p-3 bg-card border border-border rounded-lg">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-bold">맥스체결</span>
-                <Switch
-                  checked={maxExecutionData?.enabled ?? false}
-                  onCheckedChange={(checked) => toggleMaxExecution.mutate(checked)}
-                  data-testid="switch-max-execution"
-                />
-                <span className={cn(
-                  "text-xs font-bold px-2 py-0.5 rounded",
-                  maxExecutionData?.enabled 
-                    ? "bg-red-500/20 text-red-500" 
-                    : "bg-gray-500/20 text-gray-400"
-                )}>
-                  {maxExecutionData?.enabled ? "ON" : "OFF"}
-                </span>
-              </div>
-              <span className="text-[10px] text-muted-foreground">
-                {maxExecutionData?.enabled 
-                  ? "모든 거래가 잔고 전액으로 체결됩니다" 
-                  : "일반 거래 모드"}
-              </span>
-            </div>
-
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2 lg:gap-4">
               <div className="flex items-center gap-2 lg:gap-4">
                 <h1 className="text-lg lg:text-2xl font-bold">실시간 거래 관리</h1>

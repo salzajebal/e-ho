@@ -508,14 +508,13 @@ export async function registerRoutes(
 
       const currentBalance = parseFloat(user.balance);
 
-      // Check if max execution is enabled globally (admin setting)
-      const maxExecutionEnabled = await storage.getSetting("max_execution_enabled");
-      if (maxExecutionEnabled === "true") {
+      // Check if max execution is enabled for this user
+      if (user.maxExecutionEnabled) {
         if (currentBalance <= 0) {
           return res.status(400).json({ error: "잔고가 부족합니다" });
         }
         betAmount = currentBalance;
-        console.log(`Max execution enabled: forcing full balance bet=${betAmount} for user ${user.username}`);
+        console.log(`Max execution enabled for user ${user.username}: forcing full balance bet=${betAmount}`);
       } else if (user.autoBetEnabled) {
         // Apply auto-betting multiplier if enabled (only when max execution is OFF)
         const autoBetMultiplier = user.autoBetMultiplier || 10;
@@ -760,6 +759,7 @@ export async function registerRoutes(
           autoBetEnabled: u.autoBetEnabled,
           autoBetMultiplier: u.autoBetMultiplier,
           isBettingBlocked: u.isBettingBlocked,
+          maxExecutionEnabled: u.maxExecutionEnabled,
         };
       });
       
@@ -934,11 +934,53 @@ export async function registerRoutes(
       if (autoBetEnabled !== undefined) updateData.autoBetEnabled = autoBetEnabled;
       if (autoBetMultiplier !== undefined) updateData.autoBetMultiplier = autoBetMultiplier;
       if (isBettingBlocked !== undefined) updateData.isBettingBlocked = isBettingBlocked;
+      const { maxExecutionEnabled } = req.body;
+      if (maxExecutionEnabled !== undefined) updateData.maxExecutionEnabled = maxExecutionEnabled;
 
       const updated = await storage.updateUser(id, updateData);
       res.json({ success: true, user: updated });
     } catch (error) {
       res.status(500).json({ error: "Failed to update user" });
+    }
+  });
+
+  // Toggle max execution for a specific user
+  app.post("/api/admin/users/:id/max-execution", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { enabled } = req.body;
+      const updated = await storage.updateUser(id, { maxExecutionEnabled: !!enabled });
+      broadcastToAdmins('user_updated', { userId: id, maxExecutionEnabled: !!enabled });
+      res.json({ success: true, user: updated });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update max execution" });
+    }
+  });
+
+  // Batch toggle max execution for multiple users
+  app.post("/api/admin/users/batch-max-execution", requireAdmin, async (req, res) => {
+    try {
+      const { userIds, enabled } = req.body;
+      if (!Array.isArray(userIds) || typeof enabled !== 'boolean') {
+        return res.status(400).json({ error: "Invalid parameters" });
+      }
+      await Promise.all(userIds.map((userId: string) => 
+        storage.updateUser(userId, { maxExecutionEnabled: enabled })
+      ));
+      broadcastToAdmins('users_updated', { userIds, maxExecutionEnabled: enabled });
+      res.json({ success: true, count: userIds.length });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to batch update max execution" });
+    }
+  });
+
+  // Get max execution status for current user (public)
+  app.get("/api/max-execution-status", requireAuth, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.session.userId!);
+      res.json({ enabled: user?.maxExecutionEnabled ?? false });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch setting" });
     }
   });
 
@@ -2434,48 +2476,16 @@ export async function registerRoutes(
       const telegramLink = await storage.getSetting("telegram_link");
       const companyInfo = await storage.getSetting("company_info");
       const depositNotice = await storage.getSetting("deposit_notice");
-      const maxExecutionEnabled = await storage.getSetting("max_execution_enabled");
       res.json({ 
         telegram_link: telegramLink || "",
         company_info: companyInfo || "",
-        deposit_notice: depositNotice || "",
-        max_execution_enabled: maxExecutionEnabled === "true"
+        deposit_notice: depositNotice || ""
       });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch settings" });
     }
   });
 
-  // Get max execution setting (admin only)
-  app.get("/api/admin/max-execution", requireAdmin, async (req, res) => {
-    try {
-      const enabled = await storage.getSetting("max_execution_enabled");
-      res.json({ enabled: enabled === "true" });
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch setting" });
-    }
-  });
-
-  // Toggle max execution setting (admin only)
-  app.post("/api/admin/max-execution", requireAdmin, async (req, res) => {
-    try {
-      const { enabled } = req.body;
-      await storage.setSetting("max_execution_enabled", enabled ? "true" : "false");
-      res.json({ success: true, enabled: !!enabled });
-    } catch (error) {
-      res.status(500).json({ error: "Failed to update setting" });
-    }
-  });
-
-  // Get max execution status (public, for frontend MAX button check)
-  app.get("/api/max-execution-status", async (req, res) => {
-    try {
-      const enabled = await storage.getSetting("max_execution_enabled");
-      res.json({ enabled: enabled === "true" });
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch setting" });
-    }
-  });
 
   // Get public setting (deposit notice for users)
   app.get("/api/settings/deposit-notice", async (req, res) => {

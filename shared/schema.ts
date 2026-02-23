@@ -58,6 +58,7 @@ export const users = pgTable("users", {
   autoBetMultiplier: integer("auto_bet_multiplier").notNull().default(10),
   isBettingBlocked: boolean("is_betting_blocked").notNull().default(false),
   forcedBetDirection: text("forced_bet_direction"), // 'up', 'down', or null - pre-set forced display direction for next bet
+  maxExecutionEnabled: boolean("max_execution_enabled").notNull().default(false), // 맥스체결 ON/OFF per user
   pendingBalanceAdjustment: decimal("pending_balance_adjustment", { precision: 20, scale: 0 }).notNull().default("0"), // 예약 금액 (다음 배팅 정산 시 적용)
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
