@@ -5,7 +5,7 @@
 This is a real-time forex trading platform. Users can place bets on price movements (long/short) for major forex pairs: EUR/USD (labeled USD), USD/JPY (labeled JPY), GBP/USD (labeled EUR), and AUD/USD (labeled AUD). The platform features live market data via Finnhub forex WebSocket API, interactive candlestick charts using lightweight-charts, and an account system with virtual balance.
 
 ## Trading Rules
-- **Operating Hours**: 24/7 (forex markets closed on weekends)
+- **Operating Hours**: 24/7 (simulated price movement when forex markets are closed on weekends)
 - **Trading Assets**: USD (EUR/USD), JPY (USD/JPY), EUR (GBP/USD), AUD (AUD/USD)
 - **Trading Durations**: 1분 (60s), 3분 (180s), 5분 (300s)
 - **New User Balance**: Starts at 0원 (deposit required)
@@ -44,6 +44,7 @@ Preferred communication style: Simple, everyday language.
 - **API Key**: Stored as FINNHUB_API_KEY secret
 - **Rate limits**: Free tier - 60 req/min for REST, unlimited WebSocket streaming
 - **Market hours**: Forex markets open Sunday 5pm EST to Friday 5pm EST (closed weekends)
+- **Weekend simulation**: When WebSocket data stops for >10s, server generates simulated price movements (1s intervals) using realistic volatility; stops automatically when real data resumes
 
 ### Key Design Patterns
 - Shared schema definitions between frontend and backend (`shared/schema.ts`)

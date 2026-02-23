@@ -2532,6 +2532,7 @@ export async function registerRoutes(
   let isConnected = false;
   let messageCount = 0;
   let reconnectAttempts = 0;
+  let lastTradeAt = 0;
 
   function startFinnhubWebSocket() {
     if (finnhubWs) {
@@ -2583,6 +2584,7 @@ export async function registerRoutes(
               
               const forexSymbol = FINNHUB_TO_FOREX[finnhubSymbol];
               if (forexSymbol && price > 0) {
+                lastTradeAt = Date.now();
                 messageCount++;
                 const prev = forexPrices[forexSymbol];
                 const openPrice = prev.openPrice > 0 ? prev.openPrice : price;
@@ -2638,6 +2640,80 @@ export async function registerRoutes(
   console.log('🚀 [Finnhub] 서버 시작 - WebSocket 실시간 연결');
   startFinnhubWebSocket();
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+  // ==================== SIMULATED PRICE MOVEMENT (WEEKENDS / DISCONNECTED) ====================
+  const DEFAULT_PRICES: Record<string, number> = {
+    USD: 1.1825,
+    JPY: 154.14,
+    EUR: 1.3523,
+    AUD: 0.7088,
+  };
+
+  let simulationTimer: NodeJS.Timeout | null = null;
+  let simulationActive = false;
+
+  function startSimulation() {
+    if (simulationActive) return;
+    simulationActive = true;
+    console.log('🎲 [Simulation] 시뮬레이션 가격 변동 시작 (시장 미연결)');
+
+    simulationTimer = setInterval(() => {
+      const timeSinceLastTrade = Date.now() - lastTradeAt;
+      if (lastTradeAt > 0 && timeSinceLastTrade < 5000) {
+        stopSimulation();
+        return;
+      }
+
+      const now = Date.now();
+      for (const symbol of ['USD', 'JPY', 'EUR', 'AUD']) {
+        const prev = forexPrices[symbol];
+        let basePrice = prev.price > 0 ? prev.price : DEFAULT_PRICES[symbol];
+
+        const volatility = symbol === 'JPY' ? 0.0002 : 0.00004;
+        const change = basePrice * volatility * (Math.random() - 0.5) * 2;
+        const newPrice = basePrice + change;
+
+        const openPrice = prev.openPrice > 0 ? prev.openPrice : basePrice;
+        const totalChange = newPrice - openPrice;
+        const changePercent = openPrice > 0 ? (totalChange / openPrice) * 100 : 0;
+
+        forexPrices[symbol] = {
+          price: newPrice,
+          change: totalChange,
+          changePercent: changePercent,
+          high: Math.max(prev.high > 0 ? prev.high : newPrice, newPrice),
+          low: prev.low > 0 ? Math.min(prev.low, newPrice) : newPrice,
+          volume: 0,
+          updatedAt: now,
+          openPrice: openPrice,
+        };
+
+        updateCandles(symbol, newPrice, now);
+      }
+    }, 1000);
+  }
+
+  function stopSimulation() {
+    if (!simulationActive) return;
+    simulationActive = false;
+    if (simulationTimer) {
+      clearInterval(simulationTimer);
+      simulationTimer = null;
+    }
+    console.log('✅ [Simulation] 실시간 데이터 수신 재개 - 시뮬레이션 중단');
+  }
+
+  const simulationMonitor = setInterval(() => {
+    if (simulationActive) return;
+    
+    const now = Date.now();
+    const timeSinceLastTrade = lastTradeAt > 0 ? now - lastTradeAt : Infinity;
+    const anyHasPrice = Object.values(forexPrices).some(p => p.price > 0);
+
+    if (timeSinceLastTrade > 10000 || !anyHasPrice) {
+      startSimulation();
+    }
+  }, 3000);
 
   // ==================== AUTO-SETTLEMENT FOR EXPIRED BETS ====================
   async function settleExpiredBets() {
