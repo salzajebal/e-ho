@@ -1115,12 +1115,7 @@ export default function Admin() {
 
     ws.onclose = (event) => {
       setWsConnected(false);
-      if (event.code === 4001 || event.code === 4003) {
-        console.log('Admin WebSocket: Session invalid or expired');
-        queryClient.setQueryData(["/api/admin/auth/me"], null);
-      } else {
-        console.log('Admin WebSocket disconnected');
-      }
+      console.log(`Admin WebSocket disconnected (code: ${event.code})`);
     };
 
     ws.onerror = (error) => {

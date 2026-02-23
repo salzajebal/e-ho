@@ -69,20 +69,25 @@ export async function validateWebSocketSession(cookieHeader: string | undefined)
     // Get session from store
     return new Promise((resolve) => {
       sessionStore.get(sessionId, async (err, session) => {
-        if (err || !session || !session.userId) {
+        if (err || !session) {
           resolve(null);
           return;
         }
         
-        // Verify user is admin
-        const user = await storage.getUser(session.userId);
+        const effectiveUserId = session.adminUserId || session.userId;
+        if (!effectiveUserId) {
+          resolve(null);
+          return;
+        }
+        
+        const user = await storage.getUser(effectiveUserId);
         if (!user) {
           resolve(null);
           return;
         }
         
         resolve({
-          userId: session.userId,
+          userId: effectiveUserId,
           isAdmin: user.role === 'admin',
         });
       });
