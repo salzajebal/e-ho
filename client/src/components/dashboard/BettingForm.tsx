@@ -567,16 +567,18 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
           <label className="text-xs text-muted-foreground">주문금액 (원)</label>
           <div className="relative">
             <Input 
-              type="number" 
+              type="text"
+              inputMode="numeric"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value.replace(/[^0-9]/g, '');
+                setAmount(val);
+              }}
               onFocus={handleAmountFocus}
               onPaste={handlePaste}
               onCopy={handleCopy}
-              className="font-mono text-base lg:text-lg text-right pr-10 h-10 lg:h-12 bg-input border-border focus-visible:ring-primary"
+              className="font-mono text-base lg:text-lg text-right pr-10 h-10 lg:h-12 bg-input border-border focus-visible:ring-primary [appearance:textfield]"
               data-testid="input-bet-amount"
-              min="1000"
-              step="1000"
               placeholder="금액 입력"
             />
             <span className="absolute right-3 top-2.5 lg:top-3.5 text-sm text-muted-foreground">원</span>
