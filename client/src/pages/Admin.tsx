@@ -43,6 +43,9 @@ import {
   Plus,
   Minus,
   ArrowUpRight,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
   Clock,
   UserX,
   AlertCircle,
@@ -757,6 +760,8 @@ export default function Admin() {
   const [createUserOpen, setCreateUserOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [userSearchQuery, setUserSearchQuery] = useState("");
+  const [userSortField, setUserSortField] = useState<string | null>(null);
+  const [userSortDirection, setUserSortDirection] = useState<'asc' | 'desc'>('desc');
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
   const [loginHistoryUser, setLoginHistoryUser] = useState<AdminUser | null>(null);
   const [telegramLink, setTelegramLink] = useState("");
@@ -3069,11 +3074,42 @@ export default function Admin() {
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">이름</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">강제설정</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">총판</th>
-                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">보유머니</th>
-                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">총거래</th>
-                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">총입금</th>
-                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">총출금</th>
-                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">수익률</th>
+                      {[
+                        { field: 'balance', label: '보유머니' },
+                        { field: 'totalBet', label: '총거래' },
+                        { field: 'totalDeposit', label: '총입금' },
+                        { field: 'totalWithdrawal', label: '총출금' },
+                        { field: 'profitRate', label: '수익률' },
+                      ].map(col => (
+                        <th key={col.field} className="px-2 lg:px-3 py-2 whitespace-nowrap">
+                          <button
+                            onClick={() => {
+                              if (userSortField === col.field) {
+                                if (userSortDirection === 'desc') {
+                                  setUserSortDirection('asc');
+                                } else {
+                                  setUserSortField(null);
+                                }
+                              } else {
+                                setUserSortField(col.field);
+                                setUserSortDirection('desc');
+                              }
+                            }}
+                            className={cn(
+                              "flex items-center gap-1 hover:text-foreground transition-colors",
+                              userSortField === col.field ? "text-primary font-semibold" : ""
+                            )}
+                            data-testid={`sort-${col.field}`}
+                          >
+                            {col.label}
+                            {userSortField === col.field ? (
+                              userSortDirection === 'desc' ? <ArrowDown className="w-3 h-3" /> : <ArrowUp className="w-3 h-3" />
+                            ) : (
+                              <ArrowUpDown className="w-3 h-3 opacity-40" />
+                            )}
+                          </button>
+                        </th>
+                      ))}
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">최근로그인</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">가입일</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap text-right">관리</th>
@@ -3091,6 +3127,12 @@ export default function Admin() {
                           (user.accountNumber && user.accountNumber.toLowerCase().includes(query)) ||
                           (user.phone && user.phone.toLowerCase().includes(query))
                         );
+                      })
+                      .sort((a, b) => {
+                        if (!userSortField) return 0;
+                        const aVal = parseFloat((a as any)[userSortField] || '0');
+                        const bVal = parseFloat((b as any)[userSortField] || '0');
+                        return userSortDirection === 'desc' ? bVal - aVal : aVal - bVal;
                       })
                       .map((user) => (
                       <tr key={user.id} className="border-t border-border/50 hover:bg-muted/10">
