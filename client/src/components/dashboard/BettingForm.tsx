@@ -257,6 +257,7 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
   const [betConfirmation, setBetConfirmation] = useState<BetConfirmation>({ show: false, direction: 'long', amount: 0, price: 0, round: 0 });
   const [timeAlert, setTimeAlert] = useState<TimeAlert>({ show: false, message: '' });
   const [forcedDirections, setForcedDirections] = useState<ForcedDirection[]>([]);
+  const [resultRefreshTrigger, setResultRefreshTrigger] = useState(0);
   const allGamesStateRef = useRef<AllGamesState>({});
   const lastPriceRef = useRef<number>(currentPrice);
   const allPricesRef = useRef<Record<string, number>>(allPrices);
@@ -315,6 +316,18 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
     // - forced "매수"(up) → closePrice > strikePrice
     // - forced "매도"(down) → closePrice < strikePrice
     const betResultsByRound = new Map<number, GameResult>();
+    const pendingBetRounds = new Set<number>();
+    
+    // Track pending bets - don't show generated results for these rounds
+    userBets.filter(bet => 
+      bet.outcome === 'pending' && 
+      bet.symbol === game.symbol &&
+      bet.duration === game.duration &&
+      bet.roundNumber != null
+    ).forEach(bet => {
+      pendingBetRounds.add(bet.roundNumber!);
+    });
+    
     completedBets.forEach(bet => {
       const strikePrice = parseFloat(bet.strikePrice);
       const closePrice = parseFloat(bet.closePrice || '0');
@@ -357,6 +370,10 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
 
     generatedResults.forEach(genResult => {
       if (!usedRounds.has(genResult.round)) {
+        // Don't show generated results for rounds with pending bets
+        // Wait for the server to settle and provide authoritative result
+        if (pendingBetRounds.has(genResult.round)) return;
+        
         // Check if this round has a forced direction
         const forcedDir = forcedMap.get(genResult.round);
         if (forcedDir) {
@@ -388,7 +405,7 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
     validResults.sort((a, b) => b.round - a.round);
     
     setGameResults(validResults);
-  }, [game.id, game.duration, game.symbol, currentPrice, userBets, forcedDirections]);
+  }, [game.id, game.duration, game.symbol, currentPrice, userBets, forcedDirections, resultRefreshTrigger]);
 
   // Track round changes for ALL 12 games simultaneously
   useEffect(() => {
@@ -452,14 +469,7 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
           
           setTimeout(() => {
             if (gameIdRef.current === gameId) {
-              const latestSaved = localStorage.getItem(storageKey);
-              if (latestSaved) {
-                try {
-                  const allResults: GameResult[] = JSON.parse(latestSaved);
-                  const visibleResults = allResults.filter(r => !r.displayAfter || Date.now() >= r.displayAfter);
-                  setGameResults(visibleResults);
-                } catch {}
-              }
+              setResultRefreshTrigger(prev => prev + 1);
             }
           }, 5000);
           
