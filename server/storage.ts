@@ -1401,7 +1401,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getBranchByCode(code: string): Promise<Branch | undefined> {
-    const [branch] = await db.select().from(branches).where(eq(branches.code, code));
+    const [branch] = await db.select().from(branches).where(sql`LOWER(${branches.code}) = LOWER(${code})`);
     return branch;
   }
 

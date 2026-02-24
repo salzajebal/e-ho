@@ -193,6 +193,10 @@ export default function Landing() {
   const [region, setRegion] = useState("");
   const [branchCode, setBranchCode] = useState("");
   const [registerErrorMessage, setRegisterErrorMessage] = useState("");
+  const [usernameChecked, setUsernameChecked] = useState(false);
+  const [usernameCheckMessage, setUsernameCheckMessage] = useState("");
+  const [usernameAvailable, setUsernameAvailable] = useState(false);
+  const [checkingUsername, setCheckingUsername] = useState(false);
   
   // Inquiry form state
   const [showInquiryFormModal, setShowInquiryFormModal] = useState(false);
@@ -324,12 +328,43 @@ export default function Landing() {
     });
   };
 
+  const handleCheckUsername = async () => {
+    if (regUsername.length < 3) {
+      setUsernameCheckMessage("아이디는 3자 이상이어야 합니다");
+      setUsernameAvailable(false);
+      setUsernameChecked(true);
+      return;
+    }
+    setCheckingUsername(true);
+    try {
+      const res = await fetch("/api/auth/check-username", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: regUsername }),
+      });
+      const data = await res.json();
+      setUsernameAvailable(data.available);
+      setUsernameCheckMessage(data.available ? data.message : data.error);
+      setUsernameChecked(true);
+    } catch {
+      setUsernameCheckMessage("중복확인에 실패했습니다");
+      setUsernameAvailable(false);
+      setUsernameChecked(true);
+    } finally {
+      setCheckingUsername(false);
+    }
+  };
+
   const handleRegisterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setRegisterErrorMessage("");
     
     if (regUsername.length < 3) {
       setRegisterErrorMessage("아이디는 3자 이상이어야 합니다");
+      return;
+    }
+    if (!usernameChecked || !usernameAvailable) {
+      setRegisterErrorMessage("아이디 중복확인을 해주세요");
       return;
     }
     if (regPassword.length < 4) {
@@ -389,6 +424,9 @@ export default function Landing() {
         setBankName("");
         setAccountHolder("");
         setAccountNumber("");
+        setUsernameChecked(false);
+        setUsernameCheckMessage("");
+        setUsernameAvailable(false);
       },
       onError: (error: Error) => {
         setRegisterErrorMessage(error.message);
@@ -1331,7 +1369,7 @@ export default function Landing() {
       </Dialog>
 
       {/* Register Modal */}
-      <Dialog open={showRegisterModal} onOpenChange={(open) => { setShowRegisterModal(open); if (!open) setRegisterErrorMessage(""); }}>
+      <Dialog open={showRegisterModal} onOpenChange={(open) => { setShowRegisterModal(open); if (!open) { setRegisterErrorMessage(""); setUsernameChecked(false); setUsernameCheckMessage(""); setUsernameAvailable(false); } }}>
         <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden max-h-[90vh] overflow-y-auto">
           <DialogTitle className="sr-only">회원가입</DialogTitle>
           <div className="relative">
@@ -1358,19 +1396,36 @@ export default function Landing() {
               </div>
               
               <form onSubmit={handleRegisterSubmit} className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-xs text-gray-300 font-medium">아이디</label>
+                <div className="space-y-1">
+                  <label className="text-xs text-gray-300 font-medium">아이디</label>
+                  <div className="flex gap-2">
                     <Input
                       type="text"
                       value={regUsername}
-                      onChange={(e) => setRegUsername(e.target.value)}
+                      onChange={(e) => { setRegUsername(e.target.value); setUsernameChecked(false); setUsernameCheckMessage(""); setUsernameAvailable(false); }}
                       placeholder="아이디 (3자 이상)"
-                      className="h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-amber-500/50 text-sm"
+                      className="h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-amber-500/50 text-sm flex-1"
                       data-testid="input-reg-username"
                       required
                     />
+                    <Button
+                      type="button"
+                      onClick={handleCheckUsername}
+                      disabled={checkingUsername || regUsername.length < 3}
+                      className="h-10 px-3 text-xs font-medium bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/30 whitespace-nowrap"
+                      data-testid="button-check-username"
+                    >
+                      {checkingUsername ? "확인중..." : "중복확인"}
+                    </Button>
                   </div>
+                  {usernameChecked && usernameCheckMessage && (
+                    <p className={`text-xs mt-1 ${usernameAvailable ? 'text-green-400' : 'text-red-400'}`} data-testid="text-username-check">
+                      {usernameCheckMessage}
+                    </p>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <label className="text-xs text-gray-300 font-medium">이름</label>
                     <Input

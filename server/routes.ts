@@ -160,6 +160,22 @@ export async function registerRoutes(
   // ==================== AUTH ROUTES ====================
 
   // Register
+  app.post("/api/auth/check-username", async (req, res) => {
+    try {
+      const { username } = req.body;
+      if (!username || username.length < 3) {
+        return res.status(400).json({ available: false, error: "아이디는 3자 이상이어야 합니다" });
+      }
+      const existing = await storage.getUserByUsername(username);
+      if (existing) {
+        return res.json({ available: false, error: "이미 사용 중인 아이디입니다" });
+      }
+      return res.json({ available: true, message: "사용 가능한 아이디입니다" });
+    } catch (error) {
+      res.status(500).json({ available: false, error: "중복확인에 실패했습니다" });
+    }
+  });
+
   app.post("/api/auth/register", async (req, res) => {
     try {
       const { username, password, name, phone, birthDate, region, branchCode, bankName, accountHolder, accountNumber } = req.body;
