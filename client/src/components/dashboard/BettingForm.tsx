@@ -121,13 +121,15 @@ const cleanupOldGameResults = (gameId: string) => {
 
 // Generate all past results for a game (entire day up to current round)
 const generateAllPastResults = (gameId: string, duration: number, basePrice: number): GameResult[] => {
-  // Clean up old date results first
   cleanupOldGameResults(gameId);
   
   const currentRound = calculateRoundNumber(duration);
   const results: GameResult[] = [];
   
-  // Get existing results from localStorage (today only)
+  const kstTime = getKSTDate();
+  const secondsSinceMidnight = kstTime.getHours() * 3600 + kstTime.getMinutes() * 60 + kstTime.getSeconds();
+  const elapsedInCurrentRound = secondsSinceMidnight % duration;
+  
   const storageKey = getStorageKey(gameId);
   const saved = localStorage.getItem(storageKey);
   let existingResults: GameResult[] = [];
@@ -135,13 +137,10 @@ const generateAllPastResults = (gameId: string, duration: number, basePrice: num
     try {
       const parsed = JSON.parse(saved);
       if (Array.isArray(parsed)) {
-        // CRITICAL: Filter out any results with round numbers >= currentRound
-        // This ensures old data from previous days doesn't show up
         existingResults = parsed.filter((r: GameResult) => 
           typeof r.round === 'number' && r.round > 0 && r.round < currentRound
         );
         
-        // If we filtered out results, clear localStorage and start fresh
         if (existingResults.length !== parsed.length) {
           localStorage.removeItem(storageKey);
           existingResults = [];
@@ -153,33 +152,43 @@ const generateAllPastResults = (gameId: string, duration: number, basePrice: num
     }
   }
   
-  // Create a set of existing round numbers for quick lookup
   const existingRounds = new Set(existingResults.map(r => r.round));
   
-  // Only generate results for recent rounds (limit to last 50 for performance)
   const startRound = Math.max(1, currentRound - 50);
+  const previousRound = currentRound - 1;
+  const shouldSkipPreviousRound = elapsedInCurrentRound < 5;
   
-  // Generate all past rounds that don't exist yet
   for (let round = currentRound - 1; round >= startRound; round--) {
+    if (round === previousRound && shouldSkipPreviousRound) {
+      const existing = existingResults.find(r => r.round === round);
+      if (existing && existing.displayAfter && Date.now() < existing.displayAfter) {
+        continue;
+      }
+      if (existing && (!existing.displayAfter || Date.now() >= existing.displayAfter)) {
+        results.push(existing);
+        continue;
+      }
+      continue;
+    }
+    
     if (existingRounds.has(round)) {
-      // Use existing result
       const existing = existingResults.find(r => r.round === round);
       if (existing) {
+        if (existing.displayAfter && Date.now() < existing.displayAfter) {
+          continue;
+        }
         results.push(existing);
       }
     } else {
-      // Generate simulated result based on seeded random
-      // Use full gameId hash for better differentiation between BTC and ETH
       let gameIdHash = 0;
       for (let i = 0; i < gameId.length; i++) {
         gameIdHash = ((gameIdHash << 5) - gameIdHash) + gameId.charCodeAt(i);
-        gameIdHash = gameIdHash & gameIdHash; // Convert to 32bit integer
+        gameIdHash = gameIdHash & gameIdHash;
       }
       const seed = round * 7919 + duration * 7907 + Math.abs(gameIdHash) * 7901;
       const pseudoRandom = ((seed * 9301 + 49297) % 233280) / 233280;
       const direction: 'up' | 'down' = pseudoRandom > 0.5 ? 'up' : 'down';
       
-      // Calculate time for this round (KST start time of the round)
       const secondsSinceStart = (round - 1) * duration;
       const hours = Math.floor(secondsSinceStart / 3600);
       const minutes = Math.floor((secondsSinceStart % 3600) / 60);
@@ -193,10 +202,8 @@ const generateAllPastResults = (gameId: string, duration: number, basePrice: num
     }
   }
   
-  // Sort by round descending (newest first)
   results.sort((a, b) => b.round - a.round);
   
-  // Save to localStorage (only valid results)
   localStorage.setItem(storageKey, JSON.stringify(results));
   
   return results;
@@ -363,14 +370,19 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
       }
     });
     
-    // Get current round to filter out invalid results
     const currentRoundNow = calculateRoundNumber(game.duration);
+    const kstNow = getKSTDate();
+    const secSinceMidnight = kstNow.getHours() * 3600 + kstNow.getMinutes() * 60 + kstNow.getSeconds();
+    const elapsedInRound = secSinceMidnight % game.duration;
+    const recentRound = currentRoundNow - 1;
     
-    // Filter out any results >= current round and results still in delay period
     const now = Date.now();
-    const validResults = finalResults.filter(r => 
-      r.round > 0 && r.round < currentRoundNow && (!r.displayAfter || now >= r.displayAfter)
-    );
+    const validResults = finalResults.filter(r => {
+      if (r.round <= 0 || r.round >= currentRoundNow) return false;
+      if (r.displayAfter && now < r.displayAfter) return false;
+      if (r.round === recentRound && elapsedInRound < 5) return false;
+      return true;
+    });
     
     // Sort by round descending (most recent first) - highest round number at top
     validResults.sort((a, b) => b.round - a.round);
