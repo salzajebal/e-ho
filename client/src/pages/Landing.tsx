@@ -192,6 +192,7 @@ export default function Landing() {
   const [accountNumber, setAccountNumber] = useState("");
   const [region, setRegion] = useState("");
   const [branchCode, setBranchCode] = useState("");
+  const [registerErrorMessage, setRegisterErrorMessage] = useState("");
   
   // Inquiry form state
   const [showInquiryFormModal, setShowInquiryFormModal] = useState(false);
@@ -325,41 +326,42 @@ export default function Landing() {
 
   const handleRegisterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setRegisterErrorMessage("");
     
     if (regUsername.length < 3) {
-      toast.error("아이디는 3자 이상이어야 합니다");
+      setRegisterErrorMessage("아이디는 3자 이상이어야 합니다");
       return;
     }
     if (regPassword.length < 4) {
-      toast.error("비밀번호는 4자 이상이어야 합니다");
+      setRegisterErrorMessage("비밀번호는 4자 이상이어야 합니다");
       return;
     }
     if (regPassword !== confirmPassword) {
-      toast.error("비밀번호가 일치하지 않습니다");
+      setRegisterErrorMessage("비밀번호가 일치하지 않습니다");
       return;
     }
     if (!name) {
-      toast.error("이름을 입력해주세요");
+      setRegisterErrorMessage("이름을 입력해주세요");
       return;
     }
     if (!phone || phone.length < 10) {
-      toast.error("올바른 휴대폰 번호를 입력해주세요");
+      setRegisterErrorMessage("올바른 휴대폰 번호를 입력해주세요");
       return;
     }
     if (!branchCode) {
-      toast.error("지점코드를 입력해주세요");
+      setRegisterErrorMessage("지점코드를 입력해주세요");
       return;
     }
     if (!bankName) {
-      toast.error("은행을 선택해주세요");
+      setRegisterErrorMessage("은행을 선택해주세요");
       return;
     }
     if (!accountHolder) {
-      toast.error("예금주를 입력해주세요");
+      setRegisterErrorMessage("예금주를 입력해주세요");
       return;
     }
     if (!accountNumber) {
-      toast.error("계좌번호를 입력해주세요");
+      setRegisterErrorMessage("계좌번호를 입력해주세요");
       return;
     }
     
@@ -374,6 +376,7 @@ export default function Landing() {
       accountNumber,
     }, {
       onSuccess: () => {
+        setRegisterErrorMessage("");
         setShowRegisterModal(false);
         setRegUsername("");
         setRegPassword("");
@@ -386,6 +389,9 @@ export default function Landing() {
         setBankName("");
         setAccountHolder("");
         setAccountNumber("");
+      },
+      onError: (error: Error) => {
+        setRegisterErrorMessage(error.message);
       }
     });
   };
@@ -1325,7 +1331,7 @@ export default function Landing() {
       </Dialog>
 
       {/* Register Modal */}
-      <Dialog open={showRegisterModal} onOpenChange={setShowRegisterModal}>
+      <Dialog open={showRegisterModal} onOpenChange={(open) => { setShowRegisterModal(open); if (!open) setRegisterErrorMessage(""); }}>
         <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden max-h-[90vh] overflow-y-auto">
           <DialogTitle className="sr-only">회원가입</DialogTitle>
           <div className="relative">
@@ -1481,6 +1487,12 @@ export default function Landing() {
                     </div>
                   </div>
                 </div>
+
+                {registerErrorMessage && (
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 mt-2" data-testid="text-register-error">
+                    <p className="text-red-400 text-sm text-center font-medium">{registerErrorMessage}</p>
+                  </div>
+                )}
 
                 <Button
                   type="submit"
