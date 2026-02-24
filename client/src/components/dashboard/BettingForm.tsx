@@ -41,6 +41,7 @@ interface GameResult {
   round: number;
   direction: 'up' | 'down';
   time: string;
+  displayAfter?: number;
 }
 
 const MULTIPLIER = 1.95;
@@ -365,8 +366,11 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
     // Get current round to filter out invalid results
     const currentRoundNow = calculateRoundNumber(game.duration);
     
-    // Filter out any results >= current round (shouldn't exist)
-    const validResults = finalResults.filter(r => r.round > 0 && r.round < currentRoundNow);
+    // Filter out any results >= current round and results still in delay period
+    const now = Date.now();
+    const validResults = finalResults.filter(r => 
+      r.round > 0 && r.round < currentRoundNow && (!r.displayAfter || now >= r.displayAfter)
+    );
     
     // Sort by round descending (most recent first) - highest round number at top
     validResults.sort((a, b) => b.round - a.round);
@@ -412,29 +416,38 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
           const openPrice = gameState.roundStartPrice;
           const direction = closePrice >= openPrice ? 'up' : 'down';
           
+          const displayAfter = Date.now() + 5000;
+          
           const newResult: GameResult = {
             round: gameState.lastRound,
             direction,
             time: timeStr,
+            displayAfter,
           };
           
           const storageKey = getStorageKey(gameId);
+          const saved = localStorage.getItem(storageKey);
+          let results: GameResult[] = [];
+          if (saved) {
+            try {
+              results = JSON.parse(saved);
+            } catch (e) {
+              results = [];
+            }
+          }
+          const updated = [newResult, ...results];
+          localStorage.setItem(storageKey, JSON.stringify(updated));
           
           setTimeout(() => {
-            const saved = localStorage.getItem(storageKey);
-            let results: GameResult[] = [];
-            if (saved) {
-              try {
-                results = JSON.parse(saved);
-              } catch (e) {
-                results = [];
-              }
-            }
-            const updated = [newResult, ...results];
-            localStorage.setItem(storageKey, JSON.stringify(updated));
-            
             if (gameIdRef.current === gameId) {
-              setGameResults(updated);
+              const latestSaved = localStorage.getItem(storageKey);
+              if (latestSaved) {
+                try {
+                  const allResults: GameResult[] = JSON.parse(latestSaved);
+                  const visibleResults = allResults.filter(r => !r.displayAfter || Date.now() >= r.displayAfter);
+                  setGameResults(visibleResults);
+                } catch {}
+              }
             }
           }, 5000);
           
