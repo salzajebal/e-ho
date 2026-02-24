@@ -419,21 +419,24 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
           };
           
           const storageKey = getStorageKey(gameId);
-          const saved = localStorage.getItem(storageKey);
-          let results: GameResult[] = [];
-          if (saved) {
-            try {
-              results = JSON.parse(saved);
-            } catch (e) {
-              results = [];
-            }
-          }
-          const updated = [newResult, ...results];
-          localStorage.setItem(storageKey, JSON.stringify(updated));
           
-          if (gameId === gid) {
-            setGameResults(updated);
-          }
+          setTimeout(() => {
+            const saved = localStorage.getItem(storageKey);
+            let results: GameResult[] = [];
+            if (saved) {
+              try {
+                results = JSON.parse(saved);
+              } catch (e) {
+                results = [];
+              }
+            }
+            const updated = [newResult, ...results];
+            localStorage.setItem(storageKey, JSON.stringify(updated));
+            
+            if (gameIdRef.current === gameId) {
+              setGameResults(updated);
+            }
+          }, 5000);
           
           allGamesStateRef.current[gameId] = {
             lastRound: currentRoundForGame,
