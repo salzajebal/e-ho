@@ -119,93 +119,63 @@ const cleanupOldGameResults = (gameId: string) => {
   keysToRemove.forEach(key => localStorage.removeItem(key));
 };
 
-// Generate all past results for a game (entire day up to current round)
-const generateAllPastResults = (gameId: string, duration: number, basePrice: number): GameResult[] => {
+// Read real-time results from localStorage (written by checkAllGames only)
+const getStoredResults = (gameId: string, duration: number): GameResult[] => {
+  const storageKey = getStorageKey(gameId);
+  const saved = localStorage.getItem(storageKey);
+  if (!saved) return [];
+  try {
+    const parsed = JSON.parse(saved);
+    if (!Array.isArray(parsed)) return [];
+    const currentRound = calculateRoundNumber(duration);
+    return parsed.filter((r: GameResult) => 
+      typeof r.round === 'number' && r.round > 0 && r.round < currentRound
+    );
+  } catch {
+    return [];
+  }
+};
+
+// Generate deterministic pseudo-random direction for a round (always same result for same inputs)
+const getPseudoRandomDirection = (gameId: string, duration: number, round: number): 'up' | 'down' => {
+  let gameIdHash = 0;
+  for (let i = 0; i < gameId.length; i++) {
+    gameIdHash = ((gameIdHash << 5) - gameIdHash) + gameId.charCodeAt(i);
+    gameIdHash = gameIdHash & gameIdHash;
+  }
+  const seed = round * 7919 + duration * 7907 + Math.abs(gameIdHash) * 7901;
+  const pseudoRandom = ((seed * 9301 + 49297) % 233280) / 233280;
+  return pseudoRandom > 0.5 ? 'up' : 'down';
+};
+
+// Generate all past results for a game (read-only, does NOT write to localStorage)
+const generateAllPastResults = (gameId: string, duration: number): GameResult[] => {
   cleanupOldGameResults(gameId);
   
   const currentRound = calculateRoundNumber(duration);
   const results: GameResult[] = [];
   
-  const kstTime = getKSTDate();
-  const secondsSinceMidnight = kstTime.getHours() * 3600 + kstTime.getMinutes() * 60 + kstTime.getSeconds();
-  const elapsedInCurrentRound = secondsSinceMidnight % duration;
-  
-  const storageKey = getStorageKey(gameId);
-  const saved = localStorage.getItem(storageKey);
-  let existingResults: GameResult[] = [];
-  if (saved) {
-    try {
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed)) {
-        existingResults = parsed.filter((r: GameResult) => 
-          typeof r.round === 'number' && r.round > 0 && r.round < currentRound
-        );
-        
-        if (existingResults.length !== parsed.length) {
-          localStorage.removeItem(storageKey);
-          existingResults = [];
-        }
-      }
-    } catch (e) {
-      localStorage.removeItem(storageKey);
-      existingResults = [];
-    }
-  }
-  
-  const existingRounds = new Set(existingResults.map(r => r.round));
+  const storedResults = getStoredResults(gameId, duration);
+  const storedRounds = new Map<number, GameResult>();
+  storedResults.forEach(r => storedRounds.set(r.round, r));
   
   const startRound = Math.max(1, currentRound - 50);
-  const previousRound = currentRound - 1;
-  const shouldSkipPreviousRound = elapsedInCurrentRound < 5;
   
   for (let round = currentRound - 1; round >= startRound; round--) {
-    if (round === previousRound && shouldSkipPreviousRound) {
-      const existing = existingResults.find(r => r.round === round);
-      if (existing && existing.displayAfter && Date.now() < existing.displayAfter) {
-        continue;
-      }
-      if (existing && (!existing.displayAfter || Date.now() >= existing.displayAfter)) {
-        results.push(existing);
-        continue;
-      }
-      continue;
-    }
-    
-    if (existingRounds.has(round)) {
-      const existing = existingResults.find(r => r.round === round);
-      if (existing) {
-        if (existing.displayAfter && Date.now() < existing.displayAfter) {
-          continue;
-        }
-        results.push(existing);
-      }
+    if (storedRounds.has(round)) {
+      results.push(storedRounds.get(round)!);
     } else {
-      let gameIdHash = 0;
-      for (let i = 0; i < gameId.length; i++) {
-        gameIdHash = ((gameIdHash << 5) - gameIdHash) + gameId.charCodeAt(i);
-        gameIdHash = gameIdHash & gameIdHash;
-      }
-      const seed = round * 7919 + duration * 7907 + Math.abs(gameIdHash) * 7901;
-      const pseudoRandom = ((seed * 9301 + 49297) % 233280) / 233280;
-      const direction: 'up' | 'down' = pseudoRandom > 0.5 ? 'up' : 'down';
-      
+      const direction = getPseudoRandomDirection(gameId, duration, round);
       const secondsSinceStart = (round - 1) * duration;
       const hours = Math.floor(secondsSinceStart / 3600);
       const minutes = Math.floor((secondsSinceStart % 3600) / 60);
       const timeStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
       
-      results.push({
-        round,
-        direction,
-        time: timeStr,
-      });
+      results.push({ round, direction, time: timeStr });
     }
   }
   
   results.sort((a, b) => b.round - a.round);
-  
-  localStorage.setItem(storageKey, JSON.stringify(results));
-  
   return results;
 };
 
@@ -259,6 +229,7 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
   const [forcedDirections, setForcedDirections] = useState<ForcedDirection[]>([]);
   const [resultRefreshTrigger, setResultRefreshTrigger] = useState(0);
   const allGamesStateRef = useRef<AllGamesState>({});
+  const roundCompletionTimesRef = useRef<Map<string, number>>(new Map());
   const lastPriceRef = useRef<number>(currentPrice);
   const allPricesRef = useRef<Record<string, number>>(allPrices);
   const gameDurationRef = useRef<number>(game.duration);
@@ -287,8 +258,7 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
       }
     };
     fetchForcedDirections();
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchForcedDirections, 30000);
+    const interval = setInterval(fetchForcedDirections, 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -344,8 +314,7 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
       });
     });
     
-    // Get existing generated results
-    const generatedResults = generateAllPastResults(game.id, game.duration, currentPrice);
+    const generatedResults = generateAllPastResults(game.id, game.duration);
     
     // Build final results: user bet results take priority over generated results
     const finalResults: GameResult[] = [];
@@ -388,16 +357,15 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
     });
     
     const currentRoundNow = calculateRoundNumber(game.duration);
-    const kstNow = getKSTDate();
-    const secSinceMidnight = kstNow.getHours() * 3600 + kstNow.getMinutes() * 60 + kstNow.getSeconds();
-    const elapsedInRound = secSinceMidnight % game.duration;
-    const recentRound = currentRoundNow - 1;
-    
     const now = Date.now();
+    
     const validResults = finalResults.filter(r => {
       if (r.round <= 0 || r.round >= currentRoundNow) return false;
-      if (r.displayAfter && now < r.displayAfter) return false;
-      if (r.round === recentRound && elapsedInRound < 5) return false;
+      
+      const completionKey = `${game.id}_${r.round}`;
+      const completionTime = roundCompletionTimesRef.current.get(completionKey);
+      if (completionTime && (now - completionTime) < 5000) return false;
+      
       return true;
     });
     
@@ -405,7 +373,7 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
     validResults.sort((a, b) => b.round - a.round);
     
     setGameResults(validResults);
-  }, [game.id, game.duration, game.symbol, currentPrice, userBets, forcedDirections, resultRefreshTrigger]);
+  }, [game.id, game.duration, game.symbol, userBets, forcedDirections, resultRefreshTrigger]);
 
   // Track round changes for ALL 12 games simultaneously
   useEffect(() => {
@@ -444,14 +412,13 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
           const closePrice = symbolPrice;
           const openPrice = gameState.roundStartPrice;
           const direction = closePrice >= openPrice ? 'up' : 'down';
-          
-          const displayAfter = Date.now() + 5000;
+          const completedRound = gameState.lastRound;
+          const completionTime = Date.now();
           
           const newResult: GameResult = {
-            round: gameState.lastRound,
+            round: completedRound,
             direction,
             time: timeStr,
-            displayAfter,
           };
           
           const storageKey = getStorageKey(gameId);
@@ -464,8 +431,16 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
               results = [];
             }
           }
-          const updated = [newResult, ...results];
-          localStorage.setItem(storageKey, JSON.stringify(updated));
+          const existingIdx = results.findIndex(r => r.round === completedRound);
+          if (existingIdx >= 0) {
+            results[existingIdx] = newResult;
+          } else {
+            results.unshift(newResult);
+          }
+          localStorage.setItem(storageKey, JSON.stringify(results));
+          
+          const completionKey = `${gameId}_${completedRound}`;
+          roundCompletionTimesRef.current.set(completionKey, completionTime);
           
           setTimeout(() => {
             if (gameIdRef.current === gameId) {
