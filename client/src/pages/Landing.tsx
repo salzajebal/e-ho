@@ -1626,9 +1626,15 @@ export default function Landing() {
                             {bet.direction === 'long' ? 'LONG' : 'SHORT'}
                           </span>
                           <span className="text-white font-medium">{bet.symbol}</span>
+                          {bet.roundNumber && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-400">
+                              {bet.roundNumber}회차
+                            </span>
+                          )}
                         </div>
                         <div className="text-xs text-gray-400 mt-1">
-                          {new Date(bet.createdAt).toLocaleDateString('ko-KR')}
+                          {new Date(bet.createdAt).toLocaleDateString('ko-KR')}{' '}
+                          {new Date(bet.createdAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })}
                         </div>
                       </div>
                       <div className="text-right">
