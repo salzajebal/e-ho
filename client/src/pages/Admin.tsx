@@ -3324,7 +3324,7 @@ export default function Admin() {
                             {bet.roundNumber || '-'}회차
                           </span>
                         </td>
-                        <td className="px-2 lg:px-3 py-1.5 lg:py-2">{bet.username}</td>
+                        <td className="px-2 lg:px-3 py-1.5 lg:py-2">{bet.name || bet.username}</td>
                         <td className="px-2 lg:px-3 py-1.5 lg:py-2 text-center">
                           {bet.outcome === 'pending' ? (
                             <button
