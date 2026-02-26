@@ -197,6 +197,7 @@ export default function Home() {
               currentPrice={currentMarket.price} 
               game={selectedGame}
               onBet={handleBet}
+              isBetting={createBet.isPending}
               balance={balanceData?.balance}
               userBets={allBets}
               allPrices={currentPrices}
@@ -244,6 +245,7 @@ export default function Home() {
               currentPrice={currentMarket.price} 
               game={selectedGame}
               onBet={handleBet}
+              isBetting={createBet.isPending}
               balance={balanceData?.balance}
               userBets={allBets}
               allPrices={currentPrices}

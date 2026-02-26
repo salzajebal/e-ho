@@ -110,6 +110,21 @@ export async function initializeDatabase(): Promise<void> {
     console.log('Bets table ready');
 
     await client.query(`
+      DELETE FROM bets a USING bets b
+      WHERE a.id < b.id
+        AND a.user_id = b.user_id
+        AND a.symbol = b.symbol
+        AND a.duration = b.duration
+        AND a.round_number = b.round_number
+    `);
+
+    await client.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_bets_user_round
+      ON bets (user_id, symbol, duration, round_number)
+    `);
+    console.log('Bets unique index ready');
+
+    await client.query(`
       CREATE TABLE IF NOT EXISTS settings (
         key TEXT PRIMARY KEY,
         value TEXT NOT NULL,

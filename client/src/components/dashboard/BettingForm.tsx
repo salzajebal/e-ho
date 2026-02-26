@@ -33,6 +33,7 @@ interface BettingFormProps {
   game: Game;
   balance?: string;
   onBet: (direction: 'long' | 'short', amount: number) => void;
+  isBetting?: boolean;
   userBets?: UserBet[];
   allPrices?: Record<string, number>;
 }
@@ -209,7 +210,7 @@ interface ForcedDirection {
   dateKey: string;
 }
 
-export function BettingForm({ currentPrice, game, balance, onBet, userBets = [], allPrices = {} }: BettingFormProps) {
+export function BettingForm({ currentPrice, game, balance, onBet, isBetting = false, userBets = [], allPrices = {} }: BettingFormProps) {
   const { data: maxExecutionData } = useQuery<{ enabled: boolean }>({
     queryKey: ["/api/max-execution-status"],
     queryFn: async () => {
@@ -536,6 +537,7 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
   };
 
   const confirmBet = () => {
+    if (isBetting) return;
     onBet(betConfirmation.direction, betConfirmation.amount);
     setBetConfirmation(prev => ({ ...prev, show: false }));
     setAmount("");
@@ -769,12 +771,13 @@ export function BettingForm({ currentPrice, game, balance, onBet, userBets = [],
               </Button>
               <Button 
                 onClick={confirmBet}
+                disabled={isBetting}
                 className={cn(
                   "w-full text-white",
                   betConfirmation.direction === 'long' ? "bg-up hover:bg-up/90" : "bg-down hover:bg-down/90"
                 )}
               >
-                확인
+                {isBetting ? "처리중..." : "확인"}
               </Button>
             </div>
           </div>

@@ -594,7 +594,10 @@ export async function registerRoutes(
       });
 
       res.json(bet);
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.code === '23505' || error?.message?.includes('idx_bets_user_round')) {
+        return res.status(400).json({ error: "회차당 1회만 거래 가능합니다. 다음 회차를 이용해주세요." });
+      }
       console.error("Failed to place bet:", error);
       res.status(500).json({ error: "Failed to place bet" });
     }
