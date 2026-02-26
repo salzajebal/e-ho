@@ -415,12 +415,22 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserBetForRound(userId: string, symbol: string, duration: number, roundNumber: number): Promise<Bet | undefined> {
+    const now = new Date();
+    const kstOffset = 9 * 60;
+    const utcOffset = now.getTimezoneOffset();
+    const kstNow = new Date(now.getTime() + (utcOffset + kstOffset) * 60 * 1000);
+    const todayStart = new Date(kstNow.getFullYear(), kstNow.getMonth(), kstNow.getDate());
+    const todayStartUTC = new Date(todayStart.getTime() - (kstOffset * 60 * 1000));
+    const tomorrowStartUTC = new Date(todayStartUTC.getTime() + 24 * 60 * 60 * 1000);
+
     const [bet] = await db.select().from(bets)
       .where(and(
         eq(bets.userId, userId),
         eq(bets.symbol, symbol),
         eq(bets.duration, duration),
-        eq(bets.roundNumber, roundNumber)
+        eq(bets.roundNumber, roundNumber),
+        gte(bets.createdAt, todayStartUTC),
+        sql`${bets.createdAt} < ${tomorrowStartUTC}`
       ));
     return bet || undefined;
   }
