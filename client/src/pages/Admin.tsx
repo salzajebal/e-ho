@@ -1034,7 +1034,7 @@ export default function Admin() {
       return res.json();
     },
     enabled: auth?.role === 'admin',
-    refetchInterval: 2000,
+    refetchInterval: 5000,
   });
 
   const { data: settingsData } = useQuery({
@@ -1148,6 +1148,12 @@ export default function Admin() {
       console.log('Admin WebSocket connection opened');
     };
 
+    const debounceTimers: Record<string, ReturnType<typeof setTimeout>> = {};
+    const debouncedRefetch = (key: string, fn: () => void, delay = 1000) => {
+      if (debounceTimers[key]) clearTimeout(debounceTimers[key]);
+      debounceTimers[key] = setTimeout(fn, delay);
+    };
+
     ws.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data);
@@ -1158,16 +1164,16 @@ export default function Admin() {
           console.log('Admin force logout received');
           queryClient.setQueryData(["/api/admin/auth/me"], null);
         } else if (msg.event === 'bet_placed' || msg.event === 'bet_updated' || msg.event === 'bet_settled') {
-          refetchBets();
-          refetchUsers();
+          debouncedRefetch('bets', () => refetchBets());
+          debouncedRefetch('users', () => refetchUsers());
           if (msg.event === 'bet_placed') {
             toast.info(`새 거래: ${msg.data.user?.username || 'Unknown'} - ${formatMoney(msg.data.bet.amount)}`);
           }
         } else if (msg.event === 'balance_updated') {
-          refetchUsers();
+          debouncedRefetch('users', () => refetchUsers());
         } else if (msg.event === 'transaction_request') {
-          refetchTransactions();
-          refetchUsers();
+          debouncedRefetch('transactions', () => refetchTransactions());
+          debouncedRefetch('users', () => refetchUsers());
           const type = msg.data.type === 'deposit' ? '입금' : '출금';
           const amount = Number(msg.data.amount).toLocaleString();
           const userName = msg.data.name || msg.data.username || 'Unknown';
@@ -1184,7 +1190,7 @@ export default function Admin() {
             });
           }
         } else if (msg.event === 'user_connected' || msg.event === 'user_disconnected') {
-          refetchOnlineUsers();
+          debouncedRefetch('onlineUsers', () => refetchOnlineUsers());
         }
       } catch (e) {
         console.error('WebSocket parse error:', e);
