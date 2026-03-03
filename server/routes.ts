@@ -732,13 +732,22 @@ export async function registerRoutes(
   app.get("/api/admin/users", requireAdmin, async (req, res) => {
     try {
       const allUsers = await storage.getAllUsers();
-      const allBets = await storage.getAllBets();
+      
+      const statsResult = await sessionPool.query(`
+        SELECT user_id,
+          COALESCE(SUM(CASE WHEN outcome != 'pending' THEN amount::numeric ELSE 0 END), 0) as total_bet,
+          COALESCE(SUM(CASE WHEN outcome = 'win' THEN payout::numeric ELSE 0 END), 0) as total_win
+        FROM bets
+        GROUP BY user_id
+      `);
+      const statsMap = new Map<string, { totalBet: number; totalWin: number }>();
+      for (const row of statsResult.rows) {
+        statsMap.set(row.user_id, { totalBet: parseFloat(row.total_bet), totalWin: parseFloat(row.total_win) });
+      }
       
       const usersWithStats = allUsers.map(u => {
-        const userBets = allBets.filter(b => b.userId === u.id && b.outcome !== 'pending');
-        const totalBetAmount = userBets.reduce((sum, b) => sum + parseFloat(b.amount), 0);
-        const totalWinAmount = userBets.filter(b => b.outcome === 'win').reduce((sum, b) => sum + parseFloat(b.payout || '0'), 0);
-        const profitRate = totalBetAmount > 0 ? ((totalWinAmount - totalBetAmount) / totalBetAmount * 100) : 0;
+        const stats = statsMap.get(u.id) || { totalBet: 0, totalWin: 0 };
+        const profitRate = stats.totalBet > 0 ? ((stats.totalWin - stats.totalBet) / stats.totalBet * 100) : 0;
         
         return {
           id: u.id,
@@ -752,8 +761,8 @@ export async function registerRoutes(
           balance: u.balance,
           totalDeposit: u.totalDeposit,
           totalWithdrawal: u.totalWithdrawal,
-          totalBet: totalBetAmount.toString(),
-          totalWin: totalWinAmount.toString(),
+          totalBet: stats.totalBet.toString(),
+          totalWin: stats.totalWin.toString(),
           profitRate: profitRate.toFixed(2),
           role: u.role,
           isActive: u.isActive,
@@ -1272,15 +1281,7 @@ export async function registerRoutes(
     }
   });
 
-  // Get all bets with usernames (admin)
-  app.get("/api/admin/bets", requireAdmin, async (req, res) => {
-    try {
-      const allBets = await storage.getAllBetsWithUsers();
-      res.json(allBets);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch bets" });
-    }
-  });
+  // (moved to later route with filter support)
 
   // Update bet outcome (admin)
   app.patch("/api/admin/bets/:id", requireAdmin, async (req, res) => {
@@ -1352,29 +1353,31 @@ export async function registerRoutes(
   app.get("/api/admin/stats", requireAdmin, async (req, res) => {
     try {
       const allUsers = await storage.getAllUsers();
-      const allBets = await storage.getAllBets();
-      
       const totalUsers = allUsers.length;
       const activeUsers = allUsers.filter(u => u.isActive).length;
-      const totalBets = allBets.length;
-      const pendingBets = allBets.filter(b => b.outcome === 'pending').length;
-      const wonBets = allBets.filter(b => b.outcome === 'win').length;
-      const lostBets = allBets.filter(b => b.outcome === 'lose').length;
-      
-      const totalBetAmount = allBets.reduce((sum, b) => sum + parseFloat(b.amount), 0);
-      const totalPayout = allBets.filter(b => b.outcome === 'win').reduce((sum, b) => sum + parseFloat(b.payout || '0'), 0);
-      const profit = totalBetAmount - totalPayout;
+
+      const betStats = await sessionPool.query(`
+        SELECT
+          COUNT(*)::int as total_bets,
+          COUNT(*) FILTER (WHERE outcome = 'pending')::int as pending_bets,
+          COUNT(*) FILTER (WHERE outcome = 'win')::int as won_bets,
+          COUNT(*) FILTER (WHERE outcome = 'lose')::int as lost_bets,
+          COALESCE(SUM(amount::numeric), 0) as total_bet_amount,
+          COALESCE(SUM(CASE WHEN outcome = 'win' THEN payout::numeric ELSE 0 END), 0) as total_payout
+        FROM bets
+      `);
+      const s = betStats.rows[0];
 
       res.json({
         totalUsers,
         activeUsers,
-        totalBets,
-        pendingBets,
-        wonBets,
-        lostBets,
-        totalBetAmount,
-        totalPayout,
-        profit,
+        totalBets: s.total_bets,
+        pendingBets: s.pending_bets,
+        wonBets: s.won_bets,
+        lostBets: s.lost_bets,
+        totalBetAmount: parseFloat(s.total_bet_amount),
+        totalPayout: parseFloat(s.total_payout),
+        profit: parseFloat(s.total_bet_amount) - parseFloat(s.total_payout),
       });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch stats" });

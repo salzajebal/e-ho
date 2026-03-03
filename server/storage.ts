@@ -607,8 +607,6 @@ export class DatabaseStorage implements IStorage {
     symbol?: string,
     userId?: string
   ): Promise<(Bet & { username: string; name: string; userForcedDirection: string | null })[]> {
-    let query = db.select().from(bets);
-    
     const conditions = [];
     if (status) {
       conditions.push(eq(bets.outcome, status));
@@ -619,15 +617,20 @@ export class DatabaseStorage implements IStorage {
     if (userId) {
       conditions.push(eq(bets.userId, userId));
     }
-    
-    let allBets;
-    if (conditions.length > 0) {
-      allBets = await db.select().from(bets)
-        .where(and(...conditions))
-        .orderBy(desc(bets.createdAt));
-    } else {
-      allBets = await db.select().from(bets).orderBy(desc(bets.createdAt));
+
+    if (conditions.length === 0) {
+      const now = new Date();
+      const kstOffset = 9 * 60;
+      const utcOffset = now.getTimezoneOffset();
+      const kstNow = new Date(now.getTime() + (utcOffset + kstOffset) * 60 * 1000);
+      const todayStart = new Date(kstNow.getFullYear(), kstNow.getMonth(), kstNow.getDate());
+      const todayStartUTC = new Date(todayStart.getTime() - (kstOffset * 60 * 1000));
+      conditions.push(gte(bets.createdAt, todayStartUTC));
     }
+    
+    const allBets = await db.select().from(bets)
+      .where(and(...conditions))
+      .orderBy(desc(bets.createdAt));
     
     const allUsers = await this.getAllUsers();
     const userMap = new Map(allUsers.map(u => [u.id, { username: u.username, name: u.name, forcedBetDirection: u.forcedBetDirection }]));
