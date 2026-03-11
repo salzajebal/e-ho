@@ -171,8 +171,10 @@ export interface IStorage {
   deleteInquiryTemplate(id: number): Promise<void>;
 
   // Round forced direction methods (회차별 강제설정)
-  setRoundForcedDirection(symbol: string, duration: number, roundNumber: number, dateKey: string, forcedDirection: 'up' | 'down'): Promise<RoundForcedDirection>;
+  setRoundForcedDirection(symbol: string, duration: number, roundNumber: number, dateKey: string, forcedDirection: string): Promise<RoundForcedDirection>;
   getRoundForcedDirection(symbol: string, duration: number, roundNumber: number, dateKey: string): Promise<RoundForcedDirection | undefined>;
+  getRoundForcedDirectionsForRound(symbol: string, duration: number, roundNumber: number, dateKey: string): Promise<RoundForcedDirection[]>;
+  deleteRoundForcedDirectionByType(symbol: string, duration: number, roundNumber: number, dateKey: string, forcedDirection: string): Promise<void>;
   getRoundForcedDirectionsForDate(dateKey: string): Promise<RoundForcedDirection[]>;
   deleteRoundForcedDirection(symbol: string, duration: number, roundNumber: number, dateKey: string): Promise<void>;
 
@@ -1325,17 +1327,30 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Round forced direction methods (회차별 강제설정)
-  async setRoundForcedDirection(symbol: string, duration: number, roundNumber: number, dateKey: string, forcedDirection: 'up' | 'down'): Promise<RoundForcedDirection> {
-    // Delete existing if any
-    await db.delete(roundForcedDirections)
-      .where(and(
-        eq(roundForcedDirections.symbol, symbol),
-        eq(roundForcedDirections.duration, duration),
-        eq(roundForcedDirections.roundNumber, roundNumber),
-        eq(roundForcedDirections.dateKey, dateKey)
-      ));
+  async setRoundForcedDirection(symbol: string, duration: number, roundNumber: number, dateKey: string, forcedDirection: string): Promise<RoundForcedDirection> {
+    const isDirectionType = ['up', 'down'].includes(forcedDirection);
+    const isOutcomeType = ['all_win', 'all_lose'].includes(forcedDirection);
     
-    // Insert new
+    if (isDirectionType) {
+      await db.delete(roundForcedDirections)
+        .where(and(
+          eq(roundForcedDirections.symbol, symbol),
+          eq(roundForcedDirections.duration, duration),
+          eq(roundForcedDirections.roundNumber, roundNumber),
+          eq(roundForcedDirections.dateKey, dateKey),
+          sql`${roundForcedDirections.forcedDirection} IN ('up', 'down')`
+        ));
+    } else if (isOutcomeType) {
+      await db.delete(roundForcedDirections)
+        .where(and(
+          eq(roundForcedDirections.symbol, symbol),
+          eq(roundForcedDirections.duration, duration),
+          eq(roundForcedDirections.roundNumber, roundNumber),
+          eq(roundForcedDirections.dateKey, dateKey),
+          sql`${roundForcedDirections.forcedDirection} IN ('all_win', 'all_lose')`
+        ));
+    }
+    
     const [created] = await db.insert(roundForcedDirections)
       .values({ symbol, duration, roundNumber, dateKey, forcedDirection })
       .returning();
@@ -1351,6 +1366,27 @@ export class DatabaseStorage implements IStorage {
         eq(roundForcedDirections.dateKey, dateKey)
       ));
     return result || undefined;
+  }
+
+  async getRoundForcedDirectionsForRound(symbol: string, duration: number, roundNumber: number, dateKey: string): Promise<RoundForcedDirection[]> {
+    return await db.select().from(roundForcedDirections)
+      .where(and(
+        eq(roundForcedDirections.symbol, symbol),
+        eq(roundForcedDirections.duration, duration),
+        eq(roundForcedDirections.roundNumber, roundNumber),
+        eq(roundForcedDirections.dateKey, dateKey)
+      ));
+  }
+
+  async deleteRoundForcedDirectionByType(symbol: string, duration: number, roundNumber: number, dateKey: string, forcedDirection: string): Promise<void> {
+    await db.delete(roundForcedDirections)
+      .where(and(
+        eq(roundForcedDirections.symbol, symbol),
+        eq(roundForcedDirections.duration, duration),
+        eq(roundForcedDirections.roundNumber, roundNumber),
+        eq(roundForcedDirections.dateKey, dateKey),
+        eq(roundForcedDirections.forcedDirection, forcedDirection)
+      ));
   }
 
   async getRoundForcedDirectionsForDate(dateKey: string): Promise<RoundForcedDirection[]> {

@@ -340,12 +340,11 @@ function AdminLogin() {
 function RoundForcedTab() {
   const [selectedSymbol, setSelectedSymbol] = useState<string>('USD');
   const [selectedDuration, setSelectedDuration] = useState<number>(60);
-  const [selectedDirection, setSelectedDirection] = useState<'up' | 'down' | 'all_win' | 'all_lose'>('up');
   const [timeLeft, setTimeLeft] = useState({ minutes: 0, seconds: 0 });
   const [currentRound, setCurrentRound] = useState(1);
+  const [isToggling, setIsToggling] = useState(false);
   const duration = selectedDuration;
 
-  // Get KST Date - synchronized with BettingForm
   const getKSTDate = (): Date => {
     const now = new Date();
     const kstOffset = 9 * 60;
@@ -353,14 +352,12 @@ function RoundForcedTab() {
     return new Date(now.getTime() + (utcOffset + kstOffset) * 60 * 1000);
   };
 
-  // Calculate current round number - synchronized with BettingForm
   const calculateRoundNumber = (durationSeconds: number): number => {
     const kstTime = getKSTDate();
     const secondsSinceMidnight = kstTime.getHours() * 3600 + kstTime.getMinutes() * 60 + kstTime.getSeconds();
     return Math.floor(secondsSinceMidnight / durationSeconds) + 1;
   };
 
-  // Get remaining seconds in current round - synchronized with BettingForm
   const getRoundTimeRemaining = (durationSeconds: number): number => {
     const kstTime = getKSTDate();
     const secondsSinceMidnight = kstTime.getHours() * 3600 + kstTime.getMinutes() * 60 + kstTime.getSeconds();
@@ -368,7 +365,6 @@ function RoundForcedTab() {
     return durationSeconds - elapsedInRound;
   };
 
-  // Get today's date key in KST
   const getKSTDateKey = () => {
     const kstDate = getKSTDate();
     const year = kstDate.getFullYear();
@@ -380,7 +376,6 @@ function RoundForcedTab() {
   const dateKey = getKSTDateKey();
   const maxRounds = Math.floor(86400 / duration);
 
-  // Real-time round and countdown update - synchronized with BettingForm
   useEffect(() => {
     const calculateRoundInfo = () => {
       const round = calculateRoundNumber(duration);
@@ -397,7 +392,6 @@ function RoundForcedTab() {
     return () => clearInterval(interval);
   }, [duration]);
 
-  // Fetch round forced directions for today
   const { data: forcedDirections = [], refetch: refetchDirections } = useQuery<any[]>({
     queryKey: ['/api/admin/round-forced', dateKey],
     queryFn: async () => {
@@ -408,15 +402,17 @@ function RoundForcedTab() {
     refetchInterval: 5000,
   });
 
-  // Check if current round already has a setting
-  const currentRoundSetting = forcedDirections.find(
+  const currentRoundSettings = forcedDirections.filter(
     d => d.symbol === selectedSymbol && d.duration === duration && d.roundNumber === currentRound
   );
+  const hasDirection = currentRoundSettings.find(d => d.forcedDirection === 'up' || d.forcedDirection === 'down');
+  const hasOutcome = currentRoundSettings.find(d => d.forcedDirection === 'all_win' || d.forcedDirection === 'all_lose');
 
-  // Set forced direction for current round
-  const handleSetCurrentRound = async () => {
+  const handleToggle = async (forcedDirection: string) => {
+    if (isToggling) return;
+    setIsToggling(true);
     try {
-      const res = await fetch('/api/admin/round-forced', {
+      const res = await fetch('/api/admin/round-forced/toggle', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -425,23 +421,29 @@ function RoundForcedTab() {
           duration,
           roundNumber: currentRound,
           dateKey,
-          forcedDirection: selectedDirection,
+          forcedDirection,
         }),
       });
       if (!res.ok) throw new Error('설정 실패');
-      const dirLabel = selectedDirection === 'up' ? '매수' : selectedDirection === 'down' ? '매도' : selectedDirection === 'all_win' ? '전체적중' : '전체미적중';
-      toast.success(`${currentRound}회차 ${dirLabel} 설정 완료`);
+      const result = await res.json();
+      const labels: Record<string, string> = { up: '매수(롱)', down: '매도(숏)', all_win: '전체적중', all_lose: '전체미적중' };
+      if (result.action === 'created') {
+        toast.success(`${currentRound}회차 ${labels[forcedDirection]} 적용`);
+      } else {
+        toast.success(`${currentRound}회차 ${labels[forcedDirection]} 해제`);
+      }
       refetchDirections();
     } catch (error) {
       toast.error('회차별 설정에 실패했습니다');
+    } finally {
+      setIsToggling(false);
     }
   };
 
-  // Delete forced direction
   const handleDeleteForced = async (item: any) => {
     try {
-      const res = await fetch('/api/admin/round-forced', {
-        method: 'DELETE',
+      const res = await fetch('/api/admin/round-forced/toggle', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
@@ -449,10 +451,11 @@ function RoundForcedTab() {
           duration: item.duration,
           roundNumber: item.roundNumber,
           dateKey: item.dateKey,
+          forcedDirection: item.forcedDirection,
         }),
       });
       if (!res.ok) throw new Error('삭제 실패');
-      toast.success('설정이 삭제되었습니다');
+      toast.success('설정이 해제되었습니다');
       refetchDirections();
     } catch (error) {
       toast.error('삭제에 실패했습니다');
@@ -493,134 +496,156 @@ function RoundForcedTab() {
         </div>
       </div>
 
-      {/* Symbol Selection & Direction Setting */}
+      {/* Symbol & Duration Selection */}
       <div className="bg-card border border-border rounded-lg p-6">
         <h3 className="font-medium mb-4 flex items-center gap-2">
           <Zap className="w-4 h-4 text-yellow-500" />
           현재 회차 강제 설정
         </h3>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Symbol Selection */}
-          <div className="space-y-3">
-            <label className="text-sm text-muted-foreground font-medium">종목 선택</label>
-            <div className="grid grid-cols-2 gap-2">
-              {['USD', 'EUR', 'JPY', 'AUD'].map(sym => (
-                <Button
-                  key={sym}
-                  type="button"
-                  variant={selectedSymbol === sym ? 'default' : 'outline'}
-                  className={cn(
-                    "h-12 text-sm font-bold",
-                    selectedSymbol === sym && "bg-amber-600 hover:bg-amber-700"
-                  )}
-                  onClick={() => setSelectedSymbol(sym)}
-                >
-                  {sym === 'USD' ? '달러' : sym === 'EUR' ? '유로' : sym === 'JPY' ? '엔화' : '호주달러'}
-                </Button>
-              ))}
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <label className="text-sm text-muted-foreground font-medium">종목 선택</label>
+              <div className="grid grid-cols-4 gap-2">
+                {['USD', 'EUR', 'JPY', 'AUD'].map(sym => (
+                  <Button
+                    key={sym}
+                    type="button"
+                    variant={selectedSymbol === sym ? 'default' : 'outline'}
+                    className={cn(
+                      "h-12 text-sm font-bold",
+                      selectedSymbol === sym && "bg-amber-600 hover:bg-amber-700"
+                    )}
+                    onClick={() => setSelectedSymbol(sym)}
+                  >
+                    {sym === 'USD' ? '달러' : sym === 'EUR' ? '유로' : sym === 'JPY' ? '엔화' : '호주달러'}
+                  </Button>
+                ))}
+              </div>
             </div>
-            <label className="text-sm text-muted-foreground font-medium mt-2">시간 선택</label>
-            <div className="flex gap-2">
-              {[60, 180, 300].map(d => (
-                <Button
-                  key={d}
-                  type="button"
-                  variant={selectedDuration === d ? 'default' : 'outline'}
-                  className={cn(
-                    "flex-1 h-10 text-sm font-bold",
-                    selectedDuration === d && "bg-amber-600 hover:bg-amber-700"
-                  )}
-                  onClick={() => setSelectedDuration(d)}
-                >
-                  {d / 60}분
-                </Button>
-              ))}
+            <div className="space-y-3">
+              <label className="text-sm text-muted-foreground font-medium">시간 선택</label>
+              <div className="flex gap-2">
+                {[60, 180, 300].map(d => (
+                  <Button
+                    key={d}
+                    type="button"
+                    variant={selectedDuration === d ? 'default' : 'outline'}
+                    className={cn(
+                      "flex-1 h-12 text-sm font-bold",
+                      selectedDuration === d && "bg-amber-600 hover:bg-amber-700"
+                    )}
+                    onClick={() => setSelectedDuration(d)}
+                  >
+                    {d / 60}분
+                  </Button>
+                ))}
+              </div>
             </div>
           </div>
 
-          {/* Direction Selection */}
+          {/* Direction buttons - click = instant toggle */}
           <div className="space-y-3">
-            <label className="text-sm text-muted-foreground font-medium">결과 방향</label>
+            <label className="text-sm text-muted-foreground font-medium">포지션 강제 변경 (클릭 시 즉시 적용/해제)</label>
             <div className="grid grid-cols-2 gap-3">
               <Button
                 type="button"
-                variant={selectedDirection === 'up' ? 'default' : 'outline'}
+                disabled={isToggling}
                 className={cn(
-                  "h-14 text-lg font-bold",
-                  selectedDirection === 'up' && "bg-up hover:bg-up/90"
+                  "h-16 text-lg font-bold transition-all",
+                  hasDirection?.forcedDirection === 'up'
+                    ? "bg-up hover:bg-up/80 text-white ring-2 ring-up ring-offset-2 ring-offset-background"
+                    : "bg-transparent border-2 border-up/50 text-up hover:bg-up/10"
                 )}
-                onClick={() => setSelectedDirection('up')}
+                onClick={() => handleToggle('up')}
+                data-testid="toggle-round-up"
               >
                 <TrendingUp className="w-5 h-5 mr-2" />
                 매수(롱)
+                {hasDirection?.forcedDirection === 'up' && <Check className="w-4 h-4 ml-2" />}
               </Button>
               <Button
                 type="button"
-                variant={selectedDirection === 'down' ? 'default' : 'outline'}
+                disabled={isToggling}
                 className={cn(
-                  "h-14 text-lg font-bold",
-                  selectedDirection === 'down' && "bg-down hover:bg-down/90"
+                  "h-16 text-lg font-bold transition-all",
+                  hasDirection?.forcedDirection === 'down'
+                    ? "bg-down hover:bg-down/80 text-white ring-2 ring-down ring-offset-2 ring-offset-background"
+                    : "bg-transparent border-2 border-down/50 text-down hover:bg-down/10"
                 )}
-                onClick={() => setSelectedDirection('down')}
+                onClick={() => handleToggle('down')}
+                data-testid="toggle-round-down"
               >
                 <TrendingDown className="w-5 h-5 mr-2" />
                 매도(숏)
-              </Button>
-              <Button
-                type="button"
-                variant={selectedDirection === 'all_win' ? 'default' : 'outline'}
-                className={cn(
-                  "h-14 text-lg font-bold",
-                  selectedDirection === 'all_win' && "bg-green-600 hover:bg-green-700 text-white"
-                )}
-                onClick={() => setSelectedDirection('all_win')}
-              >
-                <Check className="w-5 h-5 mr-2" />
-                전체적중
-              </Button>
-              <Button
-                type="button"
-                variant={selectedDirection === 'all_lose' ? 'default' : 'outline'}
-                className={cn(
-                  "h-14 text-lg font-bold",
-                  selectedDirection === 'all_lose' && "bg-red-600 hover:bg-red-700 text-white"
-                )}
-                onClick={() => setSelectedDirection('all_lose')}
-              >
-                <X className="w-5 h-5 mr-2" />
-                전체미적중
+                {hasDirection?.forcedDirection === 'down' && <Check className="w-4 h-4 ml-2" />}
               </Button>
             </div>
           </div>
 
-          {/* Apply Button */}
           <div className="space-y-3">
-            <label className="text-sm text-muted-foreground font-medium">적용</label>
-            {currentRoundSetting ? (
-              <div className="h-14 flex items-center justify-center bg-muted rounded-lg">
-                <span className="text-muted-foreground">
-                  이미 설정됨: <span className={
-                    currentRoundSetting.forcedDirection === 'up' ? 'text-up' : 
-                    currentRoundSetting.forcedDirection === 'down' ? 'text-down' :
-                    currentRoundSetting.forcedDirection === 'all_win' ? 'text-green-500' : 'text-red-500'
-                  }>
-                    {currentRoundSetting.forcedDirection === 'up' ? '매수(롱)' : 
-                     currentRoundSetting.forcedDirection === 'down' ? '매도(숏)' :
-                     currentRoundSetting.forcedDirection === 'all_win' ? '전체적중' : '전체미적중'}
-                  </span>
-                </span>
-              </div>
-            ) : (
+            <label className="text-sm text-muted-foreground font-medium">전체 결과 강제 설정 (클릭 시 즉시 적용/해제)</label>
+            <div className="grid grid-cols-2 gap-3">
               <Button
-                onClick={handleSetCurrentRound}
-                className="w-full h-14 text-lg font-bold bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
+                type="button"
+                disabled={isToggling}
+                className={cn(
+                  "h-16 text-lg font-bold transition-all",
+                  hasOutcome?.forcedDirection === 'all_win'
+                    ? "bg-green-600 hover:bg-green-700 text-white ring-2 ring-green-500 ring-offset-2 ring-offset-background"
+                    : "bg-transparent border-2 border-green-600/50 text-green-500 hover:bg-green-600/10"
+                )}
+                onClick={() => handleToggle('all_win')}
+                data-testid="toggle-round-all-win"
               >
-                <Zap className="w-5 h-5 mr-2" />
-                현재 회차 설정
+                <Check className="w-5 h-5 mr-2" />
+                전체적중
+                {hasOutcome?.forcedDirection === 'all_win' && <Check className="w-4 h-4 ml-2" />}
               </Button>
-            )}
+              <Button
+                type="button"
+                disabled={isToggling}
+                className={cn(
+                  "h-16 text-lg font-bold transition-all",
+                  hasOutcome?.forcedDirection === 'all_lose'
+                    ? "bg-red-600 hover:bg-red-700 text-white ring-2 ring-red-500 ring-offset-2 ring-offset-background"
+                    : "bg-transparent border-2 border-red-600/50 text-red-500 hover:bg-red-600/10"
+                )}
+                onClick={() => handleToggle('all_lose')}
+                data-testid="toggle-round-all-lose"
+              >
+                <X className="w-5 h-5 mr-2" />
+                전체미적중
+                {hasOutcome?.forcedDirection === 'all_lose' && <Check className="w-4 h-4 ml-2" />}
+              </Button>
+            </div>
           </div>
+
+          {/* Current settings summary */}
+          {(hasDirection || hasOutcome) && (
+            <div className="bg-muted/50 rounded-lg p-4">
+              <div className="text-sm font-medium mb-2">현재 {currentRound}회차 설정:</div>
+              <div className="flex flex-wrap gap-2">
+                {hasDirection && (
+                  <span className={cn(
+                    "px-3 py-1.5 rounded-full text-sm font-bold",
+                    hasDirection.forcedDirection === 'up' ? "bg-up/20 text-up" : "bg-down/20 text-down"
+                  )}>
+                    {hasDirection.forcedDirection === 'up' ? '📈 매수(롱)' : '📉 매도(숏)'}
+                  </span>
+                )}
+                {hasOutcome && (
+                  <span className={cn(
+                    "px-3 py-1.5 rounded-full text-sm font-bold",
+                    hasOutcome.forcedDirection === 'all_win' ? "bg-green-600/20 text-green-500" : "bg-red-600/20 text-red-500"
+                  )}>
+                    {hasOutcome.forcedDirection === 'all_win' ? '✅ 전체적중' : '❌ 전체미적중'}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -641,7 +666,7 @@ function RoundForcedTab() {
               <tr>
                 <th className="px-4 py-3 text-left font-medium">회차</th>
                 <th className="px-4 py-3 text-left font-medium">상태</th>
-                <th className="px-4 py-3 text-center font-medium">설정 방향</th>
+                <th className="px-4 py-3 text-center font-medium">설정</th>
                 <th className="px-4 py-3 text-center font-medium">관리</th>
               </tr>
             </thead>

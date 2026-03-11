@@ -636,28 +636,30 @@ export async function registerRoutes(
       const kstBetTime = new Date(betCreatedAt.getTime() + betCreatedAt.getTimezoneOffset() * 60 * 1000 + kstOffset);
       const betDateKey = `${kstBetTime.getFullYear()}-${String(kstBetTime.getMonth() + 1).padStart(2, '0')}-${String(kstBetTime.getDate()).padStart(2, '0')}`;
       
-      // Priority: 1) Round forced direction  2) Individual forced outcome  3) Price-based
+      // Priority: 1) Round forced settings  2) Individual forced outcome  3) Price-based
       let newDirection: 'long' | 'short' | undefined;
-      const roundForced = await storage.getRoundForcedDirection(bet.symbol, bet.duration, bet.roundNumber, betDateKey);
-      if (roundForced) {
-        if (roundForced.forcedDirection === 'all_win') {
-          outcome = 'win';
-          const variation = strikePrice * 0.001;
-          closePriceNum = bet.direction === 'long' ? strikePrice + variation : strikePrice - variation;
-        } else if (roundForced.forcedDirection === 'all_lose') {
-          outcome = 'lose';
-          const variation = strikePrice * 0.001;
-          closePriceNum = bet.direction === 'long' ? strikePrice - variation : strikePrice + variation;
-        } else if (roundForced.forcedDirection === 'up') {
-          outcome = 'win';
-          newDirection = 'long';
-          const variation = strikePrice * 0.001;
-          closePriceNum = strikePrice + variation;
+      const roundForcedList = await storage.getRoundForcedDirectionsForRound(bet.symbol, bet.duration, bet.roundNumber, betDateKey);
+      const directionForced = roundForcedList.find(r => r.forcedDirection === 'up' || r.forcedDirection === 'down');
+      const outcomeForced = roundForcedList.find(r => r.forcedDirection === 'all_win' || r.forcedDirection === 'all_lose');
+      
+      if (directionForced || outcomeForced) {
+        let effectiveDirection = bet.direction;
+        if (directionForced) {
+          newDirection = directionForced.forcedDirection === 'up' ? 'long' : 'short';
+          effectiveDirection = newDirection;
+        }
+        
+        if (outcomeForced) {
+          outcome = outcomeForced.forcedDirection === 'all_win' ? 'win' : 'lose';
         } else {
           outcome = 'win';
-          newDirection = 'short';
-          const variation = strikePrice * 0.001;
-          closePriceNum = strikePrice - variation;
+        }
+        
+        const variation = strikePrice * 0.001;
+        if (outcome === 'win') {
+          closePriceNum = effectiveDirection === 'long' ? strikePrice + variation : strikePrice - variation;
+        } else {
+          closePriceNum = effectiveDirection === 'long' ? strikePrice - variation : strikePrice + variation;
         }
       } else if (bet.forcedOutcome === 'win' || bet.forcedOutcome === 'lose') {
         outcome = bet.forcedOutcome;
@@ -2159,7 +2161,7 @@ export async function registerRoutes(
         return res.status(400).json({ error: "필수 필드가 누락되었습니다" });
       }
       
-      if (!['up', 'down'].includes(forcedDirection)) {
+      if (!['up', 'down', 'all_win', 'all_lose'].includes(forcedDirection)) {
         return res.status(400).json({ error: "유효하지 않은 방향입니다" });
       }
       
@@ -2174,6 +2176,38 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Failed to set round forced direction:", error);
       res.status(500).json({ error: "회차별 강제설정에 실패했습니다" });
+    }
+  });
+
+  // Toggle (delete) a specific round forced direction type
+  app.post("/api/admin/round-forced/toggle", requireAdmin, async (req, res) => {
+    try {
+      const { symbol, duration, roundNumber, dateKey, forcedDirection } = req.body;
+      
+      if (!symbol || !duration || !roundNumber || !dateKey || !forcedDirection) {
+        return res.status(400).json({ error: "필수 필드가 누락되었습니다" });
+      }
+
+      // Check if this specific type already exists
+      const existing = await storage.getRoundForcedDirectionsForRound(
+        symbol, parseInt(duration), parseInt(roundNumber), dateKey
+      );
+      const hasThis = existing.find(d => d.forcedDirection === forcedDirection);
+
+      if (hasThis) {
+        await storage.deleteRoundForcedDirectionByType(
+          symbol, parseInt(duration), parseInt(roundNumber), dateKey, forcedDirection
+        );
+        res.json({ action: 'deleted' });
+      } else {
+        const result = await storage.setRoundForcedDirection(
+          symbol, parseInt(duration), parseInt(roundNumber), dateKey, forcedDirection
+        );
+        res.json({ action: 'created', data: result });
+      }
+    } catch (error) {
+      console.error("Failed to toggle round forced direction:", error);
+      res.status(500).json({ error: "회차별 강제설정 토글에 실패했습니다" });
     }
   });
 
@@ -2930,28 +2964,30 @@ export async function registerRoutes(
           const kstBetTime = new Date(betCreatedAt.getTime() + betCreatedAt.getTimezoneOffset() * 60 * 1000 + kstOffset);
           const betDateKey = `${kstBetTime.getFullYear()}-${String(kstBetTime.getMonth() + 1).padStart(2, '0')}-${String(kstBetTime.getDate()).padStart(2, '0')}`;
           
-          // Priority: 1) Round forced direction  2) Individual forced outcome  3) Price-based
+          // Priority: 1) Round forced settings  2) Individual forced outcome  3) Price-based
           let newDirection: 'long' | 'short' | undefined;
-          const roundForced = await storage.getRoundForcedDirection(bet.symbol, bet.duration, bet.roundNumber, betDateKey);
-          if (roundForced) {
-            if (roundForced.forcedDirection === 'all_win') {
-              outcome = 'win';
-              const variation = strikePrice * 0.001;
-              closePrice = bet.direction === 'long' ? strikePrice + variation : strikePrice - variation;
-            } else if (roundForced.forcedDirection === 'all_lose') {
-              outcome = 'lose';
-              const variation = strikePrice * 0.001;
-              closePrice = bet.direction === 'long' ? strikePrice - variation : strikePrice + variation;
-            } else if (roundForced.forcedDirection === 'up') {
-              outcome = 'win';
-              newDirection = 'long';
-              const variation = strikePrice * 0.001;
-              closePrice = strikePrice + variation;
+          const roundForcedList = await storage.getRoundForcedDirectionsForRound(bet.symbol, bet.duration, bet.roundNumber, betDateKey);
+          const directionForced = roundForcedList.find(r => r.forcedDirection === 'up' || r.forcedDirection === 'down');
+          const outcomeForced = roundForcedList.find(r => r.forcedDirection === 'all_win' || r.forcedDirection === 'all_lose');
+          
+          if (directionForced || outcomeForced) {
+            let effectiveDirection = bet.direction;
+            if (directionForced) {
+              newDirection = directionForced.forcedDirection === 'up' ? 'long' : 'short';
+              effectiveDirection = newDirection;
+            }
+            
+            if (outcomeForced) {
+              outcome = outcomeForced.forcedDirection === 'all_win' ? 'win' : 'lose';
             } else {
               outcome = 'win';
-              newDirection = 'short';
-              const variation = strikePrice * 0.001;
-              closePrice = strikePrice - variation;
+            }
+            
+            const variation = strikePrice * 0.001;
+            if (outcome === 'win') {
+              closePrice = effectiveDirection === 'long' ? strikePrice + variation : strikePrice - variation;
+            } else {
+              closePrice = effectiveDirection === 'long' ? strikePrice - variation : strikePrice + variation;
             }
           } else if (bet.forcedOutcome === 'win' || bet.forcedOutcome === 'lose') {
             outcome = bet.forcedOutcome;
