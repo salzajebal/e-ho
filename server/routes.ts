@@ -645,17 +645,12 @@ export async function registerRoutes(
       if (directionForced || outcomeForced) {
         const variation = strikePrice * 0.001;
         
-        if (directionForced && outcomeForced) {
-          const marketDirection = directionForced.forcedDirection; // 'up' or 'down'
-          const isWin = outcomeForced.forcedDirection === 'all_win';
-          outcome = isWin ? 'win' : 'lose';
-          
-          if (marketDirection === 'up') {
-            closePriceNum = strikePrice + variation;
-            newDirection = isWin ? 'long' : 'short';
+        if (outcomeForced) {
+          outcome = outcomeForced.forcedDirection === 'all_win' ? 'win' : 'lose';
+          if (outcome === 'win') {
+            closePriceNum = bet.direction === 'long' ? strikePrice + variation : strikePrice - variation;
           } else {
-            closePriceNum = strikePrice - variation;
-            newDirection = isWin ? 'short' : 'long';
+            closePriceNum = bet.direction === 'long' ? strikePrice - variation : strikePrice + variation;
           }
         } else if (directionForced) {
           outcome = 'win';
@@ -665,13 +660,6 @@ export async function registerRoutes(
           } else {
             closePriceNum = strikePrice - variation;
             newDirection = 'short';
-          }
-        } else if (outcomeForced) {
-          outcome = outcomeForced.forcedDirection === 'all_win' ? 'win' : 'lose';
-          if (outcome === 'win') {
-            closePriceNum = bet.direction === 'long' ? strikePrice + variation : strikePrice - variation;
-          } else {
-            closePriceNum = bet.direction === 'long' ? strikePrice - variation : strikePrice + variation;
           }
         }
       } else if (bet.forcedOutcome === 'win' || bet.forcedOutcome === 'lose') {
