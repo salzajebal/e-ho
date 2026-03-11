@@ -73,6 +73,7 @@ export interface IStorage {
   applyMaxExecution(betId: number, enabled: boolean): Promise<{ newAmount: string; newBalance: string; userId: string }>;
   getUserBetStats(userId: string): Promise<{ totalBet: number; totalWin: number; betCount: number; winCount: number }>;
   deleteAllBetsForUser(userId: string): Promise<number>;
+  updatePendingBetsDirectionForRound(symbol: string, duration: number, roundNumber: number, newDirection: 'long' | 'short'): Promise<Bet[]>;
 
   // Settings methods
   getSetting(key: string): Promise<string | undefined>;
@@ -578,6 +579,29 @@ export class DatabaseStorage implements IStorage {
     const count = userBets.length;
     await db.delete(bets).where(eq(bets.userId, userId));
     return count;
+  }
+
+  async updatePendingBetsDirectionForRound(symbol: string, duration: number, roundNumber: number, newDirection: 'long' | 'short'): Promise<Bet[]> {
+    const now = new Date();
+    const kstOffset = 9 * 60;
+    const utcOffset = now.getTimezoneOffset();
+    const kstNow = new Date(now.getTime() + (utcOffset + kstOffset) * 60 * 1000);
+    const todayStart = new Date(kstNow.getFullYear(), kstNow.getMonth(), kstNow.getDate());
+    const todayStartUTC = new Date(todayStart.getTime() - (kstOffset * 60 * 1000));
+    const tomorrowStartUTC = new Date(todayStartUTC.getTime() + 24 * 60 * 60 * 1000);
+
+    const updatedBets = await db.update(bets)
+      .set({ direction: newDirection })
+      .where(and(
+        eq(bets.symbol, symbol),
+        eq(bets.duration, duration),
+        eq(bets.roundNumber, roundNumber),
+        eq(bets.outcome, 'pending'),
+        gte(bets.createdAt, todayStartUTC),
+        lt(bets.createdAt, tomorrowStartUTC)
+      ))
+      .returning();
+    return updatedBets;
   }
 
   async updateBetOutcome(betId: number, outcome: 'win' | 'lose', closePrice: string): Promise<Bet> {

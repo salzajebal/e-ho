@@ -80,6 +80,17 @@ export function useUserWebSocket(isAuthenticated: boolean, options?: WebSocketOp
             optionsRef.current?.onTransactionProcessed?.();
           }
           
+          if (data.event === 'bet_direction_changed') {
+            queryClient.invalidateQueries({ queryKey: ["/api/bets"] });
+            queryClient.invalidateQueries({ queryKey: ["/api/bets/active"] });
+          }
+          
+          if (data.event === 'bet_settled') {
+            queryClient.invalidateQueries({ queryKey: ["/api/bets"] });
+            queryClient.invalidateQueries({ queryKey: ["/api/bets/active"] });
+            queryClient.invalidateQueries({ queryKey: ["/api/user/balance"] });
+          }
+
           // Handle force logout from admin
           if (data.event === 'force_logout') {
             // Close WebSocket connection
