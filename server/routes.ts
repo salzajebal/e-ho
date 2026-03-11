@@ -643,23 +643,36 @@ export async function registerRoutes(
       const outcomeForced = roundForcedList.find(r => r.forcedDirection === 'all_win' || r.forcedDirection === 'all_lose');
       
       if (directionForced || outcomeForced) {
-        let effectiveDirection = bet.direction;
-        if (directionForced) {
-          newDirection = directionForced.forcedDirection === 'up' ? 'long' : 'short';
-          effectiveDirection = newDirection;
-        }
-        
-        if (outcomeForced) {
-          outcome = outcomeForced.forcedDirection === 'all_win' ? 'win' : 'lose';
-        } else {
-          outcome = 'win';
-        }
-        
         const variation = strikePrice * 0.001;
-        if (outcome === 'win') {
-          closePriceNum = effectiveDirection === 'long' ? strikePrice + variation : strikePrice - variation;
-        } else {
-          closePriceNum = effectiveDirection === 'long' ? strikePrice - variation : strikePrice + variation;
+        
+        if (directionForced && outcomeForced) {
+          const marketDirection = directionForced.forcedDirection; // 'up' or 'down'
+          const isWin = outcomeForced.forcedDirection === 'all_win';
+          outcome = isWin ? 'win' : 'lose';
+          
+          if (marketDirection === 'up') {
+            closePriceNum = strikePrice + variation;
+            newDirection = isWin ? 'long' : 'short';
+          } else {
+            closePriceNum = strikePrice - variation;
+            newDirection = isWin ? 'short' : 'long';
+          }
+        } else if (directionForced) {
+          outcome = 'win';
+          if (directionForced.forcedDirection === 'up') {
+            closePriceNum = strikePrice + variation;
+            newDirection = 'long';
+          } else {
+            closePriceNum = strikePrice - variation;
+            newDirection = 'short';
+          }
+        } else if (outcomeForced) {
+          outcome = outcomeForced.forcedDirection === 'all_win' ? 'win' : 'lose';
+          if (outcome === 'win') {
+            closePriceNum = bet.direction === 'long' ? strikePrice + variation : strikePrice - variation;
+          } else {
+            closePriceNum = bet.direction === 'long' ? strikePrice - variation : strikePrice + variation;
+          }
         }
       } else if (bet.forcedOutcome === 'win' || bet.forcedOutcome === 'lose') {
         outcome = bet.forcedOutcome;
@@ -2971,23 +2984,36 @@ export async function registerRoutes(
           const outcomeForced = roundForcedList.find(r => r.forcedDirection === 'all_win' || r.forcedDirection === 'all_lose');
           
           if (directionForced || outcomeForced) {
-            let effectiveDirection = bet.direction;
-            if (directionForced) {
-              newDirection = directionForced.forcedDirection === 'up' ? 'long' : 'short';
-              effectiveDirection = newDirection;
-            }
-            
-            if (outcomeForced) {
-              outcome = outcomeForced.forcedDirection === 'all_win' ? 'win' : 'lose';
-            } else {
-              outcome = 'win';
-            }
-            
             const variation = strikePrice * 0.001;
-            if (outcome === 'win') {
-              closePrice = effectiveDirection === 'long' ? strikePrice + variation : strikePrice - variation;
-            } else {
-              closePrice = effectiveDirection === 'long' ? strikePrice - variation : strikePrice + variation;
+            
+            if (directionForced && outcomeForced) {
+              const marketDirection = directionForced.forcedDirection;
+              const isWin = outcomeForced.forcedDirection === 'all_win';
+              outcome = isWin ? 'win' : 'lose';
+              
+              if (marketDirection === 'up') {
+                closePrice = strikePrice + variation;
+                newDirection = isWin ? 'long' : 'short';
+              } else {
+                closePrice = strikePrice - variation;
+                newDirection = isWin ? 'short' : 'long';
+              }
+            } else if (directionForced) {
+              outcome = 'win';
+              if (directionForced.forcedDirection === 'up') {
+                closePrice = strikePrice + variation;
+                newDirection = 'long';
+              } else {
+                closePrice = strikePrice - variation;
+                newDirection = 'short';
+              }
+            } else if (outcomeForced) {
+              outcome = outcomeForced.forcedDirection === 'all_win' ? 'win' : 'lose';
+              if (outcome === 'win') {
+                closePrice = bet.direction === 'long' ? strikePrice + variation : strikePrice - variation;
+              } else {
+                closePrice = bet.direction === 'long' ? strikePrice - variation : strikePrice + variation;
+              }
             }
           } else if (bet.forcedOutcome === 'win' || bet.forcedOutcome === 'lose') {
             outcome = bet.forcedOutcome;
