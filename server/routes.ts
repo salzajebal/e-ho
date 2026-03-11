@@ -2228,6 +2228,38 @@ export async function registerRoutes(
     }
   });
 
+  // Update bet direction (admin)
+  app.patch("/api/admin/bets/:id/direction", requireAdmin, async (req, res) => {
+    try {
+      const betId = parseInt(req.params.id);
+      const { direction } = req.body;
+
+      if (!direction || !['long', 'short'].includes(direction)) {
+        return res.status(400).json({ error: "유효한 방향을 선택해주세요" });
+      }
+
+      const bet = await storage.getBet(betId);
+      if (!bet) {
+        return res.status(404).json({ error: "배팅을 찾을 수 없습니다" });
+      }
+
+      if (bet.outcome !== 'pending') {
+        return res.status(400).json({ error: "이미 정산된 배팅은 수정할 수 없습니다" });
+      }
+
+      const updatedBet = await storage.updateBet(betId, { direction });
+
+      broadcastToAdmins('bet_updated', { bet: updatedBet });
+      broadcastToUser(bet.userId, 'bet_updated', { betId, direction });
+
+      console.log(`🔄 [Direction Change] Bet #${betId}: ${bet.direction} → ${direction}`);
+      res.json(updatedBet);
+    } catch (error) {
+      console.error("Failed to update bet direction:", error);
+      res.status(500).json({ error: "포지션 변경에 실패했습니다" });
+    }
+  });
+
   // Update bet amount (admin)
   app.patch("/api/admin/bets/:id/amount", requireAdmin, async (req, res) => {
     try {

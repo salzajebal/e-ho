@@ -1878,6 +1878,28 @@ export default function Admin() {
     },
   });
 
+  const changeBetDirection = useMutation({
+    mutationFn: async ({ betId, direction }: { betId: number; direction: 'long' | 'short' }) => {
+      const res = await fetch(`/api/admin/bets/${betId}/direction`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ direction }),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "포지션 변경 실패");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/bets"] });
+      toast.success("포지션이 변경되었습니다");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
   const setForcedOutcome = useMutation({
     mutationFn: async ({ betId, outcome }: { betId: number; outcome: 'win' | 'lose' }) => {
       const res = await fetch(`/api/admin/bets/${betId}/force-outcome`, {
@@ -3385,12 +3407,32 @@ export default function Admin() {
                           )}
                         </td>
                         <td className="px-2 lg:px-3 py-1.5 lg:py-2">
-                          <span className={cn(
-                            "inline-flex items-center px-1.5 lg:px-2 py-0.5 rounded text-[10px] lg:text-xs font-medium",
-                            bet.direction === 'long' ? "bg-up/20 text-up" : "bg-down/20 text-down"
-                          )}>
-                            {bet.direction === 'long' ? 'LONG' : 'SHORT'}
-                          </span>
+                          {bet.outcome === 'pending' ? (
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => changeBetDirection.mutate({ betId: bet.id, direction: bet.direction === 'long' ? 'short' : 'long' })}
+                                disabled={changeBetDirection.isPending}
+                                className={cn(
+                                  "inline-flex items-center px-1.5 lg:px-2 py-0.5 rounded text-[10px] lg:text-xs font-bold cursor-pointer border transition-all",
+                                  bet.direction === 'long' 
+                                    ? "bg-up/20 text-up border-up/50 hover:bg-up/30" 
+                                    : "bg-down/20 text-down border-down/50 hover:bg-down/30"
+                                )}
+                                data-testid={`toggle-direction-${bet.id}`}
+                                title="클릭하여 포지션 변경"
+                              >
+                                {bet.direction === 'long' ? '▲ LONG' : '▼ SHORT'}
+                                <RefreshCw className="w-2.5 h-2.5 ml-1" />
+                              </button>
+                            </div>
+                          ) : (
+                            <span className={cn(
+                              "inline-flex items-center px-1.5 lg:px-2 py-0.5 rounded text-[10px] lg:text-xs font-medium",
+                              bet.direction === 'long' ? "bg-up/20 text-up" : "bg-down/20 text-down"
+                            )}>
+                              {bet.direction === 'long' ? 'LONG' : 'SHORT'}
+                            </span>
+                          )}
                         </td>
                         <td className="px-2 lg:px-3 py-1.5 lg:py-2">
                           {editingBetId === bet.id ? (
