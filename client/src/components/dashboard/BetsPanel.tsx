@@ -65,13 +65,6 @@ function BetRow({ bet, currentPrice, onExpire }: { bet: Bet; currentPrice: numbe
     const betDate = new Date(bet.createdAt);
     const formattedDate = `${(betDate.getMonth() + 1).toString().padStart(2, '0')}.${betDate.getDate().toString().padStart(2, '0')} ${betDate.getHours().toString().padStart(2, '0')}:${betDate.getMinutes().toString().padStart(2, '0')}`;
     
-    // Determine actual market direction from closePrice vs strikePrice
-    // This reflects the forced direction set by admin
-    const closePrice = parseFloat(bet.closePrice || '0');
-    const betStrikePrice = parseFloat(bet.strikePrice);
-    const marketWentUp = closePrice >= betStrikePrice;
-    const marketDirection = marketWentUp ? 'up' : 'down';
-    
     return (
       <div className={cn(
         "flex items-center gap-3 px-4 py-3 border-b border-border/50",
@@ -92,9 +85,9 @@ function BetRow({ bet, currentPrice, onExpire }: { bet: Bet; currentPrice: numbe
             <span className="font-semibold text-sm">{bet.symbol}</span>
             <span className={cn(
               "text-xs px-1.5 py-0.5 rounded",
-              marketDirection === 'up' ? "bg-up/20 text-up" : "bg-down/20 text-down"
+              bet.direction === 'long' ? "bg-up/20 text-up" : "bg-down/20 text-down"
             )}>
-              {marketDirection === 'up' ? 'LONG' : 'SHORT'}
+              {bet.direction === 'long' ? 'LONG' : 'SHORT'}
             </span>
             {bet.roundNumber != null && (
               <span className="text-xs px-1.5 py-0.5 rounded bg-primary/20 text-primary font-mono">
