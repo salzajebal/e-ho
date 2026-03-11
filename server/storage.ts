@@ -462,7 +462,8 @@ export class DatabaseStorage implements IStorage {
     betId: number, 
     closePrice: string, 
     outcome: 'win' | 'lose', 
-    payout: number
+    payout: number,
+    newDirection?: 'long' | 'short'
   ): Promise<{ success: boolean; bet?: Bet; newBalance?: string; alreadySettled?: boolean }> {
     console.log(`🔒 [Atomic Settle] Bet #${betId}: 원자적 정산 시작`);
     
@@ -486,14 +487,18 @@ export class DatabaseStorage implements IStorage {
       }
       
       // 3. 베팅 정산
+      const updateData: any = { 
+        closePrice,
+        outcome,
+        payout: payout.toString(),
+        settledAt: new Date(),
+      };
+      if (newDirection) {
+        updateData.direction = newDirection;
+      }
       const [settledBet] = await tx
         .update(bets)
-        .set({ 
-          closePrice,
-          outcome,
-          payout: payout.toString(),
-          settledAt: new Date(),
-        })
+        .set(updateData)
         .where(eq(bets.id, betId))
         .returning();
       

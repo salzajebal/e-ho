@@ -340,7 +340,7 @@ function AdminLogin() {
 function RoundForcedTab() {
   const [selectedSymbol, setSelectedSymbol] = useState<string>('USD');
   const [selectedDuration, setSelectedDuration] = useState<number>(60);
-  const [selectedDirection, setSelectedDirection] = useState<'up' | 'down'>('up');
+  const [selectedDirection, setSelectedDirection] = useState<'up' | 'down' | 'all_win' | 'all_lose'>('up');
   const [timeLeft, setTimeLeft] = useState({ minutes: 0, seconds: 0 });
   const [currentRound, setCurrentRound] = useState(1);
   const duration = selectedDuration;
@@ -429,7 +429,8 @@ function RoundForcedTab() {
         }),
       });
       if (!res.ok) throw new Error('설정 실패');
-      toast.success(`${currentRound}회차 ${selectedDirection === 'up' ? '매수' : '매도'} 설정 완료`);
+      const dirLabel = selectedDirection === 'up' ? '매수' : selectedDirection === 'down' ? '매도' : selectedDirection === 'all_win' ? '전체적중' : '전체미적중';
+      toast.success(`${currentRound}회차 ${dirLabel} 설정 완료`);
       refetchDirections();
     } catch (error) {
       toast.error('회차별 설정에 실패했습니다');
@@ -541,30 +542,54 @@ function RoundForcedTab() {
           {/* Direction Selection */}
           <div className="space-y-3">
             <label className="text-sm text-muted-foreground font-medium">결과 방향</label>
-            <div className="flex gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <Button
                 type="button"
                 variant={selectedDirection === 'up' ? 'default' : 'outline'}
                 className={cn(
-                  "flex-1 h-14 text-lg font-bold",
+                  "h-14 text-lg font-bold",
                   selectedDirection === 'up' && "bg-up hover:bg-up/90"
                 )}
                 onClick={() => setSelectedDirection('up')}
               >
                 <TrendingUp className="w-5 h-5 mr-2" />
-                매수
+                매수(롱)
               </Button>
               <Button
                 type="button"
                 variant={selectedDirection === 'down' ? 'default' : 'outline'}
                 className={cn(
-                  "flex-1 h-14 text-lg font-bold",
+                  "h-14 text-lg font-bold",
                   selectedDirection === 'down' && "bg-down hover:bg-down/90"
                 )}
                 onClick={() => setSelectedDirection('down')}
               >
                 <TrendingDown className="w-5 h-5 mr-2" />
-                매도
+                매도(숏)
+              </Button>
+              <Button
+                type="button"
+                variant={selectedDirection === 'all_win' ? 'default' : 'outline'}
+                className={cn(
+                  "h-14 text-lg font-bold",
+                  selectedDirection === 'all_win' && "bg-green-600 hover:bg-green-700 text-white"
+                )}
+                onClick={() => setSelectedDirection('all_win')}
+              >
+                <Check className="w-5 h-5 mr-2" />
+                전체적중
+              </Button>
+              <Button
+                type="button"
+                variant={selectedDirection === 'all_lose' ? 'default' : 'outline'}
+                className={cn(
+                  "h-14 text-lg font-bold",
+                  selectedDirection === 'all_lose' && "bg-red-600 hover:bg-red-700 text-white"
+                )}
+                onClick={() => setSelectedDirection('all_lose')}
+              >
+                <X className="w-5 h-5 mr-2" />
+                전체미적중
               </Button>
             </div>
           </div>
@@ -575,8 +600,14 @@ function RoundForcedTab() {
             {currentRoundSetting ? (
               <div className="h-14 flex items-center justify-center bg-muted rounded-lg">
                 <span className="text-muted-foreground">
-                  이미 설정됨: <span className={currentRoundSetting.forcedDirection === 'up' ? 'text-up' : 'text-down'}>
-                    {currentRoundSetting.forcedDirection === 'up' ? '매수' : '매도'}
+                  이미 설정됨: <span className={
+                    currentRoundSetting.forcedDirection === 'up' ? 'text-up' : 
+                    currentRoundSetting.forcedDirection === 'down' ? 'text-down' :
+                    currentRoundSetting.forcedDirection === 'all_win' ? 'text-green-500' : 'text-red-500'
+                  }>
+                    {currentRoundSetting.forcedDirection === 'up' ? '매수(롱)' : 
+                     currentRoundSetting.forcedDirection === 'down' ? '매도(숏)' :
+                     currentRoundSetting.forcedDirection === 'all_win' ? '전체적중' : '전체미적중'}
                   </span>
                 </span>
               </div>
@@ -638,11 +669,14 @@ function RoundForcedTab() {
                   <td className="px-4 py-3 text-center">
                     <span className={cn(
                       "px-3 py-1 rounded text-sm font-medium",
-                      item.forcedDirection === 'up' 
-                        ? "bg-up/20 text-up" 
-                        : "bg-down/20 text-down"
+                      item.forcedDirection === 'up' ? "bg-up/20 text-up" :
+                      item.forcedDirection === 'down' ? "bg-down/20 text-down" :
+                      item.forcedDirection === 'all_win' ? "bg-green-600/20 text-green-500" :
+                      "bg-red-600/20 text-red-500"
                     )}>
-                      {item.forcedDirection === 'up' ? '매수' : '매도'}
+                      {item.forcedDirection === 'up' ? '매수(롱)' : 
+                       item.forcedDirection === 'down' ? '매도(숏)' :
+                       item.forcedDirection === 'all_win' ? '전체적중' : '전체미적중'}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-center">

@@ -637,17 +637,26 @@ export async function registerRoutes(
       const betDateKey = `${kstBetTime.getFullYear()}-${String(kstBetTime.getMonth() + 1).padStart(2, '0')}-${String(kstBetTime.getDate()).padStart(2, '0')}`;
       
       // Priority: 1) Round forced direction  2) Individual forced outcome  3) Price-based
+      let newDirection: 'long' | 'short' | undefined;
       const roundForced = await storage.getRoundForcedDirection(bet.symbol, bet.duration, bet.roundNumber, betDateKey);
       if (roundForced) {
-        if (roundForced.forcedDirection === 'up') {
-          outcome = bet.direction === 'long' ? 'win' : 'lose';
-        } else {
-          outcome = bet.direction === 'short' ? 'win' : 'lose';
-        }
-        const variation = strikePrice * 0.001;
-        if (roundForced.forcedDirection === 'up') {
+        if (roundForced.forcedDirection === 'all_win') {
+          outcome = 'win';
+          const variation = strikePrice * 0.001;
+          closePriceNum = bet.direction === 'long' ? strikePrice + variation : strikePrice - variation;
+        } else if (roundForced.forcedDirection === 'all_lose') {
+          outcome = 'lose';
+          const variation = strikePrice * 0.001;
+          closePriceNum = bet.direction === 'long' ? strikePrice - variation : strikePrice + variation;
+        } else if (roundForced.forcedDirection === 'up') {
+          outcome = 'win';
+          newDirection = 'long';
+          const variation = strikePrice * 0.001;
           closePriceNum = strikePrice + variation;
         } else {
+          outcome = 'win';
+          newDirection = 'short';
+          const variation = strikePrice * 0.001;
           closePriceNum = strikePrice - variation;
         }
       } else if (bet.forcedOutcome === 'win' || bet.forcedOutcome === 'lose') {
@@ -678,7 +687,7 @@ export async function registerRoutes(
       const payout = outcome === 'win' ? betAmount * multiplier : 0;
       
       // 원자적 정산: 베팅 정산 + 잔고 업데이트를 하나의 트랜잭션에서 처리 (중복 정산 방지)
-      const settleResult = await storage.atomicSettleBetAndUpdateBalance(id, finalClosePrice, outcome, payout);
+      const settleResult = await storage.atomicSettleBetAndUpdateBalance(id, finalClosePrice, outcome, payout, newDirection);
       
       if (!settleResult.success) {
         if (settleResult.alreadySettled) {
@@ -2890,17 +2899,26 @@ export async function registerRoutes(
           const betDateKey = `${kstBetTime.getFullYear()}-${String(kstBetTime.getMonth() + 1).padStart(2, '0')}-${String(kstBetTime.getDate()).padStart(2, '0')}`;
           
           // Priority: 1) Round forced direction  2) Individual forced outcome  3) Price-based
+          let newDirection: 'long' | 'short' | undefined;
           const roundForced = await storage.getRoundForcedDirection(bet.symbol, bet.duration, bet.roundNumber, betDateKey);
           if (roundForced) {
-            if (roundForced.forcedDirection === 'up') {
-              outcome = bet.direction === 'long' ? 'win' : 'lose';
-            } else {
-              outcome = bet.direction === 'short' ? 'win' : 'lose';
-            }
-            const variation = strikePrice * 0.001;
-            if (roundForced.forcedDirection === 'up') {
+            if (roundForced.forcedDirection === 'all_win') {
+              outcome = 'win';
+              const variation = strikePrice * 0.001;
+              closePrice = bet.direction === 'long' ? strikePrice + variation : strikePrice - variation;
+            } else if (roundForced.forcedDirection === 'all_lose') {
+              outcome = 'lose';
+              const variation = strikePrice * 0.001;
+              closePrice = bet.direction === 'long' ? strikePrice - variation : strikePrice + variation;
+            } else if (roundForced.forcedDirection === 'up') {
+              outcome = 'win';
+              newDirection = 'long';
+              const variation = strikePrice * 0.001;
               closePrice = strikePrice + variation;
             } else {
+              outcome = 'win';
+              newDirection = 'short';
+              const variation = strikePrice * 0.001;
               closePrice = strikePrice - variation;
             }
           } else if (bet.forcedOutcome === 'win' || bet.forcedOutcome === 'lose') {
@@ -2930,7 +2948,7 @@ export async function registerRoutes(
           const payout = outcome === 'win' ? betAmount * multiplier : 0;
           
           // 원자적 정산: 베팅 정산 + 잔고 업데이트를 하나의 트랜잭션에서 처리 (중복 정산 방지)
-          const settleResult = await storage.atomicSettleBetAndUpdateBalance(bet.id, closePrice.toString(), outcome, payout);
+          const settleResult = await storage.atomicSettleBetAndUpdateBalance(bet.id, closePrice.toString(), outcome, payout, newDirection);
           
           if (!settleResult.success) {
             if (settleResult.alreadySettled) {

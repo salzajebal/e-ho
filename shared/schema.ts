@@ -151,11 +151,11 @@ export type Bet = typeof bets.$inferSelect;
 // This sets a forced market direction for a specific round that applies to ALL users
 export const roundForcedDirections = pgTable("round_forced_directions", {
   id: serial("id").primaryKey(),
-  symbol: text("symbol").notNull(), // 'BTC' or 'ETH'
-  duration: integer("duration").notNull(), // duration in seconds (120, 180)
-  roundNumber: integer("round_number").notNull(), // round number to force
-  forcedDirection: text("forced_direction").notNull(), // 'up' (매수) or 'down' (매도)
-  dateKey: text("date_key").notNull(), // YYYY-MM-DD format to identify the day (KST)
+  symbol: text("symbol").notNull(),
+  duration: integer("duration").notNull(),
+  roundNumber: integer("round_number").notNull(),
+  forcedDirection: text("forced_direction").notNull(), // 'up' (매수), 'down' (매도), 'all_win' (전체적중), 'all_lose' (전체미적중)
+  dateKey: text("date_key").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
