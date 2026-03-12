@@ -763,8 +763,8 @@ function RoundForcedTab() {
           </div>
 
           <div className="space-y-3">
-            <label className="text-sm text-muted-foreground font-medium">거래결과 표시 방향 강제 (표시만 변경, 정산 무관)</label>
-            <p className="text-xs text-muted-foreground">유저 화면의 거래결과 목록에서 이 회차의 방향(LONG/SHORT)을 강제로 표시합니다.</p>
+            <label className="text-sm text-muted-foreground font-medium">결과 방향 강제 (표시 + 정산 연동)</label>
+            <p className="text-xs text-muted-foreground">이 회차의 결과 방향을 강제합니다. LONG 설정 시 LONG 베팅 유저는 적중, SHORT 유저는 미적중 처리됩니다.</p>
             <div className="grid grid-cols-2 gap-3">
               <Button
                 type="button"
