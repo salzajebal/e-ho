@@ -343,6 +343,7 @@ function RoundForcedTab() {
   const [timeLeft, setTimeLeft] = useState({ minutes: 0, seconds: 0 });
   const [currentRound, setCurrentRound] = useState(1);
   const [isToggling, setIsToggling] = useState(false);
+  const [isGlobalToggling, setIsGlobalToggling] = useState(false);
   const duration = selectedDuration;
 
   const getKSTDate = (): Date => {
@@ -401,6 +402,48 @@ function RoundForcedTab() {
     },
     refetchInterval: 5000,
   });
+
+  const { data: globalForced = {}, refetch: refetchGlobal } = useQuery<Record<string, string>>({
+    queryKey: ['/api/admin/global-forced'],
+    queryFn: async () => {
+      const res = await fetch('/api/admin/global-forced', { credentials: 'include' });
+      if (!res.ok) return {};
+      return res.json();
+    },
+    refetchInterval: 5000,
+  });
+
+  const currentGlobalKey = `${selectedSymbol}:${duration}`;
+  const currentGlobalValue = globalForced[currentGlobalKey] || '';
+
+  const handleGlobalToggle = async (forcedOutcome: 'all_win' | 'all_lose') => {
+    if (isGlobalToggling) return;
+    setIsGlobalToggling(true);
+    try {
+      const newValue = currentGlobalValue === forcedOutcome ? 'none' : forcedOutcome;
+      const res = await fetch('/api/admin/global-forced', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          symbol: selectedSymbol,
+          duration,
+          forcedOutcome: newValue,
+        }),
+      });
+      if (!res.ok) throw new Error('설정 실패');
+      if (newValue === 'none') {
+        toast.success(`${selectedSymbol} ${duration / 60}분 전체 회차 강제설정 해제`);
+      } else {
+        toast.success(`${selectedSymbol} ${duration / 60}분 전체 회차 ${newValue === 'all_win' ? '전체적중' : '전체미적중'} 적용`);
+      }
+      refetchGlobal();
+    } catch (error) {
+      toast.error('글로벌 강제설정에 실패했습니다');
+    } finally {
+      setIsGlobalToggling(false);
+    }
+  };
 
   const currentRoundSettings = forcedDirections.filter(
     d => d.symbol === selectedSymbol && d.duration === duration && d.roundNumber === currentRound
@@ -500,7 +543,7 @@ function RoundForcedTab() {
       <div className="bg-card border border-border rounded-lg p-6">
         <h3 className="font-medium mb-4 flex items-center gap-2">
           <Zap className="w-4 h-4 text-yellow-500" />
-          현재 회차 강제 설정
+          종목/시간 선택
         </h3>
 
         <div className="space-y-6">
@@ -544,7 +587,103 @@ function RoundForcedTab() {
               </div>
             </div>
           </div>
+        </div>
+      </div>
 
+      {/* Global Forced Settings - 전체 회차 자동 적용 */}
+      <div className={cn(
+        "border rounded-lg p-6",
+        currentGlobalValue ? "bg-gradient-to-r from-purple-900/30 to-purple-800/20 border-purple-500/50" : "bg-card border-border"
+      )}>
+        <h3 className="font-medium mb-2 flex items-center gap-2">
+          <Zap className="w-4 h-4 text-purple-400" />
+          전체 회차 자동 적용 (끌 때까지 모든 회차에 적용)
+        </h3>
+        <p className="text-xs text-muted-foreground mb-4">
+          켜두면 어드민이 보지 않아도 해당 종목/시간의 모든 회차에 자동으로 적용됩니다. 개별 회차 설정이 있으면 개별 설정이 우선합니다.
+        </p>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Button
+            type="button"
+            disabled={isGlobalToggling}
+            className={cn(
+              "h-16 text-lg font-bold transition-all",
+              currentGlobalValue === 'all_win'
+                ? "bg-green-600 hover:bg-green-700 text-white ring-2 ring-green-500 ring-offset-2 ring-offset-background"
+                : "bg-transparent border-2 border-green-600/50 text-green-500 hover:bg-green-600/10"
+            )}
+            onClick={() => handleGlobalToggle('all_win')}
+            data-testid="toggle-global-all-win"
+          >
+            <Check className="w-5 h-5 mr-2" />
+            전체적중 (자동)
+            {currentGlobalValue === 'all_win' && <Check className="w-4 h-4 ml-2" />}
+          </Button>
+          <Button
+            type="button"
+            disabled={isGlobalToggling}
+            className={cn(
+              "h-16 text-lg font-bold transition-all",
+              currentGlobalValue === 'all_lose'
+                ? "bg-red-600 hover:bg-red-700 text-white ring-2 ring-red-500 ring-offset-2 ring-offset-background"
+                : "bg-transparent border-2 border-red-600/50 text-red-500 hover:bg-red-600/10"
+            )}
+            onClick={() => handleGlobalToggle('all_lose')}
+            data-testid="toggle-global-all-lose"
+          >
+            <X className="w-5 h-5 mr-2" />
+            전체미적중 (자동)
+            {currentGlobalValue === 'all_lose' && <Check className="w-4 h-4 ml-2" />}
+          </Button>
+        </div>
+
+        {currentGlobalValue && (
+          <div className="mt-4 bg-muted/50 rounded-lg p-3">
+            <div className="flex items-center gap-2">
+              <span className={cn(
+                "px-3 py-1.5 rounded-full text-sm font-bold animate-pulse",
+                currentGlobalValue === 'all_win' ? "bg-green-600/20 text-green-500" : "bg-red-600/20 text-red-500"
+              )}>
+                {currentGlobalValue === 'all_win' ? '✅ 전체적중' : '❌ 전체미적중'} 자동 적용 중
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {selectedSymbol} {duration / 60}분 - 모든 회차
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Show all active global settings */}
+        {Object.keys(globalForced).filter(k => globalForced[k]).length > 0 && (
+          <div className="mt-4 border-t border-border/50 pt-4">
+            <div className="text-xs text-muted-foreground font-medium mb-2">현재 활성화된 글로벌 설정:</div>
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(globalForced).filter(([, v]) => v).map(([key, value]) => {
+                const [sym, dur] = key.split(':');
+                return (
+                  <span key={key} className={cn(
+                    "px-2 py-1 rounded text-xs font-bold",
+                    value === 'all_win' ? "bg-green-600/20 text-green-500" : "bg-red-600/20 text-red-500",
+                    key === currentGlobalKey && "ring-1 ring-white/30"
+                  )}>
+                    {sym} {parseInt(dur) / 60}분: {value === 'all_win' ? '전체적중' : '전체미적중'}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Current Round Settings */}
+      <div className="bg-card border border-border rounded-lg p-6">
+        <h3 className="font-medium mb-4 flex items-center gap-2">
+          <Zap className="w-4 h-4 text-yellow-500" />
+          현재 회차 개별 설정 (이 회차에만 적용)
+        </h3>
+
+        <div className="space-y-6">
           {/* Direction buttons - click = instant toggle */}
           <div className="space-y-3">
             <label className="text-sm text-muted-foreground font-medium">포지션 강제 변경 (클릭 시 즉시 적용/해제)</label>
