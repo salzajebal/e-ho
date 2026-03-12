@@ -432,10 +432,13 @@ function RoundForcedTab() {
         }),
       });
       if (!res.ok) throw new Error('설정 실패');
+      const result = await res.json();
       if (newValue === 'none') {
         toast.success(`${selectedSymbol} ${duration / 60}분 전체 회차 강제설정 해제`);
       } else {
-        toast.success(`${selectedSymbol} ${duration / 60}분 전체 회차 ${newValue === 'all_win' ? '전체적중' : '전체미적중'} 적용`);
+        const reSettled = result.reSettled || 0;
+        const reSettledMsg = reSettled > 0 ? ` (${reSettled}건 재정산)` : '';
+        toast.success(`${selectedSymbol} ${duration / 60}분 전체 회차 ${newValue === 'all_win' ? '전체적중' : '전체미적중'} 적용${reSettledMsg}`);
       }
       refetchGlobal();
     } catch (error) {

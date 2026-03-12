@@ -69,6 +69,7 @@ export interface IStorage {
   setForcedOutcome(betId: number, forcedOutcome: 'win' | 'lose' | null): Promise<Bet>;
   getExpiredPendingBets(): Promise<Bet[]>;
   getSettledBetsForRound(symbol: string, duration: number, roundNumber: number): Promise<Bet[]>;
+  getRecentlySettledBetsBySymbolDuration(symbol: string, duration: number, withinMinutes?: number): Promise<Bet[]>;
   reSettleBet(betId: number, newOutcome: 'win' | 'lose', newClosePrice: string, newPayout: number): Promise<{ success: boolean; bet?: Bet; newBalance?: string }>;
   getAllBets(): Promise<Bet[]>;
   updateBet(betId: number, data: Partial<Bet>): Promise<Bet>;
@@ -565,6 +566,17 @@ export class DatabaseStorage implements IStorage {
         eq(bets.duration, duration),
         eq(bets.roundNumber, roundNumber),
         sql`${bets.outcome} IN ('win', 'lose')`
+      ));
+  }
+
+  async getRecentlySettledBetsBySymbolDuration(symbol: string, duration: number, withinMinutes: number = 30): Promise<Bet[]> {
+    const cutoff = new Date(Date.now() - withinMinutes * 60 * 1000);
+    return await db.select().from(bets)
+      .where(and(
+        eq(bets.symbol, symbol),
+        eq(bets.duration, duration),
+        sql`${bets.outcome} IN ('win', 'lose')`,
+        sql`(${bets.settledAt} IS NOT NULL AND ${bets.settledAt} >= ${cutoff}) OR ${bets.expiresAt} >= ${cutoff}`
       ));
   }
 

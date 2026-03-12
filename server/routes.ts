@@ -2383,7 +2383,42 @@ export async function registerRoutes(
       } else {
         await storage.setSetting(key, forcedOutcome);
         console.log(`🌐 [Global Forced] ${symbol} ${duration}s: ${forcedOutcome} 설정`);
-        res.json({ action: 'set', value: forcedOutcome });
+        
+        // Re-settle recently settled bets that don't match the new forced outcome
+        const newOutcome: 'win' | 'lose' = forcedOutcome === 'all_win' ? 'win' : 'lose';
+        const recentBets = await storage.getRecentlySettledBetsBySymbolDuration(symbol, parseInt(duration), 30);
+        let reSettledCount = 0;
+        
+        for (const bet of recentBets) {
+          if (bet.outcome === newOutcome) continue;
+          
+          const strikePrice = parseFloat(bet.strikePrice);
+          const betAmount = parseFloat(bet.amount);
+          const multiplier = parseFloat(bet.multiplier);
+          const variation = strikePrice * 0.001;
+          
+          let newClosePrice: number;
+          if (newOutcome === 'win') {
+            newClosePrice = bet.direction === 'long' ? strikePrice + variation : strikePrice - variation;
+          } else {
+            newClosePrice = bet.direction === 'long' ? strikePrice - variation : strikePrice + variation;
+          }
+          const newPayout = newOutcome === 'win' ? betAmount * multiplier : 0;
+          
+          const reResult = await storage.reSettleBet(bet.id, newOutcome, newClosePrice.toString(), newPayout);
+          if (reResult.success) {
+            reSettledCount++;
+            broadcastToUser(bet.userId, 'bet_settled', { betId: bet.id, outcome: newOutcome, closePrice: newClosePrice.toString(), payout: newPayout.toString() });
+            broadcastToAdmins('bet_settled', { betId: bet.id, outcome: newOutcome, closePrice: newClosePrice.toString(), payout: newPayout.toString() });
+            if (reResult.newBalance) broadcastToAdmins('balance_updated', { userId: bet.userId, balance: reResult.newBalance });
+          }
+        }
+        
+        if (reSettledCount > 0) {
+          console.log(`🌐 [Global Forced] ${symbol} ${duration}s: ${reSettledCount}개 최근 정산된 베팅 → ${newOutcome} 재정산`);
+        }
+        
+        res.json({ action: 'set', value: forcedOutcome, reSettled: reSettledCount });
       }
     } catch (error) {
       console.error("Failed to set global forced setting:", error);
@@ -3166,10 +3201,12 @@ export async function registerRoutes(
             }
           }
           
+          let forcedBy = '';
           if (outcomeForced || globalForcedOutcome) {
             const variation = strikePrice * 0.001;
             const forcedVal = outcomeForced ? outcomeForced.forcedDirection : globalForcedOutcome;
             outcome = forcedVal === 'all_win' ? 'win' : 'lose';
+            forcedBy = outcomeForced ? `round-${outcomeForced.forcedDirection}` : `global-${globalForcedOutcome}`;
             if (outcome === 'win') {
               closePrice = bet.direction === 'long' ? strikePrice + variation : strikePrice - variation;
             } else {
@@ -3179,6 +3216,7 @@ export async function registerRoutes(
             const forcedDir: 'long' | 'short' = displayForced.forcedDirection === 'display_up' ? 'long' : 'short';
             const variation = strikePrice * 0.001;
             outcome = bet.direction === forcedDir ? 'win' : 'lose';
+            forcedBy = `display-${displayForced.forcedDirection}`;
             if (outcome === 'win') {
               closePrice = bet.direction === 'long' ? strikePrice + variation : strikePrice - variation;
             } else {
@@ -3187,9 +3225,11 @@ export async function registerRoutes(
           } else if (directionForced) {
             const variation = strikePrice * 0.001;
             outcome = 'win';
+            forcedBy = `direction-${directionForced.forcedDirection}`;
             closePrice = bet.direction === 'long' ? strikePrice + variation : strikePrice - variation;
           } else if (bet.forcedOutcome === 'win' || bet.forcedOutcome === 'lose') {
             outcome = bet.forcedOutcome;
+            forcedBy = `individual-${bet.forcedOutcome}`;
             const variation = strikePrice * 0.001;
             if (outcome === 'win') {
               if (bet.direction === 'long') {
@@ -3210,6 +3250,7 @@ export async function registerRoutes(
             } else {
               outcome = closePrice < strikePrice ? 'win' : 'lose';
             }
+            forcedBy = 'price';
           }
           
           const payout = outcome === 'win' ? betAmount * multiplier : 0;
@@ -3224,7 +3265,7 @@ export async function registerRoutes(
             continue;
           }
           
-          console.log(`✅ [Auto-Settle] Bet #${bet.id}: 정산 완료 (${outcome}, payout: ${payout.toLocaleString()}원)`);
+          console.log(`✅ [Auto-Settle] Bet #${bet.id}: ${bet.symbol} R${bet.roundNumber} ${bet.duration}s ${bet.direction} → ${outcome} (${forcedBy}) payout: ${payout.toLocaleString()}원`);
           console.log(`   새 잔고: ${settleResult.newBalance ? parseFloat(settleResult.newBalance).toLocaleString() : '알 수 없음'}원`)
           
           // Broadcast settlement to admin clients
