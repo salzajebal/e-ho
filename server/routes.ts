@@ -2236,6 +2236,53 @@ export async function registerRoutes(
           }
         }
 
+        if (forcedDirection === 'all_win' || forcedDirection === 'all_lose') {
+          const settledBets = await storage.getSettledBetsForRound(symbol, parseInt(duration), parseInt(roundNumber));
+          const newOutcome: 'win' | 'lose' = forcedDirection === 'all_win' ? 'win' : 'lose';
+          let reSettledCount = 0;
+          
+          for (const bet of settledBets) {
+            if (bet.outcome === newOutcome) continue;
+            
+            const strikePrice = parseFloat(bet.strikePrice);
+            const betAmount = parseFloat(bet.amount);
+            const multiplier = parseFloat(bet.multiplier);
+            const variation = strikePrice * 0.001;
+            
+            let newClosePrice: number;
+            if (newOutcome === 'win') {
+              newClosePrice = bet.direction === 'long' ? strikePrice + variation : strikePrice - variation;
+            } else {
+              newClosePrice = bet.direction === 'long' ? strikePrice - variation : strikePrice + variation;
+            }
+            const newPayout = newOutcome === 'win' ? betAmount * multiplier : 0;
+            
+            const reResult = await storage.reSettleBet(bet.id, newOutcome, newClosePrice.toString(), newPayout);
+            if (reResult.success) {
+              reSettledCount++;
+              broadcastToUser(bet.userId, 'bet_settled', {
+                betId: bet.id,
+                outcome: newOutcome,
+                closePrice: newClosePrice.toString(),
+                payout: newPayout.toString(),
+              });
+              broadcastToAdmins('bet_settled', {
+                betId: bet.id,
+                outcome: newOutcome,
+                closePrice: newClosePrice.toString(),
+                payout: newPayout.toString(),
+              });
+              if (reResult.newBalance) {
+                broadcastToAdmins('balance_updated', { userId: bet.userId, balance: reResult.newBalance });
+              }
+            }
+          }
+          
+          if (reSettledCount > 0) {
+            console.log(`🔄 [Round Forced] ${symbol} R${roundNumber} ${duration}s: ${reSettledCount}개 이미 정산된 베팅 → ${forcedDirection === 'all_win' ? '전체적중' : '전체미적중'} 재정산 완료`);
+          }
+        }
+
         res.json({ action: 'created', data: result });
       }
     } catch (error) {
@@ -3019,7 +3066,14 @@ export async function registerRoutes(
     try {
       const expiredBets = await storage.getExpiredPendingBets();
       
+      const GRACE_PERIOD_MS = 5000;
+      
       for (const bet of expiredBets) {
+        const expiresAt = new Date(bet.expiresAt).getTime();
+        const now = Date.now();
+        if (now - expiresAt < GRACE_PERIOD_MS) {
+          continue;
+        }
         try {
           const symbol = bet.symbol.toUpperCase();
           let closePrice = getForexPrice(symbol)?.price;

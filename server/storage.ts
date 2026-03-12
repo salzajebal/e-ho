@@ -68,6 +68,8 @@ export interface IStorage {
   settleBet(id: number, closePrice: string, outcome: 'win' | 'lose', payout: string): Promise<Bet>;
   setForcedOutcome(betId: number, forcedOutcome: 'win' | 'lose' | null): Promise<Bet>;
   getExpiredPendingBets(): Promise<Bet[]>;
+  getSettledBetsForRound(symbol: string, duration: number, roundNumber: number): Promise<Bet[]>;
+  reSettleBet(betId: number, newOutcome: 'win' | 'lose', newClosePrice: string, newPayout: number): Promise<{ success: boolean; bet?: Bet; newBalance?: string }>;
   getAllBets(): Promise<Bet[]>;
   updateBet(betId: number, data: Partial<Bet>): Promise<Bet>;
   applyMaxExecution(betId: number, enabled: boolean): Promise<{ newAmount: string; newBalance: string; userId: string }>;
@@ -554,6 +556,48 @@ export class DatabaseStorage implements IStorage {
         eq(bets.outcome, 'pending'),
         lt(bets.expiresAt, new Date())
       ));
+  }
+
+  async getSettledBetsForRound(symbol: string, duration: number, roundNumber: number): Promise<Bet[]> {
+    return await db.select().from(bets)
+      .where(and(
+        eq(bets.symbol, symbol),
+        eq(bets.duration, duration),
+        eq(bets.roundNumber, roundNumber),
+        sql`${bets.outcome} IN ('win', 'lose')`
+      ));
+  }
+
+  async reSettleBet(betId: number, newOutcome: 'win' | 'lose', newClosePrice: string, newPayout: number): Promise<{ success: boolean; bet?: Bet; newBalance?: string }> {
+    const result = await db.transaction(async (tx) => {
+      const [bet] = await tx.select().from(bets).where(eq(bets.id, betId)).for("update");
+      if (!bet) return { success: false };
+      
+      if (bet.outcome === newOutcome) {
+        return { success: false };
+      }
+      
+      const oldPayout = parseFloat(bet.payout || '0');
+      
+      const [updatedBet] = await tx.update(bets)
+        .set({ closePrice: newClosePrice, outcome: newOutcome, payout: newPayout.toString(), settledAt: new Date() })
+        .where(eq(bets.id, betId))
+        .returning();
+      
+      const [user] = await tx.select({ balance: users.balance }).from(users).where(eq(users.id, bet.userId)).for("update");
+      if (!user) return { success: false };
+      
+      const currentBalance = parseFloat(user.balance || '0');
+      const balanceAdjustment = newPayout - oldPayout;
+      const newBalance = Math.max(0, currentBalance + balanceAdjustment).toString();
+      
+      console.log(`🔄 [Re-Settle] Bet #${betId}: ${bet.outcome} → ${newOutcome}, 잔고 조정: ${balanceAdjustment >= 0 ? '+' : ''}${balanceAdjustment.toLocaleString()}원 (${currentBalance.toLocaleString()} → ${parseFloat(newBalance).toLocaleString()})`);
+      
+      await tx.update(users).set({ balance: newBalance }).where(eq(users.id, bet.userId));
+      
+      return { success: true, bet: updatedBet, newBalance };
+    });
+    return result;
   }
 
   async getAllBets(): Promise<Bet[]> {
