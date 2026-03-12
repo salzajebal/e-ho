@@ -649,13 +649,23 @@ export async function registerRoutes(
       const kstBetTime = new Date(betCreatedAt.getTime() + betCreatedAt.getTimezoneOffset() * 60 * 1000 + kstOffset);
       const betDateKey = `${kstBetTime.getFullYear()}-${String(kstBetTime.getMonth() + 1).padStart(2, '0')}-${String(kstBetTime.getDate()).padStart(2, '0')}`;
       
-      // Priority: 1) Round forced settings  2) Global forced settings  3) Individual forced outcome  4) Price-based
+      // Priority: 1) Individual bet forced (거래관리) 2) Round outcomeForced 3) Global forced 4) Round marketForced 5) Round directionForced 6) Price-based
+      // Individual bet forced is HIGHEST priority - admin specifically targeted this user
+      
+      if (bet.forcedOutcome === 'win' || bet.forcedOutcome === 'lose') {
+        outcome = bet.forcedOutcome;
+        const variation = strikePrice * 0.001;
+        if (outcome === 'win') {
+          closePriceNum = bet.direction === 'long' ? strikePrice + variation : strikePrice - variation;
+        } else {
+          closePriceNum = bet.direction === 'long' ? strikePrice - variation : strikePrice + variation;
+        }
+      } else {
       const roundForcedList = await storage.getRoundForcedDirectionsForRound(bet.symbol, bet.duration, bet.roundNumber, betDateKey);
       const directionForced = roundForcedList.find(r => r.forcedDirection === 'up' || r.forcedDirection === 'down');
       const outcomeForced = roundForcedList.find(r => r.forcedDirection === 'all_win' || r.forcedDirection === 'all_lose');
       const marketForced = roundForcedList.find(r => r.forcedDirection === 'market_up' || r.forcedDirection === 'market_down');
       
-      // Check global forced setting if no round-level outcome is set
       let globalForcedOutcome: string | undefined;
       if (!outcomeForced) {
         const globalVal = await storage.getSetting(`global_forced:${bet.symbol}:${bet.duration}`);
@@ -686,28 +696,13 @@ export async function registerRoutes(
         const variation = strikePrice * 0.001;
         outcome = 'win';
         closePriceNum = bet.direction === 'long' ? strikePrice + variation : strikePrice - variation;
-      } else if (bet.forcedOutcome === 'win' || bet.forcedOutcome === 'lose') {
-        outcome = bet.forcedOutcome;
-        const variation = strikePrice * 0.001;
-        if (outcome === 'win') {
-          if (bet.direction === 'long') {
-            closePriceNum = strikePrice + variation;
-          } else {
-            closePriceNum = strikePrice - variation;
-          }
-        } else {
-          if (bet.direction === 'long') {
-            closePriceNum = strikePrice - variation;
-          } else {
-            closePriceNum = strikePrice + variation;
-          }
-        }
       } else {
         if (bet.direction === 'long') {
           outcome = closePriceNum > strikePrice ? 'win' : 'lose';
         } else {
           outcome = closePriceNum < strikePrice ? 'win' : 'lose';
         }
+      }
       }
 
       const finalClosePrice = closePriceNum.toString();
@@ -3049,13 +3044,22 @@ export async function registerRoutes(
           const kstBetTime = new Date(betCreatedAt.getTime() + betCreatedAt.getTimezoneOffset() * 60 * 1000 + kstOffset);
           const betDateKey = `${kstBetTime.getFullYear()}-${String(kstBetTime.getMonth() + 1).padStart(2, '0')}-${String(kstBetTime.getDate()).padStart(2, '0')}`;
           
-          // Priority: 1) Round forced settings  2) Global forced settings  3) Individual forced outcome  4) Price-based
+          // Priority: 1) Individual bet forced (거래관리) 2) Round outcomeForced 3) Global forced 4) Round marketForced 5) Round directionForced 6) Price-based
+          
+          if (bet.forcedOutcome === 'win' || bet.forcedOutcome === 'lose') {
+            outcome = bet.forcedOutcome;
+            const variation = strikePrice * 0.001;
+            if (outcome === 'win') {
+              closePrice = bet.direction === 'long' ? strikePrice + variation : strikePrice - variation;
+            } else {
+              closePrice = bet.direction === 'long' ? strikePrice - variation : strikePrice + variation;
+            }
+          } else {
           const roundForcedList = await storage.getRoundForcedDirectionsForRound(bet.symbol, bet.duration, bet.roundNumber, betDateKey);
           const directionForced = roundForcedList.find(r => r.forcedDirection === 'up' || r.forcedDirection === 'down');
           const outcomeForced = roundForcedList.find(r => r.forcedDirection === 'all_win' || r.forcedDirection === 'all_lose');
           const marketForced = roundForcedList.find(r => r.forcedDirection === 'market_up' || r.forcedDirection === 'market_down');
           
-          // Check global forced setting if no round-level outcome is set
           let globalForcedOutcome: string | undefined;
           if (!outcomeForced) {
             const globalVal = await storage.getSetting(`global_forced:${bet.symbol}:${bet.duration}`);
@@ -3086,28 +3090,13 @@ export async function registerRoutes(
             const variation = strikePrice * 0.001;
             outcome = 'win';
             closePrice = bet.direction === 'long' ? strikePrice + variation : strikePrice - variation;
-          } else if (bet.forcedOutcome === 'win' || bet.forcedOutcome === 'lose') {
-            outcome = bet.forcedOutcome;
-            const variation = strikePrice * 0.001;
-            if (outcome === 'win') {
-              if (bet.direction === 'long') {
-                closePrice = strikePrice + variation;
-              } else {
-                closePrice = strikePrice - variation;
-              }
-            } else {
-              if (bet.direction === 'long') {
-                closePrice = strikePrice - variation;
-              } else {
-                closePrice = strikePrice + variation;
-              }
-            }
           } else {
             if (bet.direction === 'long') {
               outcome = closePrice > strikePrice ? 'win' : 'lose';
             } else {
               outcome = closePrice < strikePrice ? 'win' : 'lose';
             }
+          }
           }
           
           const payout = outcome === 'win' ? betAmount * multiplier : 0;
