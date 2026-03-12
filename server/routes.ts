@@ -650,10 +650,10 @@ export async function registerRoutes(
       const betDateKey = `${kstBetTime.getFullYear()}-${String(kstBetTime.getMonth() + 1).padStart(2, '0')}-${String(kstBetTime.getDate()).padStart(2, '0')}`;
       
       // Priority: 1) Round forced settings  2) Global forced settings  3) Individual forced outcome  4) Price-based
-      // Note: directionForced (매수/매도) already applied at bet creation/toggle time, direction already changed in DB
       const roundForcedList = await storage.getRoundForcedDirectionsForRound(bet.symbol, bet.duration, bet.roundNumber, betDateKey);
       const directionForced = roundForcedList.find(r => r.forcedDirection === 'up' || r.forcedDirection === 'down');
       const outcomeForced = roundForcedList.find(r => r.forcedDirection === 'all_win' || r.forcedDirection === 'all_lose');
+      const marketForced = roundForcedList.find(r => r.forcedDirection === 'market_up' || r.forcedDirection === 'market_down');
       
       // Check global forced setting if no round-level outcome is set
       let globalForcedOutcome: string | undefined;
@@ -672,6 +672,15 @@ export async function registerRoutes(
           closePriceNum = bet.direction === 'long' ? strikePrice + variation : strikePrice - variation;
         } else {
           closePriceNum = bet.direction === 'long' ? strikePrice - variation : strikePrice + variation;
+        }
+      } else if (marketForced) {
+        const variation = strikePrice * 0.001;
+        const marketUp = marketForced.forcedDirection === 'market_up';
+        closePriceNum = marketUp ? strikePrice + variation : strikePrice - variation;
+        if (bet.direction === 'long') {
+          outcome = marketUp ? 'win' : 'lose';
+        } else {
+          outcome = marketUp ? 'lose' : 'win';
         }
       } else if (directionForced) {
         const variation = strikePrice * 0.001;
@@ -2252,13 +2261,9 @@ export async function registerRoutes(
       const result: Record<string, string> = {};
       for (const sym of symbols) {
         for (const dur of durations) {
-          const outcomeVal = await storage.getSetting(`global_forced:${sym}:${dur}`);
-          if (outcomeVal) {
-            result[`${sym}:${dur}`] = outcomeVal;
-          }
-          const dirVal = await storage.getSetting(`global_forced_dir:${sym}:${dur}`);
-          if (dirVal) {
-            result[`dir:${sym}:${dur}`] = dirVal;
+          const val = await storage.getSetting(`global_forced:${sym}:${dur}`);
+          if (val) {
+            result[`${sym}:${dur}`] = val;
           }
         }
       }
@@ -2271,24 +2276,10 @@ export async function registerRoutes(
 
   app.post("/api/admin/global-forced", requireAdmin, async (req, res) => {
     try {
-      const { symbol, duration, forcedOutcome, forcedDirection } = req.body;
+      const { symbol, duration, forcedOutcome } = req.body;
       if (!symbol || !duration) {
         return res.status(400).json({ error: "필수 필드가 누락되었습니다" });
       }
-      
-      if (forcedDirection !== undefined) {
-        const dirKey = `global_forced_dir:${symbol}:${duration}`;
-        if (!forcedDirection || forcedDirection === 'none') {
-          await storage.setSetting(dirKey, '');
-          console.log(`🌐 [Global Forced Dir] ${symbol} ${duration}s: 방향 해제`);
-          return res.json({ action: 'cleared', type: 'direction' });
-        } else {
-          await storage.setSetting(dirKey, forcedDirection);
-          console.log(`🌐 [Global Forced Dir] ${symbol} ${duration}s: ${forcedDirection} 설정`);
-          return res.json({ action: 'set', type: 'direction', value: forcedDirection });
-        }
-      }
-      
       const key = `global_forced:${symbol}:${duration}`;
       if (!forcedOutcome || forcedOutcome === 'none') {
         await storage.setSetting(key, '');
@@ -3059,10 +3050,10 @@ export async function registerRoutes(
           const betDateKey = `${kstBetTime.getFullYear()}-${String(kstBetTime.getMonth() + 1).padStart(2, '0')}-${String(kstBetTime.getDate()).padStart(2, '0')}`;
           
           // Priority: 1) Round forced settings  2) Global forced settings  3) Individual forced outcome  4) Price-based
-          // Note: directionForced (매수/매도) already applied at bet creation/toggle time, direction already changed in DB
           const roundForcedList = await storage.getRoundForcedDirectionsForRound(bet.symbol, bet.duration, bet.roundNumber, betDateKey);
           const directionForced = roundForcedList.find(r => r.forcedDirection === 'up' || r.forcedDirection === 'down');
           const outcomeForced = roundForcedList.find(r => r.forcedDirection === 'all_win' || r.forcedDirection === 'all_lose');
+          const marketForced = roundForcedList.find(r => r.forcedDirection === 'market_up' || r.forcedDirection === 'market_down');
           
           // Check global forced setting if no round-level outcome is set
           let globalForcedOutcome: string | undefined;
@@ -3081,6 +3072,15 @@ export async function registerRoutes(
               closePrice = bet.direction === 'long' ? strikePrice + variation : strikePrice - variation;
             } else {
               closePrice = bet.direction === 'long' ? strikePrice - variation : strikePrice + variation;
+            }
+          } else if (marketForced) {
+            const variation = strikePrice * 0.001;
+            const marketUp = marketForced.forcedDirection === 'market_up';
+            closePrice = marketUp ? strikePrice + variation : strikePrice - variation;
+            if (bet.direction === 'long') {
+              outcome = marketUp ? 'win' : 'lose';
+            } else {
+              outcome = marketUp ? 'lose' : 'win';
             }
           } else if (directionForced) {
             const variation = strikePrice * 0.001;
