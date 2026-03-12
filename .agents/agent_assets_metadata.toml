@@ -6,3 +6,9 @@ id = "JxbMG6iCwgkLYXFE8yWL5"
 uri = "file://forced_settlement_questions.md"
 type = "text"
 title = "거래 강제설정 로직 확인 질문지"
+
+[[outputs]]
+id = "8yTGYaQQ1mfAZy8tznOtH"
+uri = "file://잔고보정_보고서.md"
+type = "text"
+title = "잔고 보정 보고서 (2026-03-12)"
