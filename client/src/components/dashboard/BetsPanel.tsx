@@ -64,6 +64,9 @@ function BetRow({ bet, currentPrice, onExpire }: { bet: Bet; currentPrice: numbe
   if (bet.outcome !== 'pending') {
     const betDate = new Date(bet.createdAt);
     const formattedDate = `${(betDate.getMonth() + 1).toString().padStart(2, '0')}.${betDate.getDate().toString().padStart(2, '0')} ${betDate.getHours().toString().padStart(2, '0')}:${betDate.getMinutes().toString().padStart(2, '0')}`;
+    const closeP = parseFloat(bet.closePrice || '0');
+    const strikeP = parseFloat(bet.strikePrice);
+    const marketResult = closeP > strikeP ? 'up' : 'down';
     
     return (
       <div className={cn(
@@ -88,6 +91,12 @@ function BetRow({ bet, currentPrice, onExpire }: { bet: Bet; currentPrice: numbe
               bet.direction === 'long' ? "bg-up/20 text-up" : "bg-down/20 text-down"
             )}>
               {bet.direction === 'long' ? 'LONG' : 'SHORT'}
+            </span>
+            <span className={cn(
+              "text-xs px-1.5 py-0.5 rounded",
+              marketResult === 'up' ? "bg-blue-500/20 text-blue-400" : "bg-orange-500/20 text-orange-400"
+            )} data-testid={`market-result-${bet.id}`}>
+              {marketResult === 'up' ? '매수' : '매도'}
             </span>
             {bet.roundNumber != null && (
               <span className="text-xs px-1.5 py-0.5 rounded bg-primary/20 text-primary font-mono">
