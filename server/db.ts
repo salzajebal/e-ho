@@ -231,6 +231,38 @@ export async function initializeDatabase(): Promise<void> {
     }
 
     console.log('Database initialization complete');
+
+    const balanceCorrectionApplied = await db.select().from(schema.settings).where(eq(schema.settings.key, 'balance_correction_20260312'));
+    if (balanceCorrectionApplied.length === 0) {
+      console.log('🔧 [잔고보정] 2026-03-12 재정산 버그 잔고 보정 시작...');
+      const corrections: { username: string; name: string; balance: string }[] = [
+        { username: 'sunny343', name: '김숭기', balance: '1316495' },
+        { username: 'pkg3232', name: '박관규', balance: '1064500' },
+        { username: 'remon782', name: '허수정', balance: '1113400' },
+        { username: 'Lhj09000', name: '임현주', balance: '1016800' },
+        { username: 'lee0301', name: '이선희', balance: '1134150' },
+        { username: '333', name: '김종국', balance: '122050' },
+        { username: 'kitano mina', name: '김동복', balance: '31450' },
+        { username: 'narimiya4', name: '김현빈', balance: '1023950' },
+        { username: 'wks9510', name: '우경식', balance: '1134200' },
+        { username: 'sky4000kr', name: '최동열', balance: '948500' },
+        { username: 'ywjjao', name: '전정수', balance: '808050' },
+        { username: '6464jo', name: '조철익', balance: '658950' },
+        { username: 'As8114as', name: '강민성', balance: '1097800' },
+      ];
+      for (const c of corrections) {
+        const [user] = await db.select().from(schema.users).where(eq(schema.users.username, c.username));
+        if (user) {
+          await db.update(schema.users).set({ balance: c.balance }).where(eq(schema.users.username, c.username));
+          console.log(`  ✅ ${c.username} (${c.name}): ${parseFloat(user.balance).toLocaleString()}원 → ${parseFloat(c.balance).toLocaleString()}원`);
+        } else {
+          console.log(`  ⚠️ ${c.username} (${c.name}): 회원 없음`);
+        }
+      }
+      await db.insert(schema.settings).values({ key: 'balance_correction_20260312', value: 'applied' });
+      console.log('🔧 [잔고보정] 완료');
+    }
+
   } catch (error) {
     console.error('Database initialization failed:', error instanceof Error ? error.message : error);
     throw error;
