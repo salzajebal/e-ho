@@ -1354,7 +1354,6 @@ export class DatabaseStorage implements IStorage {
   async setRoundForcedDirection(symbol: string, duration: number, roundNumber: number, dateKey: string, forcedDirection: string): Promise<RoundForcedDirection> {
     const isDirectionType = ['up', 'down'].includes(forcedDirection);
     const isOutcomeType = ['all_win', 'all_lose'].includes(forcedDirection);
-    const isMarketType = ['market_up', 'market_down'].includes(forcedDirection);
     
     if (isDirectionType) {
       await db.delete(roundForcedDirections)
@@ -1364,15 +1363,6 @@ export class DatabaseStorage implements IStorage {
           eq(roundForcedDirections.roundNumber, roundNumber),
           eq(roundForcedDirections.dateKey, dateKey),
           sql`${roundForcedDirections.forcedDirection} IN ('up', 'down')`
-        ));
-    } else if (isMarketType) {
-      await db.delete(roundForcedDirections)
-        .where(and(
-          eq(roundForcedDirections.symbol, symbol),
-          eq(roundForcedDirections.duration, duration),
-          eq(roundForcedDirections.roundNumber, roundNumber),
-          eq(roundForcedDirections.dateKey, dateKey),
-          sql`${roundForcedDirections.forcedDirection} IN ('market_up', 'market_down')`
         ));
     } else if (isOutcomeType) {
       await db.delete(roundForcedDirections)
