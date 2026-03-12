@@ -580,11 +580,21 @@ export class DatabaseStorage implements IStorage {
 
   async getRecentlySettledBetsBySymbolDuration(symbol: string, duration: number, withinMinutes: number = 30): Promise<Bet[]> {
     const cutoff = new Date(Date.now() - withinMinutes * 60 * 1000);
+
+    const now = new Date();
+    const kstOffset = 9 * 60;
+    const utcOffset = now.getTimezoneOffset();
+    const kstTime = new Date(now.getTime() + (kstOffset + utcOffset) * 60 * 1000);
+    const todayStart = new Date(kstTime);
+    todayStart.setHours(0, 0, 0, 0);
+    const todayStartUTC = new Date(todayStart.getTime() - (kstOffset + utcOffset) * 60 * 1000);
+
     return await db.select().from(bets)
       .where(and(
         eq(bets.symbol, symbol),
         eq(bets.duration, duration),
         sql`${bets.outcome} IN ('win', 'lose')`,
+        sql`${bets.createdAt} >= ${todayStartUTC}`,
         sql`(${bets.settledAt} IS NOT NULL AND ${bets.settledAt} >= ${cutoff}) OR ${bets.expiresAt} >= ${cutoff}`
       ));
   }
@@ -595,6 +605,19 @@ export class DatabaseStorage implements IStorage {
       if (!bet) return { success: false };
       
       if (bet.outcome === newOutcome) {
+        return { success: false };
+      }
+
+      const now = new Date();
+      const kstOffset = 9 * 60;
+      const utcOffset = now.getTimezoneOffset();
+      const kstTime = new Date(now.getTime() + (kstOffset + utcOffset) * 60 * 1000);
+      const todayStart = new Date(kstTime);
+      todayStart.setHours(0, 0, 0, 0);
+      const todayStartUTC = new Date(todayStart.getTime() - (kstOffset + utcOffset) * 60 * 1000);
+      
+      if (new Date(bet.createdAt) < todayStartUTC) {
+        console.log(`🚫 [Re-Settle] Bet #${betId}: 오늘 생성된 베팅이 아니므로 재정산 차단 (생성일: ${bet.createdAt})`);
         return { success: false };
       }
       
