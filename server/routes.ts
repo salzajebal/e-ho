@@ -2244,7 +2244,7 @@ export async function registerRoutes(
     }
   });
 
-  // Global forced outcome settings (applies to ALL rounds for a symbol+duration)
+  // Global forced settings (applies to ALL rounds for a symbol+duration)
   app.get("/api/admin/global-forced", requireAdmin, async (req, res) => {
     try {
       const symbols = ['USD', 'EUR', 'JPY', 'AUD'];
@@ -2252,9 +2252,13 @@ export async function registerRoutes(
       const result: Record<string, string> = {};
       for (const sym of symbols) {
         for (const dur of durations) {
-          const val = await storage.getSetting(`global_forced:${sym}:${dur}`);
-          if (val) {
-            result[`${sym}:${dur}`] = val;
+          const outcomeVal = await storage.getSetting(`global_forced:${sym}:${dur}`);
+          if (outcomeVal) {
+            result[`${sym}:${dur}`] = outcomeVal;
+          }
+          const dirVal = await storage.getSetting(`global_forced_dir:${sym}:${dur}`);
+          if (dirVal) {
+            result[`dir:${sym}:${dur}`] = dirVal;
           }
         }
       }
@@ -2267,10 +2271,24 @@ export async function registerRoutes(
 
   app.post("/api/admin/global-forced", requireAdmin, async (req, res) => {
     try {
-      const { symbol, duration, forcedOutcome } = req.body;
+      const { symbol, duration, forcedOutcome, forcedDirection } = req.body;
       if (!symbol || !duration) {
         return res.status(400).json({ error: "필수 필드가 누락되었습니다" });
       }
+      
+      if (forcedDirection !== undefined) {
+        const dirKey = `global_forced_dir:${symbol}:${duration}`;
+        if (!forcedDirection || forcedDirection === 'none') {
+          await storage.setSetting(dirKey, '');
+          console.log(`🌐 [Global Forced Dir] ${symbol} ${duration}s: 방향 해제`);
+          return res.json({ action: 'cleared', type: 'direction' });
+        } else {
+          await storage.setSetting(dirKey, forcedDirection);
+          console.log(`🌐 [Global Forced Dir] ${symbol} ${duration}s: ${forcedDirection} 설정`);
+          return res.json({ action: 'set', type: 'direction', value: forcedDirection });
+        }
+      }
+      
       const key = `global_forced:${symbol}:${duration}`;
       if (!forcedOutcome || forcedOutcome === 'none') {
         await storage.setSetting(key, '');
