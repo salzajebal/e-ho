@@ -206,7 +206,7 @@ interface ForcedDirection {
   symbol: string;
   duration: number;
   roundNumber: number;
-  forcedDirection: 'up' | 'down';
+  forcedDirection: 'up' | 'down' | 'display_up' | 'display_down';
   dateKey: string;
 }
 
@@ -334,18 +334,37 @@ export function BettingForm({ currentPrice, game, balance, onBet, isBetting = fa
       fd => fd.symbol === game.symbol && fd.duration === game.duration && fd.dateKey === todayKey
     );
     const forcedMap = new Map<number, 'up' | 'down'>();
+    const displayForcedMap = new Map<number, 'up' | 'down'>();
     forcedForGame.forEach(fd => {
-      forcedMap.set(fd.roundNumber, fd.forcedDirection);
+      if (fd.forcedDirection === 'display_up' || fd.forcedDirection === 'display_down') {
+        displayForcedMap.set(fd.roundNumber, fd.forcedDirection === 'display_up' ? 'up' : 'down');
+      } else if (fd.forcedDirection === 'up' || fd.forcedDirection === 'down') {
+        forcedMap.set(fd.roundNumber, fd.forcedDirection);
+      }
+    });
+
+    // Override bet results with display forced direction (display only, not affecting settlement)
+    betResultsByRound.forEach((result, round) => {
+      const displayDir = displayForcedMap.get(round);
+      if (displayDir) {
+        betResultsByRound.set(round, { ...result, direction: displayDir });
+      }
+    });
+
+    // Rebuild final results with display overrides
+    finalResults.length = 0;
+    usedRounds.clear();
+    betResultsByRound.forEach((result, round) => {
+      finalResults.push(result);
+      usedRounds.add(round);
     });
 
     generatedResults.forEach(genResult => {
       if (!usedRounds.has(genResult.round)) {
-        // Don't show generated results for rounds with pending bets
-        // Wait for the server to settle and provide authoritative result
         if (pendingBetRounds.has(genResult.round)) return;
         
-        // Check if this round has a forced direction
-        const forcedDir = forcedMap.get(genResult.round);
+        const displayDir = displayForcedMap.get(genResult.round);
+        const forcedDir = displayDir || forcedMap.get(genResult.round);
         if (forcedDir) {
           finalResults.push({
             ...genResult,

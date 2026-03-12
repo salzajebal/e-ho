@@ -450,6 +450,7 @@ function RoundForcedTab() {
   );
   const hasDirection = currentRoundSettings.find(d => d.forcedDirection === 'up' || d.forcedDirection === 'down');
   const hasOutcome = currentRoundSettings.find(d => d.forcedDirection === 'all_win' || d.forcedDirection === 'all_lose');
+  const hasDisplay = currentRoundSettings.find(d => d.forcedDirection === 'display_up' || d.forcedDirection === 'display_down');
 
   const handleToggle = async (forcedDirection: string) => {
     if (isToggling) return;
@@ -469,7 +470,7 @@ function RoundForcedTab() {
       });
       if (!res.ok) throw new Error('설정 실패');
       const result = await res.json();
-      const labels: Record<string, string> = { up: '매수(롱)', down: '매도(숏)', all_win: '전체적중', all_lose: '전체미적중' };
+      const labels: Record<string, string> = { up: '매수(롱)', down: '매도(숏)', all_win: '전체적중', all_lose: '전체미적중', display_up: '결과표시↑', display_down: '결과표시↓' };
       if (result.action === 'created') {
         toast.success(`${currentRound}회차 ${labels[forcedDirection]} 적용`);
       } else {
@@ -761,8 +762,47 @@ function RoundForcedTab() {
             </div>
           </div>
 
+          <div className="space-y-3">
+            <label className="text-sm text-muted-foreground font-medium">거래결과 표시 방향 강제 (표시만 변경, 정산 무관)</label>
+            <p className="text-xs text-muted-foreground">유저 화면의 거래결과 목록에서 이 회차의 방향(LONG/SHORT)을 강제로 표시합니다.</p>
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                type="button"
+                disabled={isToggling}
+                className={cn(
+                  "h-14 text-base font-bold transition-all",
+                  hasDisplay?.forcedDirection === 'display_up'
+                    ? "bg-cyan-600 hover:bg-cyan-700 text-white ring-2 ring-cyan-500 ring-offset-2 ring-offset-background"
+                    : "bg-transparent border-2 border-cyan-600/50 text-cyan-500 hover:bg-cyan-600/10"
+                )}
+                onClick={() => handleToggle('display_up')}
+                data-testid="toggle-round-display-up"
+              >
+                <TrendingUp className="w-5 h-5 mr-2" />
+                결과↑ LONG
+                {hasDisplay?.forcedDirection === 'display_up' && <Check className="w-4 h-4 ml-2" />}
+              </Button>
+              <Button
+                type="button"
+                disabled={isToggling}
+                className={cn(
+                  "h-14 text-base font-bold transition-all",
+                  hasDisplay?.forcedDirection === 'display_down'
+                    ? "bg-amber-600 hover:bg-amber-700 text-white ring-2 ring-amber-500 ring-offset-2 ring-offset-background"
+                    : "bg-transparent border-2 border-amber-600/50 text-amber-500 hover:bg-amber-600/10"
+                )}
+                onClick={() => handleToggle('display_down')}
+                data-testid="toggle-round-display-down"
+              >
+                <TrendingDown className="w-5 h-5 mr-2" />
+                결과↓ SHORT
+                {hasDisplay?.forcedDirection === 'display_down' && <Check className="w-4 h-4 ml-2" />}
+              </Button>
+            </div>
+          </div>
+
           {/* Current settings summary */}
-          {(hasDirection || hasOutcome) && (
+          {(hasDirection || hasOutcome || hasDisplay) && (
             <div className="bg-muted/50 rounded-lg p-4">
               <div className="text-sm font-medium mb-2">현재 {currentRound}회차 설정:</div>
               <div className="flex flex-wrap gap-2">
@@ -780,6 +820,14 @@ function RoundForcedTab() {
                     hasOutcome.forcedDirection === 'all_win' ? "bg-green-600/20 text-green-500" : "bg-red-600/20 text-red-500"
                   )}>
                     {hasOutcome.forcedDirection === 'all_win' ? '✅ 전체적중' : '❌ 전체미적중'}
+                  </span>
+                )}
+                {hasDisplay && (
+                  <span className={cn(
+                    "px-3 py-1.5 rounded-full text-sm font-bold",
+                    hasDisplay.forcedDirection === 'display_up' ? "bg-cyan-600/20 text-cyan-500" : "bg-amber-600/20 text-amber-500"
+                  )}>
+                    {hasDisplay.forcedDirection === 'display_up' ? '🔵 결과↑' : '🟠 결과↓'}
                   </span>
                 )}
               </div>
@@ -836,11 +884,17 @@ function RoundForcedTab() {
                       item.forcedDirection === 'up' ? "bg-up/20 text-up" :
                       item.forcedDirection === 'down' ? "bg-down/20 text-down" :
                       item.forcedDirection === 'all_win' ? "bg-green-600/20 text-green-500" :
-                      "bg-red-600/20 text-red-500"
+                      item.forcedDirection === 'all_lose' ? "bg-red-600/20 text-red-500" :
+                      item.forcedDirection === 'display_up' ? "bg-cyan-600/20 text-cyan-500" :
+                      item.forcedDirection === 'display_down' ? "bg-amber-600/20 text-amber-500" :
+                      "bg-muted text-muted-foreground"
                     )}>
                       {item.forcedDirection === 'up' ? '매수(롱)' : 
                        item.forcedDirection === 'down' ? '매도(숏)' :
-                       item.forcedDirection === 'all_win' ? '전체적중' : '전체미적중'}
+                       item.forcedDirection === 'all_win' ? '전체적중' :
+                       item.forcedDirection === 'all_lose' ? '전체미적중' :
+                       item.forcedDirection === 'display_up' ? '결과↑' :
+                       item.forcedDirection === 'display_down' ? '결과↓' : item.forcedDirection}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-center">
