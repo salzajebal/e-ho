@@ -470,7 +470,7 @@ function RoundForcedTab() {
       });
       if (!res.ok) throw new Error('설정 실패');
       const result = await res.json();
-      const labels: Record<string, string> = { up: '매수(롱)', down: '매도(숏)', market_up: '결과:롱(가격↑)', market_down: '결과:숏(가격↓)', all_win: '전체적중', all_lose: '전체미적중' };
+      const labels: Record<string, string> = { up: '매수(롱)', down: '매도(숏)', market_up: '거래결과:매수', market_down: '거래결과:매도', all_win: '전체적중', all_lose: '전체미적중' };
       if (result.action === 'created') {
         toast.success(`${currentRound}회차 ${labels[forcedDirection]} 적용`);
       } else {
@@ -725,8 +725,8 @@ function RoundForcedTab() {
           </div>
 
           <div className="space-y-3">
-            <label className="text-sm text-muted-foreground font-medium">거래결과 방향 강제 (시장 방향 설정, 유저 포지션 변경 없음)</label>
-            <p className="text-xs text-muted-foreground">설정하면 이 회차의 거래결과가 롱(가격↑) 또는 숏(가격↓)으로 나옵니다. 유저 포지션은 그대로 유지되며, 맞춘 유저만 적중 처리됩니다.</p>
+            <label className="text-sm text-muted-foreground font-medium">거래결과 방향 강제</label>
+            <p className="text-xs text-muted-foreground">이 회차 거래결과가 매수 또는 매도로 전체 표기됩니다. 회원 포지션은 변경되지 않습니다.</p>
             <div className="grid grid-cols-2 gap-3">
               <Button
                 type="button"
@@ -741,7 +741,7 @@ function RoundForcedTab() {
                 data-testid="toggle-round-market-up"
               >
                 <TrendingUp className="w-5 h-5 mr-2" />
-                결과: 롱 (가격↑)
+                매수
                 {hasMarket?.forcedDirection === 'market_up' && <Check className="w-4 h-4 ml-2" />}
               </Button>
               <Button
@@ -757,7 +757,7 @@ function RoundForcedTab() {
                 data-testid="toggle-round-market-down"
               >
                 <TrendingDown className="w-5 h-5 mr-2" />
-                결과: 숏 (가격↓)
+                매도
                 {hasMarket?.forcedDirection === 'market_down' && <Check className="w-4 h-4 ml-2" />}
               </Button>
             </div>
@@ -818,7 +818,7 @@ function RoundForcedTab() {
                     "px-3 py-1.5 rounded-full text-sm font-bold",
                     hasMarket.forcedDirection === 'market_up' ? "bg-blue-600/20 text-blue-400" : "bg-orange-600/20 text-orange-400"
                   )}>
-                    {hasMarket.forcedDirection === 'market_up' ? '📊 결과: 롱(가격↑)' : '📊 결과: 숏(가격↓)'}
+                    {hasMarket.forcedDirection === 'market_up' ? '📊 거래결과: 매수' : '📊 거래결과: 매도'}
                   </span>
                 )}
                 {hasOutcome && (
@@ -889,8 +889,8 @@ function RoundForcedTab() {
                     )}>
                       {item.forcedDirection === 'up' ? '매수(롱)' : 
                        item.forcedDirection === 'down' ? '매도(숏)' :
-                       item.forcedDirection === 'market_up' ? '결과:롱(가격↑)' :
-                       item.forcedDirection === 'market_down' ? '결과:숏(가격↓)' :
+                       item.forcedDirection === 'market_up' ? '거래결과:매수' :
+                       item.forcedDirection === 'market_down' ? '거래결과:매도' :
                        item.forcedDirection === 'all_win' ? '전체적중' : '전체미적중'}
                     </span>
                   </td>
