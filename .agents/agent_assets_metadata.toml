@@ -12,3 +12,9 @@ id = "8yTGYaQQ1mfAZy8tznOtH"
 uri = "file://잔고보정_보고서.md"
 type = "text"
 title = "잔고 보정 보고서 (2026-03-12)"
+
+[[outputs]]
+id = "0Dq9pDAWH-AUY370smNgI"
+uri = "file://잔고보정_목록.md"
+type = "text"
+title = "잔고 보정 목록 (2026-03-12)"
