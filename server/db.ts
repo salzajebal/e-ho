@@ -263,6 +263,53 @@ export async function initializeDatabase(): Promise<void> {
       console.log('🔧 [잔고보정] 완료');
     }
 
+    const richimamCorrection = await db.select().from(schema.settings).where(eq(schema.settings.key, 'richimam_correction_20260312'));
+    if (richimamCorrection.length === 0) {
+      console.log('🔧 [강삼경 보정] 글로벌 강제 우선순위 버그로 인한 베팅 결과 보정 시작...');
+      const betCorrections = [
+        { betId: 4407, correctOutcome: 'win' as const, roundNumber: 1063 },
+        { betId: 4386, correctOutcome: 'win' as const, roundNumber: 1059 },
+        { betId: 4375, correctOutcome: 'win' as const, roundNumber: 1057 },
+        { betId: 4354, correctOutcome: 'win' as const, roundNumber: 1051 },
+        { betId: 4289, correctOutcome: 'win' as const, roundNumber: 823 },
+      ];
+
+      const richimamId = 'a71f8323-f754-4006-8001-adc074389f02';
+
+      for (const bc of betCorrections) {
+        const [bet] = await db.select().from(schema.bets).where(eq(schema.bets.id, bc.betId));
+        if (bet && bet.userId === richimamId && bet.outcome !== bc.correctOutcome) {
+          const amount = parseFloat(bet.amount);
+          const multiplier = parseFloat(bet.multiplier);
+          const newPayout = bc.correctOutcome === 'win' ? amount * multiplier : 0;
+          const strikePrice = parseFloat(bet.strikePrice);
+          const variation = strikePrice * 0.001;
+          const newClosePrice = bet.direction === 'long'
+            ? (bc.correctOutcome === 'win' ? strikePrice + variation : strikePrice - variation)
+            : (bc.correctOutcome === 'win' ? strikePrice - variation : strikePrice + variation);
+
+          await db.update(schema.bets).set({
+            outcome: bc.correctOutcome,
+            payout: newPayout.toString(),
+            closePrice: newClosePrice.toString(),
+          }).where(eq(schema.bets.id, bc.betId));
+          console.log(`  ✅ Bet #${bc.betId} R${bc.roundNumber}: ${bet.outcome} → ${bc.correctOutcome}, 배당: ${newPayout.toLocaleString()}원`);
+        }
+      }
+
+      const [richimam] = await db.select().from(schema.users).where(eq(schema.users.id, richimamId));
+      if (richimam) {
+        const currentBalance = parseFloat(richimam.balance);
+        const addAmount = 405600;
+        const newBalance = (currentBalance + addAmount).toString();
+        await db.update(schema.users).set({ balance: newBalance }).where(eq(schema.users.id, richimamId));
+        console.log(`  ✅ 강삼경 잔고: ${currentBalance.toLocaleString()}원 + ${addAmount.toLocaleString()}원 = ${parseFloat(newBalance).toLocaleString()}원`);
+      }
+
+      await db.insert(schema.settings).values({ key: 'richimam_correction_20260312', value: 'applied' });
+      console.log('🔧 [강삼경 보정] 완료');
+    }
+
   } catch (error) {
     console.error('Database initialization failed:', error instanceof Error ? error.message : error);
     throw error;
