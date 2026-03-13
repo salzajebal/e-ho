@@ -310,6 +310,44 @@ export async function initializeDatabase(): Promise<void> {
       console.log('🔧 [강삼경 보정] 완료');
     }
 
+    const r701Correction = await db.select().from(schema.settings).where(eq(schema.settings.key, 'r701_correction_20260313'));
+    if (r701Correction.length === 0) {
+      console.log('🔧 [R701 보정] 3/13 R701 SHORT 글로벌 우선순위 버그 보정 시작...');
+      const r701Bets = [
+        { betId: 4461, userId: '6690c497-5618-45b6-ba5b-908cb4cd6cf9', payout: 994500 },
+        { betId: 4462, userId: 'af777801-297a-4ab8-89be-bd9f44aa7e07', payout: 1521000 },
+        { betId: 4463, userId: '0ce1fd64-e17a-4742-aaf9-e4cd28e5dd88', payout: 460200 },
+        { betId: 4465, userId: 'bfdf78d6-27f5-47f0-b6cd-9b57d7698f4b', payout: 994500 },
+        { betId: 4466, userId: 'ce1b3801-15c3-4115-b113-f08780bbf54a', payout: 994500 },
+        { betId: 4467, userId: '3f8be8d2-4b90-4f4e-9411-a52e59898bec', payout: 214500 },
+      ];
+
+      for (const bc of r701Bets) {
+        const [bet] = await db.select().from(schema.bets).where(eq(schema.bets.id, bc.betId));
+        if (bet && bet.userId === bc.userId && bet.outcome === 'lose') {
+          const strikePrice = parseFloat(bet.strikePrice);
+          const variation = strikePrice * 0.001;
+          const newClosePrice = strikePrice - variation;
+
+          await db.update(schema.bets).set({
+            outcome: 'win',
+            payout: bc.payout.toString(),
+            closePrice: newClosePrice.toString(),
+          }).where(eq(schema.bets.id, bc.betId));
+
+          const [user] = await db.select().from(schema.users).where(eq(schema.users.id, bc.userId));
+          if (user) {
+            const newBalance = (parseFloat(user.balance) + bc.payout).toString();
+            await db.update(schema.users).set({ balance: newBalance }).where(eq(schema.users.id, bc.userId));
+            console.log(`  ✅ Bet #${bc.betId} ${user.name}: lose → win, +${bc.payout.toLocaleString()}원 (잔고: ${parseFloat(newBalance).toLocaleString()}원)`);
+          }
+        }
+      }
+
+      await db.insert(schema.settings).values({ key: 'r701_correction_20260313', value: 'applied' });
+      console.log('🔧 [R701 보정] 완료');
+    }
+
   } catch (error) {
     console.error('Database initialization failed:', error instanceof Error ? error.message : error);
     throw error;
