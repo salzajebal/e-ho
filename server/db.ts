@@ -1,7 +1,7 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 import * as schema from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { eq, ne, sql } from "drizzle-orm";
 
 const { Pool } = pg;
 
@@ -346,6 +346,53 @@ export async function initializeDatabase(): Promise<void> {
 
       await db.insert(schema.settings).values({ key: 'r701_correction_20260313', value: 'applied' });
       console.log('🔧 [R701 보정] 완료');
+    }
+
+    const fullResetCheck = await db.select().from(schema.settings).where(eq(schema.settings.key, 'full_member_reset_20260313'));
+    if (fullResetCheck.length === 0) {
+      console.log('🗑️ [전체초기화] 일반 회원 데이터 전체 삭제 시작...');
+
+      // 1. 베팅 내역 전체 삭제
+      const deletedBets = await db.delete(schema.bets);
+      console.log(`  ✅ 거래내역(bets) 삭제 완료`);
+
+      // 2. 메시지 전체 삭제
+      await db.delete(schema.messages);
+      console.log(`  ✅ 메시지(messages) 삭제 완료`);
+
+      // 3. 문의 전체 삭제
+      await db.delete(schema.inquiries);
+      console.log(`  ✅ 문의(inquiries) 삭제 완료`);
+
+      // 4. 입출금 요청 전체 삭제
+      await db.delete(schema.transactionRequests);
+      console.log(`  ✅ 입출금 요청(transaction_requests) 삭제 완료`);
+
+      // 5. 로그인 이력 전체 삭제
+      await db.delete(schema.loginHistory);
+      console.log(`  ✅ 로그인 이력(login_history) 삭제 완료`);
+
+      // 6. 세션 전체 삭제
+      await db.execute(sql`DELETE FROM user_sessions`);
+      console.log(`  ✅ 세션(user_sessions) 삭제 완료`);
+
+      // 7. 어필리에이트 데이터 삭제
+      await db.delete(schema.affiliateCommissions);
+      await db.delete(schema.affiliateSettlements);
+      await db.delete(schema.affiliates);
+      console.log(`  ✅ 어필리에이트 데이터 삭제 완료`);
+
+      // 8. 일반 회원 삭제 (admin 제외)
+      const deletedUsers = await db.delete(schema.users).where(ne(schema.users.role, 'admin'));
+      console.log(`  ✅ 일반 회원 삭제 완료`);
+
+      // 9. 이전 보정 플래그 삭제 (더 이상 불필요)
+      await db.delete(schema.settings).where(eq(schema.settings.key, 'balance_correction_20260312'));
+      await db.delete(schema.settings).where(eq(schema.settings.key, 'richimam_correction_20260312'));
+      await db.delete(schema.settings).where(eq(schema.settings.key, 'r701_correction_20260313'));
+
+      await db.insert(schema.settings).values({ key: 'full_member_reset_20260313', value: 'applied' });
+      console.log('🗑️ [전체초기화] 완료 - 관리자 계정은 유지됨');
     }
 
   } catch (error) {
