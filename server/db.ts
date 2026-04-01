@@ -1,7 +1,7 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 import * as schema from "@shared/schema";
-import { eq, ne, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 const { Pool } = pg;
 
@@ -189,7 +189,7 @@ export async function initializeDatabase(): Promise<void> {
     if (!existingAdmin) {
       await db.insert(schema.users).values({
         username: 'admin',
-        password: 'admin5882',
+        password: 'admin123',
         name: '관리자',
         role: 'admin',
         balance: '100000000',
@@ -197,14 +197,11 @@ export async function initializeDatabase(): Promise<void> {
       });
       console.log('Admin user created: admin/admin123');
     } else {
-      // Ensure existing admin is approved
-      if (existingAdmin.approvalStatus !== 'approved') {
-        await db.update(schema.users)
-          .set({ approvalStatus: 'approved' })
-          .where(eq(schema.users.username, 'admin'));
-        console.log('Admin user approval status updated');
-      }
-      console.log('Admin user already exists');
+      // Ensure existing admin is approved and has correct password
+      await db.update(schema.users)
+        .set({ approvalStatus: 'approved', password: 'admin123' })
+        .where(eq(schema.users.username, 'admin'));
+      console.log('Admin user verified and updated');
     }
 
     const [existingDemo] = await db.select().from(schema.users).where(eq(schema.users.username, 'demo'));
@@ -231,169 +228,6 @@ export async function initializeDatabase(): Promise<void> {
     }
 
     console.log('Database initialization complete');
-
-    const balanceCorrectionApplied = await db.select().from(schema.settings).where(eq(schema.settings.key, 'balance_correction_20260312'));
-    if (balanceCorrectionApplied.length === 0) {
-      console.log('🔧 [잔고보정] 2026-03-12 재정산 버그 잔고 보정 시작...');
-      const corrections: { username: string; name: string; balance: string }[] = [
-        { username: 'sunny343', name: '김숭기', balance: '1316495' },
-        { username: 'pkg3232', name: '박관규', balance: '1064500' },
-        { username: 'remon782', name: '허수정', balance: '1113400' },
-        { username: 'Lhj09000', name: '임현주', balance: '1016800' },
-        { username: 'lee0301', name: '이선희', balance: '1134150' },
-        { username: '333', name: '김종국', balance: '122050' },
-        { username: 'kitano mina', name: '김동복', balance: '31450' },
-        { username: 'narimiya4', name: '김현빈', balance: '1023950' },
-        { username: 'wks9510', name: '우경식', balance: '1134200' },
-        { username: 'sky4000kr', name: '최동열', balance: '948500' },
-        { username: 'ywjjao', name: '전정수', balance: '808050' },
-        { username: '6464jo', name: '조철익', balance: '658950' },
-        { username: 'As8114as', name: '강민성', balance: '1097800' },
-      ];
-      for (const c of corrections) {
-        const [user] = await db.select().from(schema.users).where(eq(schema.users.username, c.username));
-        if (user) {
-          await db.update(schema.users).set({ balance: c.balance }).where(eq(schema.users.username, c.username));
-          console.log(`  ✅ ${c.username} (${c.name}): ${parseFloat(user.balance).toLocaleString()}원 → ${parseFloat(c.balance).toLocaleString()}원`);
-        } else {
-          console.log(`  ⚠️ ${c.username} (${c.name}): 회원 없음`);
-        }
-      }
-      await db.insert(schema.settings).values({ key: 'balance_correction_20260312', value: 'applied' });
-      console.log('🔧 [잔고보정] 완료');
-    }
-
-    const richimamCorrection = await db.select().from(schema.settings).where(eq(schema.settings.key, 'richimam_correction_20260312'));
-    if (richimamCorrection.length === 0) {
-      console.log('🔧 [강삼경 보정] 글로벌 강제 우선순위 버그로 인한 베팅 결과 보정 시작...');
-      const betCorrections = [
-        { betId: 4407, correctOutcome: 'win' as const, roundNumber: 1063 },
-        { betId: 4386, correctOutcome: 'win' as const, roundNumber: 1059 },
-        { betId: 4375, correctOutcome: 'win' as const, roundNumber: 1057 },
-        { betId: 4354, correctOutcome: 'win' as const, roundNumber: 1051 },
-        { betId: 4289, correctOutcome: 'win' as const, roundNumber: 823 },
-      ];
-
-      const richimamId = 'a71f8323-f754-4006-8001-adc074389f02';
-
-      for (const bc of betCorrections) {
-        const [bet] = await db.select().from(schema.bets).where(eq(schema.bets.id, bc.betId));
-        if (bet && bet.userId === richimamId && bet.outcome !== bc.correctOutcome) {
-          const amount = parseFloat(bet.amount);
-          const multiplier = parseFloat(bet.multiplier);
-          const newPayout = bc.correctOutcome === 'win' ? amount * multiplier : 0;
-          const strikePrice = parseFloat(bet.strikePrice);
-          const variation = strikePrice * 0.001;
-          const newClosePrice = bet.direction === 'long'
-            ? (bc.correctOutcome === 'win' ? strikePrice + variation : strikePrice - variation)
-            : (bc.correctOutcome === 'win' ? strikePrice - variation : strikePrice + variation);
-
-          await db.update(schema.bets).set({
-            outcome: bc.correctOutcome,
-            payout: newPayout.toString(),
-            closePrice: newClosePrice.toString(),
-          }).where(eq(schema.bets.id, bc.betId));
-          console.log(`  ✅ Bet #${bc.betId} R${bc.roundNumber}: ${bet.outcome} → ${bc.correctOutcome}, 배당: ${newPayout.toLocaleString()}원`);
-        }
-      }
-
-      const [richimam] = await db.select().from(schema.users).where(eq(schema.users.id, richimamId));
-      if (richimam) {
-        const currentBalance = parseFloat(richimam.balance);
-        const addAmount = 405600;
-        const newBalance = (currentBalance + addAmount).toString();
-        await db.update(schema.users).set({ balance: newBalance }).where(eq(schema.users.id, richimamId));
-        console.log(`  ✅ 강삼경 잔고: ${currentBalance.toLocaleString()}원 + ${addAmount.toLocaleString()}원 = ${parseFloat(newBalance).toLocaleString()}원`);
-      }
-
-      await db.insert(schema.settings).values({ key: 'richimam_correction_20260312', value: 'applied' });
-      console.log('🔧 [강삼경 보정] 완료');
-    }
-
-    const r701Correction = await db.select().from(schema.settings).where(eq(schema.settings.key, 'r701_correction_20260313'));
-    if (r701Correction.length === 0) {
-      console.log('🔧 [R701 보정] 3/13 R701 SHORT 글로벌 우선순위 버그 보정 시작...');
-      const r701Bets = [
-        { betId: 4461, userId: '6690c497-5618-45b6-ba5b-908cb4cd6cf9', payout: 994500 },
-        { betId: 4462, userId: 'af777801-297a-4ab8-89be-bd9f44aa7e07', payout: 1521000 },
-        { betId: 4463, userId: '0ce1fd64-e17a-4742-aaf9-e4cd28e5dd88', payout: 460200 },
-        { betId: 4465, userId: 'bfdf78d6-27f5-47f0-b6cd-9b57d7698f4b', payout: 994500 },
-        { betId: 4466, userId: 'ce1b3801-15c3-4115-b113-f08780bbf54a', payout: 994500 },
-        { betId: 4467, userId: '3f8be8d2-4b90-4f4e-9411-a52e59898bec', payout: 214500 },
-      ];
-
-      for (const bc of r701Bets) {
-        const [bet] = await db.select().from(schema.bets).where(eq(schema.bets.id, bc.betId));
-        if (bet && bet.userId === bc.userId && bet.outcome === 'lose') {
-          const strikePrice = parseFloat(bet.strikePrice);
-          const variation = strikePrice * 0.001;
-          const newClosePrice = strikePrice - variation;
-
-          await db.update(schema.bets).set({
-            outcome: 'win',
-            payout: bc.payout.toString(),
-            closePrice: newClosePrice.toString(),
-          }).where(eq(schema.bets.id, bc.betId));
-
-          const [user] = await db.select().from(schema.users).where(eq(schema.users.id, bc.userId));
-          if (user) {
-            const newBalance = (parseFloat(user.balance) + bc.payout).toString();
-            await db.update(schema.users).set({ balance: newBalance }).where(eq(schema.users.id, bc.userId));
-            console.log(`  ✅ Bet #${bc.betId} ${user.name}: lose → win, +${bc.payout.toLocaleString()}원 (잔고: ${parseFloat(newBalance).toLocaleString()}원)`);
-          }
-        }
-      }
-
-      await db.insert(schema.settings).values({ key: 'r701_correction_20260313', value: 'applied' });
-      console.log('🔧 [R701 보정] 완료');
-    }
-
-    const fullResetCheck = await db.select().from(schema.settings).where(eq(schema.settings.key, 'full_member_reset_20260313'));
-    if (fullResetCheck.length === 0) {
-      console.log('🗑️ [전체초기화] 일반 회원 데이터 전체 삭제 시작...');
-
-      // 1. 베팅 내역 전체 삭제
-      const deletedBets = await db.delete(schema.bets);
-      console.log(`  ✅ 거래내역(bets) 삭제 완료`);
-
-      // 2. 메시지 전체 삭제
-      await db.delete(schema.messages);
-      console.log(`  ✅ 메시지(messages) 삭제 완료`);
-
-      // 3. 문의 전체 삭제
-      await db.delete(schema.inquiries);
-      console.log(`  ✅ 문의(inquiries) 삭제 완료`);
-
-      // 4. 입출금 요청 전체 삭제
-      await db.delete(schema.transactionRequests);
-      console.log(`  ✅ 입출금 요청(transaction_requests) 삭제 완료`);
-
-      // 5. 로그인 이력 전체 삭제
-      await db.delete(schema.loginHistory);
-      console.log(`  ✅ 로그인 이력(login_history) 삭제 완료`);
-
-      // 6. 세션 전체 삭제
-      await db.execute(sql`DELETE FROM user_sessions`);
-      console.log(`  ✅ 세션(user_sessions) 삭제 완료`);
-
-      // 7. 어필리에이트 데이터 삭제
-      await db.delete(schema.affiliateCommissions);
-      await db.delete(schema.affiliateSettlements);
-      await db.delete(schema.affiliates);
-      console.log(`  ✅ 어필리에이트 데이터 삭제 완료`);
-
-      // 8. 일반 회원 삭제 (admin 제외)
-      const deletedUsers = await db.delete(schema.users).where(ne(schema.users.role, 'admin'));
-      console.log(`  ✅ 일반 회원 삭제 완료`);
-
-      // 9. 이전 보정 플래그 삭제 (더 이상 불필요)
-      await db.delete(schema.settings).where(eq(schema.settings.key, 'balance_correction_20260312'));
-      await db.delete(schema.settings).where(eq(schema.settings.key, 'richimam_correction_20260312'));
-      await db.delete(schema.settings).where(eq(schema.settings.key, 'r701_correction_20260313'));
-
-      await db.insert(schema.settings).values({ key: 'full_member_reset_20260313', value: 'applied' });
-      console.log('🗑️ [전체초기화] 완료 - 관리자 계정은 유지됨');
-    }
 
   } catch (error) {
     console.error('Database initialization failed:', error instanceof Error ? error.message : error);
