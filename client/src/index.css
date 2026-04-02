@@ -155,3 +155,30 @@
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }
 }
+
+@keyframes particle-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+@keyframes node-expand {
+  0% { opacity: 0.2; r: 4; }
+  60% { opacity: 0; r: 14; }
+  100% { opacity: 0; r: 14; }
+}
+@keyframes line-flow {
+  0% { stroke-dashoffset: 24; }
+  100% { stroke-dashoffset: 0; }
+}
+@keyframes chart-float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+@keyframes center-glow-pulse {
+  0%, 100% { opacity: 0.06; }
+  50% { opacity: 0.12; }
+}
+.node-dot { animation: particle-pulse 3s ease-in-out infinite; }
+.node-ring { animation: node-expand 3.5s ease-out infinite; }
+.network-line { animation: line-flow 5s linear infinite; }
+.chart-float { animation: chart-float 8s ease-in-out infinite; }
+.hero-center-glow { animation: center-glow-pulse 4s ease-in-out infinite; }

@@ -799,8 +799,16 @@ export default function Landing() {
 
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
-        {/* Finance Chart Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#030c1e] via-[#050f28] to-[#020810]" />
+        {/* === BASE: Deep dark navy === */}
+        <div className="absolute inset-0 bg-[#010c1f]" />
+
+        {/* === CENTER RADIAL GLOW === */}
+        <div
+          className="absolute inset-0 hero-center-glow"
+          style={{ background: 'radial-gradient(ellipse 90% 70% at 50% 38%, rgba(37,99,235,0.13) 0%, rgba(59,130,246,0.05) 45%, transparent 75%)' }}
+        />
+
+        {/* === ALL CHART LAYERS + PARTICLE NETWORK IN ONE SVG === */}
         <svg
           className="absolute inset-0 w-full h-full"
           viewBox="0 0 1440 900"
@@ -808,121 +816,174 @@ export default function Landing() {
           xmlns="http://www.w3.org/2000/svg"
         >
           <defs>
-            <linearGradient id="sp500Grad" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#1e40af" stopOpacity="0" />
-              <stop offset="15%" stopColor="#3b82f6" stopOpacity="0.9" />
-              <stop offset="85%" stopColor="#60a5fa" stopOpacity="0.9" />
-              <stop offset="100%" stopColor="#93c5fd" stopOpacity="0" />
-            </linearGradient>
-            <linearGradient id="dowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#1d4ed8" stopOpacity="0" />
-              <stop offset="20%" stopColor="#2563eb" stopOpacity="0.5" />
-              <stop offset="80%" stopColor="#3b82f6" stopOpacity="0.5" />
-              <stop offset="100%" stopColor="#60a5fa" stopOpacity="0" />
-            </linearGradient>
-            <linearGradient id="dxyGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#0ea5e9" stopOpacity="0" />
-              <stop offset="20%" stopColor="#38bdf8" stopOpacity="0.35" />
-              <stop offset="80%" stopColor="#7dd3fc" stopOpacity="0.35" />
-              <stop offset="100%" stopColor="#bae6fd" stopOpacity="0" />
+            {/* Blur filters for depth layers */}
+            <filter id="blur-deep"><feGaussianBlur stdDeviation="14"/></filter>
+            <filter id="blur-mid"><feGaussianBlur stdDeviation="5"/></filter>
+            <filter id="glow-line">
+              <feGaussianBlur stdDeviation="2.5" result="b"/>
+              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <filter id="glow-dot">
+              <feGaussianBlur stdDeviation="2" result="b"/>
+              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <filter id="glow-strong">
+              <feGaussianBlur stdDeviation="5" result="b"/>
+              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+
+            {/* SP500 foreground gradient */}
+            <linearGradient id="sp500F" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#1e40af" stopOpacity="0"/>
+              <stop offset="12%" stopColor="#3b82f6" stopOpacity="0.95"/>
+              <stop offset="88%" stopColor="#60a5fa" stopOpacity="0.95"/>
+              <stop offset="100%" stopColor="#93c5fd" stopOpacity="0"/>
             </linearGradient>
             <linearGradient id="sp500Fill" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.12" />
-              <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
+              <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.14"/>
+              <stop offset="100%" stopColor="#3b82f6" stopOpacity="0"/>
             </linearGradient>
-            <linearGradient id="dowFill" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#2563eb" stopOpacity="0.06" />
-              <stop offset="100%" stopColor="#2563eb" stopOpacity="0" />
+            <linearGradient id="dowF" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#1d4ed8" stopOpacity="0"/>
+              <stop offset="18%" stopColor="#2563eb" stopOpacity="0.55"/>
+              <stop offset="82%" stopColor="#3b82f6" stopOpacity="0.55"/>
+              <stop offset="100%" stopColor="#60a5fa" stopOpacity="0"/>
             </linearGradient>
-            <filter id="heroGlow">
-              <feGaussianBlur stdDeviation="3" result="blur" />
-              <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-            </filter>
-            <filter id="softGlow">
-              <feGaussianBlur stdDeviation="1.5" result="blur" />
-              <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-            </filter>
+            <linearGradient id="dxyF" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#0ea5e9" stopOpacity="0"/>
+              <stop offset="22%" stopColor="#38bdf8" stopOpacity="0.35"/>
+              <stop offset="78%" stopColor="#7dd3fc" stopOpacity="0.35"/>
+              <stop offset="100%" stopColor="#bae6fd" stopOpacity="0"/>
+            </linearGradient>
+            <linearGradient id="netLine" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#3b82f6" stopOpacity="0"/>
+              <stop offset="50%" stopColor="#60a5fa" stopOpacity="0.4"/>
+              <stop offset="100%" stopColor="#3b82f6" stopOpacity="0"/>
+            </linearGradient>
           </defs>
 
-          {/* Chart grid - horizontal */}
-          {[100,200,300,400,500,600,700,800].map(y => (
-            <line key={`h${y}`} x1="0" y1={y} x2="1440" y2={y} stroke="#1e3a8a" strokeOpacity="0.25" strokeWidth="0.6" strokeDasharray="4 8" />
+          {/* ── LAYER 1: Deep background (heavy blur, low opacity) ── */}
+          <g filter="url(#blur-deep)" opacity="0.18" className="chart-float">
+            <path d="M-100,580 L120,520 L280,545 L440,490 L600,460 L760,430 L920,400 L1080,370 L1240,340 L1440,305"
+              stroke="#1d4ed8" strokeWidth="4" fill="none"/>
+            <path d="M-100,680 L150,640 L320,660 L500,620 L680,590 L860,560 L1040,530 L1220,500 L1440,465"
+              stroke="#1e40af" strokeWidth="3" fill="none"/>
+            <path d="M-100,750 L200,720 L400,735 L620,700 L840,670 L1060,640 L1280,610 L1440,585"
+              stroke="#1e3a8a" strokeWidth="3" fill="none"/>
+          </g>
+
+          {/* ── LAYER 2: Mid distance (medium blur) ── */}
+          <g filter="url(#blur-mid)" opacity="0.28">
+            <path d="M-50,650 L100,620 L200,635 L320,600 L460,575 L600,555 L740,530 L880,505 L1020,478 L1160,452 L1300,425 L1440,400"
+              stroke="#2563eb" strokeWidth="2.5" fill="none"/>
+            <path d="M-50,730 L150,700 L280,715 L420,682 L570,655 L720,635 L870,608 L1030,580 L1190,555 L1350,528 L1440,510"
+              stroke="#1d4ed8" strokeWidth="2" fill="none"/>
+          </g>
+
+          {/* ── CHART GRID (fine dashed) ── */}
+          {[120,240,360,480,600,720].map(y => (
+            <line key={`h${y}`} x1="0" y1={y} x2="1440" y2={y} stroke="#1e3a8a" strokeOpacity="0.18" strokeWidth="0.5" strokeDasharray="3 9"/>
           ))}
-          {/* Chart grid - vertical */}
-          {[0,120,240,360,480,600,720,840,960,1080,1200,1320,1440].map(x => (
-            <line key={`v${x}`} x1={x} y1="0" x2={x} y2="900" stroke="#1e3a8a" strokeOpacity="0.15" strokeWidth="0.6" strokeDasharray="4 8" />
+          {[0,160,320,480,640,800,960,1120,1280,1440].map(x => (
+            <line key={`v${x}`} x1={x} y1="0" x2={x} y2="900" stroke="#1e3a8a" strokeOpacity="0.1" strokeWidth="0.5" strokeDasharray="3 9"/>
           ))}
 
-          {/* SP500 chart line - main uptrend */}
+          {/* ── LAYER 3: Sharp foreground charts ── */}
+          {/* SP500 fill */}
           <path
-            d="M-20,720 L60,700 L100,710 L140,690 L200,670 L240,680 L300,650 L360,630 L400,645 L450,620 L510,600 L560,615 L610,590 L670,565 L720,580 L770,555 L820,530 L870,545 L920,515 L980,490 L1030,505 L1090,475 L1150,450 L1200,465 L1260,435 L1310,410 L1370,390 L1440,365"
-            stroke="url(#sp500Grad)"
-            strokeWidth="2.2"
-            fill="none"
-            filter="url(#heroGlow)"
-          />
-          {/* SP500 fill area */}
-          <path
-            d="M-20,720 L60,700 L100,710 L140,690 L200,670 L240,680 L300,650 L360,630 L400,645 L450,620 L510,600 L560,615 L610,590 L670,565 L720,580 L770,555 L820,530 L870,545 L920,515 L980,490 L1030,505 L1090,475 L1150,450 L1200,465 L1260,435 L1310,410 L1370,390 L1440,365 L1440,900 L-20,900 Z"
+            d="M-20,720 L60,700 L110,712 L170,692 L230,668 L290,682 L360,648 L430,625 L490,640 L550,614 L620,592 L680,608 L750,578 L820,552 L880,568 L950,538 L1020,510 L1090,526 L1160,494 L1240,465 L1310,480 L1390,448 L1440,430 L1440,900 L-20,900 Z"
             fill="url(#sp500Fill)"
           />
-
-          {/* DOW Jones line */}
+          {/* SP500 main line */}
           <path
-            d="M-20,780 L80,755 L130,765 L190,740 L250,720 L310,735 L370,705 L430,685 L490,700 L550,670 L610,648 L670,665 L730,635 L790,612 L850,628 L910,600 L970,575 L1030,590 L1090,560 L1150,535 L1210,552 L1270,520 L1340,495 L1440,470"
-            stroke="url(#dowGrad)"
-            strokeWidth="1.6"
-            fill="none"
+            d="M-20,720 L60,700 L110,712 L170,692 L230,668 L290,682 L360,648 L430,625 L490,640 L550,614 L620,592 L680,608 L750,578 L820,552 L880,568 L950,538 L1020,510 L1090,526 L1160,494 L1240,465 L1310,480 L1390,448 L1440,430"
+            stroke="url(#sp500F)" strokeWidth="2.4" fill="none" filter="url(#glow-line)"
           />
-          {/* DOW fill */}
+          {/* DOW line */}
           <path
-            d="M-20,780 L80,755 L130,765 L190,740 L250,720 L310,735 L370,705 L430,685 L490,700 L550,670 L610,648 L670,665 L730,635 L790,612 L850,628 L910,600 L970,575 L1030,590 L1090,560 L1150,535 L1210,552 L1270,520 L1340,495 L1440,470 L1440,900 L-20,900 Z"
-            fill="url(#dowFill)"
+            d="M-20,790 L90,762 L160,778 L240,748 L320,725 L400,742 L480,710 L560,688 L640,705 L720,672 L800,648 L880,665 L960,633 L1040,608 L1120,625 L1200,595 L1280,568 L1360,584 L1440,555"
+            stroke="url(#dowF)" strokeWidth="1.7" fill="none"
           />
-
-          {/* DXY line - more volatile/flat */}
+          {/* DXY line */}
           <path
-            d="M-20,830 L100,815 L160,825 L230,808 L290,818 L360,800 L420,788 L480,798 L550,780 L620,765 L680,778 L740,758 L800,745 L870,755 L940,738 L1010,722 L1080,735 L1150,718 L1220,702 L1300,715 L1380,698 L1440,685"
-            stroke="url(#dxyGrad)"
-            strokeWidth="1.2"
-            fill="none"
+            d="M-20,848 L110,832 L200,842 L310,825 L410,835 L520,818 L620,808 L720,820 L830,802 L930,790 L1040,803 L1150,785 L1260,773 L1370,785 L1440,770"
+            stroke="url(#dxyF)" strokeWidth="1.2" fill="none"
           />
 
-          {/* Glowing data points on SP500 */}
-          {[[200,670],[360,630],[510,600],[670,565],[820,530],[980,490],[1150,450],[1310,410]].map(([x,y], i) => (
-            <g key={i}>
-              <circle cx={x} cy={y} r="5" fill="#3b82f6" opacity="0.15" />
-              <circle cx={x} cy={y} r="2.5" fill="#60a5fa" opacity="0.7" filter="url(#softGlow)" />
+          {/* ── PARTICLE NETWORK ── */}
+          {/* Network connection lines */}
+          {([
+            [[72,180],[210,140]],[[210,140],[355,170]],[[355,170],[510,120]],[[510,120],[660,155]],
+            [[660,155],[820,110]],[[820,110],[975,145]],[[975,145],[1130,100]],[[1130,100],[1290,130]],
+            [[1290,130],[1420,90]],[[72,180],[140,310]],[[210,140],[290,270]],[[355,170],[430,295]],
+            [[510,120],[570,255]],[[660,155],[720,280]],[[820,110],[870,250]],[[975,145],[1020,270]],
+            [[1130,100],[1170,230]],[[1290,130],[1330,260]],[[140,310],[290,270]],[[290,270],[430,295]],
+            [[430,295],[570,255]],[[570,255],[720,280]],[[720,280],[870,250]],[[870,250],[1020,270]],
+            [[1020,270],[1170,230]],[[1170,230],[1330,260]],[[140,310],[200,430]],[[430,295],[500,415]],
+            [[720,280],[780,400]],[[1020,270],[1080,390]],[[1330,260],[1380,380]],
+          ] as [number,number][][]).map(([[x1,y1],[x2,y2]], i) => (
+            <line
+              key={`nl${i}`} x1={x1} y1={y1} x2={x2} y2={y2}
+              stroke="#3b82f6" strokeOpacity="0.22" strokeWidth="0.8"
+              strokeDasharray="8 6"
+              className="network-line"
+              style={{ animationDelay: `${(i * 0.18) % 5}s` }}
+            />
+          ))}
+
+          {/* Network nodes */}
+          {([
+            [72,180],[210,140],[355,170],[510,120],[660,155],[820,110],[975,145],[1130,100],[1290,130],[1420,90],
+            [140,310],[290,270],[430,295],[570,255],[720,280],[870,250],[1020,270],[1170,230],[1330,260],
+            [200,430],[500,415],[780,400],[1080,390],[1380,380],
+          ] as [number,number][]).map(([x,y], i) => (
+            <g key={`nn${i}`}>
+              <circle cx={x} cy={y} r="7" fill="#3b82f6" opacity="0.07"
+                className="node-ring"
+                style={{ animationDelay: `${(i * 0.22) % 3.5}s`, transformOrigin: `${x}px ${y}px` }}
+              />
+              <circle cx={x} cy={y} r="2.8" fill="#60a5fa" opacity="0.55"
+                className="node-dot" filter="url(#glow-dot)"
+                style={{ animationDelay: `${(i * 0.22) % 3}s` }}
+              />
             </g>
           ))}
 
-          {/* Volume bars at the bottom */}
-          {[
-            [60,850,860,0.3],[180,840,870,0.5],[300,830,875,0.4],[420,845,865,0.6],
-            [540,835,870,0.35],[660,825,872,0.55],[780,838,860,0.4],[900,828,868,0.65],
-            [1020,820,872,0.45],[1140,812,868,0.7],[1260,805,870,0.5],[1380,798,865,0.6]
-          ].map(([x,y1,y2,op], i) => (
-            <rect key={i} x={x - 15} y={y1} width="30" height={Number(y2)-Number(y1)} rx="1" fill="#2563eb" opacity={Number(op) * 0.3} />
+          {/* ── GLOWING DATA POINTS on SP500 ── */}
+          {([[230,668],[360,648],[550,614],[680,608],[820,552],[950,538],[1090,526],[1240,465],[1390,448]] as [number,number][]).map(([x,y],i) => (
+            <g key={`dp${i}`}>
+              <circle cx={x} cy={y} r="8" fill="#3b82f6" opacity="0.08" className="node-ring" style={{ animationDelay: `${i*0.4}s`, transformOrigin: `${x}px ${y}px` }}/>
+              <circle cx={x} cy={y} r="3" fill="#93c5fd" opacity="0.8" filter="url(#glow-dot)" className="node-dot" style={{ animationDelay: `${i*0.4}s` }}/>
+            </g>
           ))}
 
-          {/* Price label tags */}
-          <g opacity="0.55" filter="url(#softGlow)">
-            <rect x="1350" y="352" width="76" height="20" rx="4" fill="#1e40af" />
-            <text x="1388" y="366" textAnchor="middle" fill="#93c5fd" fontSize="10" fontWeight="600" fontFamily="monospace">SP500 ▲</text>
+          {/* ── VOLUME BARS ── */}
+          {([[80,856,868,0.28],[200,848,862,0.42],[320,852,865,0.35],[440,845,860,0.52],[560,849,863,0.3],[680,843,858,0.48],[800,846,860,0.36],[920,841,857,0.55],[1040,838,854,0.4],[1160,834,851,0.62],[1280,830,847,0.44],[1400,827,843,0.5]] as [number,number,number,number][]).map(([x,y1,y2,op],i) => (
+            <rect key={`vb${i}`} x={x-14} y={y1} width="28" height={y2-y1} rx="1.5" fill="#2563eb" opacity={op*0.35}/>
+          ))}
+
+          {/* ── TICKER LABELS ── */}
+          <g filter="url(#glow-line)">
+            <rect x="1345" y="418" width="82" height="22" rx="4" fill="#0f2462" opacity="0.85"/>
+            <rect x="1345" y="418" width="82" height="22" rx="4" fill="none" stroke="#3b82f6" strokeWidth="0.5" strokeOpacity="0.5"/>
+            <text x="1386" y="433" textAnchor="middle" fill="#93c5fd" fontSize="10.5" fontWeight="700" fontFamily="monospace">SP500 ▲</text>
           </g>
-          <g opacity="0.4">
-            <rect x="1350" y="458" width="76" height="20" rx="4" fill="#1e3a8a" />
-            <text x="1388" y="472" textAnchor="middle" fill="#7dd3fc" fontSize="10" fontWeight="600" fontFamily="monospace">DOW ▲</text>
+          <g opacity="0.5">
+            <rect x="1345" y="542" width="82" height="22" rx="4" fill="#0a1a4a" opacity="0.85"/>
+            <rect x="1345" y="542" width="82" height="22" rx="4" fill="none" stroke="#2563eb" strokeWidth="0.5" strokeOpacity="0.4"/>
+            <text x="1386" y="557" textAnchor="middle" fill="#7dd3fc" fontSize="10.5" fontWeight="700" fontFamily="monospace">DOW ▲</text>
           </g>
-          <g opacity="0.3">
-            <rect x="1350" y="673" width="60" height="20" rx="4" fill="#0c4a6e" />
-            <text x="1380" y="687" textAnchor="middle" fill="#bae6fd" fontSize="10" fontWeight="600" fontFamily="monospace">DXY</text>
+          <g opacity="0.35">
+            <rect x="1345" y="758" width="66" height="22" rx="4" fill="#061830" opacity="0.85"/>
+            <text x="1378" y="773" textAnchor="middle" fill="#bae6fd" fontSize="10" fontWeight="600" fontFamily="monospace">DXY →</text>
           </g>
         </svg>
 
-        {/* Gradient overlays for text readability */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#030c1e]/30 via-[#030c1e]/55 to-[#030c1e]" />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#030c1e]/40 via-transparent to-[#030c1e]/40" />
+        {/* === GRADIENT OVERLAYS for text readability === */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#010c1f]/20 via-[#010c1f]/50 to-[#010c1f]" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#010c1f]/50 via-transparent to-[#010c1f]/50" />
+        {/* Top fade */}
+        <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-[#010c1f] to-transparent" />
 
         <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
           <div className="mb-8 flex flex-col items-center">
