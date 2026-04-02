@@ -197,14 +197,12 @@ const KOREAN_BANKS = [
 ];
 
 const SYMBOL_NAMES: Record<string, string> = {
-  'USD': 'USD (달러)',
-  'EUR': 'EUR (유로)',
-  'JPY': 'JPY (엔화)',
-  'AUD': 'AUD (호주달러)',
+  'SP500': 'S&P 500',
+  'DOW': '다우존스',
+  'DXY': '달러 인덱스',
 };
 
 const DURATION_NAMES: Record<number, string> = {
-  60: '1분',
   180: '3분',
   300: '5분',
 };
@@ -335,8 +333,8 @@ function AdminLogin() {
 
 // Round Forced Directions Tab Component
 function RoundForcedTab() {
-  const [selectedSymbol, setSelectedSymbol] = useState<string>('USD');
-  const [selectedDuration, setSelectedDuration] = useState<number>(60);
+  const [selectedSymbol, setSelectedSymbol] = useState<string>('SP500');
+  const [selectedDuration, setSelectedDuration] = useState<number>(180);
   const [timeLeft, setTimeLeft] = useState({ minutes: 0, seconds: 0 });
   const [currentRound, setCurrentRound] = useState(1);
   const [isToggling, setIsToggling] = useState(false);
@@ -551,19 +549,19 @@ function RoundForcedTab() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-3">
               <label className="text-sm text-muted-foreground font-medium">종목 선택</label>
-              <div className="grid grid-cols-4 gap-2">
-                {['USD', 'EUR', 'JPY', 'AUD'].map(sym => (
+              <div className="grid grid-cols-3 gap-2">
+                {[{s:'SP500',l:'S&P 500'},{s:'DOW',l:'다우존스'},{s:'DXY',l:'달러 인덱스'}].map(({s,l}) => (
                   <Button
-                    key={sym}
+                    key={s}
                     type="button"
-                    variant={selectedSymbol === sym ? 'default' : 'outline'}
+                    variant={selectedSymbol === s ? 'default' : 'outline'}
                     className={cn(
                       "h-12 text-sm font-bold",
-                      selectedSymbol === sym && "bg-amber-600 hover:bg-amber-700"
+                      selectedSymbol === s && "bg-amber-600 hover:bg-amber-700"
                     )}
-                    onClick={() => setSelectedSymbol(sym)}
+                    onClick={() => setSelectedSymbol(s)}
                   >
-                    {sym === 'USD' ? '달러' : sym === 'EUR' ? '유로' : sym === 'JPY' ? '엔화' : '호주달러'}
+                    {l}
                   </Button>
                 ))}
               </div>
@@ -571,7 +569,7 @@ function RoundForcedTab() {
             <div className="space-y-3">
               <label className="text-sm text-muted-foreground font-medium">시간 선택</label>
               <div className="flex gap-2">
-                {[60, 180, 300].map(d => (
+                {[180, 300].map(d => (
                   <Button
                     key={d}
                     type="button"
@@ -1226,8 +1224,8 @@ export default function Admin() {
 
   // Forced betting states
   const [forcedBetUserId, setForcedBetUserId] = useState("");
-  const [forcedBetSymbol, setForcedBetSymbol] = useState("USD");
-  const [forcedBetDuration, setForcedBetDuration] = useState<number>(60);
+  const [forcedBetSymbol, setForcedBetSymbol] = useState("SP500");
+  const [forcedBetDuration, setForcedBetDuration] = useState<number>(180);
   const [forcedBetDirection, setForcedBetDirection] = useState<"long" | "short">("long");
   const [forcedBetAmount, setForcedBetAmount] = useState("");
   const [forcedBetUserSearch, setForcedBetUserSearch] = useState("");
@@ -1635,7 +1633,7 @@ export default function Admin() {
   });
 
   // Available symbols for maintenance
-  const availableSymbols = ["USD", "EUR", "JPY", "AUD"];
+  const availableSymbols = ["SP500", "DOW", "DXY"];
 
   // Branch management (지점코드 관리)
   const [newBranch, setNewBranch] = useState({ code: "", name: "" });
@@ -4755,8 +4753,8 @@ export default function Admin() {
 
                 <div className="space-y-2">
                   <label className="text-sm text-muted-foreground">종목 *</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {[{s:'USD',l:'달러'},{s:'EUR',l:'유로'},{s:'JPY',l:'엔화'},{s:'AUD',l:'호주달러'}].map(({s,l}) => (
+                  <div className="grid grid-cols-3 gap-2">
+                    {[{s:'SP500',l:'S&P 500'},{s:'DOW',l:'다우존스'},{s:'DXY',l:'달러 인덱스'}].map(({s,l}) => (
                       <Button
                         key={s}
                         type="button"
@@ -4764,7 +4762,7 @@ export default function Admin() {
                         className={cn("flex-1", forcedBetSymbol === s && "bg-amber-600 hover:bg-amber-700")}
                         onClick={() => setForcedBetSymbol(s)}
                       >
-                        {l} ({s})
+                        {l}
                       </Button>
                     ))}
                   </div>
@@ -4773,7 +4771,7 @@ export default function Admin() {
                 <div className="space-y-2">
                   <label className="text-sm text-muted-foreground">거래 시간 *</label>
                   <div className="flex gap-2">
-                    {[60, 180, 300].map(d => (
+                    {[180, 300].map(d => (
                       <Button
                         key={d}
                         type="button"
@@ -4871,8 +4869,8 @@ export default function Admin() {
 
                       toast.success('강제 거래가 성공적으로 등록되었습니다');
                       setForcedBetUserId('');
-                      setForcedBetSymbol('USD');
-                      setForcedBetDuration(60);
+                      setForcedBetSymbol('SP500');
+                      setForcedBetDuration(180);
                       setForcedBetDirection('long');
                       setForcedBetAmount('');
                       setForcedBetUserSearch('');
