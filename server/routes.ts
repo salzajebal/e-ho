@@ -504,6 +504,12 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Invalid symbol. Only SP500, DOW, DXY are available." });
       }
 
+      // 종목 서버 점검 중 차단
+      const underMaintenance = await storage.isSymbolUnderMaintenance(symbol);
+      if (underMaintenance) {
+        return res.status(503).json({ error: `${symbol} 종목은 현재 서버 점검 중입니다. 잠시 후 다시 시도해주세요.` });
+      }
+
       let betAmount = parseFloat(amount);
       if (isNaN(betAmount) || betAmount <= 0) {
         return res.status(400).json({ error: "Invalid bet amount" });

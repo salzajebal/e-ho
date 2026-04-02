@@ -78,6 +78,18 @@ export default function Home() {
     enabled: !!user,
   });
 
+  // 현재 선택 종목 점검 상태 폴링 (30초 간격)
+  const { data: maintenanceData } = useQuery<{ symbol: string; underMaintenance: boolean }>({
+    queryKey: ["/api/maintenance", selectedGame.symbol],
+    queryFn: async () => {
+      const res = await fetch(`/api/maintenance/${selectedGame.symbol}`);
+      if (!res.ok) return { symbol: selectedGame.symbol, underMaintenance: false };
+      return res.json();
+    },
+    refetchInterval: 30_000,
+  });
+  const isUnderMaintenance = maintenanceData?.underMaintenance ?? false;
+
   // Fetch telegram link
   const { data: telegramData } = useQuery({
     queryKey: ["/api/settings/telegram"],
@@ -201,6 +213,7 @@ export default function Home() {
               balance={balanceData?.balance}
               userBets={allBets}
               allPrices={currentPrices}
+              underMaintenance={isUnderMaintenance}
             />
           </div>
           
@@ -249,6 +262,7 @@ export default function Home() {
               balance={balanceData?.balance}
               userBets={allBets}
               allPrices={currentPrices}
+              underMaintenance={isUnderMaintenance}
             />
           </div>
         </div>

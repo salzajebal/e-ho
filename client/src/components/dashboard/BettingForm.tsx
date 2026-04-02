@@ -36,6 +36,7 @@ interface BettingFormProps {
   isBetting?: boolean;
   userBets?: UserBet[];
   allPrices?: Record<string, number>;
+  underMaintenance?: boolean;
 }
 
 interface GameResult {
@@ -210,7 +211,7 @@ interface ForcedDirection {
   dateKey: string;
 }
 
-export function BettingForm({ currentPrice, game, balance, onBet, isBetting = false, userBets = [], allPrices = {} }: BettingFormProps) {
+export function BettingForm({ currentPrice, game, balance, onBet, isBetting = false, userBets = [], allPrices = {}, underMaintenance = false }: BettingFormProps) {
   const { data: maxExecutionData } = useQuery<{ enabled: boolean }>({
     queryKey: ["/api/max-execution-status"],
     queryFn: async () => {
@@ -575,7 +576,23 @@ export function BettingForm({ currentPrice, game, balance, onBet, isBetting = fa
   };
 
   return (
-    <div className="flex flex-col lg:h-full bg-card w-full">
+    <div className="relative flex flex-col lg:h-full bg-card w-full">
+      {/* 점검 오버레이 */}
+      {underMaintenance && (
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/90 backdrop-blur-sm rounded">
+          <div className="text-center space-y-3 px-6">
+            <div className="w-14 h-14 mx-auto rounded-full bg-yellow-500/20 flex items-center justify-center">
+              <AlertCircle className="w-8 h-8 text-yellow-500" />
+            </div>
+            <h3 className="text-base font-bold text-foreground">서버 점검 중</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {game.symbol} 종목은 현재 서버 점검 중입니다.<br />
+              점검이 완료되면 거래가 재개됩니다.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between px-3 lg:px-4 h-10 border-b border-border bg-muted/20 shrink-0">
         <h2 className="text-sm font-semibold text-foreground">주문</h2>
       </div>
