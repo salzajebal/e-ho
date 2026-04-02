@@ -23,6 +23,7 @@ import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { LearnInvestLogo } from "@/components/LearnInvestLogo";
 
 const CRYPTO_ASSETS = [
   { symbol: "SP500", name: "S&P500" },
@@ -806,19 +807,15 @@ export default function Landing() {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0f]/40 via-[#0a0a0f]/70 to-[#0a0a0f]" />
 
-        <div className="absolute top-20 left-[8%] opacity-[0.07] text-[180px] md:text-[260px] font-black text-amber-500 select-none pointer-events-none leading-none" aria-hidden="true">$</div>
-        <div className="absolute bottom-32 right-[5%] opacity-[0.05] text-[140px] md:text-[200px] font-black text-amber-400 select-none pointer-events-none leading-none rotate-12" aria-hidden="true">¥</div>
-        <div className="absolute top-[40%] right-[12%] opacity-[0.04] text-[100px] md:text-[140px] font-black text-amber-300 select-none pointer-events-none leading-none -rotate-6" aria-hidden="true">€</div>
+        <div className="absolute top-20 left-[8%] opacity-[0.05] text-[180px] md:text-[260px] font-black text-blue-500 select-none pointer-events-none leading-none" aria-hidden="true">%</div>
+        <div className="absolute bottom-32 right-[5%] opacity-[0.04] text-[140px] md:text-[200px] font-black text-blue-400 select-none pointer-events-none leading-none rotate-12" aria-hidden="true">↗</div>
+        <div className="absolute top-[40%] right-[12%] opacity-[0.03] text-[100px] md:text-[140px] font-black text-blue-300 select-none pointer-events-none leading-none -rotate-6" aria-hidden="true">$</div>
 
         <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
           <div className="mb-8 flex flex-col items-center">
             <div className="relative mb-6">
-              <div className="absolute -inset-4 bg-amber-500/20 rounded-full blur-xl animate-pulse" />
-              <img 
-                src="/value-option-logo.png" 
-                alt="Value-Option Logo" 
-                className="relative w-24 h-24 rounded-2xl object-cover"
-              />
+              <div className="absolute -inset-4 bg-blue-500/20 rounded-full blur-xl animate-pulse" />
+              <LearnInvestLogo size={96} className="relative rounded-2xl" />
             </div>
             <h1 className="text-5xl md:text-7xl font-bold mb-2 tracking-wide">
               <span className="bg-gradient-to-r from-blue-400 via-blue-300 to-blue-500 bg-clip-text text-transparent">Learn-invest</span>
@@ -844,30 +841,25 @@ export default function Landing() {
 
           <div className="flex items-center justify-center gap-6 mb-10 text-sm">
             <div className="flex items-center gap-2 text-gray-400">
-              <span className="text-xl font-bold text-amber-500">$</span>
-              <span>달러</span>
+              <span className="text-lg font-bold text-blue-400">📈</span>
+              <span>S&amp;P500</span>
             </div>
             <div className="w-1 h-1 rounded-full bg-gray-600" />
             <div className="flex items-center gap-2 text-gray-400">
-              <span className="text-xl font-bold text-amber-500">€</span>
-              <span>유로</span>
+              <span className="text-lg font-bold text-blue-400">🏛️</span>
+              <span>다우존스</span>
             </div>
             <div className="w-1 h-1 rounded-full bg-gray-600" />
             <div className="flex items-center gap-2 text-gray-400">
-              <span className="text-xl font-bold text-amber-500">¥</span>
-              <span>엔화</span>
-            </div>
-            <div className="w-1 h-1 rounded-full bg-gray-600" />
-            <div className="flex items-center gap-2 text-gray-400">
-              <span className="text-xl font-bold text-amber-500">A$</span>
-              <span>호주달러</span>
+              <span className="text-lg font-bold text-blue-400">$</span>
+              <span>달러 인덱스</span>
             </div>
           </div>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
               size="lg" 
-              className="bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-black font-bold px-10 py-6 text-lg rounded-lg shadow-lg shadow-amber-500/25"
+              className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-bold px-10 py-6 text-lg rounded-lg shadow-lg shadow-blue-500/25"
               data-testid="button-trade"
               onClick={handleTradeClick}
             >
@@ -877,7 +869,7 @@ export default function Landing() {
               <Button 
                 size="lg" 
                 variant="outline" 
-                className="border-amber-500/30 text-amber-400 hover:bg-amber-500/10 px-10 py-6 text-lg rounded-lg"
+                className="border-blue-500/30 text-blue-400 hover:bg-blue-500/10 px-10 py-6 text-lg rounded-lg"
                 data-testid="button-register"
                 onClick={() => setShowRegisterModal(true)}
               >
@@ -888,29 +880,27 @@ export default function Landing() {
         </div>
 
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
-          <div className="w-6 h-10 border-2 border-amber-500/30 rounded-full flex justify-center pt-2">
-            <div className="w-1.5 h-3 bg-amber-500/50 rounded-full" />
+          <div className="w-6 h-10 border-2 border-blue-500/30 rounded-full flex justify-center pt-2">
+            <div className="w-1.5 h-3 bg-blue-500/50 rounded-full" />
           </div>
         </div>
       </section>
 
-      {/* Currency Ticker Strip */}
-      <div className="relative overflow-hidden bg-[#0c0f15] border-y border-amber-500/10 py-3">
+      {/* Index Ticker Strip */}
+      <div className="relative overflow-hidden bg-[#0c0f15] border-y border-blue-500/10 py-3">
         <div className="flex animate-[scroll_20s_linear_infinite] whitespace-nowrap gap-8">
-          {[...Array(2)].map((_, repeatIdx) => (
+          {[...Array(3)].map((_, repeatIdx) => (
             <div key={repeatIdx} className="flex gap-8 shrink-0">
               {[
-                { pair: '달러', flag: '$' },
-                { pair: '유로', flag: '€' },
-                { pair: '엔화', flag: '¥' },
-                { pair: '호주달러', flag: 'A$' },
-                { pair: 'USD/CHF', flag: '₣' },
-                { pair: 'NZD/USD', flag: 'NZ$' },
-                { pair: 'USD/CAD', flag: 'C$' },
-                { pair: 'USD/CNY', flag: '¥' },
+                { pair: 'S&P500', flag: '📈', name: 'SP500' },
+                { pair: '다우존스', flag: '🏛️', name: 'DOW' },
+                { pair: '달러 인덱스', flag: '$', name: 'DXY' },
+                { pair: 'S&P500 3분', flag: '📊', name: 'SP500-180' },
+                { pair: '다우존스 5분', flag: '📉', name: 'DOW-300' },
+                { pair: '달러 인덱스 3분', flag: '💵', name: 'DXY-180' },
               ].map((item, i) => (
                 <div key={`${repeatIdx}-${i}`} className="flex items-center gap-2 text-sm">
-                  <span className="text-amber-500 font-bold">{item.flag}</span>
+                  <span className="text-blue-400 font-bold">{item.flag}</span>
                   <span className="text-gray-400">{item.pair}</span>
                 </div>
               ))}
@@ -928,14 +918,14 @@ export default function Landing() {
               <span className="text-green-400 text-sm font-medium">LIVE</span>
             </div>
             <h2 className="text-2xl md:text-3xl font-bold mb-2">실시간 마켓</h2>
-            <p className="text-gray-400">글로벌 외환 시장을 실시간으로 확인하세요</p>
+            <p className="text-gray-400">글로벌 주요 지수를 실시간으로 확인하세요</p>
           </div>
           <div className="flex flex-wrap justify-center gap-4">
             {marketData.map((item, index) => {
               const isPositive = item.changePercent >= 0;
               const chartPath = generateSparklinePath(item.priceHistory);
-              const forexDecimals = item.symbol === 'JPY' ? 3 : 5;
-              const formattedPrice = item.price.toFixed(forexDecimals);
+              const priceDecimals = item.symbol === 'DXY' ? 3 : 2;
+              const formattedPrice = item.symbol === 'DXY' ? item.price.toFixed(3) : item.price >= 1000 ? item.price.toLocaleString('en-US', { maximumFractionDigits: 2 }) : item.price.toFixed(priceDecimals);
               const formattedChange = `${isPositive ? '+' : ''}${item.changePercent.toFixed(2)}%`;
               
               return (
@@ -946,8 +936,8 @@ export default function Landing() {
                 >
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-amber-500/30 to-amber-600/10 rounded-full flex items-center justify-center group-hover:from-amber-500/40 group-hover:to-amber-600/20 transition-colors border border-amber-500/20">
-                        <span className="text-lg font-bold text-amber-400">{item.symbol === 'JPY' ? '¥' : item.symbol === 'EUR' ? '£' : item.symbol === 'AUD' ? 'A$' : '€'}</span>
+                      <div className="w-10 h-10 bg-gradient-to-br from-blue-500/30 to-blue-600/10 rounded-full flex items-center justify-center group-hover:from-blue-500/40 group-hover:to-blue-600/20 transition-colors border border-blue-500/20">
+                        <span className="text-lg font-bold text-blue-400">{item.symbol === 'SP500' ? '📈' : item.symbol === 'DOW' ? '🏛️' : '$'}</span>
                       </div>
                       <div>
                         <h3 className="font-semibold text-white">{item.name}</h3>
@@ -1285,11 +1275,7 @@ export default function Landing() {
               
               <div className="text-center mb-6">
                 <div className="flex items-center justify-center gap-2 mb-4">
-                  <img 
-                    src="/value-option-logo.png" 
-                    alt="Value-Option Logo" 
-                    className="w-12 h-12 rounded-lg object-cover"
-                  />
+                  <LearnInvestLogo size={48} className="rounded-lg" />
                 </div>
                 <h2 className="text-2xl font-bold text-white mb-1">로그인</h2>
                 <p className="text-gray-400 text-sm">계정에 접속하여 거래를 시작하세요</p>
@@ -1375,11 +1361,7 @@ export default function Landing() {
               
               <div className="text-center mb-4">
                 <div className="flex items-center justify-center gap-2 mb-3">
-                  <img 
-                    src="/value-option-logo.png" 
-                    alt="Value-Option Logo" 
-                    className="w-10 h-10 rounded-lg object-cover"
-                  />
+                  <LearnInvestLogo size={40} className="rounded-lg" />
                 </div>
                 <h2 className="text-xl font-bold text-white mb-1">회원가입</h2>
                 <p className="text-gray-400 text-sm">지금 가입하고 거래를 시작하세요</p>

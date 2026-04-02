@@ -64,6 +64,7 @@ Preferred communication style: Simple, everyday language.
 - `client/src/pages/Landing.tsx` — 랜딩 페이지 (메인)
 - `client/src/pages/Home.tsx` — 트레이딩 페이지
 - `client/src/pages/Admin.tsx` — 어드민 패널
+- `client/src/components/LearnInvestLogo.tsx` — SVG 브랜드 로고 컴포넌트
 - `client/src/lib/tradingGames.ts` — 거래 종목/게임 설정
 - `client/src/lib/theme.tsx` — 다크/라이트 모드 테마
 - `server/routes.ts` — 모든 API 엔드포인트

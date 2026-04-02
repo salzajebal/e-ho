@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { LearnInvestLogo } from "@/components/LearnInvestLogo";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -257,14 +258,9 @@ function AdminLogin() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-6">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <img 
-            src="/value-option-logo.png" 
-            alt="Value-Option Logo" 
-            className="w-16 h-16 rounded-xl object-cover mx-auto mb-4"
-          />
+          <LearnInvestLogo size={64} className="rounded-xl mx-auto mb-4" />
           <h1 className="text-3xl font-bold text-white mb-2">
-            <span className="text-white"></span>
-            <span className="text-amber-500 font-bold">VALUE-OPTION</span>
+            <span className="text-blue-400 font-bold">Learn-invest</span>
             <span className="text-white ml-2">관리자</span>
           </h1>
           <p className="text-gray-400 text-sm">관리자 계정으로 로그인하세요</p>
@@ -2678,15 +2674,8 @@ export default function Admin() {
       {/* Mobile Header */}
       <div className="lg:hidden flex items-center justify-between p-3 bg-card border-b border-border sticky top-0 z-50">
         <div className="flex items-center gap-2">
-          <img 
-            src="/value-option-logo.png" 
-            alt="Value-Option Logo" 
-            className="w-7 h-7 rounded-lg object-cover"
-          />
-          <span className="font-bold text-sm">
-            <span className="text-white"></span>
-            <span className="text-amber-500 font-bold">VALUE-OPTION</span>
-          </span>
+          <LearnInvestLogo size={28} className="rounded-lg" />
+          <span className="font-bold text-sm text-blue-400">Learn-invest</span>
           <span className="text-xs text-muted-foreground">관리자</span>
         </div>
         <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
@@ -2730,16 +2719,9 @@ export default function Admin() {
       <div className="hidden lg:flex w-56 bg-card border-r border-border flex-col shrink-0">
         <div className="p-4 border-b border-border">
           <div className="flex items-center gap-2">
-            <img 
-              src="/value-option-logo.png" 
-              alt="Value-Option Logo" 
-              className="w-8 h-8 rounded-lg object-cover"
-            />
+            <LearnInvestLogo size={32} className="rounded-lg" />
             <div>
-              <span className="font-bold text-lg">
-                <span className="text-white"></span>
-                <span className="text-amber-500 font-bold">VALUE-OPTION</span>
-              </span>
+              <span className="font-bold text-lg text-blue-400">Learn-invest</span>
             </div>
           </div>
           <p className="text-xs text-muted-foreground mt-1">관리자 패널</p>
