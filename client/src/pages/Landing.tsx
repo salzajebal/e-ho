@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { SymbolIcon } from "@/components/SymbolIcon";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1066,15 +1067,15 @@ export default function Landing() {
           {[...Array(3)].map((_, repeatIdx) => (
             <div key={repeatIdx} className="flex gap-8 shrink-0">
               {[
-                { pair: 'S&P500', flag: '📈', name: 'SP500' },
-                { pair: '다우존스', flag: '🏛️', name: 'DOW' },
-                { pair: '달러 인덱스', flag: '$', name: 'DXY' },
-                { pair: 'S&P500 3분', flag: '📊', name: 'SP500-180' },
-                { pair: '다우존스 5분', flag: '📉', name: 'DOW-300' },
-                { pair: '달러 인덱스 3분', flag: '💵', name: 'DXY-180' },
+                { pair: 'S&P 500', name: 'SP500' },
+                { pair: '다우존스', name: 'DOW' },
+                { pair: '달러 인덱스', name: 'DXY' },
+                { pair: 'S&P500 3분', name: 'SP500-180' },
+                { pair: '다우존스 5분', name: 'DOW-300' },
+                { pair: '달러 인덱스 3분', name: 'DXY-180' },
               ].map((item, i) => (
                 <div key={`${repeatIdx}-${i}`} className="flex items-center gap-2 text-sm">
-                  <span className="text-blue-400 font-bold">{item.flag}</span>
+                  <SymbolIcon symbol={item.name} size={20} />
                   <span className="text-gray-400">{item.pair}</span>
                 </div>
               ))}

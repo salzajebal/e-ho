@@ -1,6 +1,7 @@
 import { MarketData } from "@/lib/mockData";
 import { cn, formatForexPrice } from "@/lib/utils";
 import { FOREX_DISPLAY, ForexSymbol } from "@/lib/tradingGames";
+import { SymbolIcon } from "@/components/SymbolIcon";
 import { Clock } from "lucide-react";
 
 interface Game {
@@ -51,6 +52,9 @@ export function MarketOverview({ data, games, onSelectGame, selectedGameId }: Ma
                 selectedGameId === game.id && "bg-muted/40 border-l-2 border-primary pl-[14px]"
               )}
             >
+              <div className="mr-3 shrink-0">
+                <SymbolIcon symbol={game.symbol} size={28} />
+              </div>
               <div className="flex-1 flex flex-col items-start">
                 <span className="font-medium text-foreground">{game.label}</span>
                 <span className="text-xs text-muted-foreground">{FOREX_DISPLAY[game.symbol as ForexSymbol]?.pair || market.name}</span>

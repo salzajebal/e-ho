@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { TRADING_GAMES } from "@/lib/tradingGames";
+import { SymbolIcon } from "@/components/SymbolIcon";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useState } from "react";
 import { useTheme } from "@/lib/theme";
@@ -79,6 +80,7 @@ export function Navbar({ onSelectGame, selectedGameId }: NavbarProps) {
                   : 'text-muted-foreground hover:text-foreground hover:bg-muted/30'
               )}
             >
+              <SymbolIcon symbol={game.symbol} size={16} />
               <span className="font-medium">{game.label}</span>
             </button>
           ))}
