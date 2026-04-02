@@ -258,7 +258,7 @@ function AdminLogin() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-6">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <LearnInvestLogo size={64} className="rounded-xl mx-auto mb-4" />
+          <LearnInvestLogo variant="icon" size={64} className="rounded-xl mx-auto mb-4" />
           <h1 className="text-3xl font-bold text-white mb-2">
             <span className="text-blue-400 font-bold">Learn-invest</span>
             <span className="text-white ml-2">관리자</span>
@@ -2674,7 +2674,7 @@ export default function Admin() {
       {/* Mobile Header */}
       <div className="lg:hidden flex items-center justify-between p-3 bg-card border-b border-border sticky top-0 z-50">
         <div className="flex items-center gap-2">
-          <LearnInvestLogo size={28} className="rounded-lg" />
+          <LearnInvestLogo variant="icon" size={28} className="rounded-lg" />
           <span className="font-bold text-sm text-blue-400">Learn-invest</span>
           <span className="text-xs text-muted-foreground">관리자</span>
         </div>
@@ -2719,7 +2719,7 @@ export default function Admin() {
       <div className="hidden lg:flex w-56 bg-card border-r border-border flex-col shrink-0">
         <div className="p-4 border-b border-border">
           <div className="flex items-center gap-2">
-            <LearnInvestLogo size={32} className="rounded-lg" />
+            <LearnInvestLogo variant="icon" size={32} className="rounded-lg" />
             <div>
               <span className="font-bold text-lg text-blue-400">Learn-invest</span>
             </div>

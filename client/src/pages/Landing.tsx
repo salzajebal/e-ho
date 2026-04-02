@@ -815,7 +815,7 @@ export default function Landing() {
           <div className="mb-8 flex flex-col items-center">
             <div className="relative mb-6">
               <div className="absolute -inset-4 bg-blue-500/20 rounded-full blur-xl animate-pulse" />
-              <LearnInvestLogo size={96} className="relative rounded-2xl" />
+              <LearnInvestLogo variant="icon" size={96} className="relative rounded-2xl" />
             </div>
             <h1 className="text-5xl md:text-7xl font-bold mb-2 tracking-wide">
               <span className="bg-gradient-to-r from-blue-400 via-blue-300 to-blue-500 bg-clip-text text-transparent">Learn-invest</span>
@@ -1275,7 +1275,7 @@ export default function Landing() {
               
               <div className="text-center mb-6">
                 <div className="flex items-center justify-center gap-2 mb-4">
-                  <LearnInvestLogo size={48} className="rounded-lg" />
+                  <LearnInvestLogo variant="icon" size={48} className="rounded-lg" />
                 </div>
                 <h2 className="text-2xl font-bold text-white mb-1">로그인</h2>
                 <p className="text-gray-400 text-sm">계정에 접속하여 거래를 시작하세요</p>
@@ -1361,7 +1361,7 @@ export default function Landing() {
               
               <div className="text-center mb-4">
                 <div className="flex items-center justify-center gap-2 mb-3">
-                  <LearnInvestLogo size={40} className="rounded-lg" />
+                  <LearnInvestLogo variant="icon" size={40} className="rounded-lg" />
                 </div>
                 <h2 className="text-xl font-bold text-white mb-1">회원가입</h2>
                 <p className="text-gray-400 text-sm">지금 가입하고 거래를 시작하세요</p>
