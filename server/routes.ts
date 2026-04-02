@@ -2904,9 +2904,11 @@ export async function registerRoutes(
   }
 
   // Yahoo 실시간 가격과 DB 캔들 가격이 심하게 차이나면 오염 데이터 삭제 (스파이크 방지)
+  // 핵심: 마지막 캔들이 아닌 전체 최솟값으로 판정
+  // → updateCandles가 실시간 가격으로 신규 캔들을 추가해도 구 캔들들의 min이 낮으면 감지됨
   async function validateCandleStore() {
     if (candleValidationDone) return;
-    const STALE_THRESHOLD = 0.05; // 5% 이상 차이면 오염으로 판정
+    const STALE_THRESHOLD = 0.08; // 실시간 가격의 8% 이상 아래 캔들이 존재하면 오염
     const symbols = ['SP500', 'DOW', 'DXY'];
     const durations = [180, 300];
     let cleaned = 0;
@@ -2916,10 +2918,13 @@ export async function registerRoutes(
       for (const dur of durations) {
         const candles = candleStore[symbol]?.[dur];
         if (!candles || candles.length === 0) continue;
-        const lastClose = candles[candles.length - 1].close;
-        const diff = Math.abs(lastClose - realPrice) / realPrice;
-        if (diff > STALE_THRESHOLD) {
-          console.log(`🧹 [Candle] ${symbol}/${dur} 캔들 가격 오염 감지: DB=${lastClose.toFixed(2)} vs 실시간=${realPrice.toFixed(2)} (${(diff*100).toFixed(1)}%) → 초기화`);
+
+        // 전체 캔들 중 최솟값으로 오염 감지 (마지막 캔들만 보면 신규 실시간 캔들에 가려짐)
+        const minClose = Math.min(...candles.map(c => c.close));
+        const minDiff = (realPrice - minClose) / realPrice;
+
+        if (minDiff > STALE_THRESHOLD) {
+          console.log(`🧹 [Candle] ${symbol}/${dur} 오염 감지: min=${minClose.toFixed(2)} vs 실시간=${realPrice.toFixed(2)} (${(minDiff*100).toFixed(1)}% 하락 이상치) → 초기화`);
           candleStore[symbol][dur] = [];
           try {
             await storage.deleteAllForexCandlesByKey(symbol, dur);
@@ -2927,11 +2932,30 @@ export async function registerRoutes(
           } catch (e) {
             console.warn(`[Candle] DB 삭제 실패 ${symbol}/${dur}:`, e);
           }
+        } else {
+          // 오염은 아니지만 실시간 가격 범위 밖 이상값 캔들만 개별 제거
+          const lower = realPrice * 0.90;
+          const upper = realPrice * 1.10;
+          const before = candles.length;
+          const filtered = candles.filter(c => c.close >= lower && c.close <= upper);
+          if (filtered.length < before) {
+            console.log(`🔧 [Candle] ${symbol}/${dur} 이상값 캔들 ${before - filtered.length}개 제거 (${lower.toFixed(0)}~${upper.toFixed(0)} 범위 외)`);
+            candleStore[symbol][dur] = filtered;
+            // DB에서도 이상값 삭제
+            try {
+              const deleted = await storage.deleteForexCandlesOutsidePriceRange(symbol, dur, lower, upper);
+              if (deleted > 0) {
+                console.log(`🗑️ [Candle] DB에서 이상값 ${deleted}개 삭제 (${symbol}/${dur})`);
+              }
+            } catch (e) {
+              console.warn(`[Candle] DB 이상값 삭제 실패 ${symbol}/${dur}:`, e);
+            }
+          }
         }
       }
     }
     if (cleaned > 0) {
-      console.log(`✅ [Candle] 오염 캔들 ${cleaned}개 키 초기화 완료. 새 실시간 데이터로 재구축 시작.`);
+      console.log(`✅ [Candle] 오염 캔들 ${cleaned}개 키 전체 초기화. 실시간 데이터로 재구축 시작.`);
     }
     candleValidationDone = true;
   }

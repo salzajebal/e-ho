@@ -274,13 +274,24 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
       
       const currentPrice = data.price > 0 ? data.price : 0;
 
-      // 서버 캔들 가격이 실시간 가격과 3% 이상 차이나면 오염 데이터로 간주하고 버림
+      // 서버 캔들 이상값 필터링
+      // 1단계: 전체 min 기준 - 실시간 가격의 8% 이하 최솟값이 존재하면 전체 폐기 (타이밍 경쟁 조건 방지)
+      // 2단계: 개별 필터 - 정상 범위(±10%) 밖 캔들 제거
       if (serverCandles.length > 0 && currentPrice > 0) {
-        const lastClose = serverCandles[serverCandles.length - 1].close;
-        const priceDiff = Math.abs(lastClose - currentPrice) / currentPrice;
-        if (priceDiff > 0.03) {
-          console.warn(`[PriceChart] ${symbol} 서버 캔들 가격 불일치 (${(priceDiff*100).toFixed(1)}%). 현재가(${currentPrice.toFixed(2)}) 기준으로 재생성`);
+        const minClose = Math.min(...serverCandles.map(c => c.close));
+        const minDiff = (currentPrice - minClose) / currentPrice;
+        if (minDiff > 0.08) {
+          console.warn(`[PriceChart] ${symbol} 오염 캔들 감지: min=${minClose.toFixed(2)} vs 현재가=${currentPrice.toFixed(2)} (${(minDiff*100).toFixed(1)}%) → 전체 폐기`);
           serverCandles = [];
+        } else {
+          // 개별 이상값 캔들 제거 (±10% 범위 밖)
+          const lower = currentPrice * 0.90;
+          const upper = currentPrice * 1.10;
+          const before = serverCandles.length;
+          serverCandles = serverCandles.filter(c => c.close >= lower && c.close <= upper);
+          if (serverCandles.length < before) {
+            console.warn(`[PriceChart] ${symbol} 이상값 캔들 ${before - serverCandles.length}개 제거`);
+          }
         }
       }
 

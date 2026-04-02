@@ -187,6 +187,7 @@ export interface IStorage {
   upsertForexCandle(symbol: string, duration: number, time: number, open: number, high: number, low: number, close: number): Promise<void>;
   deleteOldForexCandles(symbol: string, duration: number, keepCount: number): Promise<void>;
   deleteAllForexCandlesByKey(symbol: string, duration: number): Promise<void>;
+  deleteForexCandlesOutsidePriceRange(symbol: string, duration: number, lower: number, upper: number): Promise<number>;
 
   // Branch methods (지점코드 관리)
   createBranch(branch: InsertBranch): Promise<Branch>;
@@ -1575,6 +1576,15 @@ export class DatabaseStorage implements IStorage {
       DELETE FROM forex_candles
       WHERE symbol = ${symbol} AND duration = ${duration}
     `);
+  }
+
+  async deleteForexCandlesOutsidePriceRange(symbol: string, duration: number, lower: number, upper: number): Promise<number> {
+    const result = await db.execute(sql`
+      DELETE FROM forex_candles
+      WHERE symbol = ${symbol} AND duration = ${duration}
+        AND (close::numeric < ${lower} OR close::numeric > ${upper})
+    `);
+    return (result as any).rowCount ?? 0;
   }
 
   // Branch methods
