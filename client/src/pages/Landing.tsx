@@ -1096,8 +1096,8 @@ export default function Landing() {
             {marketData.map((item, index) => {
               const isPositive = item.changePercent >= 0;
               const chartPath = generateSparklinePath(item.priceHistory);
-              const priceDecimals = item.symbol === 'DXY' ? 3 : 2;
-              const formattedPrice = item.symbol === 'DXY' ? item.price.toFixed(3) : item.price >= 1000 ? item.price.toLocaleString('en-US', { maximumFractionDigits: 2 }) : item.price.toFixed(priceDecimals);
+              const priceDecimals = item.symbol === 'DXY' ? 4 : 2;
+              const formattedPrice = item.price.toFixed(priceDecimals);
               const formattedChange = `${isPositive ? '+' : ''}${item.changePercent.toFixed(2)}%`;
               
               return (
