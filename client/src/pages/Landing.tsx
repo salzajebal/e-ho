@@ -1063,9 +1063,9 @@ export default function Landing() {
 
       {/* Index Ticker Strip */}
       <div className="relative overflow-hidden bg-[#0c0f15] border-y border-blue-500/10 py-3">
-        <div className="flex animate-[scroll_20s_linear_infinite] whitespace-nowrap gap-8">
-          {[...Array(3)].map((_, repeatIdx) => (
-            <div key={repeatIdx} className="flex gap-8 shrink-0">
+        <div className="flex animate-[ticker_30s_linear_infinite] whitespace-nowrap">
+          {[0, 1].map((repeatIdx) => (
+            <div key={repeatIdx} className="flex shrink-0 items-center">
               {[
                 { pair: 'S&P 500', name: 'SP500' },
                 { pair: '다우존스', name: 'DOW' },
@@ -1073,8 +1073,11 @@ export default function Landing() {
                 { pair: 'S&P500 3분', name: 'SP500-180' },
                 { pair: '다우존스 5분', name: 'DOW-300' },
                 { pair: '달러 인덱스 3분', name: 'DXY-180' },
+                { pair: 'S&P500 5분', name: 'SP500-300' },
+                { pair: '다우존스 3분', name: 'DOW-180' },
+                { pair: '달러 인덱스 5분', name: 'DXY-300' },
               ].map((item, i) => (
-                <div key={`${repeatIdx}-${i}`} className="flex items-center gap-2 text-sm">
+                <div key={`${repeatIdx}-${i}`} className="flex items-center gap-2 text-sm px-6 border-r border-white/5 last:border-0">
                   <SymbolIcon symbol={item.name} size={20} />
                   <span className="text-gray-400">{item.pair}</span>
                 </div>
