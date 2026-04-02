@@ -1846,6 +1846,73 @@ export default function Admin() {
     }
   }, [settingsData]);
 
+  // ── 텔레그램 봇 알림 설정 상태 ──────────────────────────────────────────
+  const [tgBotToken, setTgBotToken] = useState("");
+  const [tgChatId, setTgChatId] = useState("");
+  const [tgShowToken, setTgShowToken] = useState(false);
+
+  const { data: tgBotData, refetch: refetchTgBot } = useQuery<{
+    botToken: string; chatId: string; configured: boolean;
+  }>({
+    queryKey: ["/api/admin/settings/telegram-bot"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/settings/telegram-bot", { credentials: "include" });
+      if (!res.ok) return { botToken: "", chatId: "", configured: false };
+      return res.json();
+    },
+    enabled: auth?.role === 'admin',
+  });
+
+  const saveTgBot = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/admin/settings/telegram-bot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ botToken: tgBotToken, chatId: tgChatId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "저장 실패");
+      return data;
+    },
+    onSuccess: () => {
+      toast.success("텔레그램 봇 설정이 저장되었습니다");
+      setTgBotToken("");
+      setTgChatId("");
+      refetchTgBot();
+    },
+    onError: (e: any) => toast.error(e.message || "저장에 실패했습니다"),
+  });
+
+  const deleteTgBot = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/admin/settings/telegram-bot", {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("삭제 실패");
+    },
+    onSuccess: () => {
+      toast.success("텔레그램 봇 설정이 초기화되었습니다");
+      refetchTgBot();
+    },
+    onError: () => toast.error("초기화에 실패했습니다"),
+  });
+
+  const testTgBot = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/admin/settings/telegram-bot/test", {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "테스트 실패");
+      return data;
+    },
+    onSuccess: () => toast.success("테스트 메시지가 전송되었습니다 ✅"),
+    onError: (e: any) => toast.error(e.message || "테스트 전송에 실패했습니다"),
+  });
+
   // Repeating alert for pending transactions
   useEffect(() => {
     const pendingCount = pendingDeposits.length + pendingWithdrawals.length;
@@ -4057,6 +4124,126 @@ export default function Admin() {
                     <p className="text-foreground whitespace-pre-wrap">{depositNotice}</p>
                   </div>
                 )}
+              </div>
+            </div>
+
+            {/* 텔레그램 봇 알림 설정 */}
+            <div className="bg-card border border-border rounded-lg p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-lg font-semibold">텔레그램 봇 알림 설정</h2>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    1:1 문의 접수 · 입금신청 · 100만원 이상 베팅 시 텔레그램으로 알림을 받습니다.
+                  </p>
+                </div>
+                {tgBotData?.configured && (
+                  <span className="inline-flex items-center gap-1.5 text-xs font-medium text-green-500 bg-green-500/10 px-2.5 py-1 rounded-full border border-green-500/20">
+                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                    연결됨
+                  </span>
+                )}
+              </div>
+
+              {tgBotData?.configured && (
+                <div className="mb-4 p-3 bg-muted/30 rounded-lg border border-border text-sm space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">봇 토큰</span>
+                    <span className="font-mono text-xs">{tgBotData.botToken || "설정됨"}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">채팅 ID</span>
+                    <span className="font-mono text-xs">{tgBotData.chatId}</span>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-muted-foreground">봇 토큰 (Bot Token)</label>
+                  <div className="relative">
+                    <Input
+                      type={tgShowToken ? "text" : "password"}
+                      value={tgBotToken}
+                      onChange={(e) => setTgBotToken(e.target.value)}
+                      placeholder="1234567890:ABCdefGHIjklMNOpqrSTUvwxyz"
+                      className="pr-10"
+                      data-testid="input-tg-bot-token"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setTgShowToken(p => !p)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {tgShowToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    @BotFather에서 발급받은 봇 토큰을 입력하세요.
+                  </p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-muted-foreground">채팅 ID (Chat ID)</label>
+                  <Input
+                    value={tgChatId}
+                    onChange={(e) => setTgChatId(e.target.value)}
+                    placeholder="-1001234567890 또는 @채널명"
+                    data-testid="input-tg-chat-id"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    알림을 받을 채널/그룹/개인 Chat ID. @userinfobot 에게 메시지를 보내면 ID를 확인할 수 있습니다.
+                  </p>
+                </div>
+
+                <div className="flex gap-2 pt-1">
+                  <Button
+                    onClick={() => saveTgBot.mutate()}
+                    disabled={!tgBotToken || !tgChatId || saveTgBot.isPending}
+                    data-testid="button-save-tg-bot"
+                  >
+                    {saveTgBot.isPending ? "저장 중..." : "저장"}
+                  </Button>
+                  {tgBotData?.configured && (
+                    <>
+                      <Button
+                        variant="outline"
+                        onClick={() => testTgBot.mutate()}
+                        disabled={testTgBot.isPending}
+                        data-testid="button-test-tg-bot"
+                      >
+                        <Send className="w-4 h-4 mr-1.5" />
+                        {testTgBot.isPending ? "전송 중..." : "테스트 전송"}
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        onClick={() => {
+                          if (confirm("텔레그램 봇 설정을 초기화하시겠습니까?")) {
+                            deleteTgBot.mutate();
+                          }
+                        }}
+                        disabled={deleteTgBot.isPending}
+                        data-testid="button-delete-tg-bot"
+                      >
+                        {deleteTgBot.isPending ? "초기화 중..." : "초기화"}
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-5 pt-4 border-t border-border">
+                <p className="text-xs font-medium text-muted-foreground mb-2">알림 트리거 목록</p>
+                <ul className="space-y-1 text-xs text-muted-foreground">
+                  <li className="flex items-center gap-2">
+                    <span className="text-base">📩</span> 1:1 고객 문의 접수 시
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-base">💰</span> 입금신청 접수 시
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-base">🎯</span> 100만원 이상 베팅 건 발생 시
+                  </li>
+                </ul>
               </div>
             </div>
 

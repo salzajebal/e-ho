@@ -11,6 +11,12 @@ import { parse as parseCookie } from "cookie";
 import { unsign } from "cookie-signature";
 import { calculateRoundNumber, getRoundEndTime, getRoundTimeRemaining } from "@shared/rounds";
 import WebSocket from "ws";
+import {
+  sendTelegramNotification,
+  notifyNewInquiry,
+  notifyDepositRequest,
+  notifyLargeBet,
+} from "./telegramBot";
 
 const PgSessionStore = pgSession(session);
 
@@ -602,6 +608,17 @@ export async function registerRoutes(
         bet,
         user: { id: user.id, username: user.username, name: user.name },
       });
+
+      // 텔레그램: 100만원 이상 고액베팅 알림 (fire-and-forget)
+      if (betAmount >= 1_000_000) {
+        notifyLargeBet(storage, {
+          username: user.username,
+          symbol,
+          duration,
+          direction: finalDirection,
+          amount: betAmount,
+        }).catch(() => {});
+      }
 
       res.json(bet);
     } catch (error: any) {
@@ -2822,6 +2839,77 @@ export async function registerRoutes(
     }
   });
 
+  // ─── 텔레그램 봇 알림 설정 (관리자 전용) ─────────────────────────────
+
+  // 봇 설정 조회
+  app.get("/api/admin/settings/telegram-bot", requireAdmin, async (req, res) => {
+    try {
+      const botToken = await storage.getSetting("telegram_bot_token");
+      const chatId = await storage.getSetting("telegram_notification_chat_id");
+      res.json({
+        botToken: botToken ? "●".repeat(Math.min(botToken.length, 10)) + botToken.slice(-4) : "",
+        chatId: chatId || "",
+        configured: !!(botToken && chatId),
+      });
+    } catch (error) {
+      res.status(500).json({ error: "설정 조회에 실패했습니다" });
+    }
+  });
+
+  // 봇 설정 저장
+  app.post("/api/admin/settings/telegram-bot", requireAdmin, async (req, res) => {
+    try {
+      const { botToken, chatId } = req.body;
+      if (!botToken || !chatId) {
+        return res.status(400).json({ error: "봇 토큰과 채팅 ID를 모두 입력해주세요" });
+      }
+      await storage.setSetting("telegram_bot_token", botToken.trim());
+      await storage.setSetting("telegram_notification_chat_id", chatId.trim());
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "설정 저장에 실패했습니다" });
+    }
+  });
+
+  // 봇 설정 삭제 (초기화)
+  app.delete("/api/admin/settings/telegram-bot", requireAdmin, async (req, res) => {
+    try {
+      await storage.setSetting("telegram_bot_token", "");
+      await storage.setSetting("telegram_notification_chat_id", "");
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "설정 삭제에 실패했습니다" });
+    }
+  });
+
+  // 테스트 메시지 전송
+  app.post("/api/admin/settings/telegram-bot/test", requireAdmin, async (req, res) => {
+    try {
+      const botToken = await storage.getSetting("telegram_bot_token");
+      const chatId = await storage.getSetting("telegram_notification_chat_id");
+      if (!botToken || !chatId) {
+        return res.status(400).json({ error: "봇 토큰과 채팅 ID를 먼저 저장해주세요" });
+      }
+      const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+      const tgRes = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: `✅ <b>[Learn-invest 테스트 알림]</b>\n텔레그램 봇이 정상적으로 연결되었습니다.\n🕐 ${new Date(Date.now() + 9 * 3600000).toISOString().replace("T", " ").substring(0, 16)} (KST)`,
+          parse_mode: "HTML",
+        }),
+      });
+      const body = await tgRes.json() as any;
+      if (!tgRes.ok) {
+        return res.status(400).json({ error: `텔레그램 오류: ${body?.description || tgRes.status}` });
+      }
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: `테스트 전송 실패: ${error?.message}` });
+    }
+  });
+
 
   // Get public setting (deposit notice for users)
   app.get("/api/settings/deposit-notice", async (req, res) => {
@@ -3684,6 +3772,17 @@ export async function registerRoutes(
         name: user?.name,
       });
 
+      // 텔레그램: 입금신청 알림 (fire-and-forget, 입금만)
+      if (type === 'deposit') {
+        notifyDepositRequest(storage, {
+          username: user?.username || String(req.session.userId),
+          amount: amount.toString(),
+          bankName: bankName || null,
+          accountHolder: accountHolder || null,
+          accountNumber: accountNumber || null,
+        }).catch(() => {});
+      }
+
       res.json({ success: true, request });
     } catch (error) {
       console.error("Create transaction request error:", error);
@@ -3859,6 +3958,16 @@ export async function registerRoutes(
         title,
         content,
       });
+
+      // 텔레그램: 새 1:1 문의 알림 (fire-and-forget)
+      {
+        const inquiryUser = await storage.getUser(req.session.userId!);
+        notifyNewInquiry(storage, {
+          username: inquiryUser?.username || String(req.session.userId),
+          title,
+          content,
+        }).catch(() => {});
+      }
 
       res.json(inquiry);
     } catch (error) {
