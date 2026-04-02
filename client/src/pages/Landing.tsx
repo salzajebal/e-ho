@@ -1010,17 +1010,17 @@ export default function Landing() {
 
           <div className="flex items-center justify-center gap-6 mb-10 text-sm">
             <div className="flex items-center gap-2 text-gray-400">
-              <span className="text-lg font-bold text-blue-400">📈</span>
+              <SymbolIcon symbol="SP500" size={22} />
               <span>S&amp;P500</span>
             </div>
             <div className="w-1 h-1 rounded-full bg-gray-600" />
             <div className="flex items-center gap-2 text-gray-400">
-              <span className="text-lg font-bold text-blue-400">🏛️</span>
+              <SymbolIcon symbol="DOW" size={22} />
               <span>다우존스</span>
             </div>
             <div className="w-1 h-1 rounded-full bg-gray-600" />
             <div className="flex items-center gap-2 text-gray-400">
-              <span className="text-lg font-bold text-blue-400">$</span>
+              <SymbolIcon symbol="DXY" size={22} />
               <span>달러 인덱스</span>
             </div>
           </div>
