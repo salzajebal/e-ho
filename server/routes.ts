@@ -196,15 +196,6 @@ export async function registerRoutes(
         return res.status(400).json({ error: "올바른 휴대폰 번호를 입력해주세요" });
       }
 
-      if (!branchCode) {
-        return res.status(400).json({ error: "지점코드를 입력해주세요" });
-      }
-
-      const branch = await storage.getBranchByCode(branchCode);
-      if (!branch || !branch.isActive) {
-        return res.status(400).json({ error: "유효하지 않은 지점코드입니다" });
-      }
-
       if (!bankName) {
         return res.status(400).json({ error: "은행을 선택해주세요" });
       }
