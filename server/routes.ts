@@ -2904,11 +2904,20 @@ export async function registerRoutes(
   }
 
   // Yahoo 실시간 가격과 DB 캔들 가격이 심하게 차이나면 오염 데이터 삭제 (스파이크 방지)
-  // 핵심: 마지막 캔들이 아닌 전체 최솟값으로 판정
-  // → updateCandles가 실시간 가격으로 신규 캔들을 추가해도 구 캔들들의 min이 낮으면 감지됨
+  // ▸ 양방향 감지: 캔들이 실시간가보다 STALE_THRESHOLD 이상 낮거나(하락) 높아도(상승) 오염 판정
+  //   → SP500/DOW: 구 저가 캔들 (~5320 vs 6575)  |  DXY: 구 고가 캔들 (~104.5 vs 100.07)
+  // ▸ updateCandles가 실시간 캔들을 추가한 뒤 실행되므로 last 캔들이 아닌 min/max 기준으로 판정
   async function validateCandleStore() {
     if (candleValidationDone) return;
-    const STALE_THRESHOLD = 0.08; // 실시간 가격의 8% 이상 아래 캔들이 존재하면 오염
+    // 방향별 임계값 설정
+    // ▸ belowThreshold(8%): SP500/DOW가 대폭 상승한 경우 - 구 캔들이 현재가보다 훨씬 낮음
+    //   (예: 5320 캔들 vs 현재 6575 → 18.9%)
+    // ▸ aboveThreshold(4%): DXY 등이 대폭 하락한 경우 - 구 캔들이 현재가보다 높음
+    //   (예: 104.5 캔들 vs 현재 100.09 → 4.41%)
+    //   DXY 정상 일간 변동: 0.3~0.8% → 4% 초과는 명백한 이상치
+    const BELOW_THRESHOLD = 0.08; // 캔들 최솟값이 현재가 8% 아래
+    const ABOVE_THRESHOLD = 0.04; // 캔들 최댓값이 현재가 4% 위
+    const FILTER_THRESHOLD = 0.10; // 개별 캔들 ±10% 범위 밖 제거
     const symbols = ['SP500', 'DOW', 'DXY'];
     const durations = [180, 300];
     let cleaned = 0;
@@ -2919,12 +2928,17 @@ export async function registerRoutes(
         const candles = candleStore[symbol]?.[dur];
         if (!candles || candles.length === 0) continue;
 
-        // 전체 캔들 중 최솟값으로 오염 감지 (마지막 캔들만 보면 신규 실시간 캔들에 가려짐)
         const minClose = Math.min(...candles.map(c => c.close));
-        const minDiff = (realPrice - minClose) / realPrice;
+        const maxClose = Math.max(...candles.map(c => c.close));
+        const belowDiff = (realPrice - minClose) / realPrice; // 양수 = 캔들이 현재가 아래
+        const aboveDiff = (maxClose - realPrice) / realPrice; // 양수 = 캔들이 현재가 위
 
-        if (minDiff > STALE_THRESHOLD) {
-          console.log(`🧹 [Candle] ${symbol}/${dur} 오염 감지: min=${minClose.toFixed(2)} vs 실시간=${realPrice.toFixed(2)} (${(minDiff*100).toFixed(1)}% 하락 이상치) → 초기화`);
+        if (belowDiff > BELOW_THRESHOLD || aboveDiff > ABOVE_THRESHOLD) {
+          console.log(
+            `🧹 [Candle] ${symbol}/${dur} 오염 감지: ` +
+            `min=${minClose.toFixed(4)} max=${maxClose.toFixed(4)} vs 실시간=${realPrice.toFixed(4)} ` +
+            `(하락=${(belowDiff*100).toFixed(1)}% 상승=${(aboveDiff*100).toFixed(1)}%) → 전체 초기화`
+          );
           candleStore[symbol][dur] = [];
           try {
             await storage.deleteAllForexCandlesByKey(symbol, dur);
@@ -2933,15 +2947,14 @@ export async function registerRoutes(
             console.warn(`[Candle] DB 삭제 실패 ${symbol}/${dur}:`, e);
           }
         } else {
-          // 오염은 아니지만 실시간 가격 범위 밖 이상값 캔들만 개별 제거
-          const lower = realPrice * 0.90;
-          const upper = realPrice * 1.10;
+          // 전체 오염은 아니지만 개별 이상값 캔들 제거 (±10% 범위 밖)
+          const lower = realPrice * (1 - FILTER_THRESHOLD);
+          const upper = realPrice * (1 + FILTER_THRESHOLD);
           const before = candles.length;
           const filtered = candles.filter(c => c.close >= lower && c.close <= upper);
           if (filtered.length < before) {
-            console.log(`🔧 [Candle] ${symbol}/${dur} 이상값 캔들 ${before - filtered.length}개 제거 (${lower.toFixed(0)}~${upper.toFixed(0)} 범위 외)`);
+            console.log(`🔧 [Candle] ${symbol}/${dur} 이상값 캔들 ${before - filtered.length}개 제거 (범위: ${lower.toFixed(2)}~${upper.toFixed(2)})`);
             candleStore[symbol][dur] = filtered;
-            // DB에서도 이상값 삭제
             try {
               const deleted = await storage.deleteForexCandlesOutsidePriceRange(symbol, dur, lower, upper);
               if (deleted > 0) {

@@ -91,6 +91,46 @@ function getMinMove(symbol: string): number {
   return 0.01;
 }
 
+// 실시간 가격을 기준으로 서버 캔들 오염 여부 판정 (양방향)
+// - 하락 방향: DB 캔들이 실시간가보다 threshold 이상 낮음 (구 저가 캔들)
+// - 상승 방향: DB 캔들이 실시간가보다 threshold 이상 높음 (구 고가 캔들, DXY 등)
+function filterStaleCandlesBidirectional(
+  candles: CandlestickData<Time>[],
+  currentPrice: number,
+  symbol: string
+): CandlestickData<Time>[] {
+  if (candles.length === 0 || currentPrice <= 0) return candles;
+
+  // 서버와 동일한 비대칭 임계값 적용
+  const BELOW_THRESHOLD = 0.08; // 캔들 최솟값이 현재가 8% 아래 (SP500/DOW 급등 케이스)
+  const ABOVE_THRESHOLD = 0.04; // 캔들 최댓값이 현재가 4% 위 (DXY 급락 케이스)
+  const FILTER_THRESHOLD = 0.10; // 개별 캔들 ±10% 범위 밖 제거
+
+  const minClose = Math.min(...candles.map(c => c.close));
+  const maxClose = Math.max(...candles.map(c => c.close));
+
+  const belowDiff = (currentPrice - minClose) / currentPrice;  // 양수 = 캔들이 현재가 아래
+  const aboveDiff = (maxClose - currentPrice) / currentPrice;  // 양수 = 캔들이 현재가 위
+
+  if (belowDiff > BELOW_THRESHOLD || aboveDiff > ABOVE_THRESHOLD) {
+    console.warn(
+      `[PriceChart] ${symbol} 오염 캔들 전체 폐기: ` +
+      `min=${minClose.toFixed(4)} max=${maxClose.toFixed(4)} vs 현재가=${currentPrice.toFixed(4)} ` +
+      `(하락=${(belowDiff*100).toFixed(1)}% 상승=${(aboveDiff*100).toFixed(1)}%)`
+    );
+    return [];
+  }
+
+  const lower = currentPrice * (1 - FILTER_THRESHOLD);
+  const upper = currentPrice * (1 + FILTER_THRESHOLD);
+  const before = candles.length;
+  const filtered = candles.filter(c => c.close >= lower && c.close <= upper);
+  if (filtered.length < before) {
+    console.warn(`[PriceChart] ${symbol} 이상값 캔들 ${before - filtered.length}개 제거`);
+  }
+  return filtered;
+}
+
 function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -101,6 +141,7 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
   const currentStartRef = useRef<number>(0);
   const [isReady, setIsReady] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [chartVisible, setChartVisible] = useState(false);
   const [chartKey, setChartKey] = useState(0);
 
   const { theme } = useTheme();
@@ -133,6 +174,7 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
     });
   }, [theme]);
 
+  // 실시간 가격 업데이트 → priceRef 동기화 + 차트 틱 업데이트
   useEffect(() => {
     if (data.price > 0) {
       priceRef.current = data.price;
@@ -165,13 +207,16 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
     }
   }, [data.price, duration, isInitialized]);
 
+  // symbol/duration 변경 시 초기화 상태 리셋
   useEffect(() => {
     setIsInitialized(false);
+    setChartVisible(false);
     lastBarRef.current = null;
     basePriceRef.current = 0;
     currentStartRef.current = 0;
   }, [symbol, duration]);
 
+  // 차트 인스턴스 생성 (symbol/duration 변경 시 재생성)
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -262,54 +307,55 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
     };
   }, [symbol, duration, chartKey]);
 
+  // 차트 데이터 초기화
+  // data.price를 deps에서 제거 → isReady 전환 시에만 실행
+  // 가격이 아직 0이면 내부에서 최대 3초 폴링 후 진행 (깜빡거림 방지 핵심)
   useEffect(() => {
     if (!seriesRef.current || !isReady) return;
     if (basePriceRef.current !== 0) return;
-    
+
     const initializeChart = async () => {
       if (!seriesRef.current) return;
-      
-      let serverCandles = await fetchServerCandles(symbol, duration);
-      let candles: CandlestickData<Time>[] = [];
-      
-      const currentPrice = data.price > 0 ? data.price : 0;
 
-      // 서버 캔들 이상값 필터링
-      // 1단계: 전체 min 기준 - 실시간 가격의 8% 이하 최솟값이 존재하면 전체 폐기 (타이밍 경쟁 조건 방지)
-      // 2단계: 개별 필터 - 정상 범위(±10%) 밖 캔들 제거
-      if (serverCandles.length > 0 && currentPrice > 0) {
-        const minClose = Math.min(...serverCandles.map(c => c.close));
-        const minDiff = (currentPrice - minClose) / currentPrice;
-        if (minDiff > 0.08) {
-          console.warn(`[PriceChart] ${symbol} 오염 캔들 감지: min=${minClose.toFixed(2)} vs 현재가=${currentPrice.toFixed(2)} (${(minDiff*100).toFixed(1)}%) → 전체 폐기`);
-          serverCandles = [];
-        } else {
-          // 개별 이상값 캔들 제거 (±10% 범위 밖)
-          const lower = currentPrice * 0.90;
-          const upper = currentPrice * 1.10;
-          const before = serverCandles.length;
-          serverCandles = serverCandles.filter(c => c.close >= lower && c.close <= upper);
-          if (serverCandles.length < before) {
-            console.warn(`[PriceChart] ${symbol} 이상값 캔들 ${before - serverCandles.length}개 제거`);
-          }
-        }
+      // 가격이 아직 없으면 최대 3초 대기 (100ms 간격 폴링)
+      // → chart가 isReady 되는 시점과 첫 가격 수신 사이의 간격 처리
+      let currentPrice = priceRef.current;
+      if (currentPrice <= 0) {
+        await new Promise<void>(resolve => {
+          let attempts = 0;
+          const check = setInterval(() => {
+            if (priceRef.current > 0 || ++attempts > 30) {
+              clearInterval(check);
+              resolve();
+            }
+          }, 100);
+        });
+        currentPrice = priceRef.current;
       }
 
-      const basePrice = serverCandles.length > 0 
-        ? serverCandles[serverCandles.length - 1].close 
+      if (currentPrice <= 0 || !seriesRef.current) return;
+
+      let serverCandles = await fetchServerCandles(symbol, duration);
+
+      // 양방향 오염 감지: 하락(구 저가) + 상승(구 고가, DXY 등) 모두 처리
+      serverCandles = filterStaleCandlesBidirectional(serverCandles, currentPrice, symbol);
+
+      const basePrice = serverCandles.length > 0
+        ? serverCandles[serverCandles.length - 1].close
         : currentPrice;
-      
+
       if (basePrice <= 0) return;
 
       const MIN_CANDLES = 50;
       const currentAlignedTime = getKSTAlignedTime(duration);
-      
+      let candles: CandlestickData<Time>[] = [];
+
       if (serverCandles.length >= MIN_CANDLES) {
         candles = serverCandles;
       } else {
         const latestPrice = serverCandles.length > 0 ? serverCandles[serverCandles.length - 1].close : basePrice;
         const latestTime = serverCandles.length > 0 ? (serverCandles[serverCandles.length - 1].time as number) : currentAlignedTime;
-        
+
         const beforeCandles = serverCandles.length > 0
           ? generateFallbackCandles(serverCandles[0].open, Math.max(MIN_CANDLES - serverCandles.length, 30), duration, serverCandles[0].time as number)
           : [];
@@ -317,7 +363,7 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
         const gapCount = serverCandles.length > 0
           ? Math.floor((currentAlignedTime - latestTime) / duration) - 1
           : 0;
-        
+
         let afterCandles: CandlestickData<Time>[] = [];
         if (gapCount > 0 && gapCount < 100) {
           let p = latestPrice;
@@ -349,23 +395,27 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
         seen.add(t);
         return true;
       });
-      
+
       if (candles.length > 0 && seriesRef.current) {
         seriesRef.current.setData(candles);
-        
+
         const lastCandle = candles[candles.length - 1];
         lastBarRef.current = { ...lastCandle };
         basePriceRef.current = lastCandle.close;
         currentStartRef.current = lastCandle.time as number;
-        
+
         chartRef.current?.timeScale().fitContent();
         setIsInitialized(true);
+        // 데이터가 완전히 세팅된 후 페이드인 (빈 차트 프레임 차단)
+        requestAnimationFrame(() => setChartVisible(true));
       }
     };
-    
-    initializeChart();
-  }, [symbol, isReady, duration, data.price]);
 
+    initializeChart();
+  // data.price를 deps에서 제거: 내부 폴링으로 처리하여 이중 실행 방지
+  }, [symbol, isReady, duration]);
+
+  // 100ms 틱 업데이트 (isInitialized 후)
   useEffect(() => {
     if (!seriesRef.current || !isReady || !isInitialized) return;
 
@@ -438,11 +488,29 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
         {!isInitialized && <span className="text-yellow-500 ml-2">로딩중...</span>}
       </div>
 
-      <div 
-        ref={containerRef}
-        className="flex-1 min-h-0"
-        style={{ width: '100%' }}
-      />
+      {/* 차트 영역: 데이터 준비 전까지 opacity 0으로 빈 캔들 프레임 숨김 */}
+      <div className="relative flex-1 min-h-0">
+        {/* 로딩 오버레이: 데이터 세팅 전까지 배경색으로 빈 차트 가림 */}
+        {!chartVisible && (
+          <div
+            className="absolute inset-0 z-10 flex items-center justify-center"
+            style={{ backgroundColor: C.background }}
+          >
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+              <span className="text-xs" style={{ color: C.text }}>차트 로딩중...</span>
+            </div>
+          </div>
+        )}
+        <div
+          ref={containerRef}
+          className="w-full h-full"
+          style={{
+            opacity: chartVisible ? 1 : 0,
+            transition: 'opacity 0.2s ease-in',
+          }}
+        />
+      </div>
     </div>
   );
 }
