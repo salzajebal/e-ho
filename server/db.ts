@@ -181,6 +181,19 @@ export async function initializeDatabase(): Promise<void> {
     `);
     console.log('Forex candles table ready');
 
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS user_sessions (
+        sid VARCHAR NOT NULL COLLATE "default",
+        sess JSON NOT NULL,
+        expire TIMESTAMP(6) NOT NULL,
+        CONSTRAINT "user_sessions_pkey" PRIMARY KEY (sid) NOT DEFERRABLE INITIALLY IMMEDIATE
+      )
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS "IDX_user_sessions_expire" ON user_sessions (expire)
+    `);
+    console.log('Session table ready');
+
     // Ensure all admin users are approved (migration for existing data)
     await client.query(`
       UPDATE users SET approval_status = 'approved' WHERE role = 'admin' AND approval_status != 'approved'
