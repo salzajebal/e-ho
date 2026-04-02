@@ -1,0 +1,95 @@
+<svg width="76" height="76" viewBox="0 0 76 76" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="ibg" x1="0" y1="0" x2="76" y2="76" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1a3a80"/>
+      <stop offset="45%" stop-color="#0c1e52"/>
+      <stop offset="100%" stop-color="#060d28"/>
+    </linearGradient>
+    <radialGradient id="ispot" cx="35%" cy="28%" r="60%">
+      <stop offset="0%" stop-color="#3b6fd4" stop-opacity="0.4"/>
+      <stop offset="55%" stop-color="#1a3580" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#0a1540" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ishine" x1="0" y1="0" x2="0.65" y2="0.65" gradientUnits="objectBoundingBox">
+      <stop offset="0%" stop-color="white" stop-opacity="0.22"/>
+      <stop offset="38%" stop-color="white" stop-opacity="0.06"/>
+      <stop offset="100%" stop-color="white" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="ibar1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4d90ef" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#1a3a8a" stop-opacity="0.45"/>
+    </linearGradient>
+    <linearGradient id="ibar2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#60a5fa" stop-opacity="0.92"/>
+      <stop offset="100%" stop-color="#1e4ccc" stop-opacity="0.55"/>
+    </linearGradient>
+    <linearGradient id="ibar3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#93c5fd"/>
+      <stop offset="50%" stop-color="#5ba8fa" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#2555cc" stop-opacity="0.65"/>
+    </linearGradient>
+    <linearGradient id="ibar4" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#e8f4ff"/>
+      <stop offset="30%" stop-color="#bfdfff"/>
+      <stop offset="100%" stop-color="#4090f5" stop-opacity="0.85"/>
+    </linearGradient>
+    <linearGradient id="iline" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#7eb8fa" stop-opacity="0.7"/>
+      <stop offset="60%" stop-color="#c0ddff"/>
+      <stop offset="100%" stop-color="white"/>
+    </linearGradient>
+    <linearGradient id="irim" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
+      <stop offset="0%" stop-color="white" stop-opacity="0.25"/>
+      <stop offset="50%" stop-color="#3b82f6" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="white" stop-opacity="0.04"/>
+    </linearGradient>
+    <filter id="ibar-glow" x="-30%" y="-15%" width="160%" height="130%">
+      <feGaussianBlur stdDeviation="1.5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="iline-glow" x="-25%" y="-80%" width="150%" height="260%">
+      <feGaussianBlur stdDeviation="2.8" result="b1"/>
+      <feGaussianBlur stdDeviation="1.1" result="b2"/>
+      <feMerge>
+        <feMergeNode in="b1"/>
+        <feMergeNode in="b2"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="iarrow-glow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="2" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="76" height="76" rx="17" fill="url(#ibg)"/>
+  <rect width="76" height="76" rx="17" fill="url(#ispot)"/>
+  <rect width="76" height="76" rx="17" fill="url(#ishine)"/>
+
+  <rect x="11" y="53" width="8" height="13" rx="2" fill="url(#ibar1)"/>
+  <rect x="23" y="43" width="8" height="23" rx="2" fill="url(#ibar2)"/>
+  <rect x="35" y="31" width="8" height="35" rx="2" fill="url(#ibar3)" filter="url(#ibar-glow)"/>
+  <rect x="47" y="19" width="8" height="47" rx="2" fill="url(#ibar4)" filter="url(#ibar-glow)"/>
+
+  <rect x="11" y="53" width="8" height="2" rx="1" fill="white" fill-opacity="0.25"/>
+  <rect x="23" y="43" width="8" height="2" rx="1" fill="white" fill-opacity="0.2"/>
+  <rect x="35" y="31" width="8" height="2" rx="1" fill="white" fill-opacity="0.3"/>
+  <rect x="47" y="19" width="8" height="2.5" rx="1" fill="white" fill-opacity="0.45"/>
+
+  <line x1="7" y1="68" x2="62" y2="68" stroke="#60a5fa" stroke-width="1" stroke-linecap="round" opacity="0.3"/>
+
+  <polyline
+    points="15,51 27,40 39,29 51,17"
+    stroke="url(#iline)"
+    stroke-width="2.2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    fill="none"
+    filter="url(#iline-glow)"
+  />
+
+  <polygon points="51,17 58,21.5 54,25.5" fill="white" opacity="0.98" filter="url(#iarrow-glow)"/>
+  <circle cx="51" cy="17" r="2" fill="white" fill-opacity="0.6" filter="url(#iarrow-glow)"/>
+
+  <rect x="1" y="1" width="74" height="74" rx="16" stroke="url(#irim)" stroke-width="1.2" fill="none"/>
+</svg>
