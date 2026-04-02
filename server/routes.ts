@@ -2863,6 +2863,7 @@ export async function registerRoutes(
 
   let isConnected = false;
   let lastYahooFetch = 0;
+  let candleValidationDone = false;
 
   // Server-side candle accumulation from WebSocket ticks (with DB persistence)
   interface CandleData {
@@ -2900,6 +2901,39 @@ export async function registerRoutes(
     }
     const totalCandles = symbols.reduce((sum, s) => sum + durations.reduce((s2, d) => s2 + candleStore[s][d].length, 0), 0);
     console.log(`📊 [Candle] DB에서 총 ${totalCandles}개 캔들 로딩 완료`);
+  }
+
+  // Yahoo 실시간 가격과 DB 캔들 가격이 심하게 차이나면 오염 데이터 삭제 (스파이크 방지)
+  async function validateCandleStore() {
+    if (candleValidationDone) return;
+    const STALE_THRESHOLD = 0.05; // 5% 이상 차이면 오염으로 판정
+    const symbols = ['SP500', 'DOW', 'DXY'];
+    const durations = [180, 300];
+    let cleaned = 0;
+    for (const symbol of symbols) {
+      const realPrice = forexPrices[symbol]?.price;
+      if (!realPrice || realPrice <= 0) continue;
+      for (const dur of durations) {
+        const candles = candleStore[symbol]?.[dur];
+        if (!candles || candles.length === 0) continue;
+        const lastClose = candles[candles.length - 1].close;
+        const diff = Math.abs(lastClose - realPrice) / realPrice;
+        if (diff > STALE_THRESHOLD) {
+          console.log(`🧹 [Candle] ${symbol}/${dur} 캔들 가격 오염 감지: DB=${lastClose.toFixed(2)} vs 실시간=${realPrice.toFixed(2)} (${(diff*100).toFixed(1)}%) → 초기화`);
+          candleStore[symbol][dur] = [];
+          try {
+            await storage.deleteAllForexCandlesByKey(symbol, dur);
+            cleaned++;
+          } catch (e) {
+            console.warn(`[Candle] DB 삭제 실패 ${symbol}/${dur}:`, e);
+          }
+        }
+      }
+    }
+    if (cleaned > 0) {
+      console.log(`✅ [Candle] 오염 캔들 ${cleaned}개 키 초기화 완료. 새 실시간 데이터로 재구축 시작.`);
+    }
+    candleValidationDone = true;
   }
 
   let dbSaveTimer: NodeJS.Timeout | null = null;
@@ -3079,6 +3113,10 @@ export async function registerRoutes(
         lastYahooFetch = Date.now();
         isConnected = true;
         console.log(`💹 [Yahoo] 실시간 시세: SP500=${forexPrices.SP500.price.toFixed(2)}, DOW=${forexPrices.DOW.price.toFixed(2)}, DXY=${forexPrices.DXY.price.toFixed(4)}`);
+        // 최초 실시간 가격 수신 후 DB 캔들 오염 여부 검증
+        if (!candleValidationDone) {
+          validateCandleStore().catch(e => console.warn('[Candle] 검증 중 오류:', e));
+        }
       }
     } catch (err: any) {
       isConnected = false;
@@ -3118,9 +3156,9 @@ export async function registerRoutes(
 
   // ==================== FALLBACK SIMULATION (Yahoo Finance 장애 시) ====================
   const DEFAULT_PRICES: Record<string, number> = {
-    SP500: 5320.0,
-    DOW: 39500.0,
-    DXY: 104.5,
+    SP500: 6575.0,
+    DOW: 46500.0,
+    DXY: 100.1,
   };
 
   let simulationTimer: NodeJS.Timeout | null = null;

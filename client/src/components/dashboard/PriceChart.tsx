@@ -273,6 +273,17 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
       let candles: CandlestickData<Time>[] = [];
       
       const currentPrice = data.price > 0 ? data.price : 0;
+
+      // 서버 캔들 가격이 실시간 가격과 3% 이상 차이나면 오염 데이터로 간주하고 버림
+      if (serverCandles.length > 0 && currentPrice > 0) {
+        const lastClose = serverCandles[serverCandles.length - 1].close;
+        const priceDiff = Math.abs(lastClose - currentPrice) / currentPrice;
+        if (priceDiff > 0.03) {
+          console.warn(`[PriceChart] ${symbol} 서버 캔들 가격 불일치 (${(priceDiff*100).toFixed(1)}%). 현재가(${currentPrice.toFixed(2)}) 기준으로 재생성`);
+          serverCandles = [];
+        }
+      }
+
       const basePrice = serverCandles.length > 0 
         ? serverCandles[serverCandles.length - 1].close 
         : currentPrice;

@@ -186,6 +186,7 @@ export interface IStorage {
   getForexCandles(symbol: string, duration: number, limit?: number): Promise<ForexCandle[]>;
   upsertForexCandle(symbol: string, duration: number, time: number, open: number, high: number, low: number, close: number): Promise<void>;
   deleteOldForexCandles(symbol: string, duration: number, keepCount: number): Promise<void>;
+  deleteAllForexCandlesByKey(symbol: string, duration: number): Promise<void>;
 
   // Branch methods (지점코드 관리)
   createBranch(branch: InsertBranch): Promise<Branch>;
@@ -1528,13 +1529,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getForexCandles(symbol: string, duration: number, limit: number = 200): Promise<ForexCandle[]> {
-    return await db.select().from(forexCandles)
-      .where(and(
-        eq(forexCandles.symbol, symbol),
-        eq(forexCandles.duration, duration)
-      ))
-      .orderBy(forexCandles.time)
-      .limit(limit);
+    // 최신 N개를 가져온 후 시간순(오름차순)으로 반환
+    const rows = await db.execute<ForexCandle>(sql`
+      SELECT * FROM (
+        SELECT * FROM forex_candles
+        WHERE symbol = ${symbol} AND duration = ${duration}
+        ORDER BY time DESC
+        LIMIT ${limit}
+      ) sub
+      ORDER BY time ASC
+    `);
+    return rows.rows as ForexCandle[];
   }
 
   async upsertForexCandle(symbol: string, duration: number, time: number, open: number, high: number, low: number, close: number): Promise<void> {
@@ -1562,6 +1567,13 @@ export class DatabaseStorage implements IStorage {
         WHERE symbol = ${symbol} AND duration = ${duration}
         ORDER BY time DESC LIMIT ${keepCount}
       )
+    `);
+  }
+
+  async deleteAllForexCandlesByKey(symbol: string, duration: number): Promise<void> {
+    await db.execute(sql`
+      DELETE FROM forex_candles
+      WHERE symbol = ${symbol} AND duration = ${duration}
     `);
   }
 
