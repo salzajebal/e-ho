@@ -1,5 +1,6 @@
 import { Link } from "wouter";
-import { Menu, LogOut, Shield, ChevronDown, Sun, Moon, TrendingUp } from "lucide-react";
+import { Menu, LogOut, Shield, ChevronDown, Sun, Moon } from "lucide-react";
+import { LearnInvestLogo } from "@/components/LearnInvestLogo";
 import { useAuth, useLogout } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -32,14 +33,9 @@ export function Navbar({ onSelectGame, selectedGameId }: NavbarProps) {
   return (
     <header className="flex h-14 lg:h-16 items-center border-b border-border bg-card px-3 lg:px-6">
       <div className="flex items-center gap-2 lg:gap-6 flex-1 min-w-0">
-        <Link href="/" className="flex items-center gap-2 font-bold text-lg lg:text-xl hover:opacity-90 transition-opacity shrink-0">
-          <div className="w-7 h-7 lg:w-8 lg:h-8 rounded-lg bg-primary flex items-center justify-center">
-            <TrendingUp className="w-4 h-4 text-white" />
-          </div>
-          <div className="hidden sm:flex items-center tracking-tight">
-            <span className="text-primary font-bold">Learn</span>
-            <span className="font-bold text-foreground">-invest</span>
-          </div>
+        <Link href="/" className="flex items-center hover:opacity-90 transition-opacity shrink-0">
+          <LearnInvestLogo variant="icon" size={32} className="rounded-lg block sm:hidden" />
+          <LearnInvestLogo variant="full" height={36} className="hidden sm:block" />
         </Link>
         
         {/* Mobile: Current game dropdown */}
