@@ -504,13 +504,13 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Direction must be 'long' or 'short'" });
       }
 
-      if (![60, 180, 300].includes(duration)) {
-        return res.status(400).json({ error: "Duration must be 60, 180, or 300 seconds" });
+      if (![180, 300].includes(duration)) {
+        return res.status(400).json({ error: "Duration must be 180 or 300 seconds" });
       }
 
-      const VALID_SYMBOLS = ['USD', 'JPY', 'EUR', 'AUD'];
+      const VALID_SYMBOLS = ['SP500', 'DOW', 'DXY'];
       if (!VALID_SYMBOLS.includes(symbol)) {
-        return res.status(400).json({ error: "Invalid symbol. Only USD, JPY, EUR, AUD are available." });
+        return res.status(400).json({ error: "Invalid symbol. Only SP500, DOW, DXY are available." });
       }
 
       let betAmount = parseFloat(amount);
@@ -972,7 +972,7 @@ export async function registerRoutes(
   app.patch("/api/admin/users/:id", requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;
-      const { username, password, name, phone, residentNumber, region, bankName, accountHolder, accountNumber, balance, role, isActive, totalDeposit, totalWithdrawal, autoBetEnabled, autoBetMultiplier, isBettingBlocked } = req.body;
+      const { username, password, name, phone, residentNumber, region, bankName, accountHolder, accountNumber, balance, role, isActive, totalDeposit, totalWithdrawal, autoBetEnabled, autoBetMultiplier, isBettingBlocked, grade } = req.body;
 
       const updateData: any = {};
       if (username !== undefined) updateData.username = username;
@@ -992,6 +992,7 @@ export async function registerRoutes(
       if (autoBetEnabled !== undefined) updateData.autoBetEnabled = autoBetEnabled;
       if (autoBetMultiplier !== undefined) updateData.autoBetMultiplier = autoBetMultiplier;
       if (isBettingBlocked !== undefined) updateData.isBettingBlocked = isBettingBlocked;
+      if (grade !== undefined) updateData.grade = grade;
       const { maxExecutionEnabled } = req.body;
       if (maxExecutionEnabled !== undefined) updateData.maxExecutionEnabled = maxExecutionEnabled;
 
@@ -2358,8 +2359,8 @@ export async function registerRoutes(
   // Global forced outcome settings (applies to ALL rounds for a symbol+duration)
   app.get("/api/admin/global-forced", requireAdmin, async (req, res) => {
     try {
-      const symbols = ['USD', 'EUR', 'JPY', 'AUD'];
-      const durations = [60, 180, 300];
+      const symbols = ['SP500', 'DOW', 'DXY'];
+      const durations = [180, 300];
       const result: Record<string, string> = {};
       for (const sym of symbols) {
         for (const dur of durations) {
@@ -2774,6 +2775,16 @@ export async function registerRoutes(
     }
   });
 
+  // Get public setting (kakao link)
+  app.get("/api/settings/kakao", async (req, res) => {
+    try {
+      const kakaoLink = await storage.getSetting("kakao_link");
+      res.json({ kakaoLink: kakaoLink || "" });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch setting" });
+    }
+  });
+
   // Get public setting (company info)
   app.get("/api/settings/company-info", async (req, res) => {
     try {
@@ -2829,24 +2840,17 @@ export async function registerRoutes(
   const FINNHUB_API_KEY = process.env.FINNHUB_API_KEY || '';
 
   const FOREX_TO_FINNHUB: Record<string, string> = {
-    USD: 'OANDA:EUR_USD',
-    JPY: 'OANDA:USD_JPY',
-    EUR: 'OANDA:GBP_USD',
-    AUD: 'OANDA:AUD_USD',
+    SP500: 'SP500',
+    DOW: 'DOW',
+    DXY: 'DXY',
   };
 
-  const FINNHUB_TO_FOREX: Record<string, string> = {
-    'OANDA:EUR_USD': 'USD',
-    'OANDA:USD_JPY': 'JPY',
-    'OANDA:GBP_USD': 'EUR',
-    'OANDA:AUD_USD': 'AUD',
-  };
+  const FINNHUB_TO_FOREX: Record<string, string> = {};
 
   const forexPrices: { [key: string]: { price: number; change: number; changePercent: number; high: number; low: number; volume: number; updatedAt: number; openPrice: number } } = {
-    USD: { price: 0, change: 0, changePercent: 0, high: 0, low: 0, volume: 0, updatedAt: 0, openPrice: 0 },
-    JPY: { price: 0, change: 0, changePercent: 0, high: 0, low: 0, volume: 0, updatedAt: 0, openPrice: 0 },
-    EUR: { price: 0, change: 0, changePercent: 0, high: 0, low: 0, volume: 0, updatedAt: 0, openPrice: 0 },
-    AUD: { price: 0, change: 0, changePercent: 0, high: 0, low: 0, volume: 0, updatedAt: 0, openPrice: 0 },
+    SP500: { price: 0, change: 0, changePercent: 0, high: 0, low: 0, volume: 0, updatedAt: 0, openPrice: 0 },
+    DOW: { price: 0, change: 0, changePercent: 0, high: 0, low: 0, volume: 0, updatedAt: 0, openPrice: 0 },
+    DXY: { price: 0, change: 0, changePercent: 0, high: 0, low: 0, volume: 0, updatedAt: 0, openPrice: 0 },
   };
 
   function getForexPrice(forexSymbol: string) {
@@ -2862,16 +2866,15 @@ export async function registerRoutes(
     close: number;
   }
   const candleStore: Record<string, Record<number, CandleData[]>> = {
-    USD: { 60: [], 180: [], 300: [] },
-    JPY: { 60: [], 180: [], 300: [] },
-    EUR: { 60: [], 180: [], 300: [] },
-    AUD: { 60: [], 180: [], 300: [] },
+    SP500: { 180: [], 300: [] },
+    DOW: { 180: [], 300: [] },
+    DXY: { 180: [], 300: [] },
   };
   const MAX_CANDLES = 200;
 
   async function loadCandlesFromDB() {
-    const symbols = ['USD', 'JPY', 'EUR', 'AUD'];
-    const durations = [60, 180, 300];
+    const symbols = ['SP500', 'DOW', 'DXY'];
+    const durations = [180, 300];
     for (const symbol of symbols) {
       for (const dur of durations) {
         try {
@@ -2914,8 +2917,8 @@ export async function registerRoutes(
           }
         }
 
-        for (const sym of ['USD', 'JPY', 'EUR', 'AUD']) {
-          for (const d of [60, 180, 300]) {
+        for (const sym of ['SP500', 'DOW', 'DXY']) {
+          for (const d of [180, 300]) {
             if (candleStore[sym][d].length > MAX_CANDLES + 50) {
               try { await storage.deleteOldForexCandles(sym, d, MAX_CANDLES); } catch (e) {}
             }
@@ -2926,9 +2929,10 @@ export async function registerRoutes(
   }
 
   function updateCandles(symbol: string, price: number, timestamp: number) {
-    const durations = [60, 180, 300];
+    const durations = [180, 300];
     for (const dur of durations) {
-      const candles = candleStore[symbol][dur];
+      const candles = candleStore[symbol]?.[dur];
+      if (!candles) continue;
       const candleTime = Math.floor(timestamp / (dur * 1000)) * dur;
       
       if (candles.length === 0 || candles[candles.length - 1].time !== candleTime) {
@@ -3063,10 +3067,9 @@ export async function registerRoutes(
 
   // ==================== SIMULATED PRICE MOVEMENT (WEEKENDS / DISCONNECTED) ====================
   const DEFAULT_PRICES: Record<string, number> = {
-    USD: 1.1825,
-    JPY: 154.14,
-    EUR: 1.3523,
-    AUD: 0.7088,
+    SP500: 5320.0,
+    DOW: 39500.0,
+    DXY: 104.5,
   };
 
   let simulationTimer: NodeJS.Timeout | null = null;
@@ -3079,7 +3082,7 @@ export async function registerRoutes(
     if (simulationActive) return;
     simulationActive = true;
 
-    for (const symbol of ['USD', 'JPY', 'EUR', 'AUD']) {
+    for (const symbol of ['SP500', 'DOW', 'DXY']) {
       const currentPrice = forexPrices[symbol].price;
       if (!simulationAnchorPrices[symbol] || currentPrice > 0) {
         simulationAnchorPrices[symbol] = currentPrice > 0 ? currentPrice : DEFAULT_PRICES[symbol];
@@ -3095,12 +3098,12 @@ export async function registerRoutes(
       }
 
       const now = Date.now();
-      for (const symbol of ['USD', 'JPY', 'EUR', 'AUD']) {
+      for (const symbol of ['SP500', 'DOW', 'DXY']) {
         const prev = forexPrices[symbol];
         const currentPrice = prev.price > 0 ? prev.price : DEFAULT_PRICES[symbol];
         const anchorPrice = simulationAnchorPrices[symbol] || currentPrice;
 
-        const volatility = symbol === 'JPY' ? 0.00015 : 0.00003;
+        const volatility = symbol === 'DXY' ? 0.00005 : 0.0001;
         let randomChange = currentPrice * volatility * (Math.random() - 0.5) * 2;
 
         const drift = (currentPrice - anchorPrice) / anchorPrice;
@@ -3339,7 +3342,7 @@ export async function registerRoutes(
     const prices = [];
     let hasFallback = false;
 
-    for (const forexSymbol of ['USD', 'JPY', 'EUR', 'AUD']) {
+    for (const forexSymbol of ['SP500', 'DOW', 'DXY']) {
       const data = getForexPrice(forexSymbol);
       if (data && data.price > 0) {
         const isStale = (now - data.updatedAt) > 60000;
@@ -3375,7 +3378,7 @@ export async function registerRoutes(
     const { symbol } = req.params;
     const upperSymbol = symbol.toUpperCase();
     
-    const VALID_FOREX = ['USD', 'JPY', 'EUR', 'AUD'];
+    const VALID_FOREX = ['SP500', 'DOW', 'DXY'];
     if (!VALID_FOREX.includes(upperSymbol)) {
       return res.status(400).json({ error: "지원하지 않는 심볼입니다" });
     }
@@ -3412,13 +3415,13 @@ export async function registerRoutes(
     const upperSymbol = symbol.toUpperCase();
     const duration = parseInt(req.query.duration as string) || 60;
     
-    const VALID_FOREX = ['USD', 'JPY', 'EUR', 'AUD'];
+    const VALID_FOREX = ['SP500', 'DOW', 'DXY'];
     if (!VALID_FOREX.includes(upperSymbol)) {
       return res.status(400).json({ error: "지원하지 않는 심볼입니다" });
     }
 
-    const validDurations = [60, 180, 300];
-    const dur = validDurations.includes(duration) ? duration : 60;
+    const validDurations = [180, 300];
+    const dur = validDurations.includes(duration) ? duration : 180;
 
     const ticker = FOREX_TO_FINNHUB[upperSymbol];
     const candles = candleStore[upperSymbol]?.[dur] || [];

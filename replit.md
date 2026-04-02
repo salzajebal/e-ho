@@ -1,18 +1,29 @@
-# VALUE-OPTION - Forex Trading Platform
+# Learn-invest - 글로벌 투자 플랫폼
 
 ## Overview
 
-This is a real-time forex trading platform. Users can place bets on price movements (long/short) for major forex pairs: EUR/USD (labeled USD), USD/JPY (labeled JPY), GBP/USD (labeled EUR), and AUD/USD (labeled AUD). The platform features live market data via Finnhub forex WebSocket API, interactive candlestick charts using lightweight-charts, and an account system with virtual balance.
+한국어 이진 옵션 투자 플랫폼. 사용자가 S&P500, 다우존스(DOW), 달러(DXY)의 가격 변동 방향(상승/하락)에 베팅합니다. Finnhub WebSocket API를 통한 실시간 시장 데이터, lightweight-charts 캔들스틱 차트, 계좌 시스템을 제공합니다.
+
+## Admin Credentials
+- Username: `admin`
+- Password: `admin123`
 
 ## Trading Rules
-- **Operating Hours**: 24/7 (simulated price movement when forex markets are closed on weekends)
-- **Trading Assets**: USD (EUR/USD), JPY (USD/JPY), EUR (GBP/USD), AUD (AUD/USD)
-- **Trading Durations**: 1분 (60s), 3분 (180s), 5분 (300s)
-- **New User Balance**: Starts at 0원 (deposit required)
+- **Operating Hours**: 24시간 (24/7)
+- **Trading Assets**: SP500 (S&P500), DOW (다우존스), DXY (달러)
+- **Trading Durations**: 3분 (180s), 5분 (300s) — 1분 없음
+- **Min Bet**: 10,000원
+- **Buy = RED button (상승)**, **Sell = BLUE button (하락)** — 한국 관례
 
 ## User Preferences
-
 Preferred communication style: Simple, everyday language.
+
+## Key Features
+- 다크/라이트 모드 토글 (기본: 라이트 모드)
+- 회원 등급 시스템: 브론즈, 실버, 골드, VIP
+- 은행 계좌 이체 입출금 (24시간)
+- 1:1 문의 + 텔레그램 + 카카오톡 고객센터
+- 총판 시스템 제거됨
 
 ## System Architecture
 
@@ -20,9 +31,12 @@ Preferred communication style: Simple, everyday language.
 - **Framework**: React 18 with TypeScript
 - **Routing**: Wouter (lightweight router)
 - **State Management**: TanStack React Query for server state
-- **Styling**: Tailwind CSS v4 with CSS variables for theming (dark mode default)
+- **Styling**: Tailwind CSS v4 with CSS variables for theming
+  - Light mode (white background) = default `:root`
+  - Dark mode = `.dark` class
 - **UI Components**: Shadcn/ui component library (New York style) with Radix UI primitives
 - **Charts**: Lightweight-charts library for candlestick/price visualization
+- **Theme Provider**: `client/src/lib/theme.tsx` (ThemeProvider + useTheme)
 
 ### Backend Architecture
 - **Framework**: Express.js with TypeScript
@@ -31,46 +45,40 @@ Preferred communication style: Simple, everyday language.
 - **Development**: Hot module replacement via Vite middleware
 
 ### Data Flow
-- Real-time forex prices from Finnhub WebSocket (`wss://ws.finnhub.io`)
-- Candle data generated server-side from WebSocket tick data (no REST API dependency)
-- Frontend fetches prices from server API (`/api/market/prices`, `/api/market/candles`)
-- Bets are created with strike price, settled when timer expires based on current price
-- Price formatting: JPY uses 3 decimal places, all other pairs use 5 decimal places
+- Finnhub WebSocket 실시간 가격 스트리밍 (`wss://ws.finnhub.io`)
+- 서버에서 캔들 데이터 생성 (180s, 300s 캔들만)
+- 프론트엔드: `/api/market/prices`, `/api/market/candles` 폴링
+- 베팅은 strike price로 생성, 타이머 만료 시 현재가 비교로 정산
 
-### Finnhub API Integration
-- **WebSocket**: Real-time forex price streaming via OANDA feed
-- **Candle Generation**: Server accumulates tick data into OHLC candles (no external candle API needed)
-- **Symbol mapping**: USD→OANDA:EUR_USD, JPY→OANDA:USD_JPY, EUR→OANDA:GBP_USD, AUD→OANDA:AUD_USD
-- **API Key**: Stored as FINNHUB_API_KEY secret
-- **Rate limits**: Free tier - 60 req/min for REST, unlimited WebSocket streaming
-- **Market hours**: Forex markets open Sunday 5pm EST to Friday 5pm EST (closed weekends)
-- **Weekend simulation**: When WebSocket data stops for >10s, server generates simulated price movements (1s intervals) using realistic volatility; stops automatically when real data resumes
+### Market Simulation
+- 실시간 WebSocket 데이터 없을 시 자동 시뮬레이션 (1초 간격)
+- DEFAULT_PRICES: SP500=5320.0, DOW=39500.0, DXY=104.5
+- Volatility: DXY=0.00005, SP500/DOW=0.0001 (최대 ±0.3%)
 
 ### Key Design Patterns
 - Shared schema definitions between frontend and backend (`shared/schema.ts`)
-- Demo user auto-created on first request (no authentication required)
-- Path aliases: `@/` for client source, `@shared/` for shared code
-- Forex price formatting utility: `formatForexPrice()` in `client/src/lib/utils.ts`
+- All API calls use TanStack Query on the frontend
+- Database operations through `server/storage.ts` interface
 
-## External Dependencies
+## Key Files
+- `client/src/pages/Landing.tsx` — 랜딩 페이지 (메인)
+- `client/src/pages/Home.tsx` — 트레이딩 페이지
+- `client/src/pages/Admin.tsx` — 어드민 패널
+- `client/src/lib/tradingGames.ts` — 거래 종목/게임 설정
+- `client/src/lib/theme.tsx` — 다크/라이트 모드 테마
+- `server/routes.ts` — 모든 API 엔드포인트
+- `server/storage.ts` — DB 인터페이스
+- `server/db.ts` — PostgreSQL 연결 및 초기화
+- `shared/schema.ts` — Drizzle ORM 스키마
 
-### Database
-- **PostgreSQL** via `DATABASE_URL` environment variable
-- **ORM**: Drizzle ORM with drizzle-kit for migrations
-- **Schema**: Users, Bets, Messages, Affiliates, AffiliateCommissions, Settings, Announcements, Branches tables
+## Database Schema (주요 테이블)
+- `users`: id, username, password, balance, grade(브론즈/실버/골드/VIP), role, etc.
+- `bets`: id, userId, symbol, direction, amount, duration, outcome, etc.
+- `settings`: key-value 설정 (telegram_link, kakao_link, deposit_notice, etc.)
+- `forex_candles`: symbol, duration, time, ohlc data (unique index on symbol+duration+time)
 
-### Key Features
-- **Announcements**: Admin-managed public announcements with pinned/active status, displayed on landing page
-- **Messages**: Private admin-to-user messaging system displayed on landing page for logged-in users
-- **Affiliates**: Complete affiliate/distributor system with referral codes, commission tracking, and analytics
-- **Branches**: Branch code (지점코드) system - admin creates branch codes, users must enter valid branch code during registration
-
-### Third-Party APIs
-- **Finnhub Forex WebSocket**: Live forex price data for EUR/USD, USD/JPY, GBP/USD, AUD/USD
-- **API Key**: FINNHUB_API_KEY (stored as secret)
-
-### Key NPM Packages
-- `drizzle-orm` / `drizzle-zod`: Database ORM with Zod schema validation
-- `@tanstack/react-query`: Async state management
-- `lightweight-charts`: TradingView-style chart rendering
-- `connect-pg-simple`: PostgreSQL session store (available but sessions not currently implemented)
+## API Settings Keys
+- `telegram_link` — 텔레그램 링크
+- `kakao_link` — 카카오톡 링크
+- `deposit_notice` — 입금 공지
+- `company_info` — 회사 정보

@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Menu, LogOut, Shield, Clock, ChevronDown } from "lucide-react";
+import { Menu, LogOut, Shield, ChevronDown, Sun, Moon, TrendingUp } from "lucide-react";
 import { useAuth, useLogout } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -13,6 +13,7 @@ import {
 import { TRADING_GAMES } from "@/lib/tradingGames";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useState } from "react";
+import { useTheme } from "@/lib/theme";
 
 interface NavbarProps {
   onSelectGame?: (gameId: string) => void;
@@ -22,6 +23,7 @@ interface NavbarProps {
 export function Navbar({ onSelectGame, selectedGameId }: NavbarProps) {
   const { data: user } = useAuth();
   const logout = useLogout();
+  const { theme, toggleTheme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   const selectedGame = TRADING_GAMES.find(g => g.id === selectedGameId);
@@ -30,13 +32,12 @@ export function Navbar({ onSelectGame, selectedGameId }: NavbarProps) {
     <header className="flex h-14 lg:h-16 items-center border-b border-border bg-card px-3 lg:px-6">
       <div className="flex items-center gap-2 lg:gap-6 flex-1 min-w-0">
         <Link href="/" className="flex items-center gap-2 font-bold text-lg lg:text-xl hover:opacity-90 transition-opacity shrink-0">
-          <img 
-            src="/value-option-logo.png" 
-            alt="Value-Option Logo" 
-            className="w-7 h-7 lg:w-8 lg:h-8 rounded-lg object-cover"
-          />
+          <div className="w-7 h-7 lg:w-8 lg:h-8 rounded-lg bg-primary flex items-center justify-center">
+            <TrendingUp className="w-4 h-4 text-white" />
+          </div>
           <div className="hidden sm:flex items-center tracking-tight">
-            <span className="text-primary font-bold">VALUE-OPTION</span>
+            <span className="text-primary font-bold">Learn</span>
+            <span className="font-bold text-foreground">-invest</span>
           </div>
         </Link>
         
@@ -84,7 +85,23 @@ export function Navbar({ onSelectGame, selectedGameId }: NavbarProps) {
         </nav>
       </div>
 
-      <div className="flex items-center gap-2 lg:gap-4 shrink-0">
+      <div className="flex items-center gap-2 lg:gap-3 shrink-0">
+        {/* Theme Toggle */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={toggleTheme}
+          data-testid="button-theme-toggle"
+          className="w-8 h-8 p-0"
+          title={theme === 'dark' ? '라이트 모드' : '다크 모드'}
+        >
+          {theme === 'dark' ? (
+            <Sun className="w-4 h-4" />
+          ) : (
+            <Moon className="w-4 h-4" />
+          )}
+        </Button>
+
         {user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -101,6 +118,11 @@ export function Navbar({ onSelectGame, selectedGameId }: NavbarProps) {
                 <p className="text-xs text-muted-foreground">
                   잔고: {Math.floor(parseFloat(user.balance)).toLocaleString()}원
                 </p>
+                {(user as any).grade && (
+                  <p className="text-xs text-primary font-medium mt-0.5">
+                    등급: {(user as any).grade}
+                  </p>
+                )}
               </div>
               <DropdownMenuSeparator />
               {user.role === 'admin' && (
@@ -116,27 +138,14 @@ export function Navbar({ onSelectGame, selectedGameId }: NavbarProps) {
               )}
               <DropdownMenuItem 
                 onClick={() => logout.mutate()}
-                className="text-down cursor-pointer"
+                className="text-destructive cursor-pointer"
               >
                 <LogOut className="w-4 h-4 mr-2" />
                 로그아웃
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        ) : (
-          <>
-            <Link href="/login">
-              <Button variant="ghost" size="sm" className="text-xs lg:text-sm font-medium hover:text-primary transition-colors px-2 lg:px-3">
-                로그인
-              </Button>
-            </Link>
-            <Link href="/register">
-              <Button size="sm" className="bg-primary text-primary-foreground px-2 lg:px-4 py-1 lg:py-1.5 rounded-md text-xs lg:text-sm font-semibold hover:brightness-110 transition-all">
-                회원가입
-              </Button>
-            </Link>
-          </>
-        )}
+        ) : null}
       </div>
     </header>
   );

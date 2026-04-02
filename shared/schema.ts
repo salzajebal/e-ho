@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, serial, integer, decimal, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, serial, integer, decimal, timestamp, boolean, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -78,6 +78,7 @@ export const users = pgTable("users", {
   forcedBetDirection: text("forced_bet_direction"), // 'up', 'down', or null - pre-set forced display direction for next bet
   maxExecutionEnabled: boolean("max_execution_enabled").notNull().default(false), // 맥스체결 ON/OFF per user
   pendingBalanceAdjustment: decimal("pending_balance_adjustment", { precision: 20, scale: 0 }).notNull().default("0"), // 예약 금액 (다음 배팅 정산 시 적용)
+  grade: text("grade").notNull().default("브론즈"), // 회원 등급: 브론즈, 실버, 골드, VIP
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -412,7 +413,9 @@ export const forexCandles = pgTable("forex_candles", {
   high: decimal("high", { precision: 15, scale: 6 }).notNull(),
   low: decimal("low", { precision: 15, scale: 6 }).notNull(),
   close: decimal("close", { precision: 15, scale: 6 }).notNull(),
-});
+}, (table) => ({
+  symbolDurationTimeIdx: uniqueIndex("forex_candles_symbol_duration_time_idx").on(table.symbol, table.duration, table.time),
+}));
 
 export const insertForexCandleSchema = createInsertSchema(forexCandles).omit({ id: true });
 export type InsertForexCandle = z.infer<typeof insertForexCandleSchema>;

@@ -23,7 +23,7 @@ import type { Message } from "@shared/schema";
 import { TRADING_GAMES } from "@/lib/tradingGames";
 
 export default function Home() {
-  const [selectedGameId, setSelectedGameId] = useState("USD-60");
+  const [selectedGameId, setSelectedGameId] = useState("SP500-180");
   const [, setLocation] = useLocation();
   const marketData = useMarketData();
   

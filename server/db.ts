@@ -82,11 +82,17 @@ export async function initializeDatabase(): Promise<void> {
         total_bet DECIMAL(20, 0) NOT NULL DEFAULT '0',
         total_win DECIMAL(20, 0) NOT NULL DEFAULT '0',
         role TEXT NOT NULL DEFAULT 'user',
+        grade TEXT NOT NULL DEFAULT '브론즈',
         is_active BOOLEAN NOT NULL DEFAULT true,
         last_login_at TIMESTAMP,
         created_at TIMESTAMP NOT NULL DEFAULT NOW()
       )
     `);
+
+    // Add grade column to existing tables if not exists
+    await client.query(`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS grade TEXT NOT NULL DEFAULT '브론즈'
+    `).catch(() => {});
     console.log('Users table ready');
 
     await client.query(`

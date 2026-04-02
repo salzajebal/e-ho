@@ -113,6 +113,7 @@ interface AdminUser {
   profitRate: string;
   role: string;
   affiliateId: string | null;
+  grade: string;
   isActive: boolean;
   autoBetEnabled: boolean;
   autoBetMultiplier: number;
@@ -1002,7 +1003,7 @@ export default function Admin() {
     };
   }, []);
 
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'bets' | 'settings' | 'approvals' | 'messages' | 'affiliates' | 'announcements' | 'blocked-ips' | 'maintenance' | 'forced-bet' | 'round-forced' | 'deposits' | 'withdrawals' | 'inquiries' | 'branches'>('users');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'bets' | 'settings' | 'approvals' | 'messages' | 'announcements' | 'blocked-ips' | 'maintenance' | 'forced-bet' | 'round-forced' | 'deposits' | 'withdrawals' | 'inquiries'>('users');
   const [inquiryReplyId, setInquiryReplyId] = useState<number | null>(null);
   const [inquiryReplyContent, setInquiryReplyContent] = useState("");
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
@@ -1020,6 +1021,7 @@ export default function Admin() {
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
   const [loginHistoryUser, setLoginHistoryUser] = useState<AdminUser | null>(null);
   const [telegramLink, setTelegramLink] = useState("");
+  const [kakaoLink, setKakaoLink] = useState("");
   const [companyInfo, setCompanyInfo] = useState("");
   const [depositNotice, setDepositNotice] = useState("");
   const [newTemplateTitle, setNewTemplateTitle] = useState("");
@@ -1916,6 +1918,9 @@ export default function Admin() {
     if (settingsData?.telegram_link !== undefined) {
       setTelegramLink(settingsData.telegram_link);
     }
+    if (settingsData?.kakao_link !== undefined) {
+      setKakaoLink(settingsData.kakao_link);
+    }
     if (settingsData?.company_info !== undefined) {
       setCompanyInfo(settingsData.company_info);
     }
@@ -2610,18 +2615,6 @@ export default function Admin() {
         쪽지 보내기
       </button>
       <button
-        onClick={() => { setActiveTab('affiliates'); setMobileMenuOpen(false); }}
-        className={cn(
-          "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
-          activeTab === 'affiliates'
-            ? "bg-primary/10 text-primary"
-            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-        )}
-      >
-        <Share2 className="w-4 h-4" />
-        총판 관리
-      </button>
-      <button
         onClick={() => { setActiveTab('announcements'); setMobileMenuOpen(false); }}
         className={cn(
           "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
@@ -2656,18 +2649,6 @@ export default function Admin() {
       >
         <Wrench className="w-4 h-4" />
         서버 점검
-      </button>
-      <button
-        onClick={() => { setActiveTab('branches'); setMobileMenuOpen(false); }}
-        className={cn(
-          "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
-          activeTab === 'branches'
-            ? "bg-primary/10 text-primary"
-            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-        )}
-      >
-        <Building2 className="w-4 h-4" />
-        지점코드 관리
       </button>
       <button
         onClick={() => { setActiveTab('settings'); setMobileMenuOpen(false); }}
@@ -2908,18 +2889,6 @@ export default function Admin() {
             쪽지 보내기
           </button>
           <button
-            onClick={() => setActiveTab('affiliates')}
-            className={cn(
-              "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
-              activeTab === 'affiliates'
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-            )}
-          >
-            <Share2 className="w-4 h-4" />
-            총판 관리
-          </button>
-          <button
             onClick={() => setActiveTab('announcements')}
             className={cn(
               "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
@@ -2954,18 +2923,6 @@ export default function Admin() {
           >
             <Wrench className="w-4 h-4" />
             서버 점검
-          </button>
-          <button
-            onClick={() => setActiveTab('branches')}
-            className={cn(
-              "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
-              activeTab === 'branches'
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-            )}
-          >
-            <Building2 className="w-4 h-4" />
-            지점코드 관리
           </button>
           <button
             onClick={() => setActiveTab('settings')}
@@ -4078,9 +4035,41 @@ export default function Admin() {
                       className="text-primary hover:underline flex items-center gap-2"
                     >
                       {telegramLink}
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
-                      </svg>
+                    </a>
+                  </div>
+                )}
+
+                <div className="space-y-2 pt-4 border-t border-border">
+                  <label className="text-sm font-medium text-muted-foreground">카카오톡 링크</label>
+                  <div className="flex gap-3">
+                    <Input
+                      value={kakaoLink}
+                      onChange={(e) => setKakaoLink(e.target.value)}
+                      placeholder="https://open.kakao.com/..."
+                      className="flex-1"
+                    />
+                    <Button
+                      onClick={() => updateSetting.mutate({ key: 'kakao_link', value: kakaoLink })}
+                      disabled={updateSetting.isPending}
+                    >
+                      {updateSetting.isPending ? '저장 중...' : '저장'}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    고객센터에서 카카오톡 문의 클릭 시 이동할 링크입니다.
+                  </p>
+                </div>
+
+                {kakaoLink && (
+                  <div className="pt-4 border-t border-border">
+                    <p className="text-sm text-muted-foreground mb-2">현재 카카오톡 링크:</p>
+                    <a 
+                      href={kakaoLink} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline flex items-center gap-2"
+                    >
+                      {kakaoLink}
                     </a>
                   </div>
                 )}
@@ -5420,6 +5409,23 @@ export default function Admin() {
                     onChange={(e) => setEditingUser(p => p ? { ...p, phone: e.target.value } : null)}
                   />
                 </div>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">회원 등급</label>
+                <Select
+                  value={editingUser.grade || '브론즈'}
+                  onValueChange={(v) => setEditingUser(p => p ? { ...p, grade: v } : null)}
+                >
+                  <SelectTrigger data-testid="select-user-grade">
+                    <SelectValue placeholder="등급 선택" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-border">
+                    <SelectItem value="브론즈">🥉 브론즈</SelectItem>
+                    <SelectItem value="실버">🥈 실버</SelectItem>
+                    <SelectItem value="골드">🥇 골드</SelectItem>
+                    <SelectItem value="VIP">💎 VIP</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
                 <p className="text-xs text-blue-400 font-medium mb-2">가입 시 입력 정보</p>

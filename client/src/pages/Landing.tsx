@@ -25,10 +25,9 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
 const CRYPTO_ASSETS = [
-  { symbol: "USD", name: "달러" },
-  { symbol: "EUR", name: "유로" },
-  { symbol: "JPY", name: "엔화" },
-  { symbol: "AUD", name: "호주달러" },
+  { symbol: "SP500", name: "S&P500" },
+  { symbol: "DOW", name: "다우존스" },
+  { symbol: "DXY", name: "달러" },
 ];
 
 const KOREAN_BANKS = [
@@ -47,11 +46,7 @@ const KOREAN_REGIONS = [
 ];
 
 function isWithinOperatingHours(): boolean {
-  const now = new Date();
-  const kstOffset = 9 * 60 * 60 * 1000;
-  const kstTime = new Date(now.getTime() + now.getTimezoneOffset() * 60 * 1000 + kstOffset);
-  const hour = kstTime.getHours();
-  return hour >= 10 && hour < 19;
+  return true; // 24시간 운영
 }
 
 interface LandingMarketData {
@@ -64,17 +59,15 @@ interface LandingMarketData {
 
 function useLandingMarketData() {
   const [markets, setMarkets] = useState<LandingMarketData[]>([
-    { symbol: "USD", name: "달러", price: 1.0500, changePercent: 0, priceHistory: [] },
-    { symbol: "EUR", name: "유로", price: 1.2700, changePercent: 0, priceHistory: [] },
-    { symbol: "JPY", name: "엔화", price: 150.000, changePercent: 0, priceHistory: [] },
-    { symbol: "AUD", name: "호주달러", price: 0.6500, changePercent: 0, priceHistory: [] },
+    { symbol: "SP500", name: "S&P500", price: 5320.0, changePercent: 0, priceHistory: [] },
+    { symbol: "DOW", name: "다우존스", price: 39500.0, changePercent: 0, priceHistory: [] },
+    { symbol: "DXY", name: "달러", price: 104.5, changePercent: 0, priceHistory: [] },
   ]);
   
   const historyRef = useRef<Record<string, number[]>>({
-    USD: [],
-    JPY: [],
-    EUR: [],
-    AUD: [],
+    SP500: [],
+    DOW: [],
+    DXY: [],
   });
   
   const lastApiPrices = useRef<Record<string, { price: number; changePercent: number }>>({});
@@ -246,6 +239,16 @@ export default function Landing() {
     queryFn: async () => {
       const res = await fetch("/api/settings/telegram");
       if (!res.ok) return { telegramLink: "" };
+      return res.json();
+    },
+  });
+
+  // Fetch kakao link
+  const { data: kakaoData } = useQuery({
+    queryKey: ["/api/settings/kakao"],
+    queryFn: async () => {
+      const res = await fetch("/api/settings/kakao");
+      if (!res.ok) return { kakaoLink: "" };
       return res.json();
     },
   });
@@ -443,14 +446,9 @@ export default function Landing() {
           <div className="flex items-center gap-4 md:gap-8">
             <Link href="/" data-testid="link-logo">
               <div className="flex items-center gap-2 md:gap-3">
-                <img 
-                  src="/value-option-logo.png" 
-                  alt="Value-Option Logo" 
-                  className="w-8 h-8 md:w-10 md:h-10 rounded-lg object-cover"
-                />
                 <div className="flex flex-col">
-                  <span className="text-lg md:text-xl font-bold tracking-wide text-amber-500">
-                    VALUE-OPTION
+                  <span className="text-lg md:text-xl font-bold tracking-wide text-blue-400">
+                    Learn-invest
                   </span>
                 </div>
               </div>
@@ -823,18 +821,16 @@ export default function Landing() {
               />
             </div>
             <h1 className="text-5xl md:text-7xl font-bold mb-2 tracking-wide">
-              <span className="bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 bg-clip-text text-transparent">VALUE-OPTION</span>
+              <span className="bg-gradient-to-r from-blue-400 via-blue-300 to-blue-500 bg-clip-text text-transparent">Learn-invest</span>
             </h1>
           </div>
 
           <div className="flex items-center justify-center gap-4 mb-6">
-            <span className="h-px w-12 bg-gradient-to-r from-transparent to-amber-500/50" />
+            <span className="h-px w-12 bg-gradient-to-r from-transparent to-blue-500/50" />
             <div className="flex items-center gap-2">
-              <img src="/images/dollar-icon.png" alt="" className="w-6 h-6 object-contain" />
-              <span className="text-amber-400 text-sm font-semibold tracking-widest uppercase">Global Forex Trading</span>
-              <img src="/images/dollar-icon.png" alt="" className="w-6 h-6 object-contain" />
+              <span className="text-blue-400 text-sm font-semibold tracking-widest uppercase">글로벌 투자 플랫폼</span>
             </div>
-            <span className="h-px w-12 bg-gradient-to-l from-transparent to-amber-500/50" />
+            <span className="h-px w-12 bg-gradient-to-l from-transparent to-blue-500/50" />
           </div>
           
           <h2 className="text-2xl md:text-4xl font-bold mb-6" data-testid="text-hero-title">
@@ -1189,11 +1185,11 @@ export default function Landing() {
         <section className="py-20 px-4">
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="text-3xl md:text-4xl font-bold mb-4" data-testid="text-cta-title">
-              VALUE-OPTION에 가입하고<br />지금 바로 시작해보세요
+              Learn-invest에 가입하고<br />지금 바로 시작해보세요
             </h2>
             <p className="text-gray-400 text-lg mb-10">
-              당신의 첫 옵션 거래,<br />
-              믿을 수 있는 VALUE-OPTION에서 시작하세요!
+              당신의 첫 투자,<br />
+              믿을 수 있는 Learn-invest에서 시작하세요!
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
@@ -1224,13 +1220,8 @@ export default function Landing() {
           <div className="grid md:grid-cols-4 gap-10 mb-12">
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <img 
-                  src="/value-option-logo.png" 
-                  alt="Value-Option Logo" 
-                  className="w-10 h-10 rounded-lg object-cover"
-                />
-                <h3 className="text-xl font-bold text-amber-500">
-                  VALUE-OPTION
+                <h3 className="text-xl font-bold text-blue-400">
+                  Learn-invest
                 </h3>
               </div>
               <p className="text-gray-500 text-sm">
@@ -1239,12 +1230,11 @@ export default function Landing() {
               </p>
             </div>
             <div>
-              <h4 className="font-semibold mb-4 text-gray-300">통화 거래</h4>
+              <h4 className="font-semibold mb-4 text-gray-300">지수 거래</h4>
               <ul className="space-y-2 text-gray-500 text-sm">
-                <li><Link href="/trade" className="hover:text-amber-500 transition-colors" data-testid="link-trade-usd">USD (달러)</Link></li>
-                <li><Link href="/trade" className="hover:text-amber-500 transition-colors" data-testid="link-trade-eur">EUR (유로)</Link></li>
-                <li><Link href="/trade" className="hover:text-amber-500 transition-colors" data-testid="link-trade-jpy">JPY (엔화)</Link></li>
-                <li><Link href="/trade" className="hover:text-amber-500 transition-colors" data-testid="link-trade-aud">AUD (호주달러)</Link></li>
+                <li><Link href="/trade" className="hover:text-blue-400 transition-colors" data-testid="link-trade-sp500">SP500 (S&amp;P500)</Link></li>
+                <li><Link href="/trade" className="hover:text-blue-400 transition-colors" data-testid="link-trade-dow">DOW (다우존스)</Link></li>
+                <li><Link href="/trade" className="hover:text-blue-400 transition-colors" data-testid="link-trade-dxy">DXY (달러)</Link></li>
               </ul>
             </div>
             <div>
@@ -1273,7 +1263,7 @@ export default function Landing() {
           </div>
           
           <div className="border-t border-white/5 pt-8 text-center text-gray-600 text-sm space-y-2">
-            <p>© 2022 VALUE-OPTION Trade International, Inc. All rights reserved.</p>
+            <p>© 2024 Learn-invest. All rights reserved.</p>
           </div>
         </div>
       </footer>
@@ -2017,11 +2007,37 @@ export default function Landing() {
                         <Phone className="w-6 h-6 text-sky-500" />
                       </div>
                       <div className="flex-1">
-                        <h3 className="text-white font-medium">고객센터</h3>
+                        <h3 className="text-white font-medium">텔레그램 고객센터</h3>
                         <p className="text-sky-400 text-sm">텔레그램으로 바로 문의</p>
                         <p className="text-gray-400 text-xs">실시간 상담 가능</p>
                       </div>
                       <div className="text-sky-500">
+                        <ChevronRight className="w-5 h-5" />
+                      </div>
+                    </div>
+                  </a>
+                )}
+
+                {/* 고객센터 (카카오톡) */}
+                {kakaoData?.kakaoLink && (
+                  <a 
+                    href={kakaoData.kakaoLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full block bg-gradient-to-r from-yellow-500/10 to-amber-500/10 border border-yellow-500/30 rounded-xl p-4 hover:border-yellow-500/50 transition-colors cursor-pointer text-left"
+                    onClick={() => setShowCustomerServiceModal(false)}
+                    data-testid="link-kakao"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-yellow-500/20 rounded-full flex items-center justify-center">
+                        <MessageCircle className="w-6 h-6 text-yellow-500" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-white font-medium">카카오톡 고객센터</h3>
+                        <p className="text-yellow-400 text-sm">카카오톡으로 바로 문의</p>
+                        <p className="text-gray-400 text-xs">실시간 상담 가능</p>
+                      </div>
+                      <div className="text-yellow-500">
                         <ChevronRight className="w-5 h-5" />
                       </div>
                     </div>

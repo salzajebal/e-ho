@@ -39,40 +39,74 @@
 }
 
 @layer base {
+  /* Light mode (default) */
   :root {
-    /* Value-Option FX Trading Theme */
-    --background: 220 20% 7%;     /* Deep dark blue-black */
-    --foreground: 210 20% 98%;    /* Light text */
+    --background: 0 0% 98%;
+    --foreground: 222 20% 8%;
 
-    --card: 220 18% 10%;          /* Card background */
+    --card: 0 0% 100%;
+    --card-foreground: 222 20% 8%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 20% 8%;
+
+    --primary: 222 80% 35%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 14% 92%;
+    --secondary-foreground: 222 20% 8%;
+
+    --muted: 220 14% 94%;
+    --muted-foreground: 220 10% 45%;
+
+    --accent: 220 14% 92%;
+    --accent-foreground: 222 20% 8%;
+
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 14% 88%;
+    --input: 220 14% 88%;
+    --ring: 222 80% 35%;
+
+    --up: 0 72% 50%;
+    --down: 217 91% 50%;
+
+    --radius: 0.375rem;
+  }
+
+  /* Dark mode */
+  .dark {
+    --background: 220 20% 7%;
+    --foreground: 210 20% 98%;
+
+    --card: 220 18% 10%;
     --card-foreground: 210 20% 98%;
 
     --popover: 220 18% 10%;
     --popover-foreground: 210 20% 98%;
 
-    --primary: 43 96% 56%;        /* FX Gold #D4A843 */
+    --primary: 222 80% 55%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 14% 16%;     /* Dark Grey Button */
+    --secondary: 220 14% 16%;
     --secondary-foreground: 210 20% 98%;
 
     --muted: 220 14% 20%;
-    --muted-foreground: 220 10% 55%; /* Muted text */
+    --muted-foreground: 220 10% 55%;
 
     --accent: 220 14% 16%;
     --accent-foreground: 210 20% 98%;
 
-    --destructive: 0 72% 50%;     /* Red for destructive actions */
+    --destructive: 0 72% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 14% 16%;        /* Subtle borders */
-    --input: 220 14% 16%;
-    --ring: 43 96% 56%;
+    --border: 220 14% 18%;
+    --input: 220 14% 18%;
+    --ring: 222 80% 55%;
 
-    --up: 0 72% 55%;              /* Red for up (Korean market) #E53935 */
-    --down: 217 91% 55%;          /* Blue for down (Korean market) #3B82F6 */
-
-    --radius: 0.375rem;
+    --up: 0 72% 55%;
+    --down: 217 91% 55%;
   }
 
   * {
@@ -84,7 +118,6 @@
     font-family: 'IBM Plex Sans', sans-serif;
   }
 
-  /* Scrollbar styling for that technical look */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
