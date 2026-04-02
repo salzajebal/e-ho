@@ -799,17 +799,130 @@ export default function Landing() {
 
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
-        <div 
-          className="absolute inset-0 bg-cover bg-center opacity-40"
-          style={{
-            backgroundImage: "url('/images/hero-forex-bg.png')",
-          }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0f]/40 via-[#0a0a0f]/70 to-[#0a0a0f]" />
+        {/* Finance Chart Background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#030c1e] via-[#050f28] to-[#020810]" />
+        <svg
+          className="absolute inset-0 w-full h-full"
+          viewBox="0 0 1440 900"
+          preserveAspectRatio="xMidYMid slice"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <defs>
+            <linearGradient id="sp500Grad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#1e40af" stopOpacity="0" />
+              <stop offset="15%" stopColor="#3b82f6" stopOpacity="0.9" />
+              <stop offset="85%" stopColor="#60a5fa" stopOpacity="0.9" />
+              <stop offset="100%" stopColor="#93c5fd" stopOpacity="0" />
+            </linearGradient>
+            <linearGradient id="dowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#1d4ed8" stopOpacity="0" />
+              <stop offset="20%" stopColor="#2563eb" stopOpacity="0.5" />
+              <stop offset="80%" stopColor="#3b82f6" stopOpacity="0.5" />
+              <stop offset="100%" stopColor="#60a5fa" stopOpacity="0" />
+            </linearGradient>
+            <linearGradient id="dxyGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#0ea5e9" stopOpacity="0" />
+              <stop offset="20%" stopColor="#38bdf8" stopOpacity="0.35" />
+              <stop offset="80%" stopColor="#7dd3fc" stopOpacity="0.35" />
+              <stop offset="100%" stopColor="#bae6fd" stopOpacity="0" />
+            </linearGradient>
+            <linearGradient id="sp500Fill" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.12" />
+              <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
+            </linearGradient>
+            <linearGradient id="dowFill" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#2563eb" stopOpacity="0.06" />
+              <stop offset="100%" stopColor="#2563eb" stopOpacity="0" />
+            </linearGradient>
+            <filter id="heroGlow">
+              <feGaussianBlur stdDeviation="3" result="blur" />
+              <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+            </filter>
+            <filter id="softGlow">
+              <feGaussianBlur stdDeviation="1.5" result="blur" />
+              <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+            </filter>
+          </defs>
 
-        <div className="absolute top-20 left-[8%] opacity-[0.05] text-[180px] md:text-[260px] font-black text-blue-500 select-none pointer-events-none leading-none" aria-hidden="true">%</div>
-        <div className="absolute bottom-32 right-[5%] opacity-[0.04] text-[140px] md:text-[200px] font-black text-blue-400 select-none pointer-events-none leading-none rotate-12" aria-hidden="true">↗</div>
-        <div className="absolute top-[40%] right-[12%] opacity-[0.03] text-[100px] md:text-[140px] font-black text-blue-300 select-none pointer-events-none leading-none -rotate-6" aria-hidden="true">$</div>
+          {/* Chart grid - horizontal */}
+          {[100,200,300,400,500,600,700,800].map(y => (
+            <line key={`h${y}`} x1="0" y1={y} x2="1440" y2={y} stroke="#1e3a8a" strokeOpacity="0.25" strokeWidth="0.6" strokeDasharray="4 8" />
+          ))}
+          {/* Chart grid - vertical */}
+          {[0,120,240,360,480,600,720,840,960,1080,1200,1320,1440].map(x => (
+            <line key={`v${x}`} x1={x} y1="0" x2={x} y2="900" stroke="#1e3a8a" strokeOpacity="0.15" strokeWidth="0.6" strokeDasharray="4 8" />
+          ))}
+
+          {/* SP500 chart line - main uptrend */}
+          <path
+            d="M-20,720 L60,700 L100,710 L140,690 L200,670 L240,680 L300,650 L360,630 L400,645 L450,620 L510,600 L560,615 L610,590 L670,565 L720,580 L770,555 L820,530 L870,545 L920,515 L980,490 L1030,505 L1090,475 L1150,450 L1200,465 L1260,435 L1310,410 L1370,390 L1440,365"
+            stroke="url(#sp500Grad)"
+            strokeWidth="2.2"
+            fill="none"
+            filter="url(#heroGlow)"
+          />
+          {/* SP500 fill area */}
+          <path
+            d="M-20,720 L60,700 L100,710 L140,690 L200,670 L240,680 L300,650 L360,630 L400,645 L450,620 L510,600 L560,615 L610,590 L670,565 L720,580 L770,555 L820,530 L870,545 L920,515 L980,490 L1030,505 L1090,475 L1150,450 L1200,465 L1260,435 L1310,410 L1370,390 L1440,365 L1440,900 L-20,900 Z"
+            fill="url(#sp500Fill)"
+          />
+
+          {/* DOW Jones line */}
+          <path
+            d="M-20,780 L80,755 L130,765 L190,740 L250,720 L310,735 L370,705 L430,685 L490,700 L550,670 L610,648 L670,665 L730,635 L790,612 L850,628 L910,600 L970,575 L1030,590 L1090,560 L1150,535 L1210,552 L1270,520 L1340,495 L1440,470"
+            stroke="url(#dowGrad)"
+            strokeWidth="1.6"
+            fill="none"
+          />
+          {/* DOW fill */}
+          <path
+            d="M-20,780 L80,755 L130,765 L190,740 L250,720 L310,735 L370,705 L430,685 L490,700 L550,670 L610,648 L670,665 L730,635 L790,612 L850,628 L910,600 L970,575 L1030,590 L1090,560 L1150,535 L1210,552 L1270,520 L1340,495 L1440,470 L1440,900 L-20,900 Z"
+            fill="url(#dowFill)"
+          />
+
+          {/* DXY line - more volatile/flat */}
+          <path
+            d="M-20,830 L100,815 L160,825 L230,808 L290,818 L360,800 L420,788 L480,798 L550,780 L620,765 L680,778 L740,758 L800,745 L870,755 L940,738 L1010,722 L1080,735 L1150,718 L1220,702 L1300,715 L1380,698 L1440,685"
+            stroke="url(#dxyGrad)"
+            strokeWidth="1.2"
+            fill="none"
+          />
+
+          {/* Glowing data points on SP500 */}
+          {[[200,670],[360,630],[510,600],[670,565],[820,530],[980,490],[1150,450],[1310,410]].map(([x,y], i) => (
+            <g key={i}>
+              <circle cx={x} cy={y} r="5" fill="#3b82f6" opacity="0.15" />
+              <circle cx={x} cy={y} r="2.5" fill="#60a5fa" opacity="0.7" filter="url(#softGlow)" />
+            </g>
+          ))}
+
+          {/* Volume bars at the bottom */}
+          {[
+            [60,850,860,0.3],[180,840,870,0.5],[300,830,875,0.4],[420,845,865,0.6],
+            [540,835,870,0.35],[660,825,872,0.55],[780,838,860,0.4],[900,828,868,0.65],
+            [1020,820,872,0.45],[1140,812,868,0.7],[1260,805,870,0.5],[1380,798,865,0.6]
+          ].map(([x,y1,y2,op], i) => (
+            <rect key={i} x={x - 15} y={y1} width="30" height={Number(y2)-Number(y1)} rx="1" fill="#2563eb" opacity={Number(op) * 0.3} />
+          ))}
+
+          {/* Price label tags */}
+          <g opacity="0.55" filter="url(#softGlow)">
+            <rect x="1350" y="352" width="76" height="20" rx="4" fill="#1e40af" />
+            <text x="1388" y="366" textAnchor="middle" fill="#93c5fd" fontSize="10" fontWeight="600" fontFamily="monospace">SP500 ▲</text>
+          </g>
+          <g opacity="0.4">
+            <rect x="1350" y="458" width="76" height="20" rx="4" fill="#1e3a8a" />
+            <text x="1388" y="472" textAnchor="middle" fill="#7dd3fc" fontSize="10" fontWeight="600" fontFamily="monospace">DOW ▲</text>
+          </g>
+          <g opacity="0.3">
+            <rect x="1350" y="673" width="60" height="20" rx="4" fill="#0c4a6e" />
+            <text x="1380" y="687" textAnchor="middle" fill="#bae6fd" fontSize="10" fontWeight="600" fontFamily="monospace">DXY</text>
+          </g>
+        </svg>
+
+        {/* Gradient overlays for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#030c1e]/30 via-[#030c1e]/55 to-[#030c1e]" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#030c1e]/40 via-transparent to-[#030c1e]/40" />
 
         <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
           <div className="mb-8 flex flex-col items-center">
