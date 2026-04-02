@@ -204,12 +204,16 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
     seriesRef.current = series;
 
     // ResizeObserver: 차트 크기 반응형 유지
+    // 데이터 로드 완료 후에는 fitContent()도 같이 호출 → 초기 0×0 크기 문제 해결
     const resize = () => {
       if (!containerRef.current || !chartRef.current) return;
-      chartRef.current.applyOptions({
-        width: containerRef.current.clientWidth,
-        height: containerRef.current.clientHeight,
-      });
+      const w = containerRef.current.clientWidth;
+      const h = containerRef.current.clientHeight;
+      if (w === 0 || h === 0) return;
+      chartRef.current.applyOptions({ width: w, height: h });
+      if (dataLoadedRef.current) {
+        chartRef.current.timeScale().fitContent();
+      }
     };
     const observer = new ResizeObserver(resize);
     observer.observe(containerRef.current);
@@ -363,14 +367,20 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
       if (abortCtrl.signal.aborted || candles.length === 0) return;
       if (!seriesRef.current || !chartRef.current) return;
 
-      // 데이터 세팅 → fitContent
+      // 데이터 세팅
       seriesRef.current.setData(candles);
-      chartRef.current.timeScale().fitContent();
 
       const lastCandle = candles[candles.length - 1];
       lastBarRef.current = { ...lastCandle };
       currentStartRef.current = lastCandle.time as number;
       dataLoadedRef.current = true;
+
+      // 다음 프레임에 fitContent → 컨테이너 크기가 확정된 이후 실행 보장
+      requestAnimationFrame(() => {
+        if (chartRef.current) {
+          chartRef.current.timeScale().fitContent();
+        }
+      });
 
       setIsLoading(false);
     };

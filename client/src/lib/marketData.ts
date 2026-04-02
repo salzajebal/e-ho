@@ -13,10 +13,9 @@ export interface MarketData {
 }
 
 export const INITIAL_MARKET_DATA: MarketData[] = [
-  { symbol: 'USD', name: '달러', price: 1.0500, change: 0, changePercent: 0, high: 1.0600, low: 1.0400, volume: 0, category: '통화' },
-  { symbol: 'EUR', name: '유로', price: 1.2700, change: 0, changePercent: 0, high: 1.2800, low: 1.2600, volume: 0, category: '통화' },
-  { symbol: 'JPY', name: '엔화', price: 150.000, change: 0, changePercent: 0, high: 151.000, low: 149.000, volume: 0, category: '통화' },
-  { symbol: 'AUD', name: '호주달러', price: 0.6500, change: 0, changePercent: 0, high: 0.6600, low: 0.6400, volume: 0, category: '통화' },
+  { symbol: 'SP500', name: 'S&P500', price: 0, change: 0, changePercent: 0, high: 0, low: 0, volume: 0, category: '통화' },
+  { symbol: 'DOW', name: '다우존스', price: 0, change: 0, changePercent: 0, high: 0, low: 0, volume: 0, category: '통화' },
+  { symbol: 'DXY', name: '달러(DXY)', price: 0, change: 0, changePercent: 0, high: 0, low: 0, volume: 0, category: '통화' },
 ];
 
 export function useMarketData() {
