@@ -3,12 +3,31 @@ import { createChart, ColorType, CandlestickData, Time, CandlestickSeries } from
 import type { IChartApi, ISeriesApi } from "lightweight-charts";
 import { MarketData } from "@/lib/marketData";
 import { FOREX_DISPLAY, type ForexSymbol } from "@/lib/tradingGames";
+import { useTheme } from "@/lib/theme";
 
 interface PriceChartProps {
   symbol: string;
   data: MarketData;
   duration?: number;
 }
+
+const DARK_COLORS = {
+  background: '#131722',
+  text: '#787b86',
+  grid: '#1e222d',
+  crosshair: '#505050',
+  crosshairLabel: '#363a45',
+  border: '#1e222d',
+};
+
+const LIGHT_COLORS = {
+  background: '#ffffff',
+  text: '#333333',
+  grid: '#e8e8e8',
+  crosshair: '#9a9a9a',
+  crosshairLabel: '#d0d0d0',
+  border: '#e0e0e0',
+};
 
 const KST_OFFSET = 9 * 60 * 60;
 
@@ -60,8 +79,16 @@ function generateFallbackCandles(basePrice: number, count: number, intervalSecon
 }
 
 function getDecimalPlaces(symbol: string): number {
-  if (symbol === 'JPY') return 3;
-  return 5;
+  const base = symbol.split('-')[0];
+  if (base === 'DXY') return 4;
+  if (base === 'SP500' || base === 'DOW') return 2;
+  return 2;
+}
+
+function getMinMove(symbol: string): number {
+  const base = symbol.split('-')[0];
+  if (base === 'DXY') return 0.0001;
+  return 0.01;
 }
 
 function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
@@ -76,10 +103,35 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
   const [isInitialized, setIsInitialized] = useState(false);
   const [chartKey, setChartKey] = useState(0);
 
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+  const C = isDark ? DARK_COLORS : LIGHT_COLORS;
+
   const durationMinutes = duration / 60;
   const isUp = data.change >= 0;
   const displayInfo = FOREX_DISPLAY[symbol as ForexSymbol];
   const decimals = getDecimalPlaces(symbol);
+
+  // 테마 변경 시 차트 색상 즉시 업데이트
+  useEffect(() => {
+    if (!chartRef.current) return;
+    chartRef.current.applyOptions({
+      layout: {
+        background: { type: ColorType.Solid, color: C.background },
+        textColor: C.text,
+      },
+      grid: {
+        vertLines: { color: C.grid },
+        horzLines: { color: C.grid },
+      },
+      crosshair: {
+        vertLine: { color: C.crosshair, labelBackgroundColor: C.crosshairLabel },
+        horzLine: { color: C.crosshair, labelBackgroundColor: C.crosshairLabel },
+      },
+      rightPriceScale: { borderColor: C.border },
+      timeScale: { borderColor: C.border },
+    });
+  }, [theme]);
 
   useEffect(() => {
     if (data.price > 0) {
@@ -125,25 +177,25 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
 
     const chart = createChart(containerRef.current, {
       layout: {
-        background: { type: ColorType.Solid, color: '#131722' },
-        textColor: '#787b86',
+        background: { type: ColorType.Solid, color: C.background },
+        textColor: C.text,
       },
       grid: {
-        vertLines: { color: '#1e222d' },
-        horzLines: { color: '#1e222d' },
+        vertLines: { color: C.grid },
+        horzLines: { color: C.grid },
       },
       crosshair: {
         mode: 1,
-        vertLine: { color: '#505050', width: 1, style: 0, labelBackgroundColor: '#363a45' },
-        horzLine: { color: '#505050', width: 1, style: 0, labelBackgroundColor: '#363a45' },
+        vertLine: { color: C.crosshair, width: 1, style: 0, labelBackgroundColor: C.crosshairLabel },
+        horzLine: { color: C.crosshair, width: 1, style: 0, labelBackgroundColor: C.crosshairLabel },
       },
       rightPriceScale: {
-        borderColor: '#1e222d',
+        borderColor: C.border,
         scaleMargins: { top: 0.2, bottom: 0.2 },
         autoScale: true,
       },
       timeScale: {
-        borderColor: '#1e222d',
+        borderColor: C.border,
         timeVisible: true,
         secondsVisible: false,
         rightOffset: 5,
@@ -157,24 +209,23 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
           return `${hours}:${minutes}`;
         },
         priceFormatter: (price: number) => {
-          const dec = symbol === 'JPY' ? 3 : 5;
-          return price.toFixed(dec);
+          return price.toFixed(decimals);
         },
       },
       handleScroll: { mouseWheel: true, pressedMouseMove: true },
       handleScale: { axisPressedMouseMove: true, mouseWheel: true, pinch: true },
     });
 
-    const precision = symbol === 'JPY' ? 3 : 5;
-    const minMove = symbol === 'JPY' ? 0.001 : 0.00001;
+    const precision = decimals;
+    const minMove = getMinMove(symbol);
 
     const series = (chart as any).addSeries(CandlestickSeries, {
-      upColor: '#26a69a',
-      downColor: '#ef5350',
-      borderUpColor: '#26a69a',
-      borderDownColor: '#ef5350',
-      wickUpColor: '#26a69a',
-      wickDownColor: '#ef5350',
+      upColor: '#ef4444',
+      downColor: '#3b82f6',
+      borderUpColor: '#ef4444',
+      borderDownColor: '#3b82f6',
+      wickUpColor: '#ef4444',
+      wickDownColor: '#3b82f6',
       priceFormat: {
         type: 'price',
         precision: precision,
@@ -330,26 +381,35 @@ function PriceChartComponent({ symbol, data, duration = 60 }: PriceChartProps) {
     return () => clearInterval(tick);
   }, [duration, isReady, isInitialized]);
 
+  const headerBg = isDark ? 'bg-[#131722] border-[#1e222d]' : 'bg-white border-gray-200';
+  const headerText = isDark ? 'text-white' : 'text-gray-900';
+  const subText = isDark ? 'text-gray-400' : 'text-gray-500';
+  const subBorder = isDark ? 'border-[#1e222d]' : 'border-gray-200';
+
   return (
-    <div className="flex flex-col h-full w-full" style={{ backgroundColor: '#131722' }} data-testid="chart-container">
-      <div className="flex items-center justify-between px-3 py-2 border-b border-[#1e222d] shrink-0">
+    <div
+      className={`flex flex-col h-full w-full`}
+      style={{ backgroundColor: C.background }}
+      data-testid="chart-container"
+    >
+      <div className={`flex items-center justify-between px-3 py-2 border-b ${headerBg} shrink-0`}>
         <div className="flex items-center gap-3">
-          <span className="text-white font-bold text-lg">{displayInfo?.name || symbol}</span>
+          <span className={`font-bold text-lg ${headerText}`}>{displayInfo?.name || symbol}</span>
         </div>
         <div className="flex items-center gap-3">
-          <span className={`text-xl font-bold ${isUp ? 'text-[#26a69a]' : 'text-[#ef5350]'}`}>
+          <span className={`text-xl font-bold ${isUp ? 'text-red-500' : 'text-blue-500'}`}>
             {data.price.toFixed(decimals)}
           </span>
-          <span className={`text-sm ${isUp ? 'text-[#26a69a]' : 'text-[#ef5350]'}`}>
+          <span className={`text-sm ${isUp ? 'text-red-500' : 'text-blue-500'}`}>
             {isUp ? '+' : ''}{data.change.toFixed(decimals)} ({isUp ? '+' : ''}{data.changePercent.toFixed(2)}%)
           </span>
-          <span className="bg-[#ef5350] text-white text-xs px-2 py-0.5 rounded font-semibold">
+          <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded font-semibold">
             {durationMinutes}분봉
           </span>
         </div>
       </div>
 
-      <div className="flex items-center gap-2 px-3 py-1.5 border-b border-[#1e222d] text-xs text-gray-400 shrink-0">
+      <div className={`flex items-center gap-2 px-3 py-1.5 border-b ${subBorder} text-xs ${subText} shrink-0`}>
         <span className="text-blue-400">{durationMinutes}분</span>
         <span>|</span>
         <span>서버 동기화 (KST)</span>
