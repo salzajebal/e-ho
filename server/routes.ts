@@ -2836,16 +2836,20 @@ export async function registerRoutes(
     }
   });
 
-  // ==================== FINNHUB FOREX REAL-TIME PRICES ====================
-  const FINNHUB_API_KEY = process.env.FINNHUB_API_KEY || '';
-
+  // ==================== REAL-TIME MARKET PRICES (Yahoo Finance) ====================
+  // Yahoo Finance symbols for reverse lookup (kept as FOREX_TO_FINNHUB for compatibility)
   const FOREX_TO_FINNHUB: Record<string, string> = {
-    SP500: 'SP500',
-    DOW: 'DOW',
-    DXY: 'DXY',
+    SP500: '^GSPC',
+    DOW: '^DJI',
+    DXY: 'DX-Y.NYB',
   };
 
-  const FINNHUB_TO_FOREX: Record<string, string> = {};
+  // App symbol → Yahoo Finance symbol
+  const YAHOO_SYMBOLS: Record<string, string> = {
+    SP500: '^GSPC',
+    DOW: '^DJI',
+    DXY: 'DX-Y.NYB',
+  };
 
   const forexPrices: { [key: string]: { price: number; change: number; changePercent: number; high: number; low: number; volume: number; updatedAt: number; openPrice: number } } = {
     SP500: { price: 0, change: 0, changePercent: 0, high: 0, low: 0, volume: 0, updatedAt: 0, openPrice: 0 },
@@ -2856,6 +2860,9 @@ export async function registerRoutes(
   function getForexPrice(forexSymbol: string) {
     return forexPrices[forexSymbol] || null;
   }
+
+  let isConnected = false;
+  let lastYahooFetch = 0;
 
   // Server-side candle accumulation from WebSocket ticks (with DB persistence)
   interface CandleData {
@@ -2951,121 +2958,165 @@ export async function registerRoutes(
 
   loadCandlesFromDB();
 
-  let finnhubWs: WebSocket | null = null;
-  let reconnectTimer: NodeJS.Timeout | null = null;
-  let isConnected = false;
-  let messageCount = 0;
-  let reconnectAttempts = 0;
-  let lastTradeAt = 0;
+  // Yahoo Finance crumb 인증
+  let yahooCookie = '';
+  let yahooCrumb = '';
+  let lastCrumbFetch = 0;
 
-  function startFinnhubWebSocket() {
-    if (finnhubWs) {
-      try { finnhubWs.close(); } catch (e) {}
-    }
-    if (reconnectTimer) {
-      clearTimeout(reconnectTimer);
-      reconnectTimer = null;
-    }
-
-    if (!FINNHUB_API_KEY) {
-      console.error('❌ [Finnhub] API 키가 설정되지 않았습니다. FINNHUB_API_KEY 환경변수를 확인하세요.');
-      return;
-    }
-
-    const wsUrl = `wss://ws.finnhub.io?token=${FINNHUB_API_KEY}`;
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('🔗 [Finnhub] Forex WebSocket 연결 시작...');
-    
+  async function refreshYahooCrumb(): Promise<boolean> {
     try {
-      finnhubWs = new WebSocket(wsUrl);
+      const fcRes = await fetch('https://fc.yahoo.com', {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        },
+        redirect: 'follow',
+        signal: AbortSignal.timeout(6000),
+      });
+      const setCookie = fcRes.headers.get('set-cookie') || '';
+      if (setCookie) yahooCookie = setCookie.split(';')[0];
 
-      finnhubWs.on('open', () => {
+      const crumbRes = await fetch('https://query1.finance.yahoo.com/v1/test/getcrumb', {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Cookie': yahooCookie,
+        },
+        signal: AbortSignal.timeout(6000),
+      });
+      const crumb = await crumbRes.text();
+      if (crumb && crumb.length < 20 && !crumb.includes('<')) {
+        yahooCrumb = crumb.trim();
+        lastCrumbFetch = Date.now();
+        console.log('🔑 [Yahoo] crumb 인증 성공');
+        return true;
+      }
+    } catch (e: any) {
+      console.error('⚠️ [Yahoo] crumb 갱신 실패:', e.message);
+    }
+    return false;
+  }
+
+  // Yahoo Finance 실시간 시세 조회
+  async function fetchYahooPrices(): Promise<void> {
+    try {
+      // crumb 없거나 1시간 지나면 갱신
+      if (!yahooCrumb || Date.now() - lastCrumbFetch > 3600000) {
+        const ok = await refreshYahooCrumb();
+        if (!ok) {
+          isConnected = false;
+          return;
+        }
+      }
+
+      const symbolList = Object.values(YAHOO_SYMBOLS).map(s => encodeURIComponent(s)).join(',');
+      const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbolList}&fields=regularMarketPrice,regularMarketChange,regularMarketChangePercent,regularMarketDayHigh,regularMarketDayLow,regularMarketPreviousClose&crumb=${encodeURIComponent(yahooCrumb)}`;
+
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'application/json',
+          'Accept-Language': 'en-US,en;q=0.9',
+          'Cookie': yahooCookie,
+          'Referer': 'https://finance.yahoo.com/',
+        },
+        signal: AbortSignal.timeout(8000),
+      });
+
+      if (response.status === 401 || response.status === 403) {
+        // crumb 만료 → 강제 갱신 후 재시도
+        yahooCrumb = '';
+        return;
+      }
+
+      if (!response.ok) {
+        console.error(`⚠️ [Yahoo] HTTP 오류: ${response.status}`);
+        isConnected = false;
+        return;
+      }
+
+      const data = await response.json();
+      const quotes = data?.quoteResponse?.result;
+
+      if (!Array.isArray(quotes) || quotes.length === 0) {
+        isConnected = false;
+        return;
+      }
+
+      const reverseMap: Record<string, string> = {};
+      for (const [appSym, yahooSym] of Object.entries(YAHOO_SYMBOLS)) {
+        reverseMap[yahooSym] = appSym;
+      }
+
+      let updated = 0;
+      for (const quote of quotes) {
+        const appSymbol = reverseMap[quote.symbol];
+        if (!appSymbol) continue;
+
+        const price = quote.regularMarketPrice;
+        if (!price || price <= 0) continue;
+
+        const change = quote.regularMarketChange ?? 0;
+        const changePercent = quote.regularMarketChangePercent ?? 0;
+        const high = quote.regularMarketDayHigh ?? price;
+        const low = quote.regularMarketDayLow ?? price;
+        const openPrice = quote.regularMarketPreviousClose ?? price;
+
+        forexPrices[appSymbol] = {
+          price,
+          change,
+          changePercent,
+          high,
+          low,
+          volume: 0,
+          updatedAt: Date.now(),
+          openPrice,
+        };
+
+        updateCandles(appSymbol, price, Date.now());
+        updated++;
+      }
+
+      if (updated > 0) {
+        lastYahooFetch = Date.now();
         isConnected = true;
-        messageCount = 0;
-        reconnectAttempts = 0;
-        console.log('✅ [Finnhub] WebSocket 연결 성공!');
-        
-        const symbols = Object.values(FOREX_TO_FINNHUB);
-        for (const symbol of symbols) {
-          finnhubWs!.send(JSON.stringify({ type: 'subscribe', symbol }));
-        }
-        console.log(`📨 [Finnhub] 구독 요청 전송: ${symbols.join(', ')}`);
-      });
-
-      finnhubWs.on('message', (rawData: Buffer) => {
-        try {
-          const msg = JSON.parse(rawData.toString());
-          
-          if (msg.type === 'ping') {
-            return;
-          }
-          
-          if (msg.type === 'trade' && Array.isArray(msg.data)) {
-            for (const trade of msg.data) {
-              const finnhubSymbol = trade.s;
-              const price = trade.p;
-              const timestamp = trade.t;
-              
-              const forexSymbol = FINNHUB_TO_FOREX[finnhubSymbol];
-              if (forexSymbol && price > 0) {
-                lastTradeAt = Date.now();
-                messageCount++;
-                const prev = forexPrices[forexSymbol];
-                const openPrice = prev.openPrice > 0 ? prev.openPrice : price;
-                const change = price - openPrice;
-                const changePercent = openPrice > 0 ? (change / openPrice) * 100 : 0;
-                
-                forexPrices[forexSymbol] = {
-                  price: price,
-                  change: change,
-                  changePercent: changePercent,
-                  high: Math.max(prev.high || price, price),
-                  low: prev.low > 0 ? Math.min(prev.low, price) : price,
-                  volume: 0,
-                  updatedAt: Date.now(),
-                  openPrice: openPrice,
-                };
-                
-                updateCandles(forexSymbol, price, timestamp || Date.now());
-                
-                if (messageCount <= 10) {
-                  console.log(`💹 [Finnhub] ${forexSymbol} (${finnhubSymbol}): ${price} (${changePercent > 0 ? '+' : ''}${changePercent.toFixed(4)}%)`);
-                } else if (messageCount === 11) {
-                  console.log('📊 [Finnhub] 실시간 데이터 수신 중... (로그 생략)');
-                }
-              }
-            }
-          }
-        } catch (e) {
-          // 파싱 에러 무시
-        }
-      });
-
-      finnhubWs.on('error', (err) => {
-        isConnected = false;
-        console.error('❌ [Finnhub] WebSocket 에러:', err.message);
-      });
-
-      finnhubWs.on('close', () => {
-        isConnected = false;
-        reconnectAttempts++;
-        const delay = Math.min(5000 * Math.pow(2, reconnectAttempts - 1), 60000);
-        console.log(`⚠️ [Finnhub] WebSocket 연결 종료, ${delay / 1000}초 후 재연결... (시도 #${reconnectAttempts})`);
-        reconnectTimer = setTimeout(startFinnhubWebSocket, delay);
-      });
-    } catch (err) {
-      console.error('❌ [Finnhub] WebSocket 생성 실패:', err);
-      reconnectAttempts++;
-      const delay = Math.min(10000 * Math.pow(2, reconnectAttempts - 1), 60000);
-      reconnectTimer = setTimeout(startFinnhubWebSocket, delay);
+        console.log(`💹 [Yahoo] 실시간 시세: SP500=${forexPrices.SP500.price.toFixed(2)}, DOW=${forexPrices.DOW.price.toFixed(2)}, DXY=${forexPrices.DXY.price.toFixed(4)}`);
+      }
+    } catch (err: any) {
+      isConnected = false;
+      console.error('⚠️ [Yahoo] 시세 조회 실패:', err.message || err);
     }
   }
 
-  console.log('🚀 [Finnhub] 서버 시작 - WebSocket 실시간 연결');
-  startFinnhubWebSocket();
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  // 1초마다 미세 변동 적용 (시세 폴링 사이 자연스러운 움직임)
+  function applyMicroFluctuation() {
+    const now = Date.now();
+    for (const symbol of ['SP500', 'DOW', 'DXY']) {
+      const prev = forexPrices[symbol];
+      if (prev.price <= 0) continue;
+      const vol = symbol === 'DXY' ? 0.000025 : 0.00004;
+      const micro = prev.price * vol * (Math.random() - 0.5) * 2;
+      const newPrice = prev.price + micro;
+      forexPrices[symbol] = {
+        ...prev,
+        price: newPrice,
+        high: Math.max(prev.high, newPrice),
+        low: prev.low > 0 ? Math.min(prev.low, newPrice) : newPrice,
+        updatedAt: now,
+      };
+      updateCandles(symbol, newPrice, now);
+    }
+  }
 
-  // ==================== SIMULATED PRICE MOVEMENT (WEEKENDS / DISCONNECTED) ====================
+  // 서버 시작 즉시 조회 후 15초마다 폴링 (rate limit 대응)
+  console.log('🚀 [Yahoo Finance] 실시간 시세 폴링 시작...');
+  fetchYahooPrices();
+  const yahooPollTimer = setInterval(fetchYahooPrices, 15000);
+
+  // 1초마다 미세 변동
+  setInterval(() => {
+    if (forexPrices.SP500.price > 0) applyMicroFluctuation();
+  }, 1000);
+
+  // ==================== FALLBACK SIMULATION (Yahoo Finance 장애 시) ====================
   const DEFAULT_PRICES: Record<string, number> = {
     SP500: 5320.0,
     DOW: 39500.0,
@@ -3075,67 +3126,44 @@ export async function registerRoutes(
   let simulationTimer: NodeJS.Timeout | null = null;
   let simulationActive = false;
   const simulationAnchorPrices: Record<string, number> = {};
-  const MAX_DRIFT_PERCENT = 0.3;
-  const MEAN_REVERSION_STRENGTH = 0.05;
 
   function startSimulation() {
     if (simulationActive) return;
     simulationActive = true;
-
     for (const symbol of ['SP500', 'DOW', 'DXY']) {
       const currentPrice = forexPrices[symbol].price;
-      if (!simulationAnchorPrices[symbol] || currentPrice > 0) {
-        simulationAnchorPrices[symbol] = currentPrice > 0 ? currentPrice : DEFAULT_PRICES[symbol];
-      }
+      simulationAnchorPrices[symbol] = currentPrice > 0 ? currentPrice : DEFAULT_PRICES[symbol];
     }
-    console.log('🎲 [Simulation] 시뮬레이션 가격 변동 시작 (시장 미연결) - 기준가격 고정, 최대 ±0.3% 범위');
+    console.log('🎲 [Simulation] Yahoo Finance 장애 - 시뮬레이션 폴백 시작');
 
     simulationTimer = setInterval(() => {
-      const timeSinceLastTrade = Date.now() - lastTradeAt;
-      if (lastTradeAt > 0 && timeSinceLastTrade < 5000) {
+      if (lastYahooFetch > 0 && Date.now() - lastYahooFetch < 15000) {
         stopSimulation();
         return;
       }
-
       const now = Date.now();
       for (const symbol of ['SP500', 'DOW', 'DXY']) {
         const prev = forexPrices[symbol];
         const currentPrice = prev.price > 0 ? prev.price : DEFAULT_PRICES[symbol];
-        const anchorPrice = simulationAnchorPrices[symbol] || currentPrice;
-
-        const volatility = symbol === 'DXY' ? 0.00005 : 0.0001;
-        let randomChange = currentPrice * volatility * (Math.random() - 0.5) * 2;
-
-        const drift = (currentPrice - anchorPrice) / anchorPrice;
-        const maxDrift = MAX_DRIFT_PERCENT / 100;
-        const reversionForce = -drift * MEAN_REVERSION_STRENGTH * currentPrice;
-        randomChange += reversionForce;
-
-        let newPrice = currentPrice + randomChange;
-
-        const upperBound = anchorPrice * (1 + maxDrift);
-        const lowerBound = anchorPrice * (1 - maxDrift);
-        if (newPrice > upperBound) {
-          newPrice = upperBound - Math.random() * anchorPrice * volatility;
-        } else if (newPrice < lowerBound) {
-          newPrice = lowerBound + Math.random() * anchorPrice * volatility;
-        }
-
-        const openPrice = prev.openPrice > 0 ? prev.openPrice : currentPrice;
-        const totalChange = newPrice - openPrice;
-        const changePercent = openPrice > 0 ? (totalChange / openPrice) * 100 : 0;
-
+        const anchor = simulationAnchorPrices[symbol] || currentPrice;
+        const vol = symbol === 'DXY' ? 0.00005 : 0.0001;
+        let delta = currentPrice * vol * (Math.random() - 0.5) * 2;
+        const drift = (currentPrice - anchor) / anchor;
+        delta -= drift * 0.05 * currentPrice;
+        let newPrice = currentPrice + delta;
+        const maxD = 0.003;
+        newPrice = Math.max(anchor * (1 - maxD), Math.min(anchor * (1 + maxD), newPrice));
+        const openPrice = prev.openPrice > 0 ? prev.openPrice : anchor;
         forexPrices[symbol] = {
           price: newPrice,
-          change: totalChange,
-          changePercent: changePercent,
+          change: newPrice - openPrice,
+          changePercent: ((newPrice - openPrice) / openPrice) * 100,
           high: Math.max(prev.high > 0 ? prev.high : newPrice, newPrice),
           low: prev.low > 0 ? Math.min(prev.low, newPrice) : newPrice,
           volume: 0,
           updatedAt: now,
-          openPrice: openPrice,
+          openPrice,
         };
-
         updateCandles(symbol, newPrice, now);
       }
     }, 1000);
@@ -3144,24 +3172,18 @@ export async function registerRoutes(
   function stopSimulation() {
     if (!simulationActive) return;
     simulationActive = false;
-    if (simulationTimer) {
-      clearInterval(simulationTimer);
-      simulationTimer = null;
-    }
-    console.log('✅ [Simulation] 실시간 데이터 수신 재개 - 시뮬레이션 중단');
+    if (simulationTimer) { clearInterval(simulationTimer); simulationTimer = null; }
+    console.log('✅ [Simulation] Yahoo Finance 복구 - 시뮬레이션 중단');
   }
 
   const simulationMonitor = setInterval(() => {
     if (simulationActive) return;
-    
-    const now = Date.now();
-    const timeSinceLastTrade = lastTradeAt > 0 ? now - lastTradeAt : Infinity;
+    const timeSinceLastFetch = lastYahooFetch > 0 ? Date.now() - lastYahooFetch : Infinity;
     const anyHasPrice = Object.values(forexPrices).some(p => p.price > 0);
-
-    if (timeSinceLastTrade > 10000 || !anyHasPrice) {
+    if (timeSinceLastFetch > 15000 || !anyHasPrice) {
       startSimulation();
     }
-  }, 3000);
+  }, 5000);
 
   // ==================== AUTO-SETTLEMENT FOR EXPIRED BETS ====================
   async function settleExpiredBets() {
@@ -3323,8 +3345,8 @@ export async function registerRoutes(
     const now = Date.now();
     res.json({
       connected: isConnected,
-      messageCount,
-      source: 'finnhub',
+      lastFetch: lastYahooFetch,
+      source: 'yahoo_finance',
       prices: Object.entries(forexPrices).map(([symbol, data]) => ({
         symbol,
         ticker: FOREX_TO_FINNHUB[symbol],
