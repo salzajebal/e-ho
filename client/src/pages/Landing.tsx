@@ -186,7 +186,6 @@ export default function Landing() {
   const [accountHolder, setAccountHolder] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
   const [region, setRegion] = useState("");
-  const [branchCode, setBranchCode] = useState("");
   const [registerErrorMessage, setRegisterErrorMessage] = useState("");
   const [usernameChecked, setUsernameChecked] = useState(false);
   const [usernameCheckMessage, setUsernameCheckMessage] = useState("");
@@ -388,10 +387,6 @@ export default function Landing() {
       setRegisterErrorMessage("올바른 휴대폰 번호를 입력해주세요");
       return;
     }
-    if (!branchCode) {
-      setRegisterErrorMessage("지점코드를 입력해주세요");
-      return;
-    }
     if (!bankName) {
       setRegisterErrorMessage("은행을 선택해주세요");
       return;
@@ -410,7 +405,6 @@ export default function Landing() {
       password: regPassword, 
       name, 
       phone,
-      branchCode,
       bankName, 
       accountHolder, 
       accountNumber,
@@ -1627,18 +1621,6 @@ export default function Landing() {
                       placeholder="01012345678"
                       className="h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-amber-500/50 text-sm"
                       data-testid="input-reg-phone"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs text-gray-300 font-medium">지점코드</label>
-                    <Input
-                      type="text"
-                      value={branchCode}
-                      onChange={(e) => setBranchCode(e.target.value)}
-                      placeholder="지점코드 입력"
-                      className="h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-amber-500/50 text-sm"
-                      data-testid="input-reg-branch-code"
                       required
                     />
                   </div>
