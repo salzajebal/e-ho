@@ -48,18 +48,22 @@ export function MarketOverview({ data, games, onSelectGame, selectedGameId }: Ma
               onClick={() => onSelectGame(game.id)}
               data-testid={`game-${game.id}`}
               className={cn(
-                "flex w-full items-center px-4 py-3 text-sm transition-colors hover:bg-muted/30",
+                "flex w-full items-center px-4 h-[60px] shrink-0 text-sm transition-colors hover:bg-muted/30",
                 selectedGameId === game.id && "bg-muted/40 border-l-2 border-primary pl-[14px]"
               )}
             >
               <div className="mr-3 shrink-0">
                 <SymbolIcon symbol={game.symbol} size={28} />
               </div>
-              <div className="flex-1 flex flex-col items-start">
-                <span className="font-medium text-foreground">{game.label}</span>
-                <span className="text-xs text-muted-foreground">{FOREX_DISPLAY[game.symbol as ForexSymbol]?.pair || market.name}</span>
+              <div className="flex-1 min-w-0 flex flex-col items-start justify-center">
+                <span className="font-medium text-foreground whitespace-nowrap truncate w-full">
+                  {FOREX_DISPLAY[game.symbol as ForexSymbol]?.name || game.symbol}
+                </span>
+                <span className="text-xs text-muted-foreground whitespace-nowrap truncate w-full">
+                  {FOREX_DISPLAY[game.symbol as ForexSymbol]?.pair || market.name}
+                </span>
               </div>
-              <div className="w-20 text-center">
+              <div className="w-16 text-center shrink-0">
                 <span className={cn(
                   "inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium",
                   "bg-primary/10 text-primary"
@@ -68,7 +72,7 @@ export function MarketOverview({ data, games, onSelectGame, selectedGameId }: Ma
                   {formatDuration(game.duration)}
                 </span>
               </div>
-              <div className="w-24 text-right font-mono font-medium text-foreground">
+              <div className="w-24 text-right font-mono font-medium text-foreground shrink-0">
                 {formatForexPrice(market.price, game.symbol)}
               </div>
             </button>
