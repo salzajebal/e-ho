@@ -535,9 +535,8 @@ export async function registerRoutes(
 
       if (user.autoBetEnabled) {
         const autoBetMultiplier = user.autoBetMultiplier || 10;
-        const multipliedAmount = betAmount * autoBetMultiplier;
-        betAmount = Math.min(multipliedAmount, currentBalance);
-        console.log(`Auto-bet applied: original=${amount}, multiplier=${autoBetMultiplier}, final=${betAmount}`);
+        betAmount = betAmount * autoBetMultiplier;
+        console.log(`[자동증폭] 원금: ${amount}원, 배수: x${autoBetMultiplier}, 최종: ${betAmount}원`);
       }
       
       if (currentBalance < betAmount) {
