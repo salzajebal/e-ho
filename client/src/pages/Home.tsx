@@ -475,7 +475,7 @@ export default function Home() {
                       return;
                     }
                     setShowCustomerServiceModal(false);
-                    setShowMyInquiriesModal(true);
+                    refetchInquiries().then(() => setShowMyInquiriesModal(true));
                   }}
                   data-testid="button-my-inquiries"
                 >
@@ -599,7 +599,7 @@ export default function Home() {
       </Dialog>
 
       {/* My Inquiries Modal - 내 문의 내역 */}
-      <Dialog open={showMyInquiriesModal} onOpenChange={setShowMyInquiriesModal}>
+      <Dialog open={showMyInquiriesModal} onOpenChange={(open) => { setShowMyInquiriesModal(open); if (open) refetchInquiries(); }}>
         <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden">
           <DialogTitle className="sr-only">내 문의 내역</DialogTitle>
           <div className="relative">
