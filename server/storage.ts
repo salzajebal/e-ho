@@ -803,17 +803,20 @@ export class DatabaseStorage implements IStorage {
       let newBalance: string;
 
       if (enabled) {
-        const newBetAmount = currentBalance + currentBetAmount;
-        if (newBetAmount <= 0) throw new Error("잔고가 부족합니다");
+        const newBetAmount = currentBetAmount * 10;
+        const additionalNeeded = newBetAmount - currentBetAmount;
+        if (additionalNeeded > currentBalance) throw new Error("잔고가 부족합니다 (10배 체결에 필요한 잔액이 없습니다)");
+
+        const remainingBalance = Math.floor(currentBalance - additionalNeeded);
 
         await client.query(
           'UPDATE bets SET amount = $1, original_amount = $2, max_execution_applied = true WHERE id = $3',
           [newBetAmount.toString(), currentBetAmount.toString(), betId]
         );
-        await client.query('UPDATE users SET balance = $1 WHERE id = $2', ['0', bet.user_id]);
+        await client.query('UPDATE users SET balance = $1 WHERE id = $2', [remainingBalance.toString(), bet.user_id]);
 
         newAmount = newBetAmount.toString();
-        newBalance = "0";
+        newBalance = remainingBalance.toString();
       } else {
         const originalAmount = parseFloat(bet.original_amount || "0");
         const refundAmount = currentBetAmount - originalAmount;

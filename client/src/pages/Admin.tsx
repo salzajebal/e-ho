@@ -1111,10 +1111,10 @@ export default function Admin() {
     onSuccess: (_data, variables) => {
       refetchBets();
       refetchUsers();
-      toast.success(variables.enabled ? "맥스체결 ON" : "맥스체결 OFF");
+      toast.success(variables.enabled ? "10x 체결 ON" : "10x 체결 해제");
     },
     onError: (error: Error) => {
-      toast.error(error.message || "맥스체결 변경 실패");
+      toast.error(error.message || "10x 체결 변경 실패");
     },
   });
 
@@ -3522,7 +3522,7 @@ export default function Admin() {
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">종목</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">회차</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">회원</th>
-                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap text-center">맥스</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap text-center">10x</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">방향</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">거래금액</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">배당</th>
@@ -3560,7 +3560,7 @@ export default function Admin() {
                               )}
                               data-testid={`toggle-max-bet-${bet.id}`}
                             >
-                              {bet.maxExecutionApplied ? "ON" : "OFF"}
+                              {bet.maxExecutionApplied ? "ON" : "10x"}
                             </button>
                           ) : (
                             <span className="text-muted-foreground text-xs">-</span>
