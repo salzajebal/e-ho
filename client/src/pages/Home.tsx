@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { Navbar } from "@/components/layout/Navbar";
 import { Ticker } from "@/components/dashboard/Ticker";
@@ -15,7 +15,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/componen
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Mail, X, Check, MessageSquare, Headphones, FileText, ChevronRight } from "lucide-react";
+import { Mail, X, Check, MessageSquare, Headphones, FileText, ChevronRight, ArrowDownCircle, ArrowUpCircle, Clock, CheckCircle, XCircle, History } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -42,12 +42,17 @@ export default function Home() {
   const [showInquiryFormModal, setShowInquiryFormModal] = useState(false);
   const [showMyInquiriesModal, setShowMyInquiriesModal] = useState(false);
   const [showInquiryNotification, setShowInquiryNotification] = useState(false);
+  const [showTransactionsModal, setShowTransactionsModal] = useState(false);
+  const [transactionFilter, setTransactionFilter] = useState<'all' | 'deposit' | 'withdrawal'>('all');
   
   // Real-time WebSocket for message notifications
   useUserWebSocket(!!user, {
     onNewMessage: () => setInboxOpen(true),
     onInquiryReplied: () => {
       setShowInquiryNotification(true);
+    },
+    onTransactionProcessed: () => {
+      refetchTransactions();
     },
   });
   
@@ -72,6 +77,18 @@ export default function Home() {
     queryKey: ['/api/inquiries'],
     queryFn: async () => {
       const res = await fetch('/api/inquiries');
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!user,
+    staleTime: 0,
+  });
+
+  // Fetch user transactions (입출금 내역)
+  const { data: myTransactions = [], refetch: refetchTransactions } = useQuery<any[]>({
+    queryKey: ['/api/transactions'],
+    queryFn: async () => {
+      const res = await fetch('/api/transactions');
       if (!res.ok) return [];
       return res.json();
     },
@@ -493,6 +510,34 @@ export default function Home() {
                   </div>
                 </button>
 
+                {/* 입출금 내역 */}
+                <button
+                  className="w-full block bg-white/5 border border-white/10 rounded-xl p-4 hover:border-white/20 transition-colors cursor-pointer text-left"
+                  onClick={() => {
+                    if (!user) {
+                      toast.error("로그인이 필요합니다");
+                      setShowCustomerServiceModal(false);
+                      setLocation("/login");
+                      return;
+                    }
+                    setShowCustomerServiceModal(false);
+                    refetchTransactions().then(() => setShowTransactionsModal(true));
+                  }}
+                  data-testid="button-my-transactions"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-white/10 rounded-lg flex items-center justify-center">
+                      <History className="w-6 h-6 text-amber-400" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-white font-medium">입출금 내역</h3>
+                      <p className="text-amber-400 text-sm">입금·출금 신청 및 처리 현황</p>
+                      <p className="text-gray-400 text-xs">{myTransactions.length}건의 거래 내역</p>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-gray-400" />
+                  </div>
+                </button>
+
                 {/* 고객센터 (텔레그램) */}
                 {telegramData?.telegramLink && (
                   <a 
@@ -661,6 +706,118 @@ export default function Home() {
               >
                 새 문의 작성하기
               </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Transactions Modal - 입출금 내역 */}
+      <Dialog open={showTransactionsModal} onOpenChange={(open) => { setShowTransactionsModal(open); if (open) refetchTransactions(); }}>
+        <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+          <DialogTitle className="sr-only">입출금 내역</DialogTitle>
+          <div className="relative">
+            <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-500/20 rounded-2xl blur-xl" />
+            <div className="relative backdrop-blur-xl bg-[#1a1a24]/95 border border-white/10 rounded-2xl p-6 shadow-2xl max-h-[85vh] flex flex-col">
+              <button
+                onClick={() => setShowTransactionsModal(false)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              {/* Header */}
+              <div className="text-center mb-5">
+                <div className="w-16 h-16 mx-auto mb-3 bg-gradient-to-br from-amber-500 to-yellow-500 rounded-full flex items-center justify-center">
+                  <History className="w-8 h-8 text-white" />
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-1">입출금 내역</h2>
+                <p className="text-gray-400 text-sm">총 {myTransactions.length}건의 거래 내역</p>
+              </div>
+
+              {/* Filter Tabs */}
+              <div className="flex gap-2 mb-4">
+                {(['all', 'deposit', 'withdrawal'] as const).map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setTransactionFilter(f)}
+                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
+                      transactionFilter === f
+                        ? 'bg-amber-500 text-white'
+                        : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                    }`}
+                    data-testid={`tab-transaction-${f}`}
+                  >
+                    {f === 'all' ? '전체' : f === 'deposit' ? '입금' : '출금'}
+                  </button>
+                ))}
+              </div>
+
+              {/* List */}
+              <div className="overflow-y-auto flex-1 space-y-3 pr-1">
+                {(() => {
+                  const filtered = myTransactions.filter((t: any) =>
+                    transactionFilter === 'all' || t.type === transactionFilter
+                  );
+                  if (filtered.length === 0) {
+                    return (
+                      <div className="text-center py-12 text-gray-500">
+                        <History className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                        <p className="text-sm">거래 내역이 없습니다</p>
+                      </div>
+                    );
+                  }
+                  return filtered.map((tx: any) => {
+                    const isDeposit = tx.type === 'deposit';
+                    const statusMap: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
+                      pending: { label: '대기중', color: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30', icon: <Clock className="w-3 h-3" /> },
+                      approved: { label: '승인', color: 'text-green-400 bg-green-500/10 border-green-500/30', icon: <CheckCircle className="w-3 h-3" /> },
+                      rejected: { label: '거절', color: 'text-red-400 bg-red-500/10 border-red-500/30', icon: <XCircle className="w-3 h-3" /> },
+                      hold: { label: '보류', color: 'text-orange-400 bg-orange-500/10 border-orange-500/30', icon: <Clock className="w-3 h-3" /> },
+                    };
+                    const status = statusMap[tx.status] || statusMap.pending;
+                    return (
+                      <div key={tx.id} className="bg-white/5 border border-white/10 rounded-xl p-4" data-testid={`tx-item-${tx.id}`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            {isDeposit
+                              ? <ArrowDownCircle className="w-5 h-5 text-blue-400" />
+                              : <ArrowUpCircle className="w-5 h-5 text-red-400" />
+                            }
+                            <span className={`font-semibold text-base ${isDeposit ? 'text-blue-400' : 'text-red-400'}`}>
+                              {isDeposit ? '입금' : '출금'}
+                            </span>
+                          </div>
+                          <span className={`flex items-center gap-1 text-xs px-2 py-1 rounded border ${status.color}`}>
+                            {status.icon}{status.label}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-white font-bold text-lg">
+                            {Number(tx.amount).toLocaleString('ko-KR')}원
+                          </span>
+                          <span className="text-gray-500 text-xs">
+                            {new Date(tx.createdAt).toLocaleString('ko-KR', {
+                              month: '2-digit', day: '2-digit',
+                              hour: '2-digit', minute: '2-digit'
+                            })}
+                          </span>
+                        </div>
+                        {tx.bankName && (
+                          <p className="text-gray-400 text-xs mt-1">
+                            {tx.bankName} · {tx.accountHolder} · {tx.accountNumber}
+                          </p>
+                        )}
+                        {tx.adminNote && (
+                          <div className="mt-2 pt-2 border-t border-white/10">
+                            <p className="text-amber-400 text-xs font-medium mb-0.5">관리자 메모</p>
+                            <p className="text-gray-300 text-xs">{tx.adminNote}</p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
             </div>
           </div>
         </DialogContent>

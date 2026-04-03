@@ -58,14 +58,14 @@ export function useUserWebSocket(isAuthenticated: boolean, options?: WebSocketOp
           }
           
           if (data.event === 'inquiry_replied') {
-            queryClient.invalidateQueries({ queryKey: ["/api/inquiries/my"] });
+            queryClient.invalidateQueries({ queryKey: ["/api/inquiries"] });
             
             // Trigger callback to show floating notification in Home component
             optionsRef.current?.onInquiryReplied?.();
           }
           
           if (data.event === 'transaction_processed') {
-            queryClient.invalidateQueries({ queryKey: ["/api/inquiries/my"] });
+            queryClient.invalidateQueries({ queryKey: ["/api/transactions"] });
             queryClient.invalidateQueries({ queryKey: ["/api/user/balance"] });
             
             const status = data.data?.status;
