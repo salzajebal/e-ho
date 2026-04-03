@@ -69,13 +69,14 @@ export default function Home() {
 
   // Fetch user inquiries
   const { data: myInquiries = [], refetch: refetchInquiries } = useQuery<any[]>({
-    queryKey: ['/api/inquiries/my'],
+    queryKey: ['/api/inquiries'],
     queryFn: async () => {
-      const res = await fetch('/api/inquiries/my');
+      const res = await fetch('/api/inquiries');
       if (!res.ok) return [];
       return res.json();
     },
     enabled: !!user,
+    staleTime: 0,
   });
 
   // 현재 선택 종목 점검 상태 폴링 (30초 간격)
