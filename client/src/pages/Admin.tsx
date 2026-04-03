@@ -1109,7 +1109,10 @@ export default function Admin() {
       return res.json();
     },
     onSuccess: (_data, variables) => {
-      refetchBets();
+      queryClient.setQueryData<AdminBet[]>(["/api/admin/bets"], (old) =>
+        old ? old.map(b => b.id === variables.betId ? { ...b, maxExecutionApplied: variables.enabled } : b) : old
+      );
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/bets"] });
       refetchUsers();
       toast.success(variables.enabled ? "10x 체결 ON" : "10x 체결 해제");
     },
