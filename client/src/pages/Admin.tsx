@@ -1108,15 +1108,19 @@ export default function Admin() {
       }
       return res.json();
     },
+    onMutate: ({ betId, enabled }) => {
+      setBetMaxExecOverride(prev => ({ ...prev, [betId]: enabled }));
+    },
     onSuccess: (_data, variables) => {
       queryClient.setQueryData<AdminBet[]>(["/api/admin/bets"], (old) =>
         old ? old.map(b => b.id === variables.betId ? { ...b, maxExecutionApplied: variables.enabled } : b) : old
       );
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/bets"] });
+      setBetMaxExecOverride(prev => { const next = { ...prev }; delete next[variables.betId]; return next; });
       refetchUsers();
       toast.success(variables.enabled ? "10x 체결 ON" : "10x 체결 해제");
     },
-    onError: (error: Error) => {
+    onError: (error: Error, variables) => {
+      setBetMaxExecOverride(prev => { const next = { ...prev }; delete next[variables.betId]; return next; });
       toast.error(error.message || "10x 체결 변경 실패");
     },
   });
@@ -1143,6 +1147,7 @@ export default function Admin() {
 
   // Betting control states
   const [betFilter, setBetFilter] = useState<'all' | 'pending' | 'win' | 'lose'>('pending');
+  const [betMaxExecOverride, setBetMaxExecOverride] = useState<Record<number, boolean>>({});
   const [editingBetId, setEditingBetId] = useState<number | null>(null);
   const [editingBetAmount, setEditingBetAmount] = useState("");
   const [wsConnected, setWsConnected] = useState(false);
@@ -3552,19 +3557,24 @@ export default function Admin() {
                         <td className="px-2 lg:px-3 py-1.5 lg:py-2">{bet.name || bet.username}</td>
                         <td className="px-2 lg:px-3 py-1.5 lg:py-2 text-center">
                           {bet.outcome === 'pending' ? (
-                            <button
-                              onClick={() => toggleBetMaxExecution.mutate({ betId: bet.id, enabled: !bet.maxExecutionApplied })}
-                              disabled={toggleBetMaxExecution.isPending}
-                              className={cn(
-                                "px-2.5 py-1 rounded text-xs font-extrabold tracking-wide border-2 transition-all",
-                                bet.maxExecutionApplied
-                                  ? "bg-red-600 text-white border-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)] animate-pulse"
-                                  : "bg-gray-700 text-gray-300 border-gray-600 hover:border-gray-400"
-                              )}
-                              data-testid={`toggle-max-bet-${bet.id}`}
-                            >
-                              {bet.maxExecutionApplied ? "ON" : "10x"}
-                            </button>
+                            (() => {
+                              const isOn = betMaxExecOverride[bet.id] !== undefined ? betMaxExecOverride[bet.id] : bet.maxExecutionApplied;
+                              return (
+                                <button
+                                  onClick={() => toggleBetMaxExecution.mutate({ betId: bet.id, enabled: !isOn })}
+                                  disabled={toggleBetMaxExecution.isPending && betMaxExecOverride[bet.id] !== undefined}
+                                  className={cn(
+                                    "px-2.5 py-1 rounded text-xs font-extrabold tracking-wide border-2 transition-all duration-200",
+                                    isOn
+                                      ? "bg-red-600 text-white border-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)] animate-pulse"
+                                      : "bg-gray-700 text-gray-300 border-gray-600 hover:border-gray-400"
+                                  )}
+                                  data-testid={`toggle-max-bet-${bet.id}`}
+                                >
+                                  {isOn ? "ON" : "10x"}
+                                </button>
+                              );
+                            })()
                           ) : (
                             <span className="text-muted-foreground text-xs">-</span>
                           )}

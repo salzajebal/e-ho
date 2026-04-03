@@ -1072,9 +1072,9 @@ export async function registerRoutes(
       broadcastToAdmins('balance_updated', { userId: result.userId, balance: result.newBalance });
       
       res.json({ success: true, newAmount: result.newAmount, maxExecutionApplied: enabled });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Max execution error:", error);
-      res.status(500).json({ error: "맥스체결 변경 실패" });
+      res.status(500).json({ error: error.message || "맥스체결 변경 실패" });
     }
   });
 
