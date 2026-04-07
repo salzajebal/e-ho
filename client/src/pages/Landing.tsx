@@ -1598,31 +1598,34 @@ export default function Landing() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-xs text-gray-300 font-medium">비밀번호</label>
-                    <Input
-                      type="password"
-                      value={regPassword}
-                      onChange={(e) => setRegPassword(e.target.value)}
-                      placeholder="4자 이상"
-                      className="h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-amber-500/50 text-sm"
-                      data-testid="input-reg-password"
-                      required
-                    />
+                <div className="space-y-1">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs text-gray-300 font-medium">비밀번호</label>
+                      <Input
+                        type="password"
+                        value={regPassword}
+                        onChange={(e) => setRegPassword(e.target.value)}
+                        placeholder="비밀번호 입력"
+                        className="h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-amber-500/50 text-sm"
+                        data-testid="input-reg-password"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs text-gray-300 font-medium">비밀번호 확인</label>
+                      <Input
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="비밀번호 재입력"
+                        className="h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-amber-500/50 text-sm"
+                        data-testid="input-reg-confirm-password"
+                        required
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-xs text-gray-300 font-medium">비밀번호 확인</label>
-                    <Input
-                      type="password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="비밀번호 재입력"
-                      className="h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-amber-500/50 text-sm"
-                      data-testid="input-reg-confirm-password"
-                      required
-                    />
-                  </div>
+                  <p className="text-xs text-gray-500">대소문자, 숫자, 특수문자 필수 기입 8자리 이상</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
