@@ -4,7 +4,7 @@ import { cn, formatForexPrice } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { TrendingUp, TrendingDown, Clock, Hash, Timer, History, AlertCircle } from "lucide-react";
+import { TrendingUp, TrendingDown, Clock, Hash, Timer, History, AlertCircle, Wallet } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { TRADING_GAMES } from "@/lib/tradingGames";
@@ -628,6 +628,22 @@ export function BettingForm({ currentPrice, game, balance, onBet, isBetting = fa
               </span>
             </div>
           </div>
+        </div>
+
+        <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-muted/30 border border-border">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Wallet className="w-3.5 h-3.5" />
+            <span>보유 잔고</span>
+          </div>
+          <span
+            data-testid="text-available-balance"
+            className={cn(
+              "text-sm font-bold font-mono",
+              availableBalance < 10000 ? "text-destructive" : "text-primary"
+            )}
+          >
+            ₩{Math.floor(availableBalance).toLocaleString()}
+          </span>
         </div>
 
         <div className="space-y-2">
