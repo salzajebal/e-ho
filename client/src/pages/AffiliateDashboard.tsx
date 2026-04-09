@@ -656,7 +656,7 @@ export default function AffiliateDashboard() {
                       <tr>
                         <th className="px-4 py-3 font-medium">아이디</th>
                         <th className="px-4 py-3 font-medium">이름</th>
-                        <th className="px-4 py-3 font-medium text-right">보유잔고</th>
+                        <th className="px-4 py-3 font-medium text-right">보유금액</th>
                         <th className="px-4 py-3 font-medium text-center">거래수</th>
                         <th className="px-4 py-3 font-medium text-right">총거래액</th>
                         <th className="px-4 py-3 font-medium">가입일</th>
@@ -722,7 +722,7 @@ export default function AffiliateDashboard() {
                         <th className="px-4 py-3 font-medium">접속</th>
                         <th className="px-4 py-3 font-medium">아이디</th>
                         <th className="px-4 py-3 font-medium">이름</th>
-                        <th className="px-4 py-3 font-medium text-right">보유잔고</th>
+                        <th className="px-4 py-3 font-medium text-right">보유금액</th>
                         <th className="px-4 py-3 font-medium text-center">거래수</th>
                         <th className="px-4 py-3 font-medium text-right">총거래액</th>
                         <th className="px-4 py-3 font-medium text-right">총수익</th>

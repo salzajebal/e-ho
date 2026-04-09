@@ -29,7 +29,7 @@ export function OrderForm({ currentPrice, symbol, balance, onOrder }: OrderFormP
     }
 
     if (numAmount > availableBalance) {
-      toast.error("잔고가 부족합니다.");
+      toast.error("보유금액이 부족합니다.");
       return;
     }
     

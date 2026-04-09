@@ -509,7 +509,7 @@ export function BettingForm({ currentPrice, game, balance, onBet, isBetting = fa
     }
 
     if (numAmount > availableBalance) {
-      toast.error("잔고가 부족합니다.");
+      toast.error("보유금액이 부족합니다.");
       return false;
     }
     
@@ -542,7 +542,7 @@ export function BettingForm({ currentPrice, game, balance, onBet, isBetting = fa
       return;
     }
     if (availableBalance < 10000) {
-      toast.error("잔고가 부족합니다. 최소 주문금액은 10,000원입니다.");
+      toast.error("보유금액이 부족합니다. 최소 주문금액은 10,000원입니다.");
       return;
     }
     const maxAmount = Math.floor(availableBalance);

@@ -3101,7 +3101,7 @@ export default function Admin() {
                       <th className="px-2 lg:px-4 py-2 lg:py-3 font-medium">회원명</th>
                       <th className="px-2 lg:px-4 py-2 lg:py-3 font-medium">IP</th>
                       <th className="px-2 lg:px-4 py-2 lg:py-3 font-medium">접속시간</th>
-                      <th className="px-2 lg:px-4 py-2 lg:py-3 font-medium text-right">잔고</th>
+                      <th className="px-2 lg:px-4 py-2 lg:py-3 font-medium text-right">보유금액</th>
                       <th className="px-2 lg:px-4 py-2 lg:py-3 font-medium text-center">관리</th>
                     </tr>
                   </thead>
@@ -3760,7 +3760,7 @@ export default function Admin() {
                     <tr>
                       <th className="px-3 py-2 text-left font-medium">아이디</th>
                       <th className="px-3 py-2 text-left font-medium">이름</th>
-                      <th className="px-3 py-2 text-left font-medium">잔고</th>
+                      <th className="px-3 py-2 text-left font-medium">보유금액</th>
                       <th className="px-3 py-2 text-left font-medium">상태</th>
                       <th className="px-3 py-2 text-center font-medium">쪽지</th>
                     </tr>
@@ -5023,7 +5023,7 @@ export default function Admin() {
                 강제 거래 안내
               </h3>
               <p className="text-sm text-muted-foreground">
-                선택한 회원의 잔고에서 거래 금액이 차감됩니다. 회원이 충분한 잔고를 보유하고 있는지 확인하세요.
+                선택한 회원의 보유금액에서 거래 금액이 차감됩니다. 회원이 충분한 보유금액을 보유하고 있는지 확인하세요.
                 강제 거래는 일반 거래와 동일하게 정산됩니다.
               </p>
             </div>
@@ -5456,7 +5456,7 @@ export default function Admin() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-xs text-muted-foreground">시작 잔고</label>
+                <label className="text-xs text-muted-foreground">시작 보유금액</label>
                 <Input
                   type="number"
                   value={newUser.balance}
@@ -5696,13 +5696,13 @@ export default function Admin() {
                                 body: JSON.stringify({ amount: amount }),
                               });
                               const data = await res.json();
-                              if (!res.ok) throw new Error(data.error || "잔고 조정 실패");
+                              if (!res.ok) throw new Error(data.error || "보유금액 조정 실패");
                               setEditingUser(p => p ? { ...p, balance: String(data.newBalance) } : null);
                               setBalanceAdjustAmount("");
                               toast.success(`${amount.toLocaleString()}원이 추가되었습니다 (현재: ${data.newBalance.toLocaleString()}원)`);
                               refetchUsers();
                             } catch (error: any) {
-                              toast.error(error.message || "잔고 추가에 실패했습니다");
+                              toast.error(error.message || "보유금액 추가에 실패했습니다");
                             }
                           }
                         }}
@@ -5722,13 +5722,13 @@ export default function Admin() {
                                 body: JSON.stringify({ amount: -amount }),
                               });
                               const data = await res.json();
-                              if (!res.ok) throw new Error(data.error || "잔고 조정 실패");
+                              if (!res.ok) throw new Error(data.error || "보유금액 조정 실패");
                               setEditingUser(p => p ? { ...p, balance: String(data.newBalance) } : null);
                               setBalanceAdjustAmount("");
                               toast.success(`${amount.toLocaleString()}원이 차감되었습니다 (현재: ${data.newBalance.toLocaleString()}원)`);
                               refetchUsers();
                             } catch (error: any) {
-                              toast.error(error.message || "잔고 차감에 실패했습니다");
+                              toast.error(error.message || "보유금액 차감에 실패했습니다");
                             }
                           }
                         }}

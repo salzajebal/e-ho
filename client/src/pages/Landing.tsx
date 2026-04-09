@@ -561,7 +561,7 @@ export default function Landing() {
                 {/* Balance Display */}
                 <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5">
                   <Wallet className="w-4 h-4 text-amber-500" />
-                  <span className="text-gray-400 text-xs">잔고</span>
+                  <span className="text-gray-400 text-xs">보유금액</span>
                   <span className="text-white font-bold text-sm" data-testid="text-header-balance">
                     {balanceData?.balance ? Math.floor(parseFloat(balanceData.balance)).toLocaleString() : '0'}원
                   </span>
@@ -666,7 +666,7 @@ export default function Landing() {
                 {user && (
                   <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2 mb-4">
                     <Wallet className="w-4 h-4 text-amber-500" />
-                    <span className="text-gray-400 text-xs">잔고</span>
+                    <span className="text-gray-400 text-xs">보유금액</span>
                     <span className="text-white font-bold text-sm">
                       {balanceData?.balance ? Math.floor(parseFloat(balanceData.balance)).toLocaleString() : '0'}원
                     </span>
@@ -1744,7 +1744,7 @@ export default function Landing() {
                   <History className="w-8 h-8 text-amber-500" />
                 </div>
                 <h2 className="text-2xl font-bold text-white mb-1">거래내역</h2>
-                <p className="text-gray-400 text-sm">나의 거래 기록과 잔고를 확인하세요</p>
+                <p className="text-gray-400 text-sm">나의 거래 기록과 보유금액을 확인하세요</p>
               </div>
 
               {/* Balance Card */}
@@ -1752,7 +1752,7 @@ export default function Landing() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Wallet className="w-6 h-6 text-amber-500" />
-                    <span className="text-gray-300">보유 잔고</span>
+                    <span className="text-gray-300">보유금액</span>
                   </div>
                   <span className="text-2xl font-bold text-white">
                     {balanceData?.balance ? Number(balanceData.balance).toLocaleString() : '0'}원
@@ -1852,7 +1852,7 @@ export default function Landing() {
               {/* Current Balance */}
               <div className="bg-gradient-to-r from-amber-500/20 to-amber-500/20 border border-amber-500/30 rounded-xl p-4 mb-6">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-300">현재 잔고</span>
+                  <span className="text-gray-300">현재 보유금액</span>
                   <span className="text-2xl font-bold text-white">
                     {balanceData?.balance ? Number(balanceData.balance).toLocaleString() : '0'}원
                   </span>
