@@ -59,7 +59,8 @@ export function useRegister() {
       password: string;
       name: string;
       phone: string;
-      branchCode: string;
+      birthDate?: string;
+      branchCode?: string;
       bankName: string;
       accountHolder: string;
       accountNumber: string;

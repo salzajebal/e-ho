@@ -182,6 +182,7 @@ export default function Landing() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [birthDate, setBirthDate] = useState<Date | undefined>(undefined);
+  const [regBirthDate, setRegBirthDate] = useState("");
   const [bankName, setBankName] = useState("");
   const [accountHolder, setAccountHolder] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
@@ -469,6 +470,10 @@ export default function Landing() {
       setRegisterErrorMessage("올바른 휴대폰 번호를 입력해주세요");
       return;
     }
+    if (!regBirthDate || regBirthDate.replace(/\D/g, '').length !== 6) {
+      setRegisterErrorMessage("생년월일을 6자리로 입력해주세요 (예: 901231)");
+      return;
+    }
     if (!bankName) {
       setRegisterErrorMessage("은행을 선택해주세요");
       return;
@@ -487,6 +492,7 @@ export default function Landing() {
       password: regPassword, 
       name, 
       phone,
+      birthDate: regBirthDate,
       bankName, 
       accountHolder, 
       accountNumber,
@@ -499,6 +505,7 @@ export default function Landing() {
         setConfirmPassword("");
         setName("");
         setPhone("");
+        setRegBirthDate("");
         setBirthDate(undefined);
         setRegion("");
         setBranchCode("");
@@ -1731,6 +1738,22 @@ export default function Landing() {
                       required
                     />
                   </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-300 font-medium">생년월일</label>
+                    <Input
+                      type="text"
+                      value={regBirthDate}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+                        setRegBirthDate(val);
+                      }}
+                      placeholder="예: 901231"
+                      maxLength={6}
+                      className="h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-amber-500/50 text-sm"
+                      data-testid="input-reg-birthdate"
+                      required
+                    />
+                  </div>
                 </div>
 
                 <div className="pt-2 border-t border-white/10">
@@ -2780,15 +2803,8 @@ export default function Landing() {
       {/* My Page Modal */}
       <Dialog open={showMyPageModal} onOpenChange={setShowMyPageModal}>
         <DialogContent className="bg-[#0f1117] border border-white/10 text-white max-w-lg w-full max-h-[90vh] overflow-y-auto p-0">
-          <DialogTitle className="sr-only">마이페이지</DialogTitle>
           <div className="p-6">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-white">마이페이지</h2>
-              <button onClick={() => setShowMyPageModal(false)} className="text-gray-400 hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+            <DialogTitle className="text-xl font-bold text-white mb-6">마이페이지</DialogTitle>
 
             {/* 계정 정보 */}
             <div className="mb-6">
