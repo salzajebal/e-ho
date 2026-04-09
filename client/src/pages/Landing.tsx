@@ -2066,6 +2066,11 @@ export default function Landing() {
                       setShowLoginModal(true);
                       return;
                     }
+                    const hasPending = myInquiries.some(inq => inq.status === 'pending');
+                    if (hasPending) {
+                      toast.error("이전 문의에 답변이 완료된 후 새로운 문의를 작성할 수 있습니다.");
+                      return;
+                    }
                     setShowCustomerServiceModal(false);
                     setShowInquiryFormModal(true);
                   }}
@@ -2093,6 +2098,11 @@ export default function Landing() {
                       toast.error("로그인이 필요합니다");
                       setShowCustomerServiceModal(false);
                       setShowLoginModal(true);
+                      return;
+                    }
+                    const hasPending = myInquiries.some(inq => inq.status === 'pending');
+                    if (hasPending) {
+                      toast.error("이전 문의에 답변이 완료된 후 새로운 문의를 작성할 수 있습니다.");
                       return;
                     }
                     setShowCustomerServiceModal(false);

@@ -3952,6 +3952,13 @@ export async function registerRoutes(
         return res.status(400).json({ error: "제목과 내용을 입력해주세요" });
       }
 
+      // 미답변 문의가 있으면 새 문의 등록 불가
+      const existingInquiries = await storage.getInquiriesForUser(req.session.userId!);
+      const hasPending = existingInquiries.some(inq => inq.status === 'pending');
+      if (hasPending) {
+        return res.status(400).json({ error: "이전 문의에 답변이 완료된 후 새로운 문의를 작성할 수 있습니다." });
+      }
+
       const inquiry = await storage.createInquiry({
         userId: req.session.userId!,
         title,
