@@ -1992,7 +1992,13 @@ export default function Landing() {
                     <p className="text-gray-300 text-sm font-medium mb-1">입금 계좌 정보</p>
                     <p className="text-gray-500 text-xs">입금 계좌 정보는 고객센터를 통해 개별 안내드립니다.</p>
                   </div>
-                  <span className="text-xs bg-green-500/20 border border-green-500/40 text-green-400 px-3 py-1 rounded-full">요청 완료</span>
+                  <button
+                    onClick={() => { setShowDepositPageModal(false); setShowCustomerServiceModal(true); }}
+                    className="text-xs bg-amber-500/20 border border-amber-500/40 text-amber-400 px-3 py-1 rounded-full hover:bg-amber-500/30 transition-colors whitespace-nowrap"
+                    data-testid="button-deposit-inquiry"
+                  >
+                    계좌번호 문의하기
+                  </button>
                 </div>
               </div>
 
