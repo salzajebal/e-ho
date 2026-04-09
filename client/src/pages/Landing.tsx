@@ -521,7 +521,7 @@ export default function Landing() {
       <header className="fixed top-0 left-0 right-0 z-50 bg-[#0a0d14]/95 backdrop-blur-sm border-b border-white/5">
         <div className="max-w-7xl mx-auto px-3 md:px-4 h-14 md:h-16 flex items-center justify-between">
           {/* Logo */}
-          <div className="flex items-center gap-4 md:gap-8">
+          <div className="flex items-center gap-3 md:gap-5 min-w-0">
             <Link href="/" data-testid="link-logo">
               <div className="flex items-center gap-2 md:gap-3">
                 <div className="flex flex-col">
@@ -533,9 +533,9 @@ export default function Landing() {
             </Link>
             
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center gap-6">
+            <nav className="hidden md:flex items-center gap-3">
               <DropdownMenu>
-                <DropdownMenuTrigger className="text-gray-300 hover:text-amber-500 transition-colors text-sm font-medium flex items-center gap-1" data-testid="nav-options-trading">
+                <DropdownMenuTrigger className="text-gray-300 hover:text-amber-500 transition-colors text-xs font-medium flex items-center gap-1 whitespace-nowrap" data-testid="nav-options-trading">
                   옵션거래 <ChevronDown className="w-3 h-3" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="bg-[#161b22] border-white/10">
@@ -565,7 +565,7 @@ export default function Landing() {
                     setShowLoginModal(true);
                   }
                 }}
-                className="text-gray-300 hover:text-amber-500 transition-colors text-sm font-medium" 
+                className="text-gray-300 hover:text-amber-500 transition-colors text-xs font-medium whitespace-nowrap" 
                 data-testid="nav-trade-history"
               >
                 거래내역
@@ -582,14 +582,14 @@ export default function Landing() {
                   }
                   setShowDepositModal(true);
                 }}
-                className="text-gray-300 hover:text-amber-500 transition-colors text-sm font-medium" 
+                className="text-gray-300 hover:text-amber-500 transition-colors text-xs font-medium whitespace-nowrap" 
                 data-testid="nav-deposit-withdraw"
               >
                 입금/출금신청
               </button>
               <button 
                 onClick={() => setShowAnnouncementsModal(true)}
-                className="text-gray-300 hover:text-amber-500 transition-colors text-sm font-medium" 
+                className="text-gray-300 hover:text-amber-500 transition-colors text-xs font-medium whitespace-nowrap" 
                 data-testid="nav-announcements"
               >
                 공지사항
@@ -597,7 +597,7 @@ export default function Landing() {
               {user && (
                 <button 
                   onClick={openMyPage}
-                  className="text-gray-300 hover:text-amber-500 transition-colors text-sm font-medium" 
+                  className="text-gray-300 hover:text-amber-500 transition-colors text-xs font-medium whitespace-nowrap" 
                   data-testid="nav-mypage"
                 >
                   마이페이지
@@ -605,7 +605,7 @@ export default function Landing() {
               )}
               <button 
                 onClick={() => setShowCustomerServiceModal(true)}
-                className="text-gray-300 hover:text-amber-500 transition-colors text-sm font-medium" 
+                className="text-gray-300 hover:text-amber-500 transition-colors text-xs font-medium whitespace-nowrap" 
                 data-testid="nav-customer-service"
               >
                 고객센터
@@ -618,7 +618,7 @@ export default function Landing() {
                     setShowLoginModal(true);
                   }
                 }}
-                className="text-gray-300 hover:text-amber-500 transition-colors text-sm font-medium relative" 
+                className="text-gray-300 hover:text-amber-500 transition-colors text-xs font-medium whitespace-nowrap relative" 
                 data-testid="nav-messages"
               >
                 쪽지함
