@@ -303,6 +303,7 @@ export const transactionRequests = pgTable("transaction_requests", {
   bankName: text("bank_name"),
   accountHolder: text("account_holder"),
   accountNumber: text("account_number"),
+  senderName: text("sender_name"), // 입금 시 보내시는 분 이름
   adminNote: text("admin_note"),
   processedBy: varchar("processed_by"),
   processedAt: timestamp("processed_at"),

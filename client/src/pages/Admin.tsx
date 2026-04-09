@@ -1251,6 +1251,7 @@ export default function Admin() {
     bankName: string | null;
     accountHolder: string | null;
     accountNumber: string | null;
+    senderName: string | null;
     adminNote: string | null;
     processedBy: string | null;
     processedAt: string | null;
@@ -5058,6 +5059,7 @@ export default function Admin() {
                     <tr>
                       <th className="px-2 lg:px-4 py-3 text-center font-medium">처리</th>
                       <th className="px-2 lg:px-4 py-3 text-left font-medium">회원</th>
+                      <th className="px-2 lg:px-4 py-3 text-left font-medium">보내시는 분</th>
                       <th className="px-2 lg:px-4 py-3 text-right font-medium">금액</th>
                       <th className="px-2 lg:px-4 py-3 text-center font-medium">상태</th>
                       <th className="px-2 lg:px-4 py-3 text-left font-medium">신청일</th>
@@ -5112,6 +5114,9 @@ export default function Admin() {
                           <div className="font-medium">{request.username}</div>
                           <div className="text-xs text-muted-foreground">{request.name}</div>
                         </td>
+                        <td className="px-2 lg:px-4 py-3">
+                          <span className="text-sm font-medium text-amber-400">{request.senderName || '-'}</span>
+                        </td>
                         <td className="px-2 lg:px-4 py-3 text-right font-bold text-green-500">
                           +{Number(request.amount).toLocaleString()}원
                         </td>
@@ -5131,7 +5136,7 @@ export default function Admin() {
                       </tr>
                     ))}
                     {depositRequests.length === 0 && (
-                      <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">입금 신청 내역이 없습니다</td></tr>
+                      <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">입금 신청 내역이 없습니다</td></tr>
                     )}
                   </tbody>
                 </table>

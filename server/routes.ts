@@ -3773,7 +3773,7 @@ export async function registerRoutes(
   // Create transaction request (user)
   app.post("/api/transactions", requireAuth, async (req, res) => {
     try {
-      const { type, amount, bankName, accountHolder, accountNumber } = req.body;
+      const { type, amount, bankName, accountHolder, accountNumber, senderName } = req.body;
       
       if (!type || !['deposit', 'withdrawal'].includes(type)) {
         return res.status(400).json({ error: "유효하지 않은 요청 유형입니다" });
@@ -3801,6 +3801,7 @@ export async function registerRoutes(
         bankName: bankName || null,
         accountHolder: accountHolder || null,
         accountNumber: accountNumber || null,
+        senderName: senderName || null,
       });
 
       // Send notification to admins via WebSocket

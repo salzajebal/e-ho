@@ -165,12 +165,17 @@ export default function Landing() {
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [showCustomerServiceModal, setShowCustomerServiceModal] = useState(false);
-  const [showDepositModal, setShowDepositModal] = useState(false);
   const [showAnnouncementsModal, setShowAnnouncementsModal] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [transactionType, setTransactionType] = useState<'deposit' | 'withdrawal'>('deposit');
-  const [transactionAmount, setTransactionAmount] = useState('');
-  const [transactionSubmitting, setTransactionSubmitting] = useState(false);
+  // 입금 모달
+  const [showDepositPageModal, setShowDepositPageModal] = useState(false);
+  const [depositAmount, setDepositAmount] = useState('');
+  const [depositSenderName, setDepositSenderName] = useState('');
+  const [depositSubmitting, setDepositSubmitting] = useState(false);
+  // 출금 모달
+  const [showWithdrawalPageModal, setShowWithdrawalPageModal] = useState(false);
+  const [withdrawalAmount, setWithdrawalAmount] = useState('');
+  const [withdrawalSubmitting, setWithdrawalSubmitting] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loginErrorMessage, setLoginErrorMessage] = useState("");
@@ -223,7 +228,7 @@ export default function Landing() {
   const marketData = useLandingMarketData();
 
   // Fetch user balance and bet history if logged in
-  const { data: balanceData } = useQuery({
+  const { data: balanceData, refetch: refetchBalance } = useQuery({
     queryKey: ["/api/user/balance"],
     queryFn: async () => {
       const res = await fetch("/api/user/balance");
@@ -579,20 +584,25 @@ export default function Landing() {
               </button>
               <button 
                 onClick={() => {
-                  if (!user) {
-                    setShowLoginModal(true);
-                    return;
-                  }
-                  if (!isWithinOperatingHours()) {
-                    toast.error("입출금 신청은 오전 10시~오후 7시 사이에만 가능합니다");
-                    return;
-                  }
-                  setShowDepositModal(true);
+                  if (!user) { setShowLoginModal(true); return; }
+                  if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 10시~오후 7시 사이에만 가능합니다"); return; }
+                  setDepositAmount(''); setDepositSenderName(''); setShowDepositPageModal(true);
                 }}
                 className="text-gray-300 hover:text-amber-500 transition-colors text-xs font-medium whitespace-nowrap" 
-                data-testid="nav-deposit-withdraw"
+                data-testid="nav-deposit"
               >
-                입금/출금신청
+                입금신청
+              </button>
+              <button 
+                onClick={() => {
+                  if (!user) { setShowLoginModal(true); return; }
+                  if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 10시~오후 7시 사이에만 가능합니다"); return; }
+                  setWithdrawalAmount(''); setShowWithdrawalPageModal(true);
+                }}
+                className="text-gray-300 hover:text-amber-500 transition-colors text-xs font-medium whitespace-nowrap" 
+                data-testid="nav-withdrawal"
+              >
+                출금신청
               </button>
               <button 
                 onClick={() => setShowAnnouncementsModal(true)}
@@ -659,11 +669,8 @@ export default function Landing() {
                     className="text-green-400 hover:text-green-300 hover:bg-green-500/10 text-xs px-2"
                     data-testid="button-header-deposit"
                     onClick={() => { 
-                      if (!isWithinOperatingHours()) {
-                        toast.error("입출금 신청은 오전 10시~오후 7시 사이에만 가능합니다");
-                        return;
-                      }
-                      setTransactionType('deposit'); setShowDepositModal(true); 
+                      if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 10시~오후 7시 사이에만 가능합니다"); return; }
+                      setDepositAmount(''); setDepositSenderName(''); setShowDepositPageModal(true);
                     }}
                   >
                     입금
@@ -674,11 +681,8 @@ export default function Landing() {
                     className="text-red-400 hover:text-red-300 hover:bg-red-500/10 text-xs px-2"
                     data-testid="button-header-withdraw"
                     onClick={() => { 
-                      if (!isWithinOperatingHours()) {
-                        toast.error("입출금 신청은 오전 10시~오후 7시 사이에만 가능합니다");
-                        return;
-                      }
-                      setTransactionType('withdrawal'); setShowDepositModal(true); 
+                      if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 10시~오후 7시 사이에만 가능합니다"); return; }
+                      setWithdrawalAmount(''); setShowWithdrawalPageModal(true);
                     }}
                   >
                     출금
@@ -787,23 +791,27 @@ export default function Landing() {
                 </button>
                 <button 
                   onClick={() => {
-                    if (!user) {
-                      setShowLoginModal(true);
-                      setMobileMenuOpen(false);
-                      return;
-                    }
-                    if (!isWithinOperatingHours()) {
-                      toast.error("입출금 신청은 오전 10시~오후 7시 사이에만 가능합니다");
-                      setMobileMenuOpen(false);
-                      return;
-                    }
-                    setShowDepositModal(true);
+                    if (!user) { setShowLoginModal(true); setMobileMenuOpen(false); return; }
+                    if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 10시~오후 7시 사이에만 가능합니다"); setMobileMenuOpen(false); return; }
+                    setDepositAmount(''); setDepositSenderName(''); setShowDepositPageModal(true);
                     setMobileMenuOpen(false);
                   }}
                   className="text-left text-gray-300 hover:text-amber-500 py-3 border-b border-white/10 w-full touch-manipulation"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
-                  입금/출금신청
+                  입금신청
+                </button>
+                <button 
+                  onClick={() => {
+                    if (!user) { setShowLoginModal(true); setMobileMenuOpen(false); return; }
+                    if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 10시~오후 7시 사이에만 가능합니다"); setMobileMenuOpen(false); return; }
+                    setWithdrawalAmount(''); setShowWithdrawalPageModal(true);
+                    setMobileMenuOpen(false);
+                  }}
+                  className="text-left text-gray-300 hover:text-amber-500 py-3 border-b border-white/10 w-full touch-manipulation"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                >
+                  출금신청
                 </button>
                 <button 
                   onClick={() => {
@@ -1516,12 +1524,12 @@ export default function Landing() {
                 <li><button onClick={() => { 
                   if (!user) { setShowLoginModal(true); return; }
                   if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 10시~오후 7시 사이에만 가능합니다"); return; }
-                  setTransactionType('deposit'); setShowDepositModal(true); 
+                  setDepositAmount(''); setDepositSenderName(''); setShowDepositPageModal(true);
                 }} className="hover:text-amber-500 transition-colors" data-testid="link-deposit">입금신청</button></li>
                 <li><button onClick={() => { 
                   if (!user) { setShowLoginModal(true); return; }
                   if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 10시~오후 7시 사이에만 가능합니다"); return; }
-                  setTransactionType('withdrawal'); setShowDepositModal(true); 
+                  setWithdrawalAmount(''); setShowWithdrawalPageModal(true);
                 }} className="hover:text-amber-500 transition-colors" data-testid="link-withdraw">출금신청</button></li>
                 <li><button onClick={() => { if (user) { setShowHistoryModal(true); } else { setShowLoginModal(true); } }} className="hover:text-amber-500 transition-colors" data-testid="link-transaction-history">입출금내역</button></li>
               </ul>
@@ -1930,209 +1938,353 @@ export default function Landing() {
         </DialogContent>
       </Dialog>
 
-      {/* Deposit/Withdrawal Modal */}
-      <Dialog open={showDepositModal} onOpenChange={setShowDepositModal}>
+      {/* ===== 입금 신청 모달 ===== */}
+      <Dialog open={showDepositPageModal} onOpenChange={(open) => { if (!open) { setShowDepositPageModal(false); setDepositAmount(''); setDepositSenderName(''); } }}>
         <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden max-h-[90vh] overflow-y-auto">
-          <DialogTitle className="sr-only">입출금 신청</DialogTitle>
+          <DialogTitle className="sr-only">입금 신청</DialogTitle>
           <div className="relative">
-            <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/20 via-amber-500/20 to-amber-500/20 rounded-2xl blur-xl" />
+            <div className="absolute -inset-1 bg-gradient-to-r from-green-500/10 via-green-500/10 to-green-500/10 rounded-2xl blur-xl" />
             <div className="relative backdrop-blur-xl bg-[#161b22]/95 border border-white/10 rounded-2xl p-6 shadow-2xl max-h-[85vh] overflow-y-auto overscroll-contain touch-pan-y">
-              {/* Mobile-friendly header with back button */}
-              <div className="flex items-center justify-between mb-6">
-                <button 
-                  onClick={() => setShowDepositModal(false)}
-                  className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
-                >
+              {/* 헤더 */}
+              <div className="flex items-center justify-between mb-5">
+                <button onClick={() => { setShowDepositPageModal(false); setDepositAmount(''); setDepositSenderName(''); }}
+                  className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
                   <ChevronRight className="w-5 h-5 rotate-180" />
                   <span className="text-sm">뒤로가기</span>
                 </button>
-                <button 
-                  onClick={() => setShowDepositModal(false)}
-                  className="text-gray-400 hover:text-white transition-colors"
-                >
+                <h2 className="text-lg font-bold text-white">입금 신청</h2>
+                <button onClick={() => { setShowDepositPageModal(false); setDepositAmount(''); setDepositSenderName(''); }}
+                  className="text-gray-400 hover:text-white transition-colors">
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              
-              <div className="text-center mb-6">
-                <div className="flex items-center justify-center gap-2 mb-3">
-                  <Wallet className="w-8 h-8 text-amber-500" />
-                </div>
-                <h2 className="text-2xl font-bold text-white mb-1">입출금 신청</h2>
-                <p className="text-gray-400 text-sm">입금 또는 출금을 신청하세요</p>
-              </div>
 
-              {/* Current Balance */}
-              <div className="bg-gradient-to-r from-amber-500/20 to-amber-500/20 border border-amber-500/30 rounded-xl p-4 mb-6">
+              {/* 현재 보유금액 */}
+              <div className="bg-gradient-to-r from-amber-500/20 to-amber-500/10 border border-amber-500/30 rounded-xl p-3 mb-5">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-300">현재 보유금액</span>
-                  <span className="text-2xl font-bold text-white">
-                    {balanceData?.balance ? Number(balanceData.balance).toLocaleString() : '0'}원
-                  </span>
+                  <span className="text-gray-400 text-sm">현재 보유금액</span>
+                  <span className="text-xl font-bold text-white">{balanceData?.balance ? Number(balanceData.balance).toLocaleString() : '0'}원</span>
                 </div>
               </div>
 
-              {/* Transaction Type Tabs */}
-              <div className="flex mb-6">
-                <button
-                  onClick={() => setTransactionType('deposit')}
-                  className={`flex-1 py-3 text-center font-bold rounded-l-lg transition-colors ${
-                    transactionType === 'deposit'
-                      ? 'bg-green-500 text-white'
-                      : 'bg-white/10 text-gray-400 hover:bg-white/20'
-                  }`}
-                  data-testid="tab-deposit"
-                >
-                  입금 신청
-                </button>
-                <button
-                  onClick={() => setTransactionType('withdrawal')}
-                  className={`flex-1 py-3 text-center font-bold rounded-r-lg transition-colors ${
-                    transactionType === 'withdrawal'
-                      ? 'bg-red-500 text-white'
-                      : 'bg-white/10 text-gray-400 hover:bg-white/20'
-                  }`}
-                  data-testid="tab-withdrawal"
-                >
-                  출금 신청
-                </button>
-              </div>
-
-              {/* Amount Input */}
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-gray-300 text-sm mb-2">
-                    {transactionType === 'deposit' ? '입금 금액' : '출금 금액'}
-                  </label>
-                  <div className="relative">
-                    <Input
-                      type="text"
-                      value={transactionAmount}
-                      onChange={(e) => {
-                        const value = e.target.value.replace(/[^0-9]/g, '');
-                        setTransactionAmount(value);
-                      }}
-                      placeholder="금액을 입력하세요"
-                      className="bg-white/10 border-white/20 text-white pr-12"
-                      data-testid="input-transaction-amount"
-                    />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">원</span>
-                  </div>
-                  {transactionAmount && (
-                    <p className="text-gray-400 text-sm mt-1">
-                      {Number(transactionAmount).toLocaleString()}원
-                    </p>
-                  )}
-                </div>
-
-                {/* Quick amount buttons */}
-                <div className="grid grid-cols-4 gap-2">
-                  {[10000, 50000, 100000, 500000].map((amount) => (
-                    <button
-                      key={amount}
-                      onClick={() => setTransactionAmount(String(Number(transactionAmount || 0) + amount))}
-                      className="py-2 bg-white/10 hover:bg-white/20 text-gray-300 text-sm rounded transition-colors"
-                    >
-                      +{(amount / 10000)}만
-                    </button>
+              {/* 입금 진행 절차 STEP 1~4 */}
+              <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-5">
+                <h3 className="text-sm font-bold text-amber-400 mb-3">입금 진행 절차</h3>
+                <div className="space-y-3">
+                  {[
+                    { step: '01', text: '인터넷뱅킹, 모바일뱅킹, 무통장 입금, ATM 등으로 송금 가능합니다. 입금 계좌는 수시로 변경될 수 있으니 이체 전 반드시 최신 계좌를 확인해 주세요.' },
+                    { step: '02', text: '최소 입금 금액은 10,000원입니다. 금액을 잘못 입력하셨을 경우 정정 가능합니다.' },
+                    { step: '03', text: "아래 '보내시는 분'란에 실제 송금 통장의 입금주 성함을 정확히 입력해 주세요. 닉네임 또는 다른 이름 입력 시 자동 매칭이 불가합니다." },
+                    { step: '04', text: '입금신청 버튼 클릭 후 운영팀 확인을 거쳐 보유금액에 반영됩니다. 처리 완료 시 알림을 통해 안내드립니다.' },
+                  ].map(({ step, text }) => (
+                    <div key={step} className="flex gap-3">
+                      <span className="shrink-0 w-8 h-8 rounded-full bg-green-500/20 border border-green-500/40 flex items-center justify-center text-green-400 text-xs font-bold">{step}</span>
+                      <p className="text-gray-400 text-xs leading-relaxed pt-1">{text}</p>
+                    </div>
                   ))}
                 </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => setTransactionAmount(String(Number(transactionAmount || 0) + 1000000))}
-                    className="py-2 bg-white/10 hover:bg-white/20 text-gray-300 text-sm rounded transition-colors"
-                  >
-                    +100만
-                  </button>
-                  <button
-                    onClick={() => setTransactionAmount('')}
-                    className="py-2 bg-white/10 hover:bg-white/20 text-gray-300 text-sm rounded transition-colors"
-                  >
-                    초기화
-                  </button>
-                </div>
-
-                {transactionType === 'withdrawal' && Number(transactionAmount) > Number(balanceData?.balance || 0) && (
-                  <p className="text-red-400 text-sm">잔액을 초과할 수 없습니다</p>
-                )}
-
-
               </div>
 
+              {/* 입금 계좌 정보 */}
+              <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-300 text-sm font-medium mb-1">입금 계좌 정보</p>
+                    <p className="text-gray-500 text-xs">입금 계좌 정보는 고객센터를 통해 개별 안내드립니다.</p>
+                  </div>
+                  <span className="text-xs bg-green-500/20 border border-green-500/40 text-green-400 px-3 py-1 rounded-full">요청 완료</span>
+                </div>
+              </div>
+
+              {/* 보내시는 분 */}
+              <div className="mb-4">
+                <label className="block text-gray-300 text-sm mb-2">보내시는 분 <span className="text-red-400">*</span></label>
+                <Input
+                  type="text"
+                  value={depositSenderName}
+                  onChange={(e) => setDepositSenderName(e.target.value)}
+                  placeholder="실제 송금 통장의 예금주 성함 입력"
+                  className="bg-white/10 border-white/20 text-white placeholder:text-gray-500"
+                  data-testid="input-deposit-sender"
+                />
+              </div>
+
+              {/* 입금 금액 */}
+              <div className="mb-4">
+                <label className="block text-gray-300 text-sm mb-2">입금 금액 <span className="text-red-400">*</span></label>
+                <div className="relative">
+                  <Input
+                    type="text"
+                    value={depositAmount}
+                    onChange={(e) => setDepositAmount(e.target.value.replace(/[^0-9]/g, ''))}
+                    placeholder="금액을 입력하세요"
+                    className="bg-white/10 border-white/20 text-white pr-12"
+                    data-testid="input-deposit-amount"
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">원</span>
+                </div>
+                {depositAmount && <p className="text-gray-400 text-xs mt-1">{Number(depositAmount).toLocaleString()}원</p>}
+              </div>
+
+              {/* 빠른 금액 */}
+              <div className="grid grid-cols-4 gap-2 mb-2">
+                {[10000, 50000, 100000, 500000].map((amt) => (
+                  <button key={amt} onClick={() => setDepositAmount(String(Number(depositAmount || 0) + amt))}
+                    className="py-2 bg-white/10 hover:bg-white/20 text-gray-300 text-xs rounded transition-colors" data-testid={`button-deposit-quick-${amt}`}>
+                    +{amt / 10000}만
+                  </button>
+                ))}
+              </div>
+              <div className="grid grid-cols-2 gap-2 mb-5">
+                <button onClick={() => setDepositAmount(String(Number(depositAmount || 0) + 1000000))}
+                  className="py-2 bg-white/10 hover:bg-white/20 text-gray-300 text-xs rounded transition-colors" data-testid="button-deposit-quick-100">
+                  +100만
+                </button>
+                <button onClick={() => setDepositAmount('')}
+                  className="py-2 bg-white/10 hover:bg-white/20 text-gray-300 text-xs rounded transition-colors" data-testid="button-deposit-reset">
+                  초기화
+                </button>
+              </div>
+
+              {/* 입금신청 버튼 */}
               <Button
-                className={`w-full mt-6 text-white ${
-                  transactionType === 'deposit'
-                    ? 'bg-green-500 hover:bg-green-600'
-                    : 'bg-red-500 hover:bg-red-600'
-                }`}
-                disabled={
-                  transactionSubmitting ||
-                  !transactionAmount ||
-                  Number(transactionAmount) <= 0 ||
-                  (transactionType === 'withdrawal' && Number(transactionAmount) > Number(balanceData?.balance || 0))
-                }
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold mb-6"
+                disabled={depositSubmitting || !depositAmount || Number(depositAmount) <= 0 || !depositSenderName.trim()}
+                data-testid="button-deposit-submit"
                 onClick={async () => {
-                  if (!transactionAmount || Number(transactionAmount) <= 0) {
-                    toast.error('금액을 입력해주세요');
-                    return;
-                  }
-                  
-                  if (transactionType === 'withdrawal' && Number(transactionAmount) < 10000) {
-                    toast.error('최소 출금금액은 10,000원입니다.');
-                    return;
-                  }
-                  
-                  if (transactionType === 'deposit' && Number(transactionAmount) < 10000) {
-                    toast.error('최소 입금금액은 10,000원입니다.');
-                    return;
-                  }
-                  
-                  setTransactionSubmitting(true);
+                  if (!depositSenderName.trim()) { toast.error('보내시는 분 성함을 입력해주세요'); return; }
+                  if (!depositAmount || Number(depositAmount) <= 0) { toast.error('금액을 입력해주세요'); return; }
+                  if (Number(depositAmount) < 10000) { toast.error('최소 입금금액은 10,000원입니다'); return; }
+                  setDepositSubmitting(true);
                   try {
-                    const response = await fetch('/api/transactions', {
+                    const res = await fetch('/api/transactions', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        type: transactionType,
-                        amount: transactionAmount,
-                      }),
+                      body: JSON.stringify({ type: 'deposit', amount: depositAmount, senderName: depositSenderName.trim() }),
                     });
-                    
-                    const data = await response.json();
-                    if (!response.ok) {
-                      throw new Error(data.error || '요청에 실패했습니다');
-                    }
-                    
-                    if (transactionType === 'deposit') {
-                      // Create an inquiry for deposit request
-                      await fetch('/api/inquiries', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          title: `입금 신청 - ${Number(transactionAmount).toLocaleString()}원`,
-                          content: `입금 금액: ${Number(transactionAmount).toLocaleString()}원\n\n입금 계좌 정보를 안내해주세요.`,
-                        }),
-                      });
-                      refetchInquiries();
-                      toast.success('입금 신청이 완료되었습니다. 문의 내역에서 계좌 안내를 확인하세요.');
-                      setShowDepositModal(false);
-                      setTransactionAmount('');
-                      setShowMyInquiriesModal(true);
-                    } else {
-                      setWithdrawalSuccessAmount(transactionAmount);
-                      setShowDepositModal(false);
-                      setTransactionAmount('');
-                      setShowWithdrawalSuccessModal(true);
-                    }
-                  } catch (error: any) {
-                    toast.error(error.message || '요청에 실패했습니다');
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || '요청에 실패했습니다');
+                    toast.success('입금 신청이 완료되었습니다. 확인 후 보유금액에 반영됩니다.');
+                    setDepositAmount('');
+                    setDepositSenderName('');
+                    refetchTransactions();
+                  } catch (err: any) {
+                    toast.error(err.message || '요청에 실패했습니다');
                   } finally {
-                    setTransactionSubmitting(false);
+                    setDepositSubmitting(false);
                   }
                 }}
-                data-testid="button-submit-transaction"
               >
-                {transactionSubmitting ? '처리중...' : (transactionType === 'deposit' ? '입금 신청하기' : '출금 신청하기')}
+                {depositSubmitting ? '처리중...' : '입금신청'}
+              </Button>
+
+              {/* 최근 입금 내역 */}
+              <div>
+                <h3 className="text-sm font-bold text-gray-300 mb-3">최근 입금 내역</h3>
+                {(() => {
+                  const depositHistory = (myTransactions || []).filter((t: any) => t.type === 'deposit').slice(0, 5);
+                  if (depositHistory.length === 0) {
+                    return <p className="text-gray-500 text-xs text-center py-4">입금 내역이 없습니다</p>;
+                  }
+                  return (
+                    <div className="rounded-lg overflow-hidden border border-white/10">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="bg-white/5">
+                            <th className="text-left text-gray-400 px-3 py-2">신청금액</th>
+                            <th className="text-center text-gray-400 px-3 py-2">상태</th>
+                            <th className="text-right text-gray-400 px-3 py-2">신청일</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {depositHistory.map((t: any) => (
+                            <tr key={t.id} className="border-t border-white/5">
+                              <td className="px-3 py-2 text-white font-medium">{Number(t.amount).toLocaleString()}원</td>
+                              <td className="px-3 py-2 text-center">
+                                <span className={`px-2 py-0.5 rounded-full text-xs ${
+                                  t.status === 'approved' ? 'bg-green-500/20 text-green-400' :
+                                  t.status === 'rejected' ? 'bg-red-500/20 text-red-400' :
+                                  'bg-yellow-500/20 text-yellow-400'
+                                }`}>
+                                  {t.status === 'approved' ? '승인' : t.status === 'rejected' ? '거절' : '대기'}
+                                </span>
+                              </td>
+                              <td className="px-3 py-2 text-right text-gray-400">
+                                {new Date(t.createdAt).toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ===== 출금 신청 모달 ===== */}
+      <Dialog open={showWithdrawalPageModal} onOpenChange={(open) => { if (!open) { setShowWithdrawalPageModal(false); setWithdrawalAmount(''); } }}>
+        <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden max-h-[90vh] overflow-y-auto">
+          <DialogTitle className="sr-only">출금 신청</DialogTitle>
+          <div className="relative">
+            <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/10 via-blue-500/10 to-blue-500/10 rounded-2xl blur-xl" />
+            <div className="relative backdrop-blur-xl bg-[#161b22]/95 border border-white/10 rounded-2xl p-6 shadow-2xl max-h-[85vh] overflow-y-auto overscroll-contain touch-pan-y">
+              {/* 헤더 */}
+              <div className="flex items-center justify-between mb-5">
+                <button onClick={() => { setShowWithdrawalPageModal(false); setWithdrawalAmount(''); }}
+                  className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
+                  <ChevronRight className="w-5 h-5 rotate-180" />
+                  <span className="text-sm">뒤로가기</span>
+                </button>
+                <h2 className="text-lg font-bold text-white">출금 신청</h2>
+                <button onClick={() => { setShowWithdrawalPageModal(false); setWithdrawalAmount(''); }}
+                  className="text-gray-400 hover:text-white transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* 현재 보유금액 */}
+              <div className="bg-gradient-to-r from-amber-500/20 to-amber-500/10 border border-amber-500/30 rounded-xl p-3 mb-5">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-400 text-sm">현재 보유금액</span>
+                  <span className="text-xl font-bold text-white">{balanceData?.balance ? Number(balanceData.balance).toLocaleString() : '0'}원</span>
+                </div>
+              </div>
+
+              {/* 출금 진행 절차 STEP 1~4 */}
+              <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-5">
+                <h3 className="text-sm font-bold text-blue-400 mb-3">출금 진행 절차</h3>
+                <div className="space-y-3">
+                  {[
+                    { step: '01', text: '출금 처리는 영업 시간(평일 오전 10시~오후 7시) 내 순차적으로 진행됩니다. 신청 즉시 보유금액에서 우선 차감됩니다.' },
+                    { step: '02', text: '24시간 이상 지연 시, 등록된 출금 계좌 정보(은행명·계좌번호·예금주 성명)가 실제 계좌와 일치하는지 확인해 주세요.' },
+                    { step: '03', text: '등록되지 않은 계좌로 출금을 원하실 경우 반드시 고객센터를 통해 사전에 변경 요청을 해주시기 바랍니다.' },
+                    { step: '04', text: '출금신청 버튼 클릭 후 운영팀 검수를 거쳐 은행 이체가 진행됩니다. 처리 완료 시 알림을 통해 안내드립니다.' },
+                  ].map(({ step, text }) => (
+                    <div key={step} className="flex gap-3">
+                      <span className="shrink-0 w-8 h-8 rounded-full bg-blue-500/20 border border-blue-500/40 flex items-center justify-center text-blue-400 text-xs font-bold">{step}</span>
+                      <p className="text-gray-400 text-xs leading-relaxed pt-1">{text}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 출금 계좌 정보 (읽기전용) */}
+              <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-5 space-y-3">
+                <h3 className="text-sm font-bold text-gray-300 mb-1">출금 계좌 정보</h3>
+                {!user?.bankName && !user?.accountNumber ? (
+                  <div className="text-center py-2">
+                    <p className="text-yellow-400 text-xs mb-2">등록된 출금 계좌가 없습니다.</p>
+                    <button onClick={() => { setShowWithdrawalPageModal(false); openMyPage(); }}
+                      className="text-amber-400 text-xs underline hover:text-amber-300 transition-colors">
+                      마이페이지에서 계좌 등록하기
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500 text-xs">거래은행</span>
+                      <span className="text-white text-xs font-medium">{user?.bankName || '-'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500 text-xs">계좌번호</span>
+                      <span className="text-white text-xs font-medium">{user?.accountNumber || '-'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500 text-xs">예금주</span>
+                      <span className="text-white text-xs font-medium">{user?.accountHolder || '-'}</span>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* 출금 가능액 */}
+              <div className="flex justify-between items-center bg-white/5 border border-white/10 rounded-xl px-4 py-3 mb-4">
+                <span className="text-gray-400 text-sm">출금가능액</span>
+                <span className="text-white font-bold">{balanceData?.balance ? Number(balanceData.balance).toLocaleString() : '0'}원</span>
+              </div>
+
+              {/* 출금 금액 */}
+              <div className="mb-4">
+                <label className="block text-gray-300 text-sm mb-2">출금 금액 <span className="text-red-400">*</span></label>
+                <div className="relative">
+                  <Input
+                    type="text"
+                    value={withdrawalAmount}
+                    onChange={(e) => setWithdrawalAmount(e.target.value.replace(/[^0-9]/g, ''))}
+                    placeholder="금액을 입력하세요"
+                    className="bg-white/10 border-white/20 text-white pr-12"
+                    data-testid="input-withdrawal-amount"
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">원</span>
+                </div>
+                {withdrawalAmount && <p className="text-gray-400 text-xs mt-1">{Number(withdrawalAmount).toLocaleString()}원</p>}
+                {withdrawalAmount && Number(withdrawalAmount) > Number(balanceData?.balance || 0) && (
+                  <p className="text-red-400 text-xs mt-1">보유금액을 초과할 수 없습니다</p>
+                )}
+              </div>
+
+              {/* 빠른 금액 */}
+              <div className="grid grid-cols-4 gap-2 mb-2">
+                {[10000, 50000, 100000, 500000].map((amt) => (
+                  <button key={amt} onClick={() => setWithdrawalAmount(String(Math.min(Number(withdrawalAmount || 0) + amt, Number(balanceData?.balance || 0))))}
+                    className="py-2 bg-white/10 hover:bg-white/20 text-gray-300 text-xs rounded transition-colors" data-testid={`button-withdrawal-quick-${amt}`}>
+                    +{amt / 10000}만
+                  </button>
+                ))}
+              </div>
+              <div className="grid grid-cols-2 gap-2 mb-5">
+                <button onClick={() => setWithdrawalAmount(String(balanceData?.balance ? Math.floor(Number(balanceData.balance)) : 0))}
+                  className="py-2 bg-white/10 hover:bg-white/20 text-gray-300 text-xs rounded transition-colors" data-testid="button-withdrawal-all">
+                  전액
+                </button>
+                <button onClick={() => setWithdrawalAmount('')}
+                  className="py-2 bg-white/10 hover:bg-white/20 text-gray-300 text-xs rounded transition-colors" data-testid="button-withdrawal-reset">
+                  초기화
+                </button>
+              </div>
+
+              {/* 출금신청 버튼 */}
+              <Button
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold"
+                disabled={
+                  withdrawalSubmitting ||
+                  !withdrawalAmount ||
+                  Number(withdrawalAmount) <= 0 ||
+                  Number(withdrawalAmount) > Number(balanceData?.balance || 0) ||
+                  (!user?.bankName && !user?.accountNumber)
+                }
+                data-testid="button-withdrawal-submit"
+                onClick={async () => {
+                  if (!user?.bankName && !user?.accountNumber) { toast.error('출금 계좌를 먼저 등록해주세요'); return; }
+                  if (!withdrawalAmount || Number(withdrawalAmount) <= 0) { toast.error('금액을 입력해주세요'); return; }
+                  if (Number(withdrawalAmount) < 10000) { toast.error('최소 출금금액은 10,000원입니다'); return; }
+                  if (Number(withdrawalAmount) > Number(balanceData?.balance || 0)) { toast.error('보유금액을 초과할 수 없습니다'); return; }
+                  setWithdrawalSubmitting(true);
+                  try {
+                    const res = await fetch('/api/transactions', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ type: 'withdrawal', amount: withdrawalAmount }),
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || '요청에 실패했습니다');
+                    setWithdrawalSuccessAmount(withdrawalAmount);
+                    setShowWithdrawalPageModal(false);
+                    setWithdrawalAmount('');
+                    refetchBalance();
+                    setShowWithdrawalSuccessModal(true);
+                  } catch (err: any) {
+                    toast.error(err.message || '요청에 실패했습니다');
+                  } finally {
+                    setWithdrawalSubmitting(false);
+                  }
+                }}
+              >
+                {withdrawalSubmitting ? '처리중...' : '출금신청'}
               </Button>
             </div>
           </div>
