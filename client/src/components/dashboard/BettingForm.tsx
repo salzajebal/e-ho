@@ -633,7 +633,7 @@ export function BettingForm({ currentPrice, game, balance, onBet, isBetting = fa
         <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-muted/30 border border-border">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Wallet className="w-3.5 h-3.5" />
-            <span>보유 잔고</span>
+            <span>보유금액</span>
           </div>
           <span
             data-testid="text-available-balance"

@@ -98,6 +98,7 @@ export function Navbar({ onSelectGame, selectedGameId }: NavbarProps) {
             className="flex items-center gap-1 lg:gap-1.5 px-2 lg:px-3 py-1 rounded-lg bg-primary/10 border border-primary/20"
           >
             <Wallet className="w-3 h-3 lg:w-3.5 lg:h-3.5 text-primary shrink-0" />
+            <span className="hidden lg:inline text-xs text-primary/70">보유금액</span>
             <span className="text-xs lg:text-sm font-bold font-mono text-primary">
               <span className="hidden sm:inline">₩</span>{displayBalance.toLocaleString()}
               <span className="hidden lg:inline">원</span>
@@ -135,7 +136,7 @@ export function Navbar({ onSelectGame, selectedGameId }: NavbarProps) {
               <div className="px-2 py-1.5 text-sm">
                 <p className="font-medium">{user.username}</p>
                 <p className="text-xs text-muted-foreground">
-                  잔고: {Math.floor(parseFloat(user.balance)).toLocaleString()}원
+                  보유금액: {Math.floor(parseFloat(user.balance)).toLocaleString()}원
                 </p>
                 {(user as any).grade && (
                   <p className="text-xs text-primary font-medium mt-0.5">
