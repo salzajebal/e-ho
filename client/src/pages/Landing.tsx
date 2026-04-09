@@ -1943,13 +1943,6 @@ export default function Landing() {
                   <p className="text-red-400 text-sm">잔액을 초과할 수 없습니다</p>
                 )}
 
-                {transactionType === 'deposit' && (
-                  <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4">
-                    <p className="text-amber-400 text-sm whitespace-pre-wrap">
-                      {depositNoticeData?.depositNotice || '입금 신청 후 고객센터에서 입금 계좌 정보를 안내해드립니다.'}
-                    </p>
-                  </div>
-                )}
 
               </div>
 
