@@ -1993,7 +1993,28 @@ export default function Landing() {
                     <p className="text-gray-500 text-xs">입금 계좌 정보는 고객센터를 통해 개별 안내드립니다.</p>
                   </div>
                   <button
-                    onClick={() => { setShowDepositPageModal(false); setShowCustomerServiceModal(true); }}
+                    onClick={async () => {
+                      try {
+                        const res = await fetch('/api/inquiries', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            title: '입금계좌 안내 요청',
+                            content: '입금계좌 정보를 안내해 주세요.',
+                          }),
+                        });
+                        if (!res.ok) {
+                          const data = await res.json();
+                          throw new Error(data.error || '문의 생성에 실패했습니다');
+                        }
+                        refetchInquiries();
+                        toast.success('입금계좌 안내 문의가 접수되었습니다.');
+                        setShowDepositPageModal(false);
+                        setShowMyInquiriesModal(true);
+                      } catch (err: any) {
+                        toast.error(err.message || '문의 생성에 실패했습니다');
+                      }
+                    }}
                     className="text-xs bg-amber-500/20 border border-amber-500/40 text-amber-400 px-3 py-1 rounded-full hover:bg-amber-500/30 transition-colors whitespace-nowrap"
                     data-testid="button-deposit-inquiry"
                   >
