@@ -1951,13 +1951,6 @@ export default function Landing() {
                   </div>
                 )}
 
-                {transactionType === 'withdrawal' && (
-                  <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4">
-                    <p className="text-yellow-400 text-sm">
-                      출금은 가입 시 등록한 계좌로 처리됩니다. 처리까지 약 30분 소요됩니다.
-                    </p>
-                  </div>
-                )}
               </div>
 
               <Button
