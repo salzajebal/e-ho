@@ -192,7 +192,15 @@ export default function Landing() {
   const [usernameAvailable, setUsernameAvailable] = useState(false);
   const [checkingUsername, setCheckingUsername] = useState(false);
   
-  // Inquiry form state
+  // My Page state
+  const [showMyPageModal, setShowMyPageModal] = useState(false);
+  const [myPageNewPassword, setMyPageNewPassword] = useState("");
+  const [myPageConfirmPassword, setMyPageConfirmPassword] = useState("");
+  const [myPageBankName, setMyPageBankName] = useState("");
+  const [myPageAccountNumber, setMyPageAccountNumber] = useState("");
+  const [myPageAccountHolder, setMyPageAccountHolder] = useState("");
+  const [myPageSaving, setMyPageSaving] = useState(false);
+
   const [showInquiryFormModal, setShowInquiryFormModal] = useState(false);
   const [showMyInquiriesModal, setShowMyInquiriesModal] = useState(false);
   const [showTransactionsModal, setShowTransactionsModal] = useState(false);
@@ -329,6 +337,66 @@ export default function Landing() {
       }
     } else {
       setShowLoginModal(true);
+    }
+  };
+
+  const openMyPage = () => {
+    if (!user) { setShowLoginModal(true); return; }
+    setMyPageNewPassword("");
+    setMyPageConfirmPassword("");
+    setMyPageBankName((user as any).bankName || "");
+    setMyPageAccountNumber((user as any).accountNumber || "");
+    setMyPageAccountHolder((user as any).accountHolder || "");
+    setShowMyPageModal(true);
+  };
+
+  const handleMyPageSave = async () => {
+    if (myPageNewPassword || myPageConfirmPassword) {
+      if (myPageNewPassword.length < 4) {
+        toast.error("비밀번호는 4자 이상이어야 합니다");
+        return;
+      }
+      if (myPageNewPassword !== myPageConfirmPassword) {
+        toast.error("비밀번호가 일치하지 않습니다");
+        return;
+      }
+    }
+    if (!myPageBankName || !myPageAccountNumber || !myPageAccountHolder) {
+      toast.error("출금 계좌 정보를 모두 입력해주세요");
+      return;
+    }
+    setMyPageSaving(true);
+    try {
+      if (myPageNewPassword) {
+        const pwRes = await fetch("/api/user/profile", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ newPassword: myPageNewPassword, confirmPassword: myPageConfirmPassword }),
+        });
+        if (!pwRes.ok) {
+          const err = await pwRes.json();
+          toast.error(err.error || "비밀번호 변경 실패");
+          setMyPageSaving(false);
+          return;
+        }
+      }
+      const bankRes = await fetch("/api/user/bank", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bankName: myPageBankName, accountNumber: myPageAccountNumber, accountHolder: myPageAccountHolder }),
+      });
+      if (!bankRes.ok) {
+        const err = await bankRes.json();
+        toast.error(err.error || "계좌 정보 변경 실패");
+        setMyPageSaving(false);
+        return;
+      }
+      toast.success("저장되었습니다");
+      setShowMyPageModal(false);
+    } catch {
+      toast.error("저장 중 오류가 발생했습니다");
+    } finally {
+      setMyPageSaving(false);
     }
   };
 
@@ -526,6 +594,15 @@ export default function Landing() {
               >
                 공지사항
               </button>
+              {user && (
+                <button 
+                  onClick={openMyPage}
+                  className="text-gray-300 hover:text-amber-500 transition-colors text-sm font-medium" 
+                  data-testid="nav-mypage"
+                >
+                  마이페이지
+                </button>
+              )}
               <button 
                 onClick={() => setShowCustomerServiceModal(true)}
                 className="text-gray-300 hover:text-amber-500 transition-colors text-sm font-medium" 
@@ -731,6 +808,19 @@ export default function Landing() {
                 >
                   공지사항
                 </button>
+                {user && (
+                  <button 
+                    onClick={() => {
+                      openMyPage();
+                      setMobileMenuOpen(false);
+                    }}
+                    className="text-left text-gray-300 hover:text-amber-500 py-3 border-b border-white/10 w-full touch-manipulation"
+                    style={{ WebkitTapHighlightColor: 'transparent' }}
+                    data-testid="mobile-nav-mypage"
+                  >
+                    마이페이지
+                  </button>
+                )}
                 <button 
                   onClick={() => {
                     setShowCustomerServiceModal(true);
@@ -2683,6 +2773,162 @@ export default function Landing() {
                 </div>
               )}
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* My Page Modal */}
+      <Dialog open={showMyPageModal} onOpenChange={setShowMyPageModal}>
+        <DialogContent className="bg-[#0f1117] border border-white/10 text-white max-w-lg w-full max-h-[90vh] overflow-y-auto p-0">
+          <DialogTitle className="sr-only">마이페이지</DialogTitle>
+          <div className="p-6">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-white">마이페이지</h2>
+              <button onClick={() => setShowMyPageModal(false)} className="text-gray-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* 계정 정보 */}
+            <div className="mb-6">
+              <h3 className="text-base font-semibold text-white mb-4 pb-2 border-b border-white/10">계정 정보</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">아이디</label>
+                  <input
+                    type="text"
+                    value={user?.username || ""}
+                    readOnly
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-gray-300 text-sm cursor-not-allowed"
+                    data-testid="input-mypage-username"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">로그인에 사용되는 고유 아이디입니다.</p>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs text-gray-400 mb-1">새 비밀번호</label>
+                    <Input
+                      type="password"
+                      placeholder="새 비밀번호"
+                      value={myPageNewPassword}
+                      onChange={e => setMyPageNewPassword(e.target.value)}
+                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 text-sm"
+                      data-testid="input-mypage-new-password"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-400 mb-1">비밀번호 확인</label>
+                    <Input
+                      type="password"
+                      placeholder="새 비밀번호 확인"
+                      value={myPageConfirmPassword}
+                      onChange={e => setMyPageConfirmPassword(e.target.value)}
+                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 text-sm"
+                      data-testid="input-mypage-confirm-password"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500">영문, 숫자, 기호를 조합하여 안전한 비밀번호를 설정해 주세요. (비워두면 변경 안됨)</p>
+              </div>
+            </div>
+
+            {/* 본인 정보 */}
+            <div className="mb-6">
+              <h3 className="text-base font-semibold text-white mb-4 pb-2 border-b border-white/10">본인 정보</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">이름</label>
+                  <input
+                    type="text"
+                    value={(user as any)?.name || ""}
+                    readOnly
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-gray-300 text-sm cursor-not-allowed"
+                    data-testid="input-mypage-name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">생년월일 (YYMMDD)</label>
+                  <input
+                    type="text"
+                    value={(user as any)?.birthDate || ""}
+                    readOnly
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-gray-300 text-sm cursor-not-allowed"
+                    data-testid="input-mypage-birthdate"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">회원 가입 시 등록한 정보 기준으로 표시됩니다.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* 출금 계좌 */}
+            <div className="mb-6">
+              <h3 className="text-base font-semibold text-white mb-4 pb-2 border-b border-white/10">출금 계좌</h3>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">은행명</label>
+                  <Select value={myPageBankName} onValueChange={setMyPageBankName}>
+                    <SelectTrigger className="bg-white/5 border-white/10 text-white text-sm" data-testid="select-mypage-bank">
+                      <SelectValue placeholder="은행 선택" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#161b22] border-white/10 max-h-60">
+                      {KOREAN_BANKS.map(bank => (
+                        <SelectItem key={bank} value={bank} className="text-gray-300 focus:bg-white/10 focus:text-white">{bank}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-gray-500 mt-1">정산 및 출금 시 사용될 계좌 정보를 정확히 입력해 주세요.</p>
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">계좌번호</label>
+                  <Input
+                    type="text"
+                    placeholder="계좌번호 (숫자만)"
+                    value={myPageAccountNumber}
+                    onChange={e => setMyPageAccountNumber(e.target.value)}
+                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 text-sm"
+                    data-testid="input-mypage-account-number"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">예금주</label>
+                  <Input
+                    type="text"
+                    placeholder="예금주명"
+                    value={myPageAccountHolder}
+                    onChange={e => setMyPageAccountHolder(e.target.value)}
+                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 text-sm"
+                    data-testid="input-mypage-account-holder"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">회원 실명과 동일해야 정상 출금이 가능합니다.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* 보유금 */}
+            <div className="mb-6">
+              <h3 className="text-base font-semibold text-white mb-4 pb-2 border-b border-white/10">보유금</h3>
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">보유금액</label>
+                <input
+                  type="text"
+                  value={`₩ ${balanceData?.balance ? Math.floor(parseFloat(balanceData.balance)).toLocaleString() : '0'}`}
+                  readOnly
+                  className="w-full bg-amber-500/5 border border-amber-500/20 rounded-lg px-3 py-2 text-amber-400 font-bold text-sm cursor-not-allowed"
+                  data-testid="input-mypage-balance"
+                />
+              </div>
+            </div>
+
+            {/* 저장 버튼 */}
+            <Button
+              onClick={handleMyPageSave}
+              disabled={myPageSaving}
+              className="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold h-11"
+              data-testid="button-mypage-save"
+            >
+              {myPageSaving ? "저장 중..." : "저장하기"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

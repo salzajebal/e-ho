@@ -465,6 +465,46 @@ export async function registerRoutes(
     }
   });
 
+  // Change password (user self-service)
+  app.patch("/api/user/profile", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { newPassword, confirmPassword } = req.body;
+
+      if (!newPassword || typeof newPassword !== 'string') {
+        return res.status(400).json({ error: "새 비밀번호를 입력해주세요" });
+      }
+      if (newPassword.length < 4) {
+        return res.status(400).json({ error: "비밀번호는 4자 이상이어야 합니다" });
+      }
+      if (newPassword !== confirmPassword) {
+        return res.status(400).json({ error: "비밀번호가 일치하지 않습니다" });
+      }
+
+      await storage.updateUser(userId, { password: newPassword });
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "비밀번호 변경에 실패했습니다" });
+    }
+  });
+
+  // Update bank account (user self-service)
+  app.patch("/api/user/bank", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { bankName, accountNumber, accountHolder } = req.body;
+
+      if (!bankName || !accountNumber || !accountHolder) {
+        return res.status(400).json({ error: "모든 계좌 정보를 입력해주세요" });
+      }
+
+      await storage.updateUser(userId, { bankName, accountNumber, accountHolder });
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "계좌 정보 변경에 실패했습니다" });
+    }
+  });
+
   // ==================== BETTING ROUTES ====================
 
   // Get active bets
