@@ -2090,42 +2090,6 @@ export default function Landing() {
                   </div>
                 </button>
 
-                {/* 개인정보 수정 요청 */}
-                <button 
-                  className="w-full block bg-gradient-to-r from-sky-500/10 to-sky-500/10 border border-sky-500/30 rounded-xl p-4 hover:border-sky-500/50 transition-colors cursor-pointer text-left"
-                  onClick={() => {
-                    if (!user) {
-                      toast.error("로그인이 필요합니다");
-                      setShowCustomerServiceModal(false);
-                      setShowLoginModal(true);
-                      return;
-                    }
-                    const hasPending = myInquiries.some(inq => inq.status === 'pending');
-                    if (hasPending) {
-                      toast.error("이전 문의에 답변이 완료된 후 새로운 문의를 작성할 수 있습니다.");
-                      return;
-                    }
-                    setShowCustomerServiceModal(false);
-                    setInquiryTitle("[개인정보 수정 요청]");
-                    setInquiryContent("변경 항목: \n변경 전: \n변경 후: \n\n※ 본인 확인을 위해 가입 시 등록한 이름과 휴대폰 번호를 함께 기재해 주세요.");
-                    setShowInquiryFormModal(true);
-                  }}
-                  data-testid="button-personal-info-change"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-sky-500/20 rounded-full flex items-center justify-center">
-                      <UserCog className="w-6 h-6 text-sky-400" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-white font-medium">개인정보 수정 요청</h3>
-                      <p className="text-sky-400 text-sm">비밀번호, 계좌정보 등 변경 요청</p>
-                    </div>
-                    <div className="text-sky-400">
-                      <ChevronRight className="w-5 h-5" />
-                    </div>
-                  </div>
-                </button>
-
                 {/* 내 문의 내역 */}
                 <button 
                   className="w-full block bg-white/5 border border-white/10 rounded-xl p-4 hover:border-amber-500/50 transition-colors cursor-pointer text-left"
