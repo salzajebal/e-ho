@@ -1551,7 +1551,33 @@ export default function Landing() {
             </div>
           </div>
           
-          <div className="border-t border-white/5 pt-8 text-center text-gray-600 text-sm space-y-2">
+          <div className="border-t border-white/5 pt-8 mb-6">
+            <div className="grid md:grid-cols-3 gap-6">
+              <div>
+                <h4 className="font-semibold mb-3 text-gray-300 text-sm">입·출금 및 상담 가능시간</h4>
+                <p className="text-gray-600 text-xs mb-2">(주말/공휴일 제외)</p>
+                <ul className="space-y-1 text-gray-500 text-xs">
+                  <li className="flex justify-between"><span>고객상담</span><span>평일 09:00 ~ 18:00</span></li>
+                  <li className="flex justify-between"><span>입금시간</span><span>평일 09:00 ~ 18:00</span></li>
+                  <li className="flex justify-between"><span>출금시간</span><span>평일 09:00 ~ 18:00</span></li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-semibold mb-3 text-gray-300 text-sm">거래 상품</h4>
+                <ul className="space-y-1 text-gray-500 text-xs">
+                  <li className="flex justify-between"><span>S&amp;P500</span><span></span></li>
+                  <li className="flex justify-between"><span>다우존스</span><span></span></li>
+                  <li className="flex justify-between"><span>US Dollar</span><span></span></li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-semibold mb-3 text-gray-300 text-sm">지수 CFD 거래</h4>
+                <p className="text-gray-500 text-xs">00:00 ~ 24:00</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-white/5 pt-6 text-center text-gray-600 text-sm space-y-2">
             <p>© 2024 Learn-invest. All rights reserved.</p>
           </div>
         </div>
