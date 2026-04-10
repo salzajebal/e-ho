@@ -20,6 +20,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Shield, Zap, Headphones, TrendingUp, Lock, Award, X, ChevronDown, ChevronRight, Phone, Mail, MessageCircle, History, Wallet, Menu, Bell, FileText, Check, Calendar as CalendarIcon, RefreshCw, UserCog, ArrowDownCircle, ArrowUpCircle, Clock, CheckCircle, XCircle } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useLogin, useRegister, useAuth, useLogout } from "@/hooks/use-auth";
+import { useUserWebSocket } from "@/hooks/use-user-websocket";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -331,6 +332,13 @@ export default function Landing() {
     },
     enabled: !!user,
     staleTime: 0,
+  });
+
+  // 실시간 웹소켓: 고객센터 답변 알림 소리 + 쪽지/입출금 처리 알림
+  useUserWebSocket(!!user, {
+    onNewMessage: () => setShowMessagesModal(true),
+    onInquiryReplied: () => setShowMyInquiriesModal(true),
+    onTransactionProcessed: () => { refetchBalance(); refetchTransactions(); },
   });
 
   const handleTradeClick = () => {

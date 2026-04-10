@@ -2,6 +2,37 @@ import { useEffect, useRef, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+// 알림 소리 재생 (Web Audio API)
+function playNotificationSound() {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    // 첫 번째 음 (높은 음)
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(880, ctx.currentTime);
+    gain1.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+    osc1.start(ctx.currentTime);
+    osc1.stop(ctx.currentTime + 0.3);
+    // 두 번째 음 (더 높은 음)
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(1100, ctx.currentTime + 0.2);
+    gain2.gain.setValueAtTime(0.3, ctx.currentTime + 0.2);
+    gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.55);
+    osc2.start(ctx.currentTime + 0.2);
+    osc2.stop(ctx.currentTime + 0.55);
+  } catch (e) {
+    // 소리 재생 실패 시 무시
+  }
+}
+
 interface WebSocketOptions {
   onNewMessage?: () => void;
   onInquiryReplied?: () => void;
@@ -59,6 +90,21 @@ export function useUserWebSocket(isAuthenticated: boolean, options?: WebSocketOp
           
           if (data.event === 'inquiry_replied') {
             queryClient.invalidateQueries({ queryKey: ["/api/inquiries"] });
+            
+            // 알림 소리 재생
+            playNotificationSound();
+            
+            // 토스트 알림
+            toast("📩 1:1 문의 답변이 도착했습니다", {
+              description: data.data?.title || "고객센터 답변을 확인해 주세요",
+              action: {
+                label: "문의 확인",
+                onClick: () => {
+                  optionsRef.current?.onInquiryReplied?.();
+                },
+              },
+              duration: 10000,
+            });
             
             // Trigger callback to show floating notification in Home component
             optionsRef.current?.onInquiryReplied?.();
