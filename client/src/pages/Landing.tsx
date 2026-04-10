@@ -1944,7 +1944,7 @@ export default function Landing() {
           <DialogTitle className="sr-only">입금 신청</DialogTitle>
           <div className="relative">
             <div className="absolute -inset-1 bg-gradient-to-r from-green-500/10 via-green-500/10 to-green-500/10 rounded-2xl blur-xl" />
-            <div className="relative backdrop-blur-xl bg-[#161b22]/95 border border-white/10 rounded-2xl p-6 shadow-2xl max-h-[85vh] overflow-y-auto overscroll-contain touch-pan-y">
+            <div className="relative backdrop-blur-xl bg-[#161b22]/95 border border-white/10 rounded-2xl p-6 shadow-2xl">
               {/* 헤더 */}
               <div className="flex items-center justify-between mb-5">
                 <button onClick={() => { setShowDepositPageModal(false); setDepositAmount(''); setDepositSenderName(''); }}
@@ -2172,7 +2172,7 @@ export default function Landing() {
           <DialogTitle className="sr-only">출금 신청</DialogTitle>
           <div className="relative">
             <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/10 via-blue-500/10 to-blue-500/10 rounded-2xl blur-xl" />
-            <div className="relative backdrop-blur-xl bg-[#161b22]/95 border border-white/10 rounded-2xl p-6 shadow-2xl max-h-[85vh] overflow-y-auto overscroll-contain touch-pan-y">
+            <div className="relative backdrop-blur-xl bg-[#161b22]/95 border border-white/10 rounded-2xl p-6 shadow-2xl">
               {/* 헤더 */}
               <div className="flex items-center justify-between mb-5">
                 <button onClick={() => { setShowWithdrawalPageModal(false); setWithdrawalAmount(''); }}
