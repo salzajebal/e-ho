@@ -334,7 +334,7 @@ function AdminLogin() {
 // Round Forced Directions Tab Component
 function RoundForcedTab() {
   const [selectedSymbol, setSelectedSymbol] = useState<string>('SP500');
-  const [selectedDuration, setSelectedDuration] = useState<number>(180);
+  const [selectedDuration, setSelectedDuration] = useState<number>(300);
   const [timeLeft, setTimeLeft] = useState({ minutes: 0, seconds: 0 });
   const [currentRound, setCurrentRound] = useState(1);
   const [isToggling, setIsToggling] = useState(false);

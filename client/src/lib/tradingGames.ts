@@ -14,12 +14,9 @@ export const FINNHUB_TICKER_MAP: Record<ForexSymbol, string> = {
 };
 
 export const TRADING_GAMES = [
-  { id: 'SP500-180', symbol: 'SP500', duration: 180, label: 'S&P500 3분' },
-  { id: 'SP500-300', symbol: 'SP500', duration: 300, label: 'S&P500 5분' },
-  { id: 'DOW-180', symbol: 'DOW', duration: 180, label: '다우존스 3분' },
-  { id: 'DOW-300', symbol: 'DOW', duration: 300, label: '다우존스 5분' },
-  { id: 'DXY-180', symbol: 'DXY', duration: 180, label: '달러 3분' },
-  { id: 'DXY-300', symbol: 'DXY', duration: 300, label: '달러 5분' },
+  { id: 'SP500-300', symbol: 'SP500', duration: 300, label: 'S&P500' },
+  { id: 'DOW-300', symbol: 'DOW', duration: 300, label: '다우존스' },
+  { id: 'DXY-300', symbol: 'DXY', duration: 300, label: '달러' },
 ] as const;
 
 export type TradingGame = typeof TRADING_GAMES[number];

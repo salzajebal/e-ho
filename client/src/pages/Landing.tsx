@@ -1188,15 +1188,12 @@ export default function Landing() {
           {[0, 1].map((repeatIdx) => (
             <div key={repeatIdx} className="flex shrink-0 items-center">
               {[
-                { pair: 'S&P 500', name: 'SP500' },
+                { pair: 'S&P500', name: 'SP500' },
                 { pair: '다우존스', name: 'DOW' },
-                { pair: '달러 인덱스', name: 'DXY' },
-                { pair: 'S&P500 3분', name: 'SP500-180' },
-                { pair: '다우존스 5분', name: 'DOW-300' },
-                { pair: '달러 인덱스 3분', name: 'DXY-180' },
-                { pair: 'S&P500 5분', name: 'SP500-300' },
-                { pair: '다우존스 3분', name: 'DOW-180' },
-                { pair: '달러 인덱스 5분', name: 'DXY-300' },
+                { pair: '달러', name: 'DXY' },
+                { pair: 'S&P500', name: 'SP500-300' },
+                { pair: '다우존스', name: 'DOW-300' },
+                { pair: '달러', name: 'DXY-300' },
               ].map((item, i) => (
                 <div key={`${repeatIdx}-${i}`} className="flex items-center gap-2 text-sm px-6 border-r border-white/5 last:border-0">
                   <SymbolIcon symbol={item.name} size={20} />
