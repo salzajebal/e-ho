@@ -203,7 +203,6 @@ const SYMBOL_NAMES: Record<string, string> = {
 };
 
 const DURATION_NAMES: Record<number, string> = {
-  180: '3분',
   300: '5분',
 };
 
@@ -569,7 +568,7 @@ function RoundForcedTab() {
             <div className="space-y-3">
               <label className="text-sm text-muted-foreground font-medium">시간 선택</label>
               <div className="flex gap-2">
-                {[180, 300].map(d => (
+                {[300].map(d => (
                   <Button
                     key={d}
                     type="button"
@@ -1156,7 +1155,7 @@ export default function Admin() {
   // Forced betting states
   const [forcedBetUserId, setForcedBetUserId] = useState("");
   const [forcedBetSymbol, setForcedBetSymbol] = useState("SP500");
-  const [forcedBetDuration, setForcedBetDuration] = useState<number>(180);
+  const [forcedBetDuration, setForcedBetDuration] = useState<number>(300);
   const [forcedBetDirection, setForcedBetDirection] = useState<"long" | "short">("long");
   const [forcedBetAmount, setForcedBetAmount] = useState("");
   const [forcedBetUserSearch, setForcedBetUserSearch] = useState("");
@@ -4895,7 +4894,7 @@ export default function Admin() {
                 <div className="space-y-2">
                   <label className="text-sm text-muted-foreground">거래 시간 *</label>
                   <div className="flex gap-2">
-                    {[180, 300].map(d => (
+                    {[300].map(d => (
                       <Button
                         key={d}
                         type="button"
@@ -4994,7 +4993,7 @@ export default function Admin() {
                       toast.success('강제 거래가 성공적으로 등록되었습니다');
                       setForcedBetUserId('');
                       setForcedBetSymbol('SP500');
-                      setForcedBetDuration(180);
+                      setForcedBetDuration(300);
                       setForcedBetDirection('long');
                       setForcedBetAmount('');
                       setForcedBetUserSearch('');

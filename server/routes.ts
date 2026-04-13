@@ -541,8 +541,8 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Direction must be 'long' or 'short'" });
       }
 
-      if (![180, 300].includes(duration)) {
-        return res.status(400).json({ error: "Duration must be 180 or 300 seconds" });
+      if (![300].includes(duration)) {
+        return res.status(400).json({ error: "Duration must be 300 seconds" });
       }
 
       const VALID_SYMBOLS = ['SP500', 'DOW', 'DXY'];
@@ -2746,10 +2746,10 @@ export async function registerRoutes(
         return res.status(400).json({ error: "방향은 long 또는 short이어야 합니다" });
       }
 
-      const validDurations = [60, 180, 300];
+      const validDurations = [300];
       const parsedDuration = parseInt(duration);
       if (!validDurations.includes(parsedDuration)) {
-        return res.status(400).json({ error: "유효하지 않은 배팅 시간입니다 (1분, 3분, 5분만 가능)" });
+        return res.status(400).json({ error: "유효하지 않은 배팅 시간입니다 (5분만 가능)" });
       }
 
       const user = await storage.getUser(userId);
@@ -2998,15 +2998,15 @@ export async function registerRoutes(
     close: number;
   }
   const candleStore: Record<string, Record<number, CandleData[]>> = {
-    SP500: { 180: [], 300: [] },
-    DOW: { 180: [], 300: [] },
-    DXY: { 180: [], 300: [] },
+    SP500: { 300: [] },
+    DOW: { 300: [] },
+    DXY: { 300: [] },
   };
   const MAX_CANDLES = 200;
 
   async function loadCandlesFromDB() {
     const symbols = ['SP500', 'DOW', 'DXY'];
-    const durations = [180, 300];
+    const durations = [300];
     for (const symbol of symbols) {
       for (const dur of durations) {
         try {
@@ -3043,7 +3043,7 @@ export async function registerRoutes(
     const ABOVE_THRESHOLD = 0.04; // 캔들 최댓값이 현재가 4% 위
     const FILTER_THRESHOLD = 0.10; // 개별 캔들 ±10% 범위 밖 제거
     const symbols = ['SP500', 'DOW', 'DXY'];
-    const durations = [180, 300];
+    const durations = [300];
     let cleaned = 0;
     for (const symbol of symbols) {
       const realPrice = forexPrices[symbol]?.price;
@@ -3120,7 +3120,7 @@ export async function registerRoutes(
         }
 
         for (const sym of ['SP500', 'DOW', 'DXY']) {
-          for (const d of [180, 300]) {
+          for (const d of [300]) {
             if (candleStore[sym][d].length > MAX_CANDLES + 50) {
               try { await storage.deleteOldForexCandles(sym, d, MAX_CANDLES); } catch (e) {}
             }
@@ -3131,7 +3131,7 @@ export async function registerRoutes(
   }
 
   function updateCandles(symbol: string, price: number, timestamp: number) {
-    const durations = [180, 300];
+    const durations = [300];
     for (const dur of durations) {
       const candles = candleStore[symbol]?.[dur];
       if (!candles) continue;
@@ -3641,8 +3641,8 @@ export async function registerRoutes(
       return res.status(400).json({ error: "지원하지 않는 심볼입니다" });
     }
 
-    const validDurations = [180, 300];
-    const dur = validDurations.includes(duration) ? duration : 180;
+    const validDurations = [300];
+    const dur = validDurations.includes(duration) ? duration : 300;
 
     const ticker = FOREX_TO_FINNHUB[upperSymbol];
     const candles = candleStore[upperSymbol]?.[dur] || [];
