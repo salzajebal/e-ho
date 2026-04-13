@@ -2000,6 +2000,7 @@ export default function Admin() {
   const [tgBotToken, setTgBotToken] = useState("");
   const [tgChatId, setTgChatId] = useState("");
   const [tgShowToken, setTgShowToken] = useState(false);
+  const [tgDetectedChats, setTgDetectedChats] = useState<{ id: string; title: string; type: string }[]>([]);
 
   const { data: tgBotData, refetch: refetchTgBot } = useQuery<{
     botToken: string; chatId: string; configured: boolean;
@@ -2061,6 +2062,29 @@ export default function Admin() {
     },
     onSuccess: () => toast.success("테스트 메시지가 전송되었습니다 ✅"),
     onError: (e: any) => toast.error(e.message || "테스트 전송에 실패했습니다"),
+  });
+
+  const detectTgChat = useMutation({
+    mutationFn: async (token: string) => {
+      const res = await fetch("/api/admin/settings/telegram-bot/detect-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ botToken: token }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "감지 실패");
+      return data as { chats: { id: string; title: string; type: string }[] };
+    },
+    onSuccess: (data) => {
+      if (data.chats.length === 0) {
+        toast.error("감지된 채팅방이 없습니다. 봇을 그룹방에 초대한 뒤 그룹방에서 메시지를 보내고 다시 시도하세요.");
+      } else {
+        setTgDetectedChats(data.chats);
+        toast.success(`${data.chats.length}개의 채팅방이 감지되었습니다`);
+      }
+    },
+    onError: (e: any) => toast.error(e.message || "채팅 ID 감지에 실패했습니다"),
   });
 
   // Repeating alert for pending transactions
@@ -4347,14 +4371,55 @@ export default function Admin() {
 
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-muted-foreground">채팅 ID (Chat ID)</label>
-                  <Input
-                    value={tgChatId}
-                    onChange={(e) => setTgChatId(e.target.value)}
-                    placeholder="-1001234567890 또는 @채널명"
-                    data-testid="input-tg-chat-id"
-                  />
+                  <div className="flex gap-2">
+                    <Input
+                      value={tgChatId}
+                      onChange={(e) => setTgChatId(e.target.value)}
+                      placeholder="-1001234567890 또는 @채널명"
+                      data-testid="input-tg-chat-id"
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        if (!tgBotToken && !tgBotData?.configured) {
+                          toast.error("봇 토큰을 먼저 입력해주세요");
+                          return;
+                        }
+                        setTgDetectedChats([]);
+                        detectTgChat.mutate(tgBotToken);
+                      }}
+                      disabled={detectTgChat.isPending}
+                      data-testid="button-detect-chat-id"
+                      className="whitespace-nowrap"
+                    >
+                      {detectTgChat.isPending ? "감지 중..." : "🔍 자동 감지"}
+                    </Button>
+                  </div>
+                  {tgDetectedChats.length > 0 && (
+                    <div className="mt-2 space-y-1.5">
+                      <p className="text-xs font-medium text-muted-foreground">감지된 채팅방 — 클릭하면 자동 입력됩니다:</p>
+                      {tgDetectedChats.map((chat) => (
+                        <button
+                          key={chat.id}
+                          type="button"
+                          onClick={() => {
+                            setTgChatId(chat.id);
+                            setTgDetectedChats([]);
+                            toast.success(`"${chat.title}" 채팅방이 선택되었습니다`);
+                          }}
+                          className="w-full flex items-center justify-between px-3 py-2 rounded-md border border-border bg-muted/30 hover:bg-muted/60 text-sm transition-colors text-left"
+                          data-testid={`button-select-chat-${chat.id}`}
+                        >
+                          <span className="font-medium truncate">{chat.title}</span>
+                          <span className="ml-2 shrink-0 text-xs text-muted-foreground font-mono">{chat.id}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                   <p className="text-xs text-muted-foreground">
-                    알림을 받을 채널/그룹/개인 Chat ID. @userinfobot 에게 메시지를 보내면 ID를 확인할 수 있습니다.
+                    봇을 그룹방에 초대하고 메시지를 보낸 뒤 🔍 자동 감지 버튼을 누르면 채팅 ID가 자동으로 입력됩니다.
                   </p>
                 </div>
 

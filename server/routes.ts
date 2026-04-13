@@ -2937,6 +2937,43 @@ export async function registerRoutes(
     }
   });
 
+  // 채팅 ID 자동 감지 (getUpdates)
+  app.post("/api/admin/settings/telegram-bot/detect-chat", requireAdmin, async (req, res) => {
+    try {
+      // 입력된 토큰 우선, 없으면 저장된 토큰 사용
+      let botToken = req.body.botToken;
+      if (!botToken) {
+        botToken = await storage.getSetting("telegram_bot_token");
+      }
+      if (!botToken) {
+        return res.status(400).json({ error: "봇 토큰을 먼저 입력해주세요" });
+      }
+      const url = `https://api.telegram.org/bot${botToken}/getUpdates?limit=50&allowed_updates=["message","my_chat_member"]`;
+      const tgRes = await fetch(url);
+      const body = await tgRes.json() as any;
+      if (!tgRes.ok) {
+        return res.status(400).json({ error: `텔레그램 오류: ${body?.description || "봇 토큰이 올바르지 않습니다"}` });
+      }
+      const updates = body.result || [];
+      const chats: { id: string; title: string; type: string }[] = [];
+      const seen = new Set<string>();
+      for (const update of updates) {
+        const chat = update.message?.chat || update.my_chat_member?.chat;
+        if (chat && !seen.has(String(chat.id))) {
+          seen.add(String(chat.id));
+          chats.push({
+            id: String(chat.id),
+            title: chat.title || chat.username || chat.first_name || String(chat.id),
+            type: chat.type,
+          });
+        }
+      }
+      res.json({ chats });
+    } catch (error: any) {
+      res.status(500).json({ error: `감지 실패: ${error?.message}` });
+    }
+  });
+
   // 테스트 메시지 전송
   app.post("/api/admin/settings/telegram-bot/test", requireAdmin, async (req, res) => {
     try {
