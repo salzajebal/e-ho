@@ -6,6 +6,12 @@ uri = "file://client/public/opengraph.png"
 type = "image"
 title = "MIB global exchange opengraph"
 
+[[generated]]
+id = "r14vXuFH6CgIBel6J64iM"
+uri = "file://client/public/mib-icon.png"
+type = "image"
+title = "MIB favicon icon"
+
 [[outputs]]
 id = "JxbMG6iCwgkLYXFE8yWL5"
 uri = "file://forced_settlement_questions.md"
