@@ -84,7 +84,7 @@ export async function notifyLargeBet(
 ): Promise<void> {
   const formattedAmount = opts.amount.toLocaleString("ko-KR") + "원";
   const dirLabel = opts.direction === "long" ? "매수 ↑" : "매도 ↓";
-  const durationLabel = opts.duration === 180 ? "3분" : "5분";
+  const durationLabel = "5분";
 
   const msg =
     `🎯 <b>[고액베팅 알림]</b>\n` +

@@ -488,7 +488,7 @@ function RoundForcedTab() {
       });
       if (!res.ok) throw new Error('설정 실패');
       const result = await res.json();
-      const labels: Record<string, string> = { up: '매수(롱)', down: '매도(숏)', all_win: '전체적중', all_lose: '전체미적중', display_up: '결과표시↑', display_down: '결과표시↓' };
+      const labels: Record<string, string> = { up: '매수', down: '매도', all_win: '전체적중', all_lose: '전체미적중', display_up: '결과표시↑', display_down: '결과표시↓' };
       if (result.action === 'created') {
         toast.success(`${effectiveSelectedRound}회차 ${labels[forcedDirection]} 적용`);
       } else {
@@ -872,7 +872,7 @@ function RoundForcedTab() {
                     "px-3 py-1.5 rounded-full text-sm font-bold",
                     hasDirection.forcedDirection === 'up' ? "bg-up/20 text-up" : "bg-down/20 text-down"
                   )}>
-                    {hasDirection.forcedDirection === 'up' ? '📈 매수(롱)' : '📉 매도(숏)'}
+                    {hasDirection.forcedDirection === 'up' ? '📈 매수' : '📉 매도'}
                   </span>
                 )}
                 {hasOutcome && (
@@ -950,8 +950,8 @@ function RoundForcedTab() {
                       item.forcedDirection === 'display_down' ? "bg-amber-600/20 text-amber-500" :
                       "bg-muted text-muted-foreground"
                     )}>
-                      {item.forcedDirection === 'up' ? '매수(롱)' : 
-                       item.forcedDirection === 'down' ? '매도(숏)' :
+                      {item.forcedDirection === 'up' ? '매수' : 
+                       item.forcedDirection === 'down' ? '매도' :
                        item.forcedDirection === 'all_win' ? '전체적중' :
                        item.forcedDirection === 'all_lose' ? '전체미적중' :
                        item.forcedDirection === 'display_up' ? '결과↑' :
@@ -991,7 +991,7 @@ function RoundForcedTab() {
         </h3>
         <p className="text-sm text-muted-foreground">
           현재 진행 중인 회차의 거래 결과를 강제로 설정합니다. 설정된 회차에서는 모든 사용자의 거래가 지정된 방향으로 정산됩니다.
-          매수로 설정하면 롱(매수) 거래는 승리, 숏(매도) 거래는 패배로 처리됩니다.
+          매수로 설정하면 매수 거래는 승리, 매도 거래는 패배로 처리됩니다.
         </p>
       </div>
     </div>
@@ -5083,7 +5083,7 @@ export default function Admin() {
                       data-testid="button-forced-bet-long"
                     >
                       <TrendingUp className="w-5 h-5 mr-2" />
-                      롱 (상승)
+                      매수 (상승)
                     </Button>
                     <Button
                       type="button"
@@ -5096,7 +5096,7 @@ export default function Admin() {
                       data-testid="button-forced-bet-short"
                     >
                       <TrendingUp className="w-5 h-5 mr-2 rotate-180" />
-                      숏 (하락)
+                      매도 (하락)
                     </Button>
                   </div>
                 </div>

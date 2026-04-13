@@ -832,12 +832,12 @@ export default function AffiliateDashboard() {
                             {bet.direction === 'long' ? (
                               <span className="inline-flex items-center gap-1 text-green-500">
                                 <ArrowUp className="w-3 h-3" />
-                                롱
+                                매수
                               </span>
                             ) : (
                               <span className="inline-flex items-center gap-1 text-red-500">
                                 <ArrowDown className="w-3 h-3" />
-                                숏
+                                매도
                               </span>
                             )}
                           </td>
