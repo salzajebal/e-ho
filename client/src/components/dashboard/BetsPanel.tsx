@@ -254,7 +254,12 @@ function UnrealizedBetRow({ bet }: { bet: Bet }) {
                 ? `+${Math.floor(payout ?? amount * 1.9).toLocaleString()}원`
                 : `-${Math.floor(amount).toLocaleString()}원`}
             </div>
-            <div className="text-xs font-medium text-orange-400">미실현</div>
+            <div className={cn(
+              "text-xs font-medium",
+              visualOutcome === 'win' ? "text-up" : "text-down"
+            )}>
+              {visualOutcome === 'win' ? '실현' : '실격'}
+            </div>
           </>
         ) : (
           <>
