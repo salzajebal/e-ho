@@ -689,26 +689,20 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Bet already settled" });
       }
 
-      // 미실현 모드: 결과 방향 반전 표시 + outcome='unrealized' 로 저장
+      // 미실현 모드 여부 확인
       const bettingUser = await storage.getUser(bet.userId);
-      if (bettingUser?.alwaysPendingEnabled) {
-        const strikePriceVal = parseFloat(bet.strikePrice);
-        const closePriceVal = parseFloat(closePrice);
-        const variation = strikePriceVal > 0 ? strikePriceVal * 0.001 : 0.001;
-        const reversedClosePrice = closePriceVal > strikePriceVal
-          ? (strikePriceVal - variation).toString()
-          : (strikePriceVal + variation).toString();
-        const updatedBet = await storage.updateBet(bet.id, {
-          closePrice: reversedClosePrice,
-          outcome: 'unrealized',
-          settledAt: new Date(),
-        });
-        console.log(`🔒 [Manual Settle] Bet #${id}: 미실현 모드 — unrealized 처리, 반전 closePrice=${reversedClosePrice}`);
-        return res.json(updatedBet);
-      }
+      const isUnrealizedUser = bettingUser?.alwaysPendingEnabled === true;
 
       const strikePrice = parseFloat(bet.strikePrice);
       let closePriceNum = parseFloat(closePrice);
+
+      // 미실현 유저는 closePrice를 반전시켜 동일 파이프라인에 입력
+      if (isUnrealizedUser) {
+        const variation = strikePrice > 0 ? strikePrice * 0.001 : 0.001;
+        closePriceNum = closePriceNum > strikePrice
+          ? strikePrice - variation
+          : strikePrice + variation;
+      }
       const betAmount = parseFloat(bet.amount);
       const multiplier = parseFloat(bet.multiplier);
 
@@ -790,8 +784,20 @@ export async function registerRoutes(
 
       const finalClosePrice = closePriceNum.toString();
       const payout = outcome === 'win' ? betAmount * multiplier : 0;
-      
-      // 원자적 정산: 베팅 정산 + 잔고 업데이트를 하나의 트랜잭션에서 처리 (중복 정산 방지)
+
+      if (isUnrealizedUser) {
+        // 미실현 유저: 잔액 불변, outcome='unrealized'로 저장 후 즉시 반환
+        const settledBet = await storage.updateBet(id, {
+          closePrice: finalClosePrice,
+          outcome: 'unrealized',
+          payout: payout.toString(),
+          settledAt: new Date(),
+        });
+        console.log(`🔒 [Manual Settle] Bet #${id}: 미실현 모드 — 반전결과 ${outcome}, payout=${payout.toLocaleString()}원 (잔액 불변)`);
+        return res.json(settledBet);
+      }
+
+      // 일반 유저: 원자적 정산 + 잔고 업데이트
       const settleResult = await storage.atomicSettleBetAndUpdateBalance(id, finalClosePrice, outcome, payout);
       
       if (!settleResult.success) {
@@ -801,8 +807,7 @@ export async function registerRoutes(
         }
         return res.status(500).json({ error: "Failed to settle bet" });
       }
-      
-      const settledBet = settleResult.bet;
+      const settledBet = settleResult.bet!;
       console.log(`✅ [Manual Settle] Bet #${id}: 정산 완료 (${outcome}, payout: ${payout.toLocaleString()}원)`);
 
       // Record round result for chart candles (use bet creation time for round date)
@@ -3468,20 +3473,16 @@ export async function registerRoutes(
           const betAmount = parseFloat(bet.amount);
           const multiplier = parseFloat(bet.multiplier);
 
-          // 미실현 모드: 결과 방향 반전 표시 + outcome='unrealized' 로 저장
+          // 미실현 모드 여부 먼저 확인
           const betUser = await storage.getUser(bet.userId);
-          if (betUser?.alwaysPendingEnabled) {
+          const isUnrealizedUser = betUser?.alwaysPendingEnabled === true;
+
+          // 미실현 유저는 closePrice를 반전시켜 파이프라인에 입력
+          if (isUnrealizedUser) {
             const variation = strikePrice > 0 ? strikePrice * 0.001 : 0.001;
-            const reversedClosePrice = closePrice > strikePrice
-              ? (strikePrice - variation).toString()
-              : (strikePrice + variation).toString();
-            await storage.updateBet(bet.id, {
-              closePrice: reversedClosePrice,
-              outcome: 'unrealized',
-              settledAt: new Date(),
-            });
-            console.log(`🔒 [Auto-Settle] Bet #${bet.id}: 미실현 모드 — unrealized 처리, 반전 closePrice=${reversedClosePrice}`);
-            continue;
+            closePrice = closePrice > strikePrice
+              ? strikePrice - variation
+              : strikePrice + variation;
           }
 
           let outcome: 'win' | 'lose';
@@ -3568,39 +3569,51 @@ export async function registerRoutes(
           }
           
           const payout = outcome === 'win' ? betAmount * multiplier : 0;
-          
-          // 원자적 정산: 베팅 정산 + 잔고 업데이트를 하나의 트랜잭션에서 처리 (중복 정산 방지)
-          const settleResult = await storage.atomicSettleBetAndUpdateBalance(bet.id, closePrice.toString(), outcome, payout);
-          
-          if (!settleResult.success) {
-            if (settleResult.alreadySettled) {
-              console.log(`⏭️ [Auto-Settle] Bet #${bet.id}: 이미 정산됨, 건너뛰기`);
-            }
-            continue;
-          }
-          
-          console.log(`✅ [Auto-Settle] Bet #${bet.id}: ${bet.symbol} R${bet.roundNumber} ${bet.duration}s ${bet.direction} → ${outcome} (${forcedBy}) payout: ${payout.toLocaleString()}원`);
-          console.log(`   새 잔고: ${settleResult.newBalance ? parseFloat(settleResult.newBalance).toLocaleString() : '알 수 없음'}원`)
-          
-          // Broadcast settlement to admin clients
-          broadcastToAdmins('bet_settled', {
-            betId: bet.id,
-            outcome,
-            closePrice: closePrice.toString(),
-            payout: payout.toString(),
-          });
 
-          broadcastToAdmins('balance_updated', { userId: bet.userId, balance: settleResult.newBalance });
-          
-          // Broadcast to user
-          broadcastToUser(bet.userId, 'bet_settled', {
-            betId: bet.id,
-            outcome,
-            closePrice: closePrice.toString(),
-            payout: payout.toString(),
-          });
-          
-          console.log(`⚡ [Auto-Settle] Bet #${bet.id} settled: ${outcome} at $${closePrice.toFixed(2)}`);
+          if (isUnrealizedUser) {
+            // 미실현 유저: 동일한 파이프라인으로 결과 계산 완료, 잔액 변동 없이 저장
+            await storage.updateBet(bet.id, {
+              closePrice: closePrice.toString(),
+              outcome: 'unrealized',
+              payout: payout.toString(),
+              settledAt: new Date(),
+            });
+            console.log(`🔒 [Auto-Settle] Bet #${bet.id}: 미실현 모드 — 반전결과 ${outcome}, closePrice=${closePrice.toFixed?.(5) ?? closePrice}, payout=${payout.toLocaleString()}원 (잔액 불변)`);
+            broadcastToUser(bet.userId, 'bet_settled', {
+              betId: bet.id,
+              outcome: 'unrealized',
+              closePrice: closePrice.toString(),
+              payout: payout.toString(),
+            });
+          } else {
+            // 일반 유저: 원자적 정산 + 잔고 업데이트
+            const settleResult = await storage.atomicSettleBetAndUpdateBalance(bet.id, closePrice.toString(), outcome, payout);
+            
+            if (!settleResult.success) {
+              if (settleResult.alreadySettled) {
+                console.log(`⏭️ [Auto-Settle] Bet #${bet.id}: 이미 정산됨, 건너뛰기`);
+              }
+              continue;
+            }
+            
+            console.log(`✅ [Auto-Settle] Bet #${bet.id}: ${bet.symbol} R${bet.roundNumber} ${bet.duration}s ${bet.direction} → ${outcome} (${forcedBy}) payout: ${payout.toLocaleString()}원`);
+            console.log(`   새 잔고: ${settleResult.newBalance ? parseFloat(settleResult.newBalance).toLocaleString() : '알 수 없음'}원`);
+            
+            broadcastToAdmins('bet_settled', {
+              betId: bet.id,
+              outcome,
+              closePrice: closePrice.toString(),
+              payout: payout.toString(),
+            });
+            broadcastToAdmins('balance_updated', { userId: bet.userId, balance: settleResult.newBalance });
+            broadcastToUser(bet.userId, 'bet_settled', {
+              betId: bet.id,
+              outcome,
+              closePrice: closePrice.toString(),
+              payout: payout.toString(),
+            });
+            console.log(`⚡ [Auto-Settle] Bet #${bet.id} settled: ${outcome} at $${closePrice.toFixed(2)}`);
+          }
         } catch (settleError) {
           console.error(`❌ [Auto-Settle] Failed to settle bet #${bet.id}:`, settleError);
         }
