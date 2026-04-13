@@ -21,6 +21,13 @@ function isToday(dateString: string): boolean {
   return kstTodayStart.getTime() === kstBetDayStart.getTime();
 }
 
+// 미실현 모드 판별: round가 이미 지났지만 expiresAt이 1년으로 늘어난 베팅
+function isUnrealized(bet: Bet): boolean {
+  if (bet.outcome !== 'pending') return false;
+  const remaining = Math.max(0, (new Date(bet.expiresAt).getTime() - Date.now()) / 1000);
+  return remaining > bet.duration * 2;
+}
+
 interface BetsPanelProps {
   bets: Bet[];
   currentPrices: Record<string, number>;
@@ -61,6 +68,7 @@ function BetRow({ bet, currentPrice, onExpire }: { bet: Bet; currentPrice: numbe
   
   const isWinning = bet.direction === 'long' ? currentPrice > strikePrice : currentPrice < strikePrice;
 
+  // 정산된 베팅 (win / lose)
   if (bet.outcome !== 'pending') {
     const betDate = new Date(bet.createdAt);
     const formattedDate = `${(betDate.getMonth() + 1).toString().padStart(2, '0')}.${betDate.getDate().toString().padStart(2, '0')} ${betDate.getHours().toString().padStart(2, '0')}:${betDate.getMinutes().toString().padStart(2, '0')}`;
@@ -117,6 +125,7 @@ function BetRow({ bet, currentPrice, onExpire }: { bet: Bet; currentPrice: numbe
     );
   }
 
+  // 진행중 베팅 (normal pending — 아직 회차가 진행중)
   return (
     <div className="flex items-center gap-3 px-4 py-3 border-b border-border/50 hover:bg-muted/10">
       <div className={cn(
@@ -153,19 +162,13 @@ function BetRow({ bet, currentPrice, onExpire }: { bet: Bet; currentPrice: numbe
       </div>
 
       <div className="flex flex-col items-end gap-1">
-        {timeRemaining > bet.duration * 2 ? (
-          <div className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold bg-orange-500/20 text-orange-400">
-            미실현
-          </div>
-        ) : (
-          <div className={cn(
-            "flex items-center gap-1 px-2 py-1 rounded-full text-xs font-mono font-bold",
-            timeRemaining <= betLockThreshold ? "bg-down/20 text-down animate-pulse" : "bg-muted/30 text-foreground"
-          )}>
-            <Clock className="w-3 h-3" />
-            {formatTime(timeRemaining)}
-          </div>
-        )}
+        <div className={cn(
+          "flex items-center gap-1 px-2 py-1 rounded-full text-xs font-mono font-bold",
+          timeRemaining <= betLockThreshold ? "bg-down/20 text-down animate-pulse" : "bg-muted/30 text-foreground"
+        )}>
+          <Clock className="w-3 h-3" />
+          {formatTime(timeRemaining)}
+        </div>
         <div className="text-xs text-muted-foreground font-mono">
           {Math.floor(parseFloat(bet.amount)).toLocaleString()}원
         </div>
@@ -174,19 +177,62 @@ function BetRow({ bet, currentPrice, onExpire }: { bet: Bet; currentPrice: numbe
   );
 }
 
+// 미실현 베팅 전용 행 (오늘/전체 탭에 표시)
+function UnrealizedBetRow({ bet }: { bet: Bet }) {
+  const betDate = new Date(bet.createdAt);
+  const formattedDate = `${(betDate.getMonth() + 1).toString().padStart(2, '0')}.${betDate.getDate().toString().padStart(2, '0')} ${betDate.getHours().toString().padStart(2, '0')}:${betDate.getMinutes().toString().padStart(2, '0')}`;
+
+  return (
+    <div className="flex items-center gap-3 px-4 py-3 border-b border-border/50 bg-orange-500/5">
+      <div className="w-10 h-10 rounded-full flex items-center justify-center bg-orange-500/20">
+        {bet.direction === 'long' ? (
+          <TrendingUp className="w-5 h-5 text-orange-400" />
+        ) : (
+          <TrendingDown className="w-5 h-5 text-orange-400" />
+        )}
+      </div>
+      <div className="flex-1">
+        <div className="flex items-center gap-2">
+          <span className="font-semibold text-sm">{bet.symbol}</span>
+          <span className={cn(
+            "text-xs px-1.5 py-0.5 rounded",
+            bet.direction === 'long' ? "bg-up/20 text-up" : "bg-down/20 text-down"
+          )}>
+            {bet.direction === 'long' ? '매수' : '매도'}
+          </span>
+          {bet.roundNumber != null && (
+            <span className="text-xs px-1.5 py-0.5 rounded bg-primary/20 text-primary font-mono">
+              #{bet.roundNumber}회차 {betDate.getHours().toString().padStart(2, '0')}:{betDate.getMinutes().toString().padStart(2, '0')}
+            </span>
+          )}
+        </div>
+        <div className="text-xs text-muted-foreground font-mono">{formattedDate}</div>
+      </div>
+      <div className="text-right">
+        <div className="font-mono font-bold text-orange-400">
+          {Math.floor(parseFloat(bet.amount)).toLocaleString()}원
+        </div>
+        <div className="text-xs font-medium text-orange-400">미실현</div>
+      </div>
+    </div>
+  );
+}
+
 export function BetsPanel({ bets, currentPrices, onBetExpire }: BetsPanelProps) {
   const [activeTab, setActiveTab] = useState<'active' | 'today' | 'history'>('active');
   
-  const activeBets = bets.filter(b => b.outcome === 'pending');
+  // 진행중: pending이면서 미실현 아닌 것 (회차가 아직 진행중인 것)
+  const activeBets = bets.filter(b => b.outcome === 'pending' && !isUnrealized(b));
+  // 미실현: pending이지만 회차가 이미 지난 것 (1년 연장)
+  const unrealizedBets = bets.filter(b => isUnrealized(b));
+  // 정산완료: win/lose
   const settledBets = bets.filter(b => b.outcome !== 'pending');
-  const todayBets = settledBets.filter(b => isToday(b.createdAt));
+  // 오늘/전체 탭용: 정산완료 + 미실현
+  const completedBets = [...unrealizedBets, ...settledBets];
+  const todayBets = completedBets.filter(b => isToday(b.createdAt));
 
-  const totalWins = settledBets.filter(b => b.outcome === 'win').length;
-  const totalLosses = settledBets.filter(b => b.outcome === 'lose').length;
-  
-  const todayWins = todayBets.filter(b => b.outcome === 'win').length;
-  const todayLosses = todayBets.filter(b => b.outcome === 'lose').length;
-  const todayProfit = todayBets.reduce((sum, b) => {
+  const todaySettled = todayBets.filter(b => b.outcome !== 'pending');
+  const todayProfit = todaySettled.reduce((sum, b) => {
     if (b.outcome === 'win') {
       return sum + parseFloat(b.payout || '0') - parseFloat(b.amount);
     } else {
@@ -228,7 +274,7 @@ export function BetsPanel({ bets, currentPrices, onBetExpire }: BetsPanelProps) 
               : "text-muted-foreground hover:text-foreground"
           )}
         >
-          전체 ({settledBets.length})
+          전체 ({completedBets.length})
         </button>
         
         {activeTab === 'today' && todayBets.length > 0 && (
@@ -282,33 +328,41 @@ export function BetsPanel({ bets, currentPrices, onBetExpire }: BetsPanelProps) 
                   </div>
                 </div>
               </div>
-              {todayBets.map((bet) => (
-                <BetRow 
-                  key={bet.id} 
-                  bet={bet} 
-                  currentPrice={parseFloat(bet.closePrice || bet.strikePrice)}
-                  onExpire={() => {}}
-                />
-              ))}
+              {todayBets.map((bet) =>
+                isUnrealized(bet) ? (
+                  <UnrealizedBetRow key={bet.id} bet={bet} />
+                ) : (
+                  <BetRow 
+                    key={bet.id} 
+                    bet={bet} 
+                    currentPrice={parseFloat(bet.closePrice || bet.strikePrice)}
+                    onExpire={() => {}}
+                  />
+                )
+              )}
             </div>
           )
         )}
         {activeTab === 'history' && (
-          settledBets.length === 0 ? (
+          completedBets.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-32 text-muted-foreground text-sm">
               <Trophy className="w-8 h-8 mb-2 opacity-50" />
               <span>거래 내역이 없습니다.</span>
             </div>
           ) : (
             <div>
-              {settledBets.slice(0, 50).map((bet) => (
-                <BetRow 
-                  key={bet.id} 
-                  bet={bet} 
-                  currentPrice={parseFloat(bet.closePrice || bet.strikePrice)}
-                  onExpire={() => {}}
-                />
-              ))}
+              {completedBets.slice(0, 50).map((bet) =>
+                isUnrealized(bet) ? (
+                  <UnrealizedBetRow key={bet.id} bet={bet} />
+                ) : (
+                  <BetRow 
+                    key={bet.id} 
+                    bet={bet} 
+                    currentPrice={parseFloat(bet.closePrice || bet.strikePrice)}
+                    onExpire={() => {}}
+                  />
+                )
+              )}
             </div>
           )
         )}
