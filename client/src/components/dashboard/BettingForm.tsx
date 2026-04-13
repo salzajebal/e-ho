@@ -556,6 +556,14 @@ export function BettingForm({ currentPrice, game, balance, onBet, isBetting = fa
     });
   };
 
+  const handleMaxFillClick = () => {
+    if (availableBalance < 10000) {
+      toast.error("보유금액이 부족합니다. 최소 주문금액은 10,000원입니다.");
+      return;
+    }
+    setAmount(Math.floor(availableBalance).toString());
+  };
+
   const confirmBet = () => {
     if (isBetting) return;
     onBet(betConfirmation.direction, betConfirmation.amount);
@@ -676,22 +684,13 @@ export function BettingForm({ currentPrice, game, balance, onBet, isBetting = fa
         )}
 
         <div className="flex flex-col gap-1.5 pt-1 lg:pt-2">
-          <div className="flex gap-2">
-            <Button 
-              onClick={() => handleMaxBetClick('long')}
-              className="h-9 lg:h-10 text-xs lg:text-sm font-bold text-white flex items-center justify-center gap-1 flex-1 bg-gray-500 hover:bg-gray-400"
-              data-testid="button-long-max"
-            >
-              LONG MAX
-            </Button>
-            <Button 
-              onClick={() => handleMaxBetClick('short')}
-              className="h-9 lg:h-10 text-xs lg:text-sm font-bold text-white flex items-center justify-center gap-1 flex-1 bg-gray-500 hover:bg-gray-400"
-              data-testid="button-short-max"
-            >
-              SHORT MAX
-            </Button>
-          </div>
+          <Button 
+            onClick={handleMaxFillClick}
+            className="h-9 lg:h-10 text-xs lg:text-sm font-bold text-white flex items-center justify-center gap-1 w-full bg-gray-500 hover:bg-gray-400"
+            data-testid="button-max"
+          >
+            MAX
+          </Button>
           <div className="flex gap-2">
             <Button 
               onClick={() => handleBetClick('long')}
@@ -705,7 +704,7 @@ export function BettingForm({ currentPrice, game, balance, onBet, isBetting = fa
               data-testid="button-long"
             >
               <TrendingUp className="w-4 h-4 shrink-0" />
-              LONG
+              매수
             </Button>
             <Button 
               onClick={() => handleBetClick('short')}
@@ -719,7 +718,7 @@ export function BettingForm({ currentPrice, game, balance, onBet, isBetting = fa
               data-testid="button-short"
             >
               <TrendingDown className="w-4 h-4 shrink-0" />
-              SHORT
+              매도
             </Button>
           </div>
         </div>
@@ -762,7 +761,7 @@ export function BettingForm({ currentPrice, game, balance, onBet, isBetting = fa
                       ) : (
                         <TrendingDown className="w-3 h-3" />
                       )}
-                      <span>{result.direction === 'up' ? 'LONG' : 'SHORT'}</span>
+                      <span>{result.direction === 'up' ? '매수' : '매도'}</span>
                     </div>
                   </div>
                 ))}
@@ -793,7 +792,7 @@ export function BettingForm({ currentPrice, game, balance, onBet, isBetting = fa
               ) : (
                 <TrendingDown className="w-5 h-5" />
               )}
-              {betConfirmation.direction === 'long' ? 'LONG' : 'SHORT'}
+              {betConfirmation.direction === 'long' ? '매수' : '매도'}
             </div>
             
             <div className="space-y-2">

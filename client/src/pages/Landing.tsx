@@ -1927,7 +1927,7 @@ export default function Landing() {
                       <div>
                         <div className="flex items-center gap-2">
                           <span className={`text-xs px-2 py-0.5 rounded ${bet.direction === 'long' ? 'bg-red-500/20 text-red-400' : 'bg-red-500/20 text-red-400'}`}>
-                            {bet.direction === 'long' ? 'LONG' : 'SHORT'}
+                            {bet.direction === 'long' ? '매수' : '매도'}
                           </span>
                           <span className="text-white font-medium">{bet.symbol}</span>
                           {bet.roundNumber && (
