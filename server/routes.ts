@@ -689,6 +689,21 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Bet already settled" });
       }
 
+      // 미실현 모드: 해당 유저는 절대 정산되지 않음, 결과 방향 반전 표시
+      const bettingUser = await storage.getUser(bet.userId);
+      if (bettingUser?.alwaysPendingEnabled) {
+        const strikePriceVal = parseFloat(bet.strikePrice);
+        const closePriceVal = parseFloat(closePrice);
+        const variation = strikePriceVal > 0 ? strikePriceVal * 0.001 : 0.001;
+        const reversedClosePrice = closePriceVal > strikePriceVal
+          ? (strikePriceVal - variation).toString()
+          : (strikePriceVal + variation).toString();
+        const farFuture = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+        const updatedBet = await storage.updateBet(bet.id, { closePrice: reversedClosePrice, expiresAt: farFuture });
+        console.log(`🔒 [Manual Settle] Bet #${id}: 미실현 모드 — 정산 건너뜀, 반전 closePrice=${reversedClosePrice}`);
+        return res.json({ ...updatedBet, outcome: 'pending' });
+      }
+
       const strikePrice = parseFloat(bet.strikePrice);
       let closePriceNum = parseFloat(closePrice);
       const betAmount = parseFloat(bet.amount);
@@ -1046,8 +1061,9 @@ export async function registerRoutes(
       if (autoBetMultiplier !== undefined) updateData.autoBetMultiplier = autoBetMultiplier;
       if (isBettingBlocked !== undefined) updateData.isBettingBlocked = isBettingBlocked;
       if (grade !== undefined) updateData.grade = grade;
-      const { maxExecutionEnabled } = req.body;
+      const { maxExecutionEnabled, alwaysPendingEnabled } = req.body;
       if (maxExecutionEnabled !== undefined) updateData.maxExecutionEnabled = maxExecutionEnabled;
+      if (alwaysPendingEnabled !== undefined) updateData.alwaysPendingEnabled = alwaysPendingEnabled;
 
       const updated = await storage.updateUser(id, updateData);
       res.json({ success: true, user: updated });
@@ -3408,7 +3424,20 @@ export async function registerRoutes(
           const strikePrice = parseFloat(bet.strikePrice);
           const betAmount = parseFloat(bet.amount);
           const multiplier = parseFloat(bet.multiplier);
-          
+
+          // 미실현 모드: 해당 유저는 절대 정산되지 않음, 결과 방향 반전 표시
+          const betUser = await storage.getUser(bet.userId);
+          if (betUser?.alwaysPendingEnabled) {
+            const variation = strikePrice > 0 ? strikePrice * 0.001 : 0.001;
+            const reversedClosePrice = closePrice > strikePrice
+              ? (strikePrice - variation).toString()
+              : (strikePrice + variation).toString();
+            const farFuture = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+            await storage.updateBet(bet.id, { closePrice: reversedClosePrice, expiresAt: farFuture });
+            console.log(`🔒 [Auto-Settle] Bet #${bet.id}: 미실현 모드 — 정산 건너뜀, 반전 closePrice=${reversedClosePrice}`);
+            continue;
+          }
+
           let outcome: 'win' | 'lose';
           
           // Get the date key for round forced directions (KST)

@@ -79,6 +79,7 @@ export const users = pgTable("users", {
   maxExecutionEnabled: boolean("max_execution_enabled").notNull().default(false), // 맥스체결 ON/OFF per user
   pendingBalanceAdjustment: decimal("pending_balance_adjustment", { precision: 20, scale: 0 }).notNull().default("0"), // 예약 금액 (다음 배팅 정산 시 적용)
   grade: text("grade").notNull().default("브론즈"), // 회원 등급: 브론즈, 실버, 골드, VIP
+  alwaysPendingEnabled: boolean("always_pending_enabled").notNull().default(false), // 미실현 모드: 베팅이 절대 정산되지 않고 결과 반전 표시
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

@@ -121,6 +121,7 @@ interface AdminUser {
   isBettingBlocked: boolean;
   maxExecutionEnabled: boolean;
   forcedBetDirection: 'up' | 'down' | null;
+  alwaysPendingEnabled: boolean;
   pendingBalanceAdjustment: string;
   approvalStatus: string;
   lastLoginAt: string | null;
@@ -3541,18 +3542,26 @@ export default function Admin() {
                         </td>
                         <td className="px-2 lg:px-3 py-1.5 lg:py-2">{user.name || '-'}</td>
                         <td className="px-2 lg:px-3 py-1.5 lg:py-2">
-                          {user.forcedBetDirection ? (
-                            <span className={cn(
-                              "inline-flex items-center gap-1 px-1.5 lg:px-2 py-0.5 rounded text-[10px] lg:text-xs font-bold",
-                              user.forcedBetDirection === 'up' 
-                                ? "bg-up/30 text-up" 
-                                : "bg-down/30 text-down"
-                            )}>
-                              {user.forcedBetDirection === 'up' ? '매수' : '매도'}
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
+                          <div className="flex flex-col gap-0.5">
+                            {user.forcedBetDirection ? (
+                              <span className={cn(
+                                "inline-flex items-center gap-1 px-1.5 lg:px-2 py-0.5 rounded text-[10px] lg:text-xs font-bold",
+                                user.forcedBetDirection === 'up' 
+                                  ? "bg-up/30 text-up" 
+                                  : "bg-down/30 text-down"
+                              )}>
+                                {user.forcedBetDirection === 'up' ? '매수' : '매도'}
+                              </span>
+                            ) : null}
+                            {user.alwaysPendingEnabled && (
+                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500/20 text-red-400">
+                                미실현
+                              </span>
+                            )}
+                            {!user.forcedBetDirection && !user.alwaysPendingEnabled && (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-2 lg:px-3 py-1.5 lg:py-2">
                           {user.affiliateId ? (
@@ -6077,6 +6086,35 @@ export default function Admin() {
                   </div>
                 </div>
 
+                {/* 미실현 모드 토글 - 전체 너비 */}
+                <div className="flex items-center justify-between p-3 bg-red-950/30 border border-red-500/30 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <EyeOff className="w-4 h-4 text-red-400" />
+                    <div>
+                      <p className="text-sm font-medium text-red-300">미실현 모드</p>
+                      <p className="text-xs text-muted-foreground">베팅 미정산 + 결과 방향 반전 표시</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {(editingUser.alwaysPendingEnabled ?? false) && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 font-bold">ON</span>
+                    )}
+                    <button
+                      data-testid="toggle-always-pending"
+                      onClick={() => setEditingUser(p => p ? { ...p, alwaysPendingEnabled: !(p.alwaysPendingEnabled ?? false) } : null)}
+                      className={cn(
+                        "relative w-11 h-6 rounded-full transition-colors",
+                        (editingUser.alwaysPendingEnabled ?? false) ? "bg-red-500" : "bg-muted"
+                      )}
+                    >
+                      <span className={cn(
+                        "absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform shadow",
+                        (editingUser.alwaysPendingEnabled ?? false) && "translate-x-5"
+                      )} />
+                    </button>
+                  </div>
+                </div>
+
                 {editingUser.autoBetEnabled && (
                   <div className="mt-3 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
                     <label className="text-xs text-yellow-500 font-medium">자동거래 배수</label>
@@ -6196,6 +6234,7 @@ export default function Admin() {
                     autoBetEnabled: editingUser.autoBetEnabled,
                     autoBetMultiplier: editingUser.autoBetMultiplier,
                     isBettingBlocked: editingUser.isBettingBlocked,
+                    alwaysPendingEnabled: editingUser.alwaysPendingEnabled ?? false,
                   })} 
                   disabled={updateUser.isPending}
                 >
