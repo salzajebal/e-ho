@@ -1,5 +1,10 @@
 uploads = []
-generated = []
+
+[[generated]]
+id = "phKaYk4ogEjBYbGh7kpOo"
+uri = "file://client/public/opengraph.png"
+type = "image"
+title = "MIB global exchange opengraph"
 
 [[outputs]]
 id = "JxbMG6iCwgkLYXFE8yWL5"
