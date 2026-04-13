@@ -21,9 +21,11 @@ function isToday(dateString: string): boolean {
   return kstTodayStart.getTime() === kstBetDayStart.getTime();
 }
 
-// 미실현 모드 판별: round가 이미 지났지만 expiresAt이 1년으로 늘어난 베팅
+// 미실현 모드 판별: outcome='unrealized' (신규) 또는 expiresAt이 1년 연장된 legacy pending
 function isUnrealized(bet: Bet): boolean {
+  if (bet.outcome === 'unrealized') return true;
   if (bet.outcome !== 'pending') return false;
+  // legacy: 구 방식 - expiresAt이 비정상적으로 먼 미래인 경우
   const remaining = Math.max(0, (new Date(bet.expiresAt).getTime() - Date.now()) / 1000);
   return remaining > bet.duration * 2;
 }
@@ -270,17 +272,18 @@ function UnrealizedBetRow({ bet }: { bet: Bet }) {
 export function BetsPanel({ bets, currentPrices, onBetExpire }: BetsPanelProps) {
   const [activeTab, setActiveTab] = useState<'active' | 'today' | 'history'>('active');
   
-  // 진행중: pending이면서 미실현 아닌 것 (회차가 아직 진행중인 것)
+  // 진행중: outcome='pending' (순수 진행중만, 미실현 제외)
   const activeBets = bets.filter(b => b.outcome === 'pending' && !isUnrealized(b));
-  // 미실현: pending이지만 회차가 이미 지난 것 (1년 연장)
+  // 미실현: outcome='unrealized' 또는 legacy pending+1년expiresAt
   const unrealizedBets = bets.filter(b => isUnrealized(b));
-  // 정산완료: win/lose
-  const settledBets = bets.filter(b => b.outcome !== 'pending');
+  // 정산완료: win/lose만 (미실현 제외)
+  const settledBets = bets.filter(b => b.outcome === 'win' || b.outcome === 'lose');
   // 오늘/전체 탭용: 정산완료 + 미실현
   const completedBets = [...unrealizedBets, ...settledBets];
   const todayBets = completedBets.filter(b => isToday(b.createdAt));
 
-  const todaySettled = todayBets.filter(b => b.outcome !== 'pending');
+  // 손익 계산은 실제 정산된 베팅만 (미실현은 잔액 변동 없음)
+  const todaySettled = todayBets.filter(b => b.outcome === 'win' || b.outcome === 'lose');
   const todayProfit = todaySettled.reduce((sum, b) => {
     if (b.outcome === 'win') {
       return sum + parseFloat(b.payout || '0') - parseFloat(b.amount);

@@ -13,7 +13,7 @@ export interface Bet {
   closePrice: string | null;
   payout: string | null;
   multiplier: string;
-  outcome: 'pending' | 'win' | 'lose';
+  outcome: 'pending' | 'win' | 'lose' | 'unrealized';
   expiresAt: string;
   createdAt: string;
   settledAt: string | null;

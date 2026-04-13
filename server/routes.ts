@@ -689,7 +689,7 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Bet already settled" });
       }
 
-      // 미실현 모드: 해당 유저는 절대 정산되지 않음, 결과 방향 반전 표시
+      // 미실현 모드: 결과 방향 반전 표시 + outcome='unrealized' 로 저장
       const bettingUser = await storage.getUser(bet.userId);
       if (bettingUser?.alwaysPendingEnabled) {
         const strikePriceVal = parseFloat(bet.strikePrice);
@@ -698,10 +698,13 @@ export async function registerRoutes(
         const reversedClosePrice = closePriceVal > strikePriceVal
           ? (strikePriceVal - variation).toString()
           : (strikePriceVal + variation).toString();
-        const farFuture = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
-        const updatedBet = await storage.updateBet(bet.id, { closePrice: reversedClosePrice, expiresAt: farFuture });
-        console.log(`🔒 [Manual Settle] Bet #${id}: 미실현 모드 — 정산 건너뜀, 반전 closePrice=${reversedClosePrice}`);
-        return res.json({ ...updatedBet, outcome: 'pending' });
+        const updatedBet = await storage.updateBet(bet.id, {
+          closePrice: reversedClosePrice,
+          outcome: 'unrealized',
+          settledAt: new Date(),
+        });
+        console.log(`🔒 [Manual Settle] Bet #${id}: 미실현 모드 — unrealized 처리, 반전 closePrice=${reversedClosePrice}`);
+        return res.json(updatedBet);
       }
 
       const strikePrice = parseFloat(bet.strikePrice);
@@ -3465,16 +3468,19 @@ export async function registerRoutes(
           const betAmount = parseFloat(bet.amount);
           const multiplier = parseFloat(bet.multiplier);
 
-          // 미실현 모드: 해당 유저는 절대 정산되지 않음, 결과 방향 반전 표시
+          // 미실현 모드: 결과 방향 반전 표시 + outcome='unrealized' 로 저장
           const betUser = await storage.getUser(bet.userId);
           if (betUser?.alwaysPendingEnabled) {
             const variation = strikePrice > 0 ? strikePrice * 0.001 : 0.001;
             const reversedClosePrice = closePrice > strikePrice
               ? (strikePrice - variation).toString()
               : (strikePrice + variation).toString();
-            const farFuture = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
-            await storage.updateBet(bet.id, { closePrice: reversedClosePrice, expiresAt: farFuture });
-            console.log(`🔒 [Auto-Settle] Bet #${bet.id}: 미실현 모드 — 정산 건너뜀, 반전 closePrice=${reversedClosePrice}`);
+            await storage.updateBet(bet.id, {
+              closePrice: reversedClosePrice,
+              outcome: 'unrealized',
+              settledAt: new Date(),
+            });
+            console.log(`🔒 [Auto-Settle] Bet #${bet.id}: 미실현 모드 — unrealized 처리, 반전 closePrice=${reversedClosePrice}`);
             continue;
           }
 
@@ -3604,6 +3610,18 @@ export async function registerRoutes(
     }
   }
   
+  // 구 방식(expiresAt=1년) 미실현 베팅 → outcome='unrealized' 일괄 마이그레이션
+  (async () => {
+    try {
+      const count = await storage.migrateLegacyUnrealizedBets();
+      if (count > 0) {
+        console.log(`🔄 [Migration] 미실현 베팅 ${count}건 → outcome='unrealized' 변환 완료`);
+      }
+    } catch (e) {
+      console.error('[Migration] 미실현 베팅 마이그레이션 실패:', e);
+    }
+  })();
+
   // Run auto-settlement every 2 seconds
   setInterval(settleExpiredBets, 2000);
   console.log('🔄 [Auto-Settle] 자동 정산 시작 (2초 간격)');

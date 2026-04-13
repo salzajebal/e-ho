@@ -1,6 +1,6 @@
 import { type User, type InsertUser, type Bet, type InsertBet, type Setting, type Message, type InsertMessage, type Affiliate, type InsertAffiliate, type AffiliateCommission, type AffiliateSettlement, type InsertAffiliateSettlement, type Announcement, type InsertAnnouncement, type BlockedIp, type InsertBlockedIp, type MaintenanceSymbol, type InsertMaintenanceSymbol, type TransactionRequest, type InsertTransactionRequest, type Inquiry, type InsertInquiry, type RoundResult, type InsertRoundResult, type LoginHistory, type InsertLoginHistory, type InquiryTemplate, type InsertInquiryTemplate, type RoundForcedDirection, type InsertRoundForcedDirection, type ForexCandle, type InsertForexCandle, type Branch, type InsertBranch, users, bets, settings, messages, affiliates, affiliateCommissions, affiliateSettlements, announcements, blockedIps, maintenanceSymbols, transactionRequests, inquiries, roundResults, loginHistory, inquiryTemplates, roundForcedDirections, forexCandles, branches } from "@shared/schema";
 import { db, pool } from "./db";
-import { eq, and, desc, lt, sql, gte } from "drizzle-orm";
+import { eq, and, desc, lt, gt, sql, gte } from "drizzle-orm";
 
 export interface UserVolume {
   userId: string;
@@ -77,6 +77,7 @@ export interface IStorage {
   getUserBetStats(userId: string): Promise<{ totalBet: number; totalWin: number; betCount: number; winCount: number }>;
   deleteAllBetsForUser(userId: string): Promise<number>;
   updatePendingBetsDirectionForRound(symbol: string, duration: number, roundNumber: number, newDirection: 'long' | 'short'): Promise<Bet[]>;
+  migrateLegacyUnrealizedBets(): Promise<number>;
 
   // Settings methods
   getSetting(key: string): Promise<string | undefined>;
@@ -694,6 +695,19 @@ export class DatabaseStorage implements IStorage {
       ))
       .returning();
     return updatedBets;
+  }
+
+  async migrateLegacyUnrealizedBets(): Promise<number> {
+    const farFuture = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    const legacy = await db.select().from(bets)
+      .where(and(eq(bets.outcome, 'pending'), gt(bets.expiresAt, farFuture)));
+    if (legacy.length === 0) return 0;
+    for (const b of legacy) {
+      await db.update(bets)
+        .set({ outcome: 'unrealized', settledAt: new Date() })
+        .where(eq(bets.id, b.id));
+    }
+    return legacy.length;
   }
 
   async updateBetOutcome(betId: number, outcome: 'win' | 'lose', closePrice: string): Promise<Bet> {
