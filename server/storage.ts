@@ -1357,7 +1357,7 @@ export class DatabaseStorage implements IStorage {
   async markAllInquiryRepliesReadForUser(userId: string): Promise<void> {
     await db.update(inquiries)
       .set({ isReplyRead: true })
-      .where(and(eq(inquiries.userId, userId), eq(inquiries.status, 'answered'), eq(inquiries.isReplyRead, false)));
+      .where(and(eq(inquiries.userId, userId), eq(inquiries.status, 'answered')));
   }
 
   async deleteAllInquiriesForUser(userId: string): Promise<number> {

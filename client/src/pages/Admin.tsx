@@ -5503,7 +5503,7 @@ export default function Admin() {
                     등록된 문의가 없습니다
                   </div>
                 ) : (
-                  inquiries.map((inquiry) => (
+                  [...inquiries].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((inquiry) => (
                     <div key={inquiry.id} className="p-4">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2 flex-wrap">
