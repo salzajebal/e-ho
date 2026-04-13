@@ -178,41 +178,90 @@ function BetRow({ bet, currentPrice, onExpire }: { bet: Bet; currentPrice: numbe
 }
 
 // 미실현 베팅 전용 행 (오늘/전체 탭에 표시)
+// closePrice가 있으면 반전된 결과값을 토대로 결과(실격/실현)를 표시
 function UnrealizedBetRow({ bet }: { bet: Bet }) {
   const betDate = new Date(bet.createdAt);
   const formattedDate = `${(betDate.getMonth() + 1).toString().padStart(2, '0')}.${betDate.getDate().toString().padStart(2, '0')} ${betDate.getHours().toString().padStart(2, '0')}:${betDate.getMinutes().toString().padStart(2, '0')}`;
 
+  // 서버가 저장한 반전 closePrice로 시각적 결과 계산
+  const hasResult = bet.closePrice != null;
+  const closePrice = hasResult ? parseFloat(bet.closePrice!) : null;
+  const strikePrice = parseFloat(bet.strikePrice);
+
+  // 반전 closePrice 기준 방향 결과 계산 (서버가 이미 반전 저장했으므로 그대로 판정)
+  let visualOutcome: 'win' | 'lose' | null = null;
+  if (closePrice !== null) {
+    if (bet.direction === 'long') {
+      visualOutcome = closePrice > strikePrice ? 'win' : 'lose';
+    } else {
+      visualOutcome = closePrice < strikePrice ? 'win' : 'lose';
+    }
+  }
+
+  const amount = parseFloat(bet.amount);
+  const payout = bet.payout ? parseFloat(bet.payout) : null;
+
   return (
-    <div className="flex items-center gap-3 px-4 py-3 border-b border-border/50 bg-orange-500/5">
-      <div className="w-10 h-10 rounded-full flex items-center justify-center bg-orange-500/20">
-        {bet.direction === 'long' ? (
-          <TrendingUp className="w-5 h-5 text-orange-400" />
+    <div className={cn(
+      "flex items-center gap-3 px-4 py-3 border-b border-border/50",
+      hasResult
+        ? visualOutcome === 'win' ? "bg-up/10" : "bg-down/10"
+        : "bg-orange-500/5"
+    )}>
+      <div className={cn(
+        "w-10 h-10 rounded-full flex items-center justify-center",
+        hasResult
+          ? visualOutcome === 'win' ? "bg-up/20" : "bg-down/20"
+          : "bg-orange-500/20"
+      )}>
+        {hasResult ? (
+          visualOutcome === 'win'
+            ? <Trophy className="w-5 h-5 text-up" />
+            : <XCircle className="w-5 h-5 text-down" />
         ) : (
-          <TrendingDown className="w-5 h-5 text-orange-400" />
+          bet.direction === 'long'
+            ? <TrendingUp className="w-5 h-5 text-orange-400" />
+            : <TrendingDown className="w-5 h-5 text-orange-400" />
         )}
       </div>
-      <div className="flex-1">
-        <div className="flex items-center gap-2">
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
           <span className="font-semibold text-sm">{bet.symbol}</span>
           <span className={cn(
-            "text-xs px-1.5 py-0.5 rounded",
+            "text-xs px-1.5 py-0.5 rounded shrink-0",
             bet.direction === 'long' ? "bg-up/20 text-up" : "bg-down/20 text-down"
           )}>
             {bet.direction === 'long' ? '매수' : '매도'}
           </span>
           {bet.roundNumber != null && (
-            <span className="text-xs px-1.5 py-0.5 rounded bg-primary/20 text-primary font-mono">
+            <span className="text-xs px-1.5 py-0.5 rounded shrink-0 bg-primary/20 text-primary font-mono">
               #{bet.roundNumber}회차 {betDate.getHours().toString().padStart(2, '0')}:{betDate.getMinutes().toString().padStart(2, '0')}
             </span>
           )}
         </div>
         <div className="text-xs text-muted-foreground font-mono">{formattedDate}</div>
       </div>
-      <div className="text-right">
-        <div className="font-mono font-bold text-orange-400">
-          {Math.floor(parseFloat(bet.amount)).toLocaleString()}원
-        </div>
-        <div className="text-xs font-medium text-orange-400">미실현</div>
+      <div className="text-right shrink-0">
+        {hasResult ? (
+          <>
+            <div className={cn(
+              "font-mono font-bold",
+              visualOutcome === 'win' ? "text-up" : "text-down"
+            )}>
+              {visualOutcome === 'win'
+                ? `+${Math.floor(payout ?? amount * 1.9).toLocaleString()}원`
+                : `-${Math.floor(amount).toLocaleString()}원`}
+            </div>
+            <div className="text-xs font-medium text-orange-400">미실현</div>
+          </>
+        ) : (
+          <>
+            <div className="font-mono font-bold text-orange-400">
+              {Math.floor(amount).toLocaleString()}원
+            </div>
+            <div className="text-xs font-medium text-orange-400">미실현</div>
+          </>
+        )}
       </div>
     </div>
   );
