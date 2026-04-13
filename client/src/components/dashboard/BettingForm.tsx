@@ -609,13 +609,6 @@ export function BettingForm({ currentPrice, game, balance, onBet, isBetting = fa
         <div className="bg-primary/10 rounded-lg p-2 lg:p-3 border border-primary/20">
           <div className="flex items-center justify-between mb-2">
             <span className="font-semibold text-foreground text-sm lg:text-base">{game.label}</span>
-            <span className={cn(
-              "inline-flex items-center gap-1 px-2 py-1 rounded text-xs lg:text-sm font-bold",
-              "bg-primary text-primary-foreground"
-            )}>
-              <Clock className="w-3 h-3 lg:w-4 lg:h-4" />
-              {formatDuration(game.duration)}
-            </span>
           </div>
           <div className="grid grid-cols-2 gap-2 mt-2">
             <div className="flex items-center justify-center bg-yellow-500/20 rounded py-2 px-2 overflow-hidden">

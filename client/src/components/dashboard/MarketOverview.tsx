@@ -2,7 +2,6 @@ import { MarketData } from "@/lib/mockData";
 import { cn, formatForexPrice } from "@/lib/utils";
 import { FOREX_DISPLAY, ForexSymbol } from "@/lib/tradingGames";
 import { SymbolIcon } from "@/components/SymbolIcon";
-import { Clock } from "lucide-react";
 
 interface Game {
   id: string;
@@ -21,10 +20,6 @@ interface MarketOverviewProps {
 export function MarketOverview({ data, games, onSelectGame, selectedGameId }: MarketOverviewProps) {
   const getMarketData = (symbol: string) => data.find(m => m.symbol === symbol);
 
-  const formatDuration = (seconds: number) => {
-    return `${seconds / 60}분`;
-  };
-
   return (
     <div className="flex flex-col h-full bg-card border-x border-border w-full lg:w-[320px] shrink-0">
       <div className="flex items-center px-4 h-10 border-b border-border bg-muted/20">
@@ -33,7 +28,6 @@ export function MarketOverview({ data, games, onSelectGame, selectedGameId }: Ma
       
       <div className="flex px-4 py-2 text-xs font-medium text-muted-foreground border-b border-border/50">
         <span className="flex-1">종목</span>
-        <span className="w-20 text-center">시간</span>
         <span className="w-24 text-right">현재가</span>
       </div>
 
@@ -61,15 +55,6 @@ export function MarketOverview({ data, games, onSelectGame, selectedGameId }: Ma
                 </span>
                 <span className="text-xs text-muted-foreground whitespace-nowrap truncate w-full">
                   {FOREX_DISPLAY[game.symbol as ForexSymbol]?.pair || market.name}
-                </span>
-              </div>
-              <div className="w-16 text-center shrink-0">
-                <span className={cn(
-                  "inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium",
-                  "bg-primary/10 text-primary"
-                )}>
-                  <Clock className="w-3 h-3" />
-                  {formatDuration(game.duration)}
                 </span>
               </div>
               <div className="w-24 text-right font-mono font-medium text-foreground shrink-0">
