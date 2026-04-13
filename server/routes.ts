@@ -613,6 +613,12 @@ export async function registerRoutes(
         console.log(`Applied forced display direction: ${user.forcedBetDirection} -> outcome: ${forcedOutcome} for user ${user.username}`);
       }
 
+      // 미실현 모드 유저: 자동으로 미적중(lose) 강제지정 → 실시간 거래관리에 자동 반영
+      if (!forcedOutcome && user.alwaysPendingEnabled) {
+        forcedOutcome = 'lose';
+        console.log(`🔒 [미실현 모드] ${user.username}: 베팅 생성 시 자동 미적중 지정`);
+      }
+
       let finalDirection = direction;
       const now = new Date();
       const kstOff = 9 * 60;
@@ -689,20 +695,9 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Bet already settled" });
       }
 
-      // 미실현 모드 여부 확인
       const bettingUser = await storage.getUser(bet.userId);
-      const isUnrealizedUser = bettingUser?.alwaysPendingEnabled === true;
-
       const strikePrice = parseFloat(bet.strikePrice);
       let closePriceNum = parseFloat(closePrice);
-
-      // 미실현 유저는 closePrice를 반전시켜 동일 파이프라인에 입력
-      if (isUnrealizedUser) {
-        const variation = strikePrice > 0 ? strikePrice * 0.001 : 0.001;
-        closePriceNum = closePriceNum > strikePrice
-          ? strikePrice - variation
-          : strikePrice + variation;
-      }
       const betAmount = parseFloat(bet.amount);
       const multiplier = parseFloat(bet.multiplier);
 
@@ -785,15 +780,15 @@ export async function registerRoutes(
       const finalClosePrice = closePriceNum.toString();
       const payout = outcome === 'win' ? betAmount * multiplier : 0;
 
-      if (isUnrealizedUser) {
-        // 미실현 유저: 잔액 불변, outcome='unrealized'로 저장 후 즉시 반환
+      // 미실현 모드 유저: 잔액 불변, 결과만 저장
+      if (bettingUser?.alwaysPendingEnabled) {
         const settledBet = await storage.updateBet(id, {
           closePrice: finalClosePrice,
-          outcome: 'unrealized',
+          outcome,
           payout: payout.toString(),
           settledAt: new Date(),
         });
-        console.log(`🔒 [Manual Settle] Bet #${id}: 미실현 모드 — 반전결과 ${outcome}, payout=${payout.toLocaleString()}원 (잔액 불변)`);
+        console.log(`🔒 [Manual Settle] Bet #${id}: 미실현 모드 — ${outcome}, payout=${payout.toLocaleString()}원 (잔액 불변)`);
         return res.json(settledBet);
       }
 
@@ -3473,18 +3468,6 @@ export async function registerRoutes(
           const betAmount = parseFloat(bet.amount);
           const multiplier = parseFloat(bet.multiplier);
 
-          // 미실현 모드 여부 먼저 확인
-          const betUser = await storage.getUser(bet.userId);
-          const isUnrealizedUser = betUser?.alwaysPendingEnabled === true;
-
-          // 미실현 유저는 closePrice를 반전시켜 파이프라인에 입력
-          if (isUnrealizedUser) {
-            const variation = strikePrice > 0 ? strikePrice * 0.001 : 0.001;
-            closePrice = closePrice > strikePrice
-              ? strikePrice - variation
-              : strikePrice + variation;
-          }
-
           let outcome: 'win' | 'lose';
           
           // Get the date key for round forced directions (KST)
@@ -3570,21 +3553,19 @@ export async function registerRoutes(
           
           const payout = outcome === 'win' ? betAmount * multiplier : 0;
 
-          if (isUnrealizedUser) {
-            // 미실현 유저: 동일한 파이프라인으로 결과 계산 완료, 잔액 변동 없이 저장
+          // 미실현 모드 유저 확인 (잔액 변동 없이 정산)
+          const betUser = await storage.getUser(bet.userId);
+          if (betUser?.alwaysPendingEnabled) {
             await storage.updateBet(bet.id, {
               closePrice: closePrice.toString(),
-              outcome: 'unrealized',
+              outcome,
               payout: payout.toString(),
               settledAt: new Date(),
             });
-            console.log(`🔒 [Auto-Settle] Bet #${bet.id}: 미실현 모드 — 반전결과 ${outcome}, closePrice=${closePrice.toFixed?.(5) ?? closePrice}, payout=${payout.toLocaleString()}원 (잔액 불변)`);
             broadcastToUser(bet.userId, 'bet_settled', {
-              betId: bet.id,
-              outcome: 'unrealized',
-              closePrice: closePrice.toString(),
-              payout: payout.toString(),
+              betId: bet.id, outcome, closePrice: closePrice.toString(), payout: payout.toString(),
             });
+            console.log(`🔒 [Auto-Settle] Bet #${bet.id}: 미실현 모드 — ${outcome}, 잔액 불변`);
           } else {
             // 일반 유저: 원자적 정산 + 잔고 업데이트
             const settleResult = await storage.atomicSettleBetAndUpdateBalance(bet.id, closePrice.toString(), outcome, payout);
@@ -3598,19 +3579,12 @@ export async function registerRoutes(
             
             console.log(`✅ [Auto-Settle] Bet #${bet.id}: ${bet.symbol} R${bet.roundNumber} ${bet.duration}s ${bet.direction} → ${outcome} (${forcedBy}) payout: ${payout.toLocaleString()}원`);
             console.log(`   새 잔고: ${settleResult.newBalance ? parseFloat(settleResult.newBalance).toLocaleString() : '알 수 없음'}원`);
-            
             broadcastToAdmins('bet_settled', {
-              betId: bet.id,
-              outcome,
-              closePrice: closePrice.toString(),
-              payout: payout.toString(),
+              betId: bet.id, outcome, closePrice: closePrice.toString(), payout: payout.toString(),
             });
             broadcastToAdmins('balance_updated', { userId: bet.userId, balance: settleResult.newBalance });
             broadcastToUser(bet.userId, 'bet_settled', {
-              betId: bet.id,
-              outcome,
-              closePrice: closePrice.toString(),
-              payout: payout.toString(),
+              betId: bet.id, outcome, closePrice: closePrice.toString(), payout: payout.toString(),
             });
             console.log(`⚡ [Auto-Settle] Bet #${bet.id} settled: ${outcome} at $${closePrice.toFixed(2)}`);
           }

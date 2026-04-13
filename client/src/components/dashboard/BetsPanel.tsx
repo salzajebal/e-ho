@@ -21,14 +21,6 @@ function isToday(dateString: string): boolean {
   return kstTodayStart.getTime() === kstBetDayStart.getTime();
 }
 
-// 미실현 모드 판별: outcome='unrealized' (신규) 또는 expiresAt이 1년 연장된 legacy pending
-function isUnrealized(bet: Bet): boolean {
-  if (bet.outcome === 'unrealized') return true;
-  if (bet.outcome !== 'pending') return false;
-  // legacy: 구 방식 - expiresAt이 비정상적으로 먼 미래인 경우
-  const remaining = Math.max(0, (new Date(bet.expiresAt).getTime() - Date.now()) / 1000);
-  return remaining > bet.duration * 2;
-}
 
 interface BetsPanelProps {
   bets: Bet[];
@@ -179,115 +171,16 @@ function BetRow({ bet, currentPrice, onExpire }: { bet: Bet; currentPrice: numbe
   );
 }
 
-// 미실현 베팅 전용 행 (오늘/전체 탭에 표시)
-// closePrice가 있으면 반전된 결과값을 토대로 결과(실격/실현)를 표시
-function UnrealizedBetRow({ bet }: { bet: Bet }) {
-  const betDate = new Date(bet.createdAt);
-  const formattedDate = `${(betDate.getMonth() + 1).toString().padStart(2, '0')}.${betDate.getDate().toString().padStart(2, '0')} ${betDate.getHours().toString().padStart(2, '0')}:${betDate.getMinutes().toString().padStart(2, '0')}`;
-
-  // 서버가 저장한 반전 closePrice로 시각적 결과 계산
-  const hasResult = bet.closePrice != null;
-  const closePrice = hasResult ? parseFloat(bet.closePrice!) : null;
-  const strikePrice = parseFloat(bet.strikePrice);
-
-  // 반전 closePrice 기준 방향 결과 계산 (서버가 이미 반전 저장했으므로 그대로 판정)
-  let visualOutcome: 'win' | 'lose' | null = null;
-  if (closePrice !== null) {
-    if (bet.direction === 'long') {
-      visualOutcome = closePrice > strikePrice ? 'win' : 'lose';
-    } else {
-      visualOutcome = closePrice < strikePrice ? 'win' : 'lose';
-    }
-  }
-
-  const amount = parseFloat(bet.amount);
-  const payout = bet.payout ? parseFloat(bet.payout) : null;
-
-  return (
-    <div className={cn(
-      "flex items-center gap-3 px-4 py-3 border-b border-border/50",
-      hasResult
-        ? visualOutcome === 'win' ? "bg-up/10" : "bg-down/10"
-        : "bg-orange-500/5"
-    )}>
-      <div className={cn(
-        "w-10 h-10 rounded-full flex items-center justify-center",
-        hasResult
-          ? visualOutcome === 'win' ? "bg-up/20" : "bg-down/20"
-          : "bg-orange-500/20"
-      )}>
-        {hasResult ? (
-          visualOutcome === 'win'
-            ? <Trophy className="w-5 h-5 text-up" />
-            : <XCircle className="w-5 h-5 text-down" />
-        ) : (
-          bet.direction === 'long'
-            ? <TrendingUp className="w-5 h-5 text-orange-400" />
-            : <TrendingDown className="w-5 h-5 text-orange-400" />
-        )}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-semibold text-sm">{bet.symbol}</span>
-          <span className={cn(
-            "text-xs px-1.5 py-0.5 rounded shrink-0",
-            bet.direction === 'long' ? "bg-up/20 text-up" : "bg-down/20 text-down"
-          )}>
-            {bet.direction === 'long' ? '매수' : '매도'}
-          </span>
-          {bet.roundNumber != null && (
-            <span className="text-xs px-1.5 py-0.5 rounded shrink-0 bg-primary/20 text-primary font-mono">
-              #{bet.roundNumber}회차 {betDate.getHours().toString().padStart(2, '0')}:{betDate.getMinutes().toString().padStart(2, '0')}
-            </span>
-          )}
-        </div>
-        <div className="text-xs text-muted-foreground font-mono">{formattedDate}</div>
-      </div>
-      <div className="text-right shrink-0">
-        {hasResult ? (
-          <>
-            <div className={cn(
-              "font-mono font-bold",
-              visualOutcome === 'win' ? "text-up" : "text-down"
-            )}>
-              {visualOutcome === 'win'
-                ? `+${Math.floor(payout ?? amount * 1.9).toLocaleString()}원`
-                : `-${Math.floor(amount).toLocaleString()}원`}
-            </div>
-            <div className={cn(
-              "text-xs font-medium",
-              visualOutcome === 'win' ? "text-up" : "text-down"
-            )}>
-              {visualOutcome === 'win' ? '실현' : '실격'}
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="font-mono font-bold text-orange-400">
-              {Math.floor(amount).toLocaleString()}원
-            </div>
-            <div className="text-xs font-medium text-orange-400">미실현</div>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
 export function BetsPanel({ bets, currentPrices, onBetExpire }: BetsPanelProps) {
   const [activeTab, setActiveTab] = useState<'active' | 'today' | 'history'>('active');
   
-  // 진행중: outcome='pending' (순수 진행중만, 미실현 제외)
-  const activeBets = bets.filter(b => b.outcome === 'pending' && !isUnrealized(b));
-  // 미실현: outcome='unrealized' 또는 legacy pending+1년expiresAt
-  const unrealizedBets = bets.filter(b => isUnrealized(b));
-  // 정산완료: win/lose만 (미실현 제외)
-  const settledBets = bets.filter(b => b.outcome === 'win' || b.outcome === 'lose');
-  // 오늘/전체 탭용: 정산완료 + 미실현
-  const completedBets = [...unrealizedBets, ...settledBets];
+  // 진행중: outcome='pending'만
+  const activeBets = bets.filter(b => b.outcome === 'pending');
+  // 정산완료: pending 제외 전부 (win, lose, unrealized 모두 동일하게 표시)
+  const completedBets = bets.filter(b => b.outcome !== 'pending');
   const todayBets = completedBets.filter(b => isToday(b.createdAt));
 
-  // 손익 계산은 실제 정산된 베팅만 (미실현은 잔액 변동 없음)
+  // 손익: 실제 잔액이 변동된 베팅만 (win/lose, unrealized 제외)
   const todaySettled = todayBets.filter(b => b.outcome === 'win' || b.outcome === 'lose');
   const todayProfit = todaySettled.reduce((sum, b) => {
     if (b.outcome === 'win') {
@@ -385,18 +278,14 @@ export function BetsPanel({ bets, currentPrices, onBetExpire }: BetsPanelProps) 
                   </div>
                 </div>
               </div>
-              {todayBets.map((bet) =>
-                isUnrealized(bet) ? (
-                  <UnrealizedBetRow key={bet.id} bet={bet} />
-                ) : (
-                  <BetRow 
-                    key={bet.id} 
-                    bet={bet} 
-                    currentPrice={parseFloat(bet.closePrice || bet.strikePrice)}
-                    onExpire={() => {}}
-                  />
-                )
-              )}
+              {todayBets.map((bet) => (
+                <BetRow
+                  key={bet.id}
+                  bet={bet}
+                  currentPrice={parseFloat(bet.closePrice || bet.strikePrice)}
+                  onExpire={() => {}}
+                />
+              ))}
             </div>
           )
         )}
@@ -408,18 +297,14 @@ export function BetsPanel({ bets, currentPrices, onBetExpire }: BetsPanelProps) 
             </div>
           ) : (
             <div>
-              {completedBets.slice(0, 50).map((bet) =>
-                isUnrealized(bet) ? (
-                  <UnrealizedBetRow key={bet.id} bet={bet} />
-                ) : (
-                  <BetRow 
-                    key={bet.id} 
-                    bet={bet} 
-                    currentPrice={parseFloat(bet.closePrice || bet.strikePrice)}
-                    onExpire={() => {}}
-                  />
-                )
-              )}
+              {completedBets.slice(0, 50).map((bet) => (
+                <BetRow
+                  key={bet.id}
+                  bet={bet}
+                  currentPrice={parseFloat(bet.closePrice || bet.strikePrice)}
+                  onExpire={() => {}}
+                />
+              ))}
             </div>
           )
         )}
