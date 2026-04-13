@@ -253,7 +253,7 @@ function AdminLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-gradient-to-br from-[#1C0F07] via-[#120906] to-[#0A0503] flex items-center justify-center p-6">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <LearnInvestLogo variant="icon" size={64} className="rounded-xl mx-auto mb-4" />
@@ -307,7 +307,7 @@ function AdminLogin() {
 
       {/* Login Error Alert Dialog */}
       <AlertDialog open={!!loginErrorMessage} onOpenChange={() => setLoginErrorMessage("")}>
-        <AlertDialogContent className="bg-[#1a1a24] border border-red-500/30">
+        <AlertDialogContent className="bg-[#201208] border border-red-500/30">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-red-500 flex items-center gap-2">
               <X className="w-5 h-5" />

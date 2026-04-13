@@ -536,9 +536,9 @@ export default function Landing() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0d14] text-white">
+    <div className="min-h-screen bg-[#100805] text-white">
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-[#0a0d14]/95 backdrop-blur-sm border-b border-white/5">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-[#100805]/95 backdrop-blur-sm border-b border-white/5">
         <div className="max-w-7xl mx-auto px-3 md:px-4 h-14 md:h-16 flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center gap-3 md:gap-5 min-w-0">
@@ -558,7 +558,7 @@ export default function Landing() {
                 <DropdownMenuTrigger className="text-gray-300 hover:text-amber-500 transition-colors text-xs font-medium flex items-center gap-1 whitespace-nowrap" data-testid="nav-options-trading">
                   옵션거래 <ChevronDown className="w-3 h-3" />
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-[#161b22] border-white/10">
+                <DropdownMenuContent className="bg-[#1C1008] border-white/10">
                   {CRYPTO_ASSETS.map((stock) => (
                     <DropdownMenuItem 
                       key={stock.symbol}
@@ -754,7 +754,7 @@ export default function Landing() {
                 <Menu className="w-6 h-6" />
               </button>
             </SheetTrigger>
-            <SheetContent side="right" className="bg-[#0a0d14] border-white/10 w-[280px]">
+            <SheetContent side="right" className="bg-[#100805] border-white/10 w-[280px]">
               <SheetHeader>
                 <SheetTitle className="text-white text-left">메뉴</SheetTitle>
               </SheetHeader>
@@ -922,7 +922,7 @@ export default function Landing() {
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
         {/* === BASE: Deep dark navy === */}
-        <div className="absolute inset-0 bg-[#010c1f]" />
+        <div className="absolute inset-0 bg-[#0D0805]" />
 
         {/* === CENTER RADIAL GLOW === */}
         <div
@@ -1102,10 +1102,10 @@ export default function Landing() {
         </svg>
 
         {/* === GRADIENT OVERLAYS for text readability === */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#010c1f]/20 via-[#010c1f]/50 to-[#010c1f]" />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#010c1f]/50 via-transparent to-[#010c1f]/50" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0D0805]/20 via-[#0D0805]/50 to-[#0D0805]" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0D0805]/50 via-transparent to-[#0D0805]/50" />
         {/* Top fade */}
-        <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-[#010c1f] to-transparent" />
+        <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-[#0D0805] to-transparent" />
 
         <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
           <div className="mb-8 flex flex-col items-center">
@@ -1155,7 +1155,7 @@ export default function Landing() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
               size="lg" 
-              className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-bold px-10 py-6 text-lg rounded-lg shadow-lg shadow-blue-500/25"
+              className="bg-gradient-to-r from-amber-700 to-amber-600 hover:from-amber-800 hover:to-amber-700 text-white font-bold px-10 py-6 text-lg rounded-lg shadow-lg shadow-amber-500/25"
               data-testid="button-trade"
               onClick={handleTradeClick}
             >
@@ -1183,7 +1183,7 @@ export default function Landing() {
       </section>
 
       {/* Index Ticker Strip */}
-      <div className="relative overflow-hidden bg-[#0c0f15] border-y border-blue-500/10 py-3">
+      <div className="relative overflow-hidden bg-[#120906] border-y border-amber-500/10 py-3">
         <div className="flex animate-[ticker_30s_linear_infinite] whitespace-nowrap">
           {[0, 1].map((repeatIdx) => (
             <div key={repeatIdx} className="flex shrink-0 items-center">
@@ -1209,7 +1209,7 @@ export default function Landing() {
       </div>
 
       {/* Market Overview */}
-      <section className="py-20 px-4 bg-[#0d1117]">
+      <section className="py-20 px-4 bg-[#130A06]">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-10">
             <div className="flex items-center justify-center gap-2 mb-2">
@@ -1230,13 +1230,13 @@ export default function Landing() {
               return (
                 <div 
                   key={item.symbol}
-                  className="w-full sm:w-[280px] bg-gradient-to-br from-[#1a1a24] to-[#12121a] border border-white/10 rounded-xl p-5 hover:border-amber-500/50 transition-all cursor-pointer group"
+                  className="w-full sm:w-[280px] bg-gradient-to-br from-[#201208] to-[#180D06] border border-white/10 rounded-xl p-5 hover:border-amber-500/50 transition-all cursor-pointer group"
                   data-testid={`card-market-${index}`}
                 >
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-blue-500/30 to-blue-600/10 rounded-full flex items-center justify-center group-hover:from-blue-500/40 group-hover:to-blue-600/20 transition-colors border border-blue-500/20">
-                        <span className="text-lg font-bold text-blue-400">{item.symbol === 'SP500' ? '📈' : item.symbol === 'DOW' ? '🏛️' : '$'}</span>
+                      <div className="w-10 h-10 bg-gradient-to-br from-amber-500/25 to-amber-600/10 rounded-full flex items-center justify-center group-hover:from-amber-500/35 group-hover:to-amber-600/20 transition-colors border border-amber-500/20">
+                        <span className="text-lg font-bold text-amber-400">{item.symbol === 'SP500' ? '📈' : item.symbol === 'DOW' ? '🏛️' : '$'}</span>
                       </div>
                       <div>
                         <h3 className="font-semibold text-white">{item.name}</h3>
@@ -1292,11 +1292,11 @@ export default function Landing() {
       </section>
 
       {/* Announcements & Messages Section */}
-      <section className="py-16 px-4 bg-[#0a0d14]">
+      <section className="py-16 px-4 bg-[#100805]">
         <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-2 gap-8">
             {/* Announcements */}
-            <div className="bg-gradient-to-br from-[#1a1a24] to-[#12121a] border border-white/10 rounded-xl p-6">
+            <div className="bg-gradient-to-br from-[#201208] to-[#180D06] border border-white/10 rounded-xl p-6">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 bg-amber-500/20 rounded-full flex items-center justify-center">
                   <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1329,7 +1329,7 @@ export default function Landing() {
             </div>
 
             {/* Messages (for logged-in users) or Login Prompt */}
-            <div className="bg-gradient-to-br from-[#1a1a24] to-[#12121a] border border-white/10 rounded-xl p-6">
+            <div className="bg-gradient-to-br from-[#201208] to-[#180D06] border border-white/10 rounded-xl p-6">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 bg-amber-500/20 rounded-full flex items-center justify-center">
                   <Mail className="w-5 h-5 text-amber-500" />
@@ -1422,7 +1422,7 @@ export default function Landing() {
             ].map((feature, index) => (
               <div 
                 key={index}
-                className="bg-[#0d1117] border border-white/5 rounded-2xl p-8 hover:border-amber-500/30 transition-all hover:transform hover:-translate-y-1"
+                className="bg-[#130A06] border border-white/5 rounded-2xl p-8 hover:border-amber-500/30 transition-all hover:transform hover:-translate-y-1"
                 data-testid={`card-feature-${index}`}
               >
                 <div className="w-14 h-14 bg-amber-500/10 rounded-xl flex items-center justify-center mb-6">
@@ -1437,7 +1437,7 @@ export default function Landing() {
       </section>
 
       {/* Testimonials */}
-      <section className="py-20 px-4 bg-[#0d1117]">
+      <section className="py-20 px-4 bg-[#130A06]">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <p className="text-amber-400 font-medium mb-2">플랫폼 이용 후기</p>
@@ -1452,7 +1452,7 @@ export default function Landing() {
             ].map((review, index) => (
               <div 
                 key={index}
-                className="bg-[#161b22] border border-white/10 rounded-2xl p-8"
+                className="bg-[#1C1008] border border-white/10 rounded-2xl p-8"
                 data-testid={`card-review-${index}`}
               >
                 <div className="flex items-center gap-3 mb-6">
@@ -1504,7 +1504,7 @@ export default function Landing() {
       )}
 
       {/* Footer */}
-      <footer className="bg-[#08080c] py-16 px-4 border-t border-white/5">
+      <footer className="bg-[#0C0705] py-16 px-4 border-t border-white/5">
         <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-4 gap-10 mb-12">
             <div>
@@ -1589,7 +1589,7 @@ export default function Landing() {
           <DialogTitle className="sr-only">로그인</DialogTitle>
           <div className="relative">
             <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/20 via-amber-500/20 to-amber-500/20 rounded-2xl blur-xl" />
-            <div className="relative backdrop-blur-xl bg-[#161b22]/95 border border-white/10 rounded-2xl p-8 shadow-2xl">
+            <div className="relative backdrop-blur-xl bg-[#1C1008]/95 border border-white/10 rounded-2xl p-8 shadow-2xl">
               <button 
                 onClick={() => setShowLoginModal(false)}
                 className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
@@ -1675,7 +1675,7 @@ export default function Landing() {
           <DialogTitle className="sr-only">회원가입</DialogTitle>
           <div className="relative">
             <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/20 via-amber-500/20 to-amber-500/20 rounded-2xl blur-xl" />
-            <div className="relative backdrop-blur-xl bg-[#161b22]/95 border border-white/10 rounded-2xl p-6 shadow-2xl">
+            <div className="relative backdrop-blur-xl bg-[#1C1008]/95 border border-white/10 rounded-2xl p-6 shadow-2xl">
               <button 
                 onClick={() => setShowRegisterModal(false)}
                 className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
@@ -1808,7 +1808,7 @@ export default function Landing() {
                         <SelectTrigger className="h-10 bg-white/5 border-white/10 text-white text-sm">
                           <SelectValue placeholder="은행을 선택하세요" />
                         </SelectTrigger>
-                        <SelectContent className="bg-gray-900 border-white/20 max-h-60 overflow-y-auto">
+                        <SelectContent className="bg-[#1C1008] border-white/20 max-h-60 overflow-y-auto">
                           {KOREAN_BANKS.map((bank) => (
                             <SelectItem key={bank} value={bank} className="text-white hover:bg-white/10">
                               {bank}
@@ -1886,7 +1886,7 @@ export default function Landing() {
           <DialogTitle className="sr-only">거래내역</DialogTitle>
           <div className="relative">
             <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/20 via-amber-500/20 to-amber-500/20 rounded-2xl blur-xl" />
-            <div className="relative backdrop-blur-xl bg-[#161b22]/95 border border-white/10 rounded-2xl p-6 shadow-2xl">
+            <div className="relative backdrop-blur-xl bg-[#1C1008]/95 border border-white/10 rounded-2xl p-6 shadow-2xl">
               <button 
                 onClick={() => setShowHistoryModal(false)}
                 className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
@@ -1978,7 +1978,7 @@ export default function Landing() {
           <DialogTitle className="sr-only">입금 신청</DialogTitle>
           <div className="relative">
             <div className="absolute -inset-1 bg-gradient-to-r from-green-500/10 via-green-500/10 to-green-500/10 rounded-2xl blur-xl" />
-            <div className="relative backdrop-blur-xl bg-[#161b22]/95 border border-white/10 rounded-2xl p-6 shadow-2xl">
+            <div className="relative backdrop-blur-xl bg-[#1C1008]/95 border border-white/10 rounded-2xl p-6 shadow-2xl">
               {/* 헤더 */}
               <div className="flex items-center justify-between mb-5">
                 <button onClick={() => { setShowDepositPageModal(false); setDepositAmount(''); setDepositSenderName(''); }}
@@ -2206,7 +2206,7 @@ export default function Landing() {
           <DialogTitle className="sr-only">출금 신청</DialogTitle>
           <div className="relative">
             <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/10 via-blue-500/10 to-blue-500/10 rounded-2xl blur-xl" />
-            <div className="relative backdrop-blur-xl bg-[#161b22]/95 border border-white/10 rounded-2xl p-6 shadow-2xl">
+            <div className="relative backdrop-blur-xl bg-[#1C1008]/95 border border-white/10 rounded-2xl p-6 shadow-2xl">
               {/* 헤더 */}
               <div className="flex items-center justify-between mb-5">
                 <button onClick={() => { setShowWithdrawalPageModal(false); setWithdrawalAmount(''); }}
@@ -2372,7 +2372,7 @@ export default function Landing() {
           <DialogTitle className="sr-only">고객센터</DialogTitle>
           <div className="relative">
             <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/20 via-amber-500/20 to-amber-500/20 rounded-2xl blur-xl" />
-            <div className="relative backdrop-blur-xl bg-[#161b22]/95 border border-white/10 rounded-2xl p-6 shadow-2xl">
+            <div className="relative backdrop-blur-xl bg-[#1C1008]/95 border border-white/10 rounded-2xl p-6 shadow-2xl">
               <button 
                 onClick={() => setShowCustomerServiceModal(false)}
                 className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
@@ -2540,7 +2540,7 @@ export default function Landing() {
 
       {/* Withdrawal Success Modal */}
       <AlertDialog open={showWithdrawalSuccessModal} onOpenChange={setShowWithdrawalSuccessModal}>
-        <AlertDialogContent className="bg-[#161b22] border border-white/10">
+        <AlertDialogContent className="bg-[#1C1008] border border-white/10">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-white flex items-center gap-2">
               <div className="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center">
@@ -2573,7 +2573,7 @@ export default function Landing() {
           <DialogTitle className="sr-only">문의 작성</DialogTitle>
           <div className="relative">
             <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/20 via-amber-500/20 to-amber-500/20 rounded-2xl blur-xl" />
-            <div className="relative backdrop-blur-xl bg-[#161b22]/95 border border-white/10 rounded-2xl p-6 shadow-2xl">
+            <div className="relative backdrop-blur-xl bg-[#1C1008]/95 border border-white/10 rounded-2xl p-6 shadow-2xl">
               <button 
                 onClick={() => setShowInquiryFormModal(false)}
                 className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
@@ -2655,7 +2655,7 @@ export default function Landing() {
           <DialogTitle className="sr-only">내 문의 내역</DialogTitle>
           <div className="relative">
             <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/20 via-amber-500/20 to-amber-500/20 rounded-2xl blur-xl" />
-            <div className="relative backdrop-blur-xl bg-[#161b22]/95 border border-white/10 rounded-2xl p-6 shadow-2xl max-h-[80vh] overflow-y-auto">
+            <div className="relative backdrop-blur-xl bg-[#1C1008]/95 border border-white/10 rounded-2xl p-6 shadow-2xl max-h-[80vh] overflow-y-auto">
               <button 
                 onClick={() => setShowMyInquiriesModal(false)}
                 className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
@@ -2752,7 +2752,7 @@ export default function Landing() {
           <DialogTitle className="sr-only">입출금 내역</DialogTitle>
           <div className="relative">
             <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-500/20 rounded-2xl blur-xl" />
-            <div className="relative backdrop-blur-xl bg-[#161b22]/95 border border-white/10 rounded-2xl p-6 shadow-2xl max-h-[85vh] flex flex-col">
+            <div className="relative backdrop-blur-xl bg-[#1C1008]/95 border border-white/10 rounded-2xl p-6 shadow-2xl max-h-[85vh] flex flex-col">
               <button
                 onClick={() => setShowTransactionsModal(false)}
                 className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
@@ -2873,7 +2873,7 @@ export default function Landing() {
           <DialogTitle className="sr-only">쪽지함</DialogTitle>
           <div className="relative">
             <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/20 via-cyan-500/20 to-amber-500/20 rounded-2xl blur-xl" />
-            <div className="relative backdrop-blur-xl bg-[#161b22]/95 border border-white/10 rounded-2xl p-6 shadow-2xl max-h-[80vh] overflow-y-auto">
+            <div className="relative backdrop-blur-xl bg-[#1C1008]/95 border border-white/10 rounded-2xl p-6 shadow-2xl max-h-[80vh] overflow-y-auto">
               <button 
                 onClick={() => { setShowMessagesModal(false); setSelectedMessage(null); }}
                 className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
@@ -2959,7 +2959,7 @@ export default function Landing() {
           <DialogTitle className="sr-only">공지사항</DialogTitle>
           <div className="relative">
             <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/20 via-amber-500/20 to-amber-500/20 rounded-2xl blur-xl" />
-            <div className="relative backdrop-blur-xl bg-[#161b22]/95 border border-white/10 rounded-2xl p-6 shadow-2xl max-h-[80vh] overflow-y-auto">
+            <div className="relative backdrop-blur-xl bg-[#1C1008]/95 border border-white/10 rounded-2xl p-6 shadow-2xl max-h-[80vh] overflow-y-auto">
               <button 
                 onClick={() => { setShowAnnouncementsModal(false); setSelectedAnnouncement(null); }}
                 className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
@@ -3114,7 +3114,7 @@ export default function Landing() {
                     <SelectTrigger className="bg-white/5 border-white/10 text-white text-sm" data-testid="select-mypage-bank">
                       <SelectValue placeholder="은행 선택" />
                     </SelectTrigger>
-                    <SelectContent className="bg-[#161b22] border-white/10 max-h-60">
+                    <SelectContent className="bg-[#1C1008] border-white/10 max-h-60">
                       {KOREAN_BANKS.map(bank => (
                         <SelectItem key={bank} value={bank} className="text-gray-300 focus:bg-white/10 focus:text-white">{bank}</SelectItem>
                       ))}
@@ -3178,7 +3178,7 @@ export default function Landing() {
 
       {/* Login Error Alert Dialog */}
       <AlertDialog open={!!loginErrorMessage} onOpenChange={() => setLoginErrorMessage("")}>
-        <AlertDialogContent className="bg-[#161b22] border border-red-500/30">
+        <AlertDialogContent className="bg-[#1C1008] border border-red-500/30">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-red-500 flex items-center gap-2">
               <X className="w-5 h-5" />
