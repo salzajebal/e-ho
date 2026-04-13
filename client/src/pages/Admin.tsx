@@ -5530,23 +5530,6 @@ export default function Admin() {
                   />
                 </div>
               </div>
-              <div className="space-y-1">
-                <label className="text-xs text-muted-foreground">회원 등급</label>
-                <Select
-                  value={editingUser.grade || '브론즈'}
-                  onValueChange={(v) => setEditingUser(p => p ? { ...p, grade: v } : null)}
-                >
-                  <SelectTrigger data-testid="select-user-grade">
-                    <SelectValue placeholder="등급 선택" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-card border-border">
-                    <SelectItem value="브론즈">🥉 브론즈</SelectItem>
-                    <SelectItem value="실버">🥈 실버</SelectItem>
-                    <SelectItem value="골드">🥇 골드</SelectItem>
-                    <SelectItem value="VIP">💎 VIP</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
               <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
                 <p className="text-xs text-blue-400 font-medium mb-2">가입 시 입력 정보</p>
                 <div className="grid grid-cols-2 gap-3">
