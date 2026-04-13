@@ -545,8 +545,8 @@ export default function Landing() {
             <Link href="/" data-testid="link-logo">
               <div className="flex items-center gap-2 md:gap-3">
                 <div className="flex flex-col">
-                  <span className="text-lg md:text-xl font-bold tracking-wide text-blue-400">
-                    Learn-invest
+                  <span className="text-lg md:text-xl font-bold tracking-wide text-primary">
+                    MIB
                   </span>
                 </div>
               </div>
@@ -1110,20 +1110,20 @@ export default function Landing() {
         <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
           <div className="mb-8 flex flex-col items-center">
             <div className="relative mb-6">
-              <div className="absolute -inset-4 bg-blue-500/20 rounded-full blur-xl animate-pulse" />
+              <div className="absolute -inset-4 bg-amber-500/20 rounded-full blur-xl animate-pulse" />
               <LearnInvestLogo variant="icon" size={96} className="relative rounded-2xl" />
             </div>
             <h1 className="text-5xl md:text-7xl font-bold mb-2 tracking-wide">
-              <span className="bg-gradient-to-r from-blue-400 via-blue-300 to-blue-500 bg-clip-text text-transparent">Learn-invest</span>
+              <span className="bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 bg-clip-text text-transparent">MIB</span>
             </h1>
           </div>
 
           <div className="flex items-center justify-center gap-4 mb-6">
-            <span className="h-px w-12 bg-gradient-to-r from-transparent to-blue-500/50" />
+            <span className="h-px w-12 bg-gradient-to-r from-transparent to-amber-500/50" />
             <div className="flex items-center gap-2">
-              <span className="text-blue-400 text-sm font-semibold tracking-widest uppercase">글로벌 투자 플랫폼</span>
+              <span className="text-amber-400 text-sm font-semibold tracking-widest uppercase">글로벌 투자 거래소</span>
             </div>
-            <span className="h-px w-12 bg-gradient-to-l from-transparent to-blue-500/50" />
+            <span className="h-px w-12 bg-gradient-to-l from-transparent to-amber-500/50" />
           </div>
           
           <h2 className="text-2xl md:text-4xl font-bold mb-6" data-testid="text-hero-title">
@@ -1165,7 +1165,7 @@ export default function Landing() {
               <Button 
                 size="lg" 
                 variant="outline" 
-                className="border-blue-500/30 text-blue-400 hover:bg-blue-500/10 px-10 py-6 text-lg rounded-lg"
+                className="border-amber-500/30 text-amber-400 hover:bg-amber-500/10 px-10 py-6 text-lg rounded-lg"
                 data-testid="button-register"
                 onClick={() => setShowRegisterModal(true)}
               >
@@ -1474,11 +1474,11 @@ export default function Landing() {
         <section className="py-20 px-4">
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="text-3xl md:text-4xl font-bold mb-4" data-testid="text-cta-title">
-              Learn-invest에 가입하고<br />지금 바로 시작해보세요
+              MIB에 가입하고<br />지금 바로 시작해보세요
             </h2>
             <p className="text-gray-400 text-lg mb-10">
               당신의 첫 투자,<br />
-              믿을 수 있는 Learn-invest에서 시작하세요!
+              믿을 수 있는 MIB에서 시작하세요!
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
@@ -1509,8 +1509,8 @@ export default function Landing() {
           <div className="grid md:grid-cols-4 gap-10 mb-12">
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <h3 className="text-xl font-bold text-blue-400">
-                  Learn-invest
+                <h3 className="text-xl font-bold text-amber-400">
+                  MIB
                 </h3>
               </div>
               <p className="text-gray-500 text-sm">
@@ -1521,9 +1521,9 @@ export default function Landing() {
             <div>
               <h4 className="font-semibold mb-4 text-gray-300">지수 거래</h4>
               <ul className="space-y-2 text-gray-500 text-sm">
-                <li><Link href="/trade" className="hover:text-blue-400 transition-colors" data-testid="link-trade-sp500">SP500 (S&amp;P500)</Link></li>
-                <li><Link href="/trade" className="hover:text-blue-400 transition-colors" data-testid="link-trade-dow">DOW (다우존스)</Link></li>
-                <li><Link href="/trade" className="hover:text-blue-400 transition-colors" data-testid="link-trade-dxy">DXY (달러)</Link></li>
+                <li><Link href="/trade" className="hover:text-amber-400 transition-colors" data-testid="link-trade-sp500">SP500 (S&amp;P500)</Link></li>
+                <li><Link href="/trade" className="hover:text-amber-400 transition-colors" data-testid="link-trade-dow">DOW (다우존스)</Link></li>
+                <li><Link href="/trade" className="hover:text-amber-400 transition-colors" data-testid="link-trade-dxy">DXY (달러)</Link></li>
               </ul>
             </div>
             <div>
@@ -1578,7 +1578,7 @@ export default function Landing() {
           </div>
 
           <div className="border-t border-white/5 pt-6 text-center text-gray-600 text-sm space-y-2">
-            <p>© 2024 Learn-invest. All rights reserved.</p>
+            <p>© 2024 MIB. All rights reserved.</p>
           </div>
         </div>
       </footer>
