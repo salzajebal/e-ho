@@ -47,3 +47,14 @@ export function formatTimeRemaining(seconds: number): string {
   const secs = seconds % 60;
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
+
+export function getRoundTimeWindow(roundNumber: number, durationSeconds: number): { start: string; end: string } {
+  const startSec = (roundNumber - 1) * durationSeconds;
+  const endSec = roundNumber * durationSeconds;
+  const fmt = (s: number) => {
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+  };
+  return { start: fmt(startSec), end: fmt(Math.min(endSec, 86400)) };
+}

@@ -338,6 +338,7 @@ function RoundForcedTab() {
   const [currentRound, setCurrentRound] = useState(1);
   const [isToggling, setIsToggling] = useState(false);
   const [isGlobalToggling, setIsGlobalToggling] = useState(false);
+  const [selectedRound, setSelectedRound] = useState<number | null>(null);
   const duration = selectedDuration;
 
   const getKSTDate = (): Date => {
@@ -371,15 +372,30 @@ function RoundForcedTab() {
   const dateKey = getKSTDateKey();
   const maxRounds = Math.floor(86400 / duration);
 
+  const getRoundTimeWindow = (roundNumber: number, durationSeconds: number): { start: string; end: string } => {
+    const startSec = (roundNumber - 1) * durationSeconds;
+    const endSec = roundNumber * durationSeconds;
+    const fmt = (s: number) => {
+      const h = Math.floor(s / 3600);
+      const m = Math.floor((s % 3600) / 60);
+      return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+    };
+    return { start: fmt(startSec), end: fmt(Math.min(endSec, 86400)) };
+  };
+
   useEffect(() => {
     const calculateRoundInfo = () => {
       const round = calculateRoundNumber(duration);
       const remainingSeconds = getRoundTimeRemaining(duration);
       const minutes = Math.floor(remainingSeconds / 60);
       const seconds = remainingSeconds % 60;
-      
       setCurrentRound(round);
       setTimeLeft({ minutes, seconds });
+      // If the selected future round has now become the current or past round, reset selection
+      setSelectedRound(prev => {
+        if (prev !== null && prev < round) return null;
+        return prev;
+      });
     };
 
     calculateRoundInfo();
@@ -409,6 +425,10 @@ function RoundForcedTab() {
 
   const currentGlobalKey = `${selectedSymbol}:${duration}`;
   const currentGlobalValue = globalForced[currentGlobalKey] || '';
+
+  const effectiveSelectedRound = selectedRound ?? currentRound;
+  const isSelectedFuture = effectiveSelectedRound > currentRound;
+  const isSelectedPast = effectiveSelectedRound < currentRound;
 
   const handleGlobalToggle = async (forcedOutcome: 'all_win' | 'all_lose') => {
     if (isGlobalToggling) return;
@@ -443,7 +463,7 @@ function RoundForcedTab() {
   };
 
   const currentRoundSettings = forcedDirections.filter(
-    d => d.symbol === selectedSymbol && d.duration === duration && d.roundNumber === currentRound
+    d => d.symbol === selectedSymbol && d.duration === duration && d.roundNumber === effectiveSelectedRound
   );
   const hasDirection = currentRoundSettings.find(d => d.forcedDirection === 'up' || d.forcedDirection === 'down');
   const hasOutcome = currentRoundSettings.find(d => d.forcedDirection === 'all_win' || d.forcedDirection === 'all_lose');
@@ -460,7 +480,7 @@ function RoundForcedTab() {
         body: JSON.stringify({
           symbol: selectedSymbol,
           duration,
-          roundNumber: currentRound,
+          roundNumber: effectiveSelectedRound,
           dateKey,
           forcedDirection,
         }),
@@ -469,9 +489,9 @@ function RoundForcedTab() {
       const result = await res.json();
       const labels: Record<string, string> = { up: '매수(롱)', down: '매도(숏)', all_win: '전체적중', all_lose: '전체미적중', display_up: '결과표시↑', display_down: '결과표시↓' };
       if (result.action === 'created') {
-        toast.success(`${currentRound}회차 ${labels[forcedDirection]} 적용`);
+        toast.success(`${effectiveSelectedRound}회차 ${labels[forcedDirection]} 적용`);
       } else {
-        toast.success(`${currentRound}회차 ${labels[forcedDirection]} 해제`);
+        toast.success(`${effectiveSelectedRound}회차 ${labels[forcedDirection]} 해제`);
       }
       refetchDirections();
     } catch (error) {
@@ -513,28 +533,123 @@ function RoundForcedTab() {
         <h1 className="text-2xl font-bold">회차별 거래결과 설정</h1>
       </div>
 
-      {/* Current Round Display */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg p-6 text-white">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="bg-white/20 rounded-full p-2">
-              <Clock className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="text-sm opacity-80">현재 진행 중인 회차</div>
-              <div className="text-3xl font-bold">{currentRound}회차</div>
-            </div>
+      {/* Current Round Status Bar */}
+      <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg p-4 text-white flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="bg-white/20 rounded-full p-2">
+            <Clock className="w-5 h-5" />
           </div>
-          <div className="text-right">
-            <div className="text-sm opacity-80">남은 시간</div>
-            <div className="text-4xl font-mono font-bold">
-              {String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}
-            </div>
+          <div>
+            <div className="text-xs opacity-80">현재 진행 중인 회차</div>
+            <div className="text-2xl font-bold">{currentRound}회차</div>
+            <div className="text-xs opacity-70">총 {maxRounds}회차 중</div>
           </div>
         </div>
-        <div className="text-sm opacity-70">
-          총 {maxRounds}회차 중 {currentRound}회차 진행 중
+        <div className="text-right">
+          <div className="text-xs opacity-80">남은 시간</div>
+          <div className="text-3xl font-mono font-bold">
+            {String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}
+          </div>
         </div>
+      </div>
+
+      {/* Round Picker */}
+      <div className="bg-card border border-border rounded-lg p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-medium flex items-center gap-2 text-sm">
+            <Zap className="w-4 h-4 text-yellow-500" />
+            회차 선택
+            {isSelectedFuture && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 font-normal">예약 모드</span>
+            )}
+            {isSelectedPast && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-normal">과거 회차</span>
+            )}
+          </h3>
+          {selectedRound !== null && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs"
+              onClick={() => setSelectedRound(null)}
+            >
+              현재 회차로 돌아가기
+            </Button>
+          )}
+        </div>
+        <div className="overflow-x-auto -mx-1 px-1 pb-1">
+          <div className="flex gap-2 min-w-max">
+            {Array.from({ length: 20 }, (_, i) => currentRound - 2 + i)
+              .filter(r => r >= 1 && r <= maxRounds)
+              .map(r => {
+                const { start, end } = getRoundTimeWindow(r, duration);
+                const rSettings = forcedDirections.filter(
+                  d => d.symbol === selectedSymbol && d.duration === duration && d.roundNumber === r
+                );
+                const isSelected = r === effectiveSelectedRound;
+                const isCurrent = r === currentRound;
+                const isFuture = r > currentRound;
+                const isPast = r < currentRound;
+                return (
+                  <button
+                    key={r}
+                    onClick={() => setSelectedRound(isCurrent ? null : r)}
+                    className={cn(
+                      "flex flex-col items-center px-2.5 py-2 rounded-lg border min-w-[72px] transition-all text-left",
+                      isSelected && isCurrent
+                        ? "border-blue-500 bg-blue-500/20 ring-1 ring-blue-500"
+                        : isSelected
+                        ? "border-amber-500 bg-amber-500/20 ring-1 ring-amber-500"
+                        : isCurrent
+                        ? "border-blue-500/50 bg-blue-500/10"
+                        : isFuture
+                        ? "border-border hover:border-green-500/50 hover:bg-green-500/5 cursor-pointer"
+                        : "border-border/50 bg-muted/10 opacity-60 cursor-pointer"
+                    )}
+                  >
+                    <span className={cn("text-xs font-bold", isCurrent ? "text-blue-400" : isFuture ? "text-foreground" : "text-muted-foreground")}>
+                      #{r}
+                    </span>
+                    <span className="text-[9px] text-muted-foreground leading-tight">{start}</span>
+                    <span className="text-[9px] text-muted-foreground leading-tight">~{end}</span>
+                    {isCurrent && (
+                      <span className="text-[8px] text-blue-400 font-medium mt-0.5">진행중</span>
+                    )}
+                    {isFuture && rSettings.length === 0 && (
+                      <span className="text-[8px] text-muted-foreground mt-0.5">대기</span>
+                    )}
+                    {isPast && rSettings.length === 0 && (
+                      <span className="text-[8px] text-muted-foreground mt-0.5">종료</span>
+                    )}
+                    {rSettings.length > 0 && (
+                      <div className="flex flex-wrap gap-0.5 mt-1 justify-center">
+                        {rSettings.map((s: any) => (
+                          <span key={s.id} className={cn(
+                            "text-[8px] px-1 py-0.5 rounded font-bold",
+                            s.forcedDirection === 'display_up' ? "bg-cyan-500/30 text-cyan-400" :
+                            s.forcedDirection === 'display_down' ? "bg-amber-500/30 text-amber-400" :
+                            s.forcedDirection === 'all_win' ? "bg-green-500/30 text-green-400" :
+                            s.forcedDirection === 'all_lose' ? "bg-red-500/30 text-red-400" :
+                            s.forcedDirection === 'up' ? "bg-up/30 text-up" :
+                            "bg-down/30 text-down"
+                          )}>
+                            {s.forcedDirection === 'display_up' ? '↑' :
+                             s.forcedDirection === 'display_down' ? '↓' :
+                             s.forcedDirection === 'all_win' ? '✓전' :
+                             s.forcedDirection === 'all_lose' ? '✗전' :
+                             s.forcedDirection === 'up' ? '↑매' : '↓매'}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+          </div>
+        </div>
+        <p className="text-[10px] text-muted-foreground mt-2">
+          현재 회차 이후를 선택하면 해당 회차 시작 전 미리 결과를 예약할 수 있습니다. 회차가 종료될 때 자동으로 적용됩니다.
+        </p>
       </div>
 
       {/* Symbol & Duration Selection */}
@@ -674,17 +789,42 @@ function RoundForcedTab() {
         )}
       </div>
 
-      {/* Current Round Settings */}
-      <div className="bg-card border border-border rounded-lg p-6">
-        <h3 className="font-medium mb-4 flex items-center gap-2">
+      {/* Selected Round Settings */}
+      <div className={cn(
+        "border rounded-lg p-6",
+        isSelectedFuture ? "bg-green-950/20 border-green-500/30" : "bg-card border-border"
+      )}>
+        <h3 className="font-medium mb-1 flex items-center gap-2">
           <Zap className="w-4 h-4 text-yellow-500" />
-          현재 회차 개별 설정 (이 회차에만 적용)
+          {effectiveSelectedRound}회차 설정
+          {isSelectedFuture && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">
+              예약 — 회차 종료 시 자동 적용
+            </span>
+          )}
+          {!isSelectedFuture && !isSelectedPast && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400">진행중</span>
+          )}
+          {isSelectedPast && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">종료된 회차</span>
+          )}
         </h3>
+        {isSelectedFuture && (
+          <p className="text-xs text-green-400/70 mb-4">
+            ⏰ {getRoundTimeWindow(effectiveSelectedRound, duration).start} ~ {getRoundTimeWindow(effectiveSelectedRound, duration).end} 회차에 미리 결과를 예약합니다.
+          </p>
+        )}
+        {!isSelectedFuture && !isSelectedPast && (
+          <p className="text-xs text-muted-foreground mb-4">현재 진행 중인 회차입니다. 설정 즉시 적용됩니다.</p>
+        )}
+        {isSelectedPast && (
+          <p className="text-xs text-muted-foreground mb-4">이미 종료된 회차입니다. 재정산이 발생할 수 있습니다.</p>
+        )}
 
         <div className="space-y-6">
           <div className="space-y-3">
             <label className="text-sm text-muted-foreground font-medium">결과 방향 강제 (표시 + 정산 연동)</label>
-            <p className="text-xs text-muted-foreground">이 회차의 결과 방향을 강제합니다. LONG 설정 시 LONG 베팅 유저는 적중, SHORT 유저는 미적중 처리됩니다.</p>
+            <p className="text-xs text-muted-foreground">이 회차의 결과 방향을 강제합니다. 매수 설정 시 매수 베팅 유저는 적중, 매도 유저는 미적중 처리됩니다.</p>
             <div className="grid grid-cols-2 gap-3">
               <Button
                 type="button"
@@ -724,7 +864,7 @@ function RoundForcedTab() {
           {/* Current settings summary */}
           {(hasDirection || hasOutcome || hasDisplay) && (
             <div className="bg-muted/50 rounded-lg p-4">
-              <div className="text-sm font-medium mb-2">현재 {currentRound}회차 설정:</div>
+              <div className="text-sm font-medium mb-2">{effectiveSelectedRound}회차 현재 설정:</div>
               <div className="flex flex-wrap gap-2">
                 {hasDirection && (
                   <span className={cn(
