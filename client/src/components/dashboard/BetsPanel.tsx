@@ -153,13 +153,19 @@ function BetRow({ bet, currentPrice, onExpire }: { bet: Bet; currentPrice: numbe
       </div>
 
       <div className="flex flex-col items-end gap-1">
-        <div className={cn(
-          "flex items-center gap-1 px-2 py-1 rounded-full text-xs font-mono font-bold",
-          timeRemaining <= betLockThreshold ? "bg-down/20 text-down animate-pulse" : "bg-muted/30 text-foreground"
-        )}>
-          <Clock className="w-3 h-3" />
-          {formatTime(timeRemaining)}
-        </div>
+        {timeRemaining > bet.duration * 2 ? (
+          <div className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold bg-orange-500/20 text-orange-400">
+            미실현
+          </div>
+        ) : (
+          <div className={cn(
+            "flex items-center gap-1 px-2 py-1 rounded-full text-xs font-mono font-bold",
+            timeRemaining <= betLockThreshold ? "bg-down/20 text-down animate-pulse" : "bg-muted/30 text-foreground"
+          )}>
+            <Clock className="w-3 h-3" />
+            {formatTime(timeRemaining)}
+          </div>
+        )}
         <div className="text-xs text-muted-foreground font-mono">
           {Math.floor(parseFloat(bet.amount)).toLocaleString()}원
         </div>
