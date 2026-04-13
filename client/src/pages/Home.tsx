@@ -645,7 +645,17 @@ export default function Home() {
       </Dialog>
 
       {/* My Inquiries Modal - 내 문의 내역 */}
-      <Dialog open={showMyInquiriesModal} onOpenChange={(open) => { setShowMyInquiriesModal(open); if (open) refetchInquiries(); }}>
+      <Dialog open={showMyInquiriesModal} onOpenChange={async (open) => {
+        setShowMyInquiriesModal(open);
+        if (open) {
+          refetchInquiries();
+          // 모달 열릴 때 답변된 문의를 일괄 읽음 처리
+          try {
+            await fetch('/api/inquiries/read-replies', { method: 'POST', credentials: 'include' });
+            refetchInquiries();
+          } catch (e) {}
+        }
+      }}>
         <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden">
           <DialogTitle className="sr-only">내 문의 내역</DialogTitle>
           <div className="relative">

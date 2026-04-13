@@ -333,6 +333,7 @@ export const inquiries = pgTable("inquiries", {
   status: text("status").notNull().default("pending"), // 'pending', 'answered'
   repliedBy: varchar("replied_by"),
   repliedAt: timestamp("replied_at"),
+  isReplyRead: boolean("is_reply_read").notNull().default(false), // 회원이 답변을 읽었는지 여부
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

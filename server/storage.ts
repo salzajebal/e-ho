@@ -154,6 +154,8 @@ export interface IStorage {
   getAllInquiries(): Promise<Inquiry[]>;
   getPendingInquiries(): Promise<Inquiry[]>;
   replyToInquiry(id: number, reply: string, repliedBy: string): Promise<Inquiry>;
+  markInquiryReplyRead(id: number, userId: string): Promise<void>;
+  markAllInquiryRepliesReadForUser(userId: string): Promise<void>;
   deleteAllInquiriesForUser(userId: string): Promise<number>;
 
   // Round result methods (라운드 결과 - 차트 캔들용)
@@ -1338,11 +1340,24 @@ export class DatabaseStorage implements IStorage {
         reply, 
         repliedBy, 
         status: 'answered', 
-        repliedAt: new Date() 
+        repliedAt: new Date(),
+        isReplyRead: false, // 새 답변 등록 시 읽음 상태 초기화
       })
       .where(eq(inquiries.id, id))
       .returning();
     return updated;
+  }
+
+  async markInquiryReplyRead(id: number, userId: string): Promise<void> {
+    await db.update(inquiries)
+      .set({ isReplyRead: true })
+      .where(and(eq(inquiries.id, id), eq(inquiries.userId, userId), eq(inquiries.status, 'answered')));
+  }
+
+  async markAllInquiryRepliesReadForUser(userId: string): Promise<void> {
+    await db.update(inquiries)
+      .set({ isReplyRead: true })
+      .where(and(eq(inquiries.userId, userId), eq(inquiries.status, 'answered'), eq(inquiries.isReplyRead, false)));
   }
 
   async deleteAllInquiriesForUser(userId: string): Promise<number> {

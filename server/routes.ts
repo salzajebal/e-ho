@@ -4063,6 +4063,30 @@ export async function registerRoutes(
     }
   });
 
+  // Mark all answered inquiry replies as read for current user (일괄 읽음 처리)
+  app.post("/api/inquiries/read-replies", requireAuth, async (req, res) => {
+    try {
+      await storage.markAllInquiryRepliesReadForUser(req.session.userId!);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Mark inquiry replies read error:", error);
+      res.status(500).json({ error: "읽음 처리에 실패했습니다" });
+    }
+  });
+
+  // Mark a single inquiry reply as read
+  app.post("/api/inquiries/:id/read-reply", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+      await storage.markInquiryReplyRead(id, req.session.userId!);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Mark inquiry reply read error:", error);
+      res.status(500).json({ error: "읽음 처리에 실패했습니다" });
+    }
+  });
+
   // Get all inquiries (관리자)
   app.get("/api/admin/inquiries", requireAdmin, async (req, res) => {
     try {

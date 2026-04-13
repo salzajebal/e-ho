@@ -1428,6 +1428,7 @@ export default function Admin() {
     status: 'pending' | 'answered';
     repliedBy: string | null;
     repliedAt: string | null;
+    isReplyRead: boolean;
     createdAt: string;
     username?: string;
   }
@@ -5440,7 +5441,7 @@ export default function Admin() {
                   inquiries.map((inquiry) => (
                     <div key={inquiry.id} className="p-4">
                       <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className={cn(
                             "px-2 py-0.5 rounded text-xs font-bold",
                             inquiry.status === 'pending' 
@@ -5449,6 +5450,11 @@ export default function Admin() {
                           )}>
                             {inquiry.status === 'pending' ? '대기' : '답변완료'}
                           </span>
+                          {inquiry.status === 'answered' && (
+                            inquiry.isReplyRead
+                              ? <span className="px-2 py-0.5 rounded text-xs font-bold bg-blue-500/20 text-blue-400">회원읽음</span>
+                              : <span className="px-2 py-0.5 rounded text-xs font-bold bg-orange-500/20 text-orange-400">회원안읽음</span>
+                          )}
                           <span className="text-sm text-muted-foreground">{inquiry.username}</span>
                         </div>
                         <span className="text-xs text-muted-foreground">
