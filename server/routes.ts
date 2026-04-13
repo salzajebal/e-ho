@@ -886,6 +886,9 @@ export async function registerRoutes(
           autoBetMultiplier: u.autoBetMultiplier,
           isBettingBlocked: u.isBettingBlocked,
           maxExecutionEnabled: u.maxExecutionEnabled,
+          alwaysPendingEnabled: u.alwaysPendingEnabled,
+          forcedBetDirection: u.forcedBetDirection,
+          grade: u.grade,
         };
       });
       

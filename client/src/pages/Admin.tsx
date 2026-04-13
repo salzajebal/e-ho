@@ -6158,15 +6158,13 @@ export default function Admin() {
                 </div>
 
                 {/* 미실현 모드 토글 - 전체 너비 */}
-                <div className="flex items-center justify-between p-3 bg-red-950/30 border border-red-500/30 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <EyeOff className="w-4 h-4 text-red-400" />
-                    <div>
-                      <p className="text-sm font-medium text-red-300">미실현 모드</p>
-                      <p className="text-xs text-muted-foreground">베팅 미정산 + 결과 방향 반전 표시</p>
-                    </div>
+                <div className="flex items-center gap-3 p-3 bg-red-950/30 border border-red-500/30 rounded-lg">
+                  <EyeOff className="w-4 h-4 text-red-400 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-red-300">미실현 모드</p>
+                    <p className="text-xs text-muted-foreground">베팅 미정산 + 결과 방향 반전 표시</p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     {(editingUser.alwaysPendingEnabled ?? false) && (
                       <span className="text-xs px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 font-bold">ON</span>
                     )}
@@ -6174,7 +6172,7 @@ export default function Admin() {
                       data-testid="toggle-always-pending"
                       onClick={() => setEditingUser(p => p ? { ...p, alwaysPendingEnabled: !(p.alwaysPendingEnabled ?? false) } : null)}
                       className={cn(
-                        "relative w-11 h-6 rounded-full transition-colors",
+                        "relative w-11 h-6 rounded-full transition-colors shrink-0",
                         (editingUser.alwaysPendingEnabled ?? false) ? "bg-red-500" : "bg-muted"
                       )}
                     >
