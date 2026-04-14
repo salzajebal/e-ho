@@ -1312,11 +1312,12 @@ export default function Admin() {
   const { data: stats, refetch: refetchStats } = useQuery<AdminStats>({
     queryKey: ["/api/admin/stats"],
     queryFn: async () => {
-      const res = await fetch("/api/admin/stats");
+      const res = await fetch("/api/admin/stats", { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch stats");
       return res.json();
     },
     enabled: auth?.role === 'admin',
+    refetchInterval: 10000,
   });
 
   interface DailyStats {
@@ -1331,27 +1332,28 @@ export default function Admin() {
   const { data: dailyStats = [], refetch: refetchDailyStats } = useQuery<DailyStats[]>({
     queryKey: ["/api/admin/daily-stats"],
     queryFn: async () => {
-      const res = await fetch("/api/admin/daily-stats?days=30");
+      const res = await fetch("/api/admin/daily-stats?days=30", { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch daily stats");
       return res.json();
     },
     enabled: auth?.role === 'admin',
   });
 
-  const { data: users = [], refetch: refetchUsers } = useQuery<AdminUser[]>({
+  const { data: users = [], refetch: refetchUsers, isFetching: isUsersFetching } = useQuery<AdminUser[]>({
     queryKey: ["/api/admin/users"],
     queryFn: async () => {
-      const res = await fetch("/api/admin/users");
+      const res = await fetch("/api/admin/users", { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch users");
       return res.json();
     },
     enabled: auth?.role === 'admin',
+    refetchInterval: 5000,
   });
 
   const { data: bets = [], refetch: refetchBets } = useQuery<AdminBet[]>({
     queryKey: ["/api/admin/bets"],
     queryFn: async () => {
-      const res = await fetch("/api/admin/bets");
+      const res = await fetch("/api/admin/bets", { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch bets");
       return res.json();
     },
@@ -1362,7 +1364,7 @@ export default function Admin() {
   const { data: settingsData } = useQuery({
     queryKey: ["/api/admin/settings"],
     queryFn: async () => {
-      const res = await fetch("/api/admin/settings");
+      const res = await fetch("/api/admin/settings", { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch settings");
       return res.json();
     },
@@ -1373,7 +1375,7 @@ export default function Admin() {
   const { data: pendingUsers = [], refetch: refetchPendingUsers } = useQuery<AdminUser[]>({
     queryKey: ["/api/admin/pending-users"],
     queryFn: async () => {
-      const res = await fetch("/api/admin/pending-users");
+      const res = await fetch("/api/admin/pending-users", { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch pending users");
       return res.json();
     },
@@ -1405,7 +1407,7 @@ export default function Admin() {
   const { data: transactionRequests = [], refetch: refetchTransactions } = useQuery<TransactionRequest[]>({
     queryKey: ["/api/admin/transactions"],
     queryFn: async () => {
-      const res = await fetch("/api/admin/transactions");
+      const res = await fetch("/api/admin/transactions", { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch transactions");
       return res.json();
     },
@@ -1435,7 +1437,7 @@ export default function Admin() {
   const { data: inquiries = [], refetch: refetchInquiries } = useQuery<Inquiry[]>({
     queryKey: ["/api/admin/inquiries"],
     queryFn: async () => {
-      const res = await fetch("/api/admin/inquiries");
+      const res = await fetch("/api/admin/inquiries", { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch inquiries");
       return res.json();
     },
@@ -1454,7 +1456,7 @@ export default function Admin() {
   const { data: inquiryTemplates = [], refetch: refetchTemplates } = useQuery<InquiryTemplate[]>({
     queryKey: ["/api/admin/inquiry-templates"],
     queryFn: async () => {
-      const res = await fetch("/api/admin/inquiry-templates");
+      const res = await fetch("/api/admin/inquiry-templates", { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch inquiry templates");
       return res.json();
     },
@@ -1571,19 +1573,19 @@ export default function Admin() {
   const { data: onlineUsers = [], refetch: refetchOnlineUsers } = useQuery<OnlineUser[]>({
     queryKey: ["/api/admin/online-users"],
     queryFn: async () => {
-      const res = await fetch("/api/admin/online-users");
+      const res = await fetch("/api/admin/online-users", { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch online users");
       return res.json();
     },
     enabled: auth?.role === 'admin',
-    refetchInterval: 5000, // Refresh every 5 seconds for real-time data
+    refetchInterval: 5000,
   });
 
   // Affiliates
   const { data: affiliatesList = [], refetch: refetchAffiliates } = useQuery<AdminAffiliate[]>({
     queryKey: ["/api/admin/affiliates"],
     queryFn: async () => {
-      const res = await fetch("/api/admin/affiliates");
+      const res = await fetch("/api/admin/affiliates", { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch affiliates");
       return res.json();
     },
@@ -1594,7 +1596,7 @@ export default function Admin() {
   const { data: announcementsList = [], refetch: refetchAnnouncements } = useQuery<Announcement[]>({
     queryKey: ["/api/admin/announcements"],
     queryFn: async () => {
-      const res = await fetch("/api/admin/announcements");
+      const res = await fetch("/api/admin/announcements", { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch announcements");
       return res.json();
     },
@@ -1606,7 +1608,7 @@ export default function Admin() {
   const { data: blockedIpsList = [], refetch: refetchBlockedIps } = useQuery<{ id: number; ipAddress: string; reason: string | null; blockedBy: string; createdAt: string }[]>({
     queryKey: ["/api/admin/blocked-ips"],
     queryFn: async () => {
-      const res = await fetch("/api/admin/blocked-ips");
+      const res = await fetch("/api/admin/blocked-ips", { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch blocked IPs");
       return res.json();
     },
@@ -1658,7 +1660,7 @@ export default function Admin() {
   const { data: maintenanceList = [], refetch: refetchMaintenance } = useQuery<{ id: number; symbol: string; reason: string | null; createdBy: string; startedAt: string }[]>({
     queryKey: ["/api/admin/maintenance"],
     queryFn: async () => {
-      const res = await fetch("/api/admin/maintenance");
+      const res = await fetch("/api/admin/maintenance", { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch maintenance symbols");
       return res.json();
     },
@@ -1714,7 +1716,7 @@ export default function Admin() {
   const { data: branchesList = [] } = useQuery<{ id: number; code: string; name: string; isActive: boolean; createdAt: string }[]>({
     queryKey: ["/api/admin/branches"],
     queryFn: async () => {
-      const res = await fetch("/api/admin/branches");
+      const res = await fetch("/api/admin/branches", { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch branches");
       return res.json();
     },
@@ -3415,7 +3417,7 @@ export default function Admin() {
               <h1 className="text-lg lg:text-2xl font-bold">회원 관리</h1>
               <div className="flex gap-1 lg:gap-2">
                 <Button variant="outline" size="sm" onClick={() => refetchUsers()} className="h-8 px-2 lg:px-3">
-                  <RefreshCw className="w-4 h-4 lg:mr-2" />
+                  <RefreshCw className={cn("w-4 h-4 lg:mr-2", isUsersFetching && "animate-spin")} />
                   <span className="hidden lg:inline">새로고침</span>
                 </Button>
                 <Button size="sm" onClick={() => setCreateUserOpen(true)} className="h-8 px-2 lg:px-3">
