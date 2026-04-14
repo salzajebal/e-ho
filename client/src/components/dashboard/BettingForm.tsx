@@ -489,7 +489,7 @@ export function BettingForm({ currentPrice, game, balance, onBet, isBetting = fa
     return `${seconds / 60}분`;
   };
 
-  const lockThreshold = game.duration <= 60 ? 10 : game.duration <= 180 ? 15 : 20;
+  const lockThreshold = game.duration <= 60 ? 10 : game.duration <= 180 ? 15 : 60;
   const isBettingLocked = timeRemaining <= lockThreshold;
 
   const validateBet = (direction: 'long' | 'short') => {
