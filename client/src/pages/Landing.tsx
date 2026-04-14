@@ -21,7 +21,7 @@ import { Shield, Zap, Headphones, TrendingUp, Lock, Award, X, ChevronDown, Chevr
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useLogin, useRegister, useAuth, useLogout } from "@/hooks/use-auth";
 import { useUserWebSocket } from "@/hooks/use-user-websocket";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -224,6 +224,7 @@ export default function Landing() {
   const login = useLogin();
   const register = useRegister();
   const logout = useLogout();
+  const queryClient = useQueryClient();
   const { data: user } = useAuth();
   const [, setLocation] = useLocation();
   const marketData = useLandingMarketData();
@@ -406,6 +407,7 @@ export default function Landing() {
         return;
       }
       toast.success("저장되었습니다");
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
       setShowMyPageModal(false);
     } catch {
       toast.error("저장 중 오류가 발생했습니다");

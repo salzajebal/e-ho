@@ -321,6 +321,9 @@ export async function registerRoutes(
         username: user.username,
         balance: user.balance,
         role: user.role,
+        bankName: user.bankName,
+        accountHolder: user.accountHolder,
+        accountNumber: user.accountNumber,
       });
     } catch (error) {
       console.error("Login error:", error);
@@ -355,6 +358,9 @@ export async function registerRoutes(
         username: user.username,
         balance: user.balance,
         role: user.role,
+        bankName: user.bankName,
+        accountHolder: user.accountHolder,
+        accountNumber: user.accountNumber,
       });
     } catch (error) {
       res.json(null);

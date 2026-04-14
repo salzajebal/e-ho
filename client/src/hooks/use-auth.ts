@@ -7,6 +7,9 @@ export interface AuthUser {
   username: string;
   balance: string;
   role: 'user' | 'admin';
+  bankName?: string | null;
+  accountHolder?: string | null;
+  accountNumber?: string | null;
 }
 
 export function useAuth() {
