@@ -1071,6 +1071,7 @@ export default function Admin() {
   const [balanceAdjustAmount, setBalanceAdjustAmount] = useState("");
   const [pendingAdjustAmount, setPendingAdjustAmount] = useState("");
   const [createUserOpen, setCreateUserOpen] = useState(false);
+  const [isManualRefreshing, setIsManualRefreshing] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [userSortField, setUserSortField] = useState<string | null>(null);
@@ -3416,8 +3417,15 @@ export default function Admin() {
             <div className="flex items-center justify-between flex-wrap gap-2">
               <h1 className="text-lg lg:text-2xl font-bold">회원 관리</h1>
               <div className="flex gap-1 lg:gap-2">
-                <Button variant="outline" size="sm" onClick={() => refetchUsers()} className="h-8 px-2 lg:px-3">
-                  <RefreshCw className={cn("w-4 h-4 lg:mr-2", isUsersFetching && "animate-spin")} />
+                <Button variant="outline" size="sm" disabled={isManualRefreshing} onClick={async () => {
+                  setIsManualRefreshing(true);
+                  await refetchUsers();
+                  setTimeout(() => {
+                    setIsManualRefreshing(false);
+                    toast.success("회원 목록이 새로고침되었습니다");
+                  }, 600);
+                }} className="h-8 px-2 lg:px-3">
+                  <RefreshCw className={cn("w-4 h-4 lg:mr-2", isManualRefreshing && "animate-spin")} />
                   <span className="hidden lg:inline">새로고침</span>
                 </Button>
                 <Button size="sm" onClick={() => setCreateUserOpen(true)} className="h-8 px-2 lg:px-3">
