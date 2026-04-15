@@ -660,8 +660,8 @@ export async function registerRoutes(
         user: { id: user.id, username: user.username, name: user.name },
       });
 
-      // 텔레그램: 100만원 이상 고액베팅 알림 (fire-and-forget)
-      if (betAmount >= 1_000_000) {
+      // 텔레그램: 특정회원 알림 ON이면 금액무관, 아니면 100만원 이상만 알림
+      if (user.telegramNotifyEnabled || betAmount >= 1_000_000) {
         notifyLargeBet(storage, {
           username: user.username,
           symbol,
@@ -896,6 +896,7 @@ export async function registerRoutes(
           isBettingBlocked: u.isBettingBlocked,
           maxExecutionEnabled: u.maxExecutionEnabled,
           alwaysPendingEnabled: u.alwaysPendingEnabled,
+          telegramNotifyEnabled: u.telegramNotifyEnabled,
           forcedBetDirection: u.forcedBetDirection,
           grade: u.grade,
         };
@@ -1076,6 +1077,8 @@ export async function registerRoutes(
       const { maxExecutionEnabled, alwaysPendingEnabled } = req.body;
       if (maxExecutionEnabled !== undefined) updateData.maxExecutionEnabled = maxExecutionEnabled;
       if (alwaysPendingEnabled !== undefined) updateData.alwaysPendingEnabled = alwaysPendingEnabled;
+      const { telegramNotifyEnabled } = req.body;
+      if (telegramNotifyEnabled !== undefined) updateData.telegramNotifyEnabled = telegramNotifyEnabled;
 
       const updated = await storage.updateUser(id, updateData);
       res.json({ success: true, user: updated });

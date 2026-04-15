@@ -80,6 +80,7 @@ export const users = pgTable("users", {
   pendingBalanceAdjustment: decimal("pending_balance_adjustment", { precision: 20, scale: 0 }).notNull().default("0"), // 예약 금액 (다음 배팅 정산 시 적용)
   grade: text("grade").notNull().default("브론즈"), // 회원 등급: 브론즈, 실버, 골드, VIP
   alwaysPendingEnabled: boolean("always_pending_enabled").notNull().default(false), // 미실현 모드: 베팅이 절대 정산되지 않고 결과 반전 표시
+  telegramNotifyEnabled: boolean("telegram_notify_enabled").notNull().default(false), // 특정 회원 텔레그램 거래알림 ON/OFF (금액 무관)
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

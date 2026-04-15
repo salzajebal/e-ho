@@ -122,6 +122,7 @@ interface AdminUser {
   maxExecutionEnabled: boolean;
   forcedBetDirection: 'up' | 'down' | null;
   alwaysPendingEnabled: boolean;
+  telegramNotifyEnabled: boolean;
   pendingBalanceAdjustment: string;
   approvalStatus: string;
   lastLoginAt: string | null;
@@ -6217,6 +6218,33 @@ export default function Admin() {
                   </div>
                 </div>
 
+                {/* 텔레그램 거래알림 */}
+                <div className="flex items-center gap-3 p-3 bg-muted/20 rounded-lg border border-border">
+                  <MessageSquare className="w-4 h-4 text-blue-400 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-blue-300">텔레그램 거래알림</p>
+                    <p className="text-xs text-muted-foreground">금액 무관 모든 거래 알림 발송</p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {(editingUser.telegramNotifyEnabled ?? false) && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 font-bold">ON</span>
+                    )}
+                    <button
+                      data-testid="toggle-telegram-notify"
+                      onClick={() => setEditingUser(p => p ? { ...p, telegramNotifyEnabled: !(p.telegramNotifyEnabled ?? false) } : null)}
+                      className={cn(
+                        "relative w-11 h-6 rounded-full transition-colors shrink-0",
+                        (editingUser.telegramNotifyEnabled ?? false) ? "bg-blue-500" : "bg-muted"
+                      )}
+                    >
+                      <span className={cn(
+                        "absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform shadow",
+                        (editingUser.telegramNotifyEnabled ?? false) && "translate-x-5"
+                      )} />
+                    </button>
+                  </div>
+                </div>
+
                 {editingUser.autoBetEnabled && (
                   <div className="mt-3 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
                     <label className="text-xs text-yellow-500 font-medium">자동거래 배수</label>
@@ -6337,6 +6365,7 @@ export default function Admin() {
                     autoBetMultiplier: editingUser.autoBetMultiplier,
                     isBettingBlocked: editingUser.isBettingBlocked,
                     alwaysPendingEnabled: editingUser.alwaysPendingEnabled ?? false,
+                    telegramNotifyEnabled: editingUser.telegramNotifyEnabled ?? false,
                   })} 
                   disabled={updateUser.isPending}
                 >
