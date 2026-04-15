@@ -402,6 +402,11 @@ export function BettingForm({ currentPrice, game, balance, onBet, isBetting = fa
   useEffect(() => {
     if (gameResults.length === 0) return;
     const latest = gameResults[0];
+    if (lastFlashedRoundRef.current === 0) {
+      // 초기 로드: 기존 결과는 플래시 없이 현재 회차만 기록
+      lastFlashedRoundRef.current = latest.round;
+      return;
+    }
     if (latest.round > lastFlashedRoundRef.current) {
       lastFlashedRoundRef.current = latest.round;
       setSettlementFlash({ show: true, direction: latest.direction });
