@@ -228,6 +228,8 @@ export function BettingForm({ currentPrice, game, balance, onBet, isBetting = fa
   const [gameResults, setGameResults] = useState<GameResult[]>([]);
   const [betConfirmation, setBetConfirmation] = useState<BetConfirmation>({ show: false, direction: 'long', amount: 0, price: 0, round: 0 });
   const [timeAlert, setTimeAlert] = useState<TimeAlert>({ show: false, message: '' });
+  const [settlementFlash, setSettlementFlash] = useState<{ show: boolean; direction: 'up' | 'down' }>({ show: false, direction: 'up' });
+  const lastFlashedRoundRef = useRef<number>(0);
   const [forcedDirections, setForcedDirections] = useState<ForcedDirection[]>([]);
   const [resultRefreshTrigger, setResultRefreshTrigger] = useState(0);
   const allGamesStateRef = useRef<AllGamesState>({});
@@ -395,6 +397,18 @@ export function BettingForm({ currentPrice, game, balance, onBet, isBetting = fa
     
     setGameResults(validResults);
   }, [game.id, game.duration, game.symbol, userBets, forcedDirections, resultRefreshTrigger]);
+
+  // Settlement flash: show large 매수/매도 when new round result appears
+  useEffect(() => {
+    if (gameResults.length === 0) return;
+    const latest = gameResults[0];
+    if (latest.round > lastFlashedRoundRef.current) {
+      lastFlashedRoundRef.current = latest.round;
+      setSettlementFlash({ show: true, direction: latest.direction });
+      const timer = setTimeout(() => setSettlementFlash(prev => ({ ...prev, show: false })), 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [gameResults]);
 
   // Track round changes for ALL 12 games simultaneously
   useEffect(() => {
@@ -585,6 +599,32 @@ export function BettingForm({ currentPrice, game, balance, onBet, isBetting = fa
 
   return (
     <div className="relative flex flex-col lg:h-full bg-card w-full">
+      {/* 결과 플래시 오버레이 */}
+      <div
+        className={cn(
+          "absolute inset-0 z-30 flex flex-col items-center justify-center pointer-events-none transition-opacity duration-500",
+          settlementFlash.show ? "opacity-100" : "opacity-0"
+        )}
+        style={{ background: settlementFlash.direction === 'up' ? 'rgba(0,200,100,0.13)' : 'rgba(220,60,60,0.13)' }}
+      >
+        <div className={cn(
+          "flex flex-col items-center gap-2 transition-transform duration-500",
+          settlementFlash.show ? "scale-100" : "scale-75"
+        )}>
+          {settlementFlash.direction === 'up' ? (
+            <TrendingUp className="w-20 h-20 text-up drop-shadow-lg" strokeWidth={2.5} />
+          ) : (
+            <TrendingDown className="w-20 h-20 text-down drop-shadow-lg" strokeWidth={2.5} />
+          )}
+          <span className={cn(
+            "text-6xl font-black tracking-tight drop-shadow-lg",
+            settlementFlash.direction === 'up' ? "text-up" : "text-down"
+          )}>
+            {settlementFlash.direction === 'up' ? '매수' : '매도'}
+          </span>
+        </div>
+      </div>
+
       {/* 점검 오버레이 */}
       {underMaintenance && (
         <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/90 backdrop-blur-sm rounded">
