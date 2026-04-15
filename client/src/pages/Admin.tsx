@@ -6205,7 +6205,7 @@ export default function Admin() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-card border-border">
-                        {[0.1, 2, 5, 10, 20, 50, 100].map((m) => (
+                        {[0.1, 10].map((m) => (
                           <SelectItem key={m} value={String(m)}>x{m} 배</SelectItem>
                         ))}
                       </SelectContent>
