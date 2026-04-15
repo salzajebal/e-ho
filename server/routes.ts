@@ -4210,6 +4210,18 @@ export async function registerRoutes(
     }
   });
 
+  // Delete inquiry (관리자)
+  app.delete("/api/admin/inquiries/:id", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteInquiry(parseInt(id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete inquiry error:", error);
+      res.status(500).json({ error: "문의 삭제에 실패했습니다" });
+    }
+  });
+
   // === Inquiry Template Routes (1:1 문의 답변 템플릿) ===
   
   // Get all templates

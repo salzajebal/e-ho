@@ -5532,11 +5532,34 @@ export default function Admin() {
                           )}
                           <span className="text-sm text-muted-foreground">{inquiry.username}</span>
                         </div>
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(inquiry.createdAt).toLocaleString('ko-KR', { 
-                            month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' 
-                          })}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(inquiry.createdAt).toLocaleString('ko-KR', { 
+                              month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' 
+                            })}
+                          </span>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 w-6 p-0 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                            onClick={async () => {
+                              if (!confirm("이 문의를 삭제하시겠습니까?")) return;
+                              try {
+                                const res = await fetch(`/api/admin/inquiries/${inquiry.id}`, {
+                                  method: 'DELETE',
+                                  credentials: 'include',
+                                });
+                                if (!res.ok) throw new Error();
+                                toast.success("문의가 삭제되었습니다");
+                                refetchInquiries();
+                              } catch {
+                                toast.error("삭제에 실패했습니다");
+                              }
+                            }}
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
                       </div>
                       <h3 className="font-medium mb-2">{inquiry.title}</h3>
                       <p className="text-sm text-muted-foreground whitespace-pre-wrap mb-3">{inquiry.content}</p>

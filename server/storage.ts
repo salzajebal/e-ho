@@ -158,6 +158,7 @@ export interface IStorage {
   markInquiryReplyRead(id: number, userId: string): Promise<void>;
   markAllInquiryRepliesReadForUser(userId: string): Promise<void>;
   deleteAllInquiriesForUser(userId: string): Promise<number>;
+  deleteInquiry(id: number): Promise<void>;
 
   // Round result methods (라운드 결과 - 차트 캔들용)
   createRoundResult(result: InsertRoundResult): Promise<RoundResult>;
@@ -1360,6 +1361,10 @@ export class DatabaseStorage implements IStorage {
       .where(eq(inquiries.id, id))
       .returning();
     return updated;
+  }
+
+  async deleteInquiry(id: number): Promise<void> {
+    await db.delete(inquiries).where(eq(inquiries.id, id));
   }
 
   async markInquiryReplyRead(id: number, userId: string): Promise<void> {
