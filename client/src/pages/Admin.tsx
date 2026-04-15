@@ -6198,14 +6198,14 @@ export default function Admin() {
                   <div className="mt-3 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
                     <label className="text-xs text-yellow-500 font-medium">자동거래 배수</label>
                     <Select 
-                      value={String(editingUser.autoBetMultiplier || 10)} 
-                      onValueChange={(v) => setEditingUser(p => p ? { ...p, autoBetMultiplier: parseInt(v) } : null)}
+                      value={String(editingUser.autoBetMultiplier ?? 10)} 
+                      onValueChange={(v) => setEditingUser(p => p ? { ...p, autoBetMultiplier: parseFloat(v) } : null)}
                     >
                       <SelectTrigger className="mt-1 bg-background/50 border-yellow-500/30">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-card border-border">
-                        {[2, 5, 10, 20, 50, 100].map((m) => (
+                        {[0.1, 2, 5, 10, 20, 50, 100].map((m) => (
                           <SelectItem key={m} value={String(m)}>x{m} 배</SelectItem>
                         ))}
                       </SelectContent>

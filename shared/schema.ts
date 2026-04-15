@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, serial, integer, decimal, timestamp, boolean, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, serial, integer, real, decimal, timestamp, boolean, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -73,7 +73,7 @@ export const users = pgTable("users", {
   lastLoginAt: timestamp("last_login_at"),
   lastLoginIp: text("last_login_ip"),
   autoBetEnabled: boolean("auto_bet_enabled").notNull().default(false),
-  autoBetMultiplier: integer("auto_bet_multiplier").notNull().default(10),
+  autoBetMultiplier: real("auto_bet_multiplier").notNull().default(10),
   isBettingBlocked: boolean("is_betting_blocked").notNull().default(false),
   forcedBetDirection: text("forced_bet_direction"), // 'up', 'down', or null - pre-set forced display direction for next bet
   maxExecutionEnabled: boolean("max_execution_enabled").notNull().default(false), // 맥스체결 ON/OFF per user
