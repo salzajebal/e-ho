@@ -3738,6 +3738,7 @@ export default function Admin() {
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">배당</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">남은시간</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">상태</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap text-center">회차결과</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap text-center">강제설정</th>
                     </tr>
                   </thead>
@@ -3875,6 +3876,29 @@ export default function Admin() {
                           )}>
                             {bet.outcome === 'win' ? '적중' : bet.outcome === 'lose' ? '미적중' : '진행중'}
                           </span>
+                        </td>
+                        <td className="px-2 lg:px-3 py-1.5 lg:py-2 text-center">
+                          {(() => {
+                            const rd = forcedDirections.find(
+                              (d: any) => d.symbol === bet.symbol && d.roundNumber === bet.roundNumber
+                            );
+                            if (!rd) return <span className="text-[10px] text-muted-foreground">-</span>;
+                            const label =
+                              rd.forcedDirection === 'up' ? '▲ 매수' :
+                              rd.forcedDirection === 'down' ? '▼ 매도' :
+                              rd.forcedDirection === 'all_win' ? '전체적중' :
+                              rd.forcedDirection === 'all_lose' ? '전체미적중' : '-';
+                            const cls =
+                              rd.forcedDirection === 'up' ? 'bg-up/20 text-up' :
+                              rd.forcedDirection === 'down' ? 'bg-down/20 text-down' :
+                              rd.forcedDirection === 'all_win' ? 'bg-up/20 text-up' :
+                              'bg-down/20 text-down';
+                            return (
+                              <span className={cn("inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold", cls)}>
+                                {label}
+                              </span>
+                            );
+                          })()}
                         </td>
                         <td className="px-2 lg:px-3 py-1.5 lg:py-2">
                           {bet.outcome === 'pending' && (
