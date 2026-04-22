@@ -229,6 +229,13 @@ export default function Landing() {
   const [, setLocation] = useLocation();
   const marketData = useLandingMarketData();
 
+  // 입금신청 "보내시는 분" 자동 세팅
+  useEffect(() => {
+    if (user?.name) {
+      setDepositSenderName(user.name);
+    }
+  }, [user?.name]);
+
   // Fetch user balance and bet history if logged in
   const { data: balanceData, refetch: refetchBalance } = useQuery({
     queryKey: ["/api/user/balance"],
