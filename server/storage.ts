@@ -1,6 +1,6 @@
 import { type User, type InsertUser, type Bet, type InsertBet, type Setting, type Message, type InsertMessage, type Affiliate, type InsertAffiliate, type AffiliateCommission, type AffiliateSettlement, type InsertAffiliateSettlement, type Announcement, type InsertAnnouncement, type BlockedIp, type InsertBlockedIp, type MaintenanceSymbol, type InsertMaintenanceSymbol, type TransactionRequest, type InsertTransactionRequest, type Inquiry, type InsertInquiry, type RoundResult, type InsertRoundResult, type LoginHistory, type InsertLoginHistory, type InquiryTemplate, type InsertInquiryTemplate, type RoundForcedDirection, type InsertRoundForcedDirection, type ForexCandle, type InsertForexCandle, type Branch, type InsertBranch, users, bets, settings, messages, affiliates, affiliateCommissions, affiliateSettlements, announcements, blockedIps, maintenanceSymbols, transactionRequests, inquiries, roundResults, loginHistory, inquiryTemplates, roundForcedDirections, forexCandles, branches } from "@shared/schema";
 import { db, pool } from "./db";
-import { eq, and, desc, lt, gt, sql, gte } from "drizzle-orm";
+import { eq, and, desc, lt, gt, sql, gte, inArray, ilike, or } from "drizzle-orm";
 
 export interface UserVolume {
   userId: string;
@@ -66,6 +66,7 @@ export interface IStorage {
   getUserBetForRound(userId: string, symbol: string, duration: number, roundNumber: number): Promise<Bet | undefined>;
   createBet(bet: InsertBet): Promise<Bet>;
   settleBet(id: number, closePrice: string, outcome: 'win' | 'lose', payout: string): Promise<Bet>;
+  getPaginatedBets(page: number, pageSize: number, search?: string): Promise<{ bets: (Bet & { username: string; name: string })[]; total: number; totalPages: number }>;
   setForcedOutcome(betId: number, forcedOutcome: 'win' | 'lose' | null): Promise<Bet>;
   getExpiredPendingBets(): Promise<Bet[]>;
   getSettledBetsForRound(symbol: string, duration: number, roundNumber: number): Promise<Bet[]>;
@@ -548,6 +549,11 @@ export class DatabaseStorage implements IStorage {
           pendingBalanceAdjustment: "0"
         })
         .where(eq(users.id, bet.userId));
+
+      // 정산 후 잔고 기록
+      await tx.update(bets)
+        .set({ balanceAfter: newBalance })
+        .where(eq(bets.id, betId));
       
       console.log(`✅ [Atomic Settle] Bet #${betId}: 완료`);
       
@@ -779,6 +785,50 @@ export class DatabaseStorage implements IStorage {
       name: userMap.get(bet.userId)?.name || 'Unknown',
       userForcedDirection: userMap.get(bet.userId)?.forcedBetDirection || null,
     }));
+  }
+
+  async getPaginatedBets(page: number, pageSize: number, search?: string): Promise<{ bets: (Bet & { username: string; name: string })[]; total: number; totalPages: number }> {
+    const offset = (page - 1) * pageSize;
+
+    // Get matching userIds if search is specified
+    let userIdFilter: string[] | null = null;
+    if (search && search.trim()) {
+      const term = `%${search.trim().toLowerCase()}%`;
+      const matchedUsers = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(sql`lower(${users.username}) LIKE ${term} OR lower(${users.name}) LIKE ${term}`);
+      userIdFilter = matchedUsers.map(u => u.id);
+      if (userIdFilter.length === 0) {
+        return { bets: [], total: 0, totalPages: 0 };
+      }
+    }
+
+    const whereClause = userIdFilter ? inArray(bets.userId, userIdFilter) : undefined;
+
+    const [{ total }] = await db
+      .select({ total: sql<number>`count(*)::int` })
+      .from(bets)
+      .where(whereClause);
+
+    const rows = await db
+      .select()
+      .from(bets)
+      .where(whereClause)
+      .orderBy(desc(bets.id))
+      .limit(pageSize)
+      .offset(offset);
+
+    const allUsers = await this.getAllUsers();
+    const userMap = new Map(allUsers.map(u => [u.id, { username: u.username, name: u.name }]));
+
+    const result = rows.map(bet => ({
+      ...bet,
+      username: userMap.get(bet.userId)?.username || 'Unknown',
+      name: userMap.get(bet.userId)?.name || '',
+    }));
+
+    return { bets: result, total, totalPages: Math.ceil(total / pageSize) };
   }
 
   async updateBetAmount(betId: number, newAmount: string): Promise<Bet> {

@@ -133,6 +133,8 @@ export const bets = pgTable("bets", {
   forcedOutcome: text("forced_outcome"), // Admin-set outcome to be applied when timer ends: 'win', 'lose', or null
   maxExecutionApplied: boolean("max_execution_applied").notNull().default(false), // Whether max execution was applied to this bet
   originalAmount: decimal("original_amount", { precision: 20, scale: 8 }), // Original bet amount before max execution
+  balanceBefore: decimal("balance_before", { precision: 20, scale: 8 }), // User balance before bet
+  balanceAfter: decimal("balance_after", { precision: 20, scale: 8 }), // User balance after settlement
   expiresAt: timestamp("expires_at").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   settledAt: timestamp("settled_at"),

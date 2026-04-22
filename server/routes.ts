@@ -649,6 +649,7 @@ export async function registerRoutes(
         multiplier: (multiplier || 2.00).toString(),
         expiresAt,
         forcedOutcome,
+        balanceBefore: currentBalance.toString(),
       });
 
       const newBalance = (currentBalance - betAmount).toString();
@@ -2559,6 +2560,20 @@ export async function registerRoutes(
   });
 
   // Get all bets (with filter)
+  // 주문내역 - 페이지네이션 + 검색
+  app.get("/api/admin/bets/history", requireAdmin, async (req, res) => {
+    try {
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const pageSize = Math.min(100, Math.max(5, parseInt(req.query.pageSize as string) || 20));
+      const search = (req.query.search as string) || '';
+      const result = await storage.getPaginatedBets(page, pageSize, search);
+      res.json(result);
+    } catch (error) {
+      console.error("Failed to fetch paginated bets:", error);
+      res.status(500).json({ error: "주문내역 조회에 실패했습니다" });
+    }
+  });
+
   app.get("/api/admin/bets", requireAdmin, async (req, res) => {
     try {
       const { status, symbol, userId } = req.query;

@@ -50,6 +50,9 @@ import {
   Clock,
   UserX,
   AlertCircle,
+  List,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -1061,7 +1064,34 @@ export default function Admin() {
     };
   }, []);
 
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'bets' | 'settings' | 'approvals' | 'messages' | 'announcements' | 'blocked-ips' | 'maintenance' | 'forced-bet' | 'round-forced' | 'deposits' | 'withdrawals' | 'inquiries' | 'branches'>('users');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'bets' | 'settings' | 'approvals' | 'messages' | 'announcements' | 'blocked-ips' | 'maintenance' | 'forced-bet' | 'round-forced' | 'deposits' | 'withdrawals' | 'inquiries' | 'branches' | 'order-history'>('users');
+  const [orderPage, setOrderPage] = useState(1);
+  const [orderPageSize, setOrderPageSize] = useState(20);
+  const [orderSearch, setOrderSearch] = useState('');
+  const [orderSearchInput, setOrderSearchInput] = useState('');
+  const { data: orderHistory, refetch: refetchOrderHistory } = useQuery<{
+    bets: Array<{
+      id: number; userId: string; username: string; name: string; symbol: string;
+      direction: string; amount: string; duration: number; roundNumber: number;
+      outcome: string; forcedOutcome: string | null; payout: string | null;
+      multiplier: string; balanceBefore: string | null; balanceAfter: string | null;
+      createdAt: string; settledAt: string | null;
+    }>;
+    total: number; totalPages: number;
+  }>({
+    queryKey: ['/api/admin/bets/history', orderPage, orderPageSize, orderSearch],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        page: orderPage.toString(),
+        pageSize: orderPageSize.toString(),
+        search: orderSearch,
+      });
+      const res = await fetch(`/api/admin/bets/history?${params}`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed');
+      return res.json();
+    },
+    enabled: activeTab === 'order-history',
+  });
   const [inquiryReplyId, setInquiryReplyId] = useState<number | null>(null);
   const [inquiryReplyContent, setInquiryReplyContent] = useState("");
   const [inquiryEditId, setInquiryEditId] = useState<number | null>(null);
@@ -2755,6 +2785,19 @@ export default function Admin() {
         거래 관리
       </button>
       <button
+        onClick={() => { setActiveTab('order-history'); setMobileMenuOpen(false); }}
+        className={cn(
+          "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+          activeTab === 'order-history'
+            ? "bg-primary/10 text-primary"
+            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+        )}
+        data-testid="tab-order-history"
+      >
+        <List className="w-4 h-4" />
+        주문내역
+      </button>
+      <button
         onClick={() => { setActiveTab('round-forced'); setMobileMenuOpen(false); }}
         className={cn(
           "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
@@ -3025,6 +3068,19 @@ export default function Admin() {
           >
             <Target className="w-4 h-4" />
             거래 관리
+          </button>
+          <button
+            onClick={() => setActiveTab('order-history')}
+            className={cn(
+              "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+              activeTab === 'order-history'
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+            )}
+            data-testid="tab-order-history-desktop"
+          >
+            <List className="w-4 h-4" />
+            주문내역
           </button>
           <button
             onClick={() => setActiveTab('round-forced')}
@@ -5294,6 +5350,214 @@ export default function Admin() {
                 강제 거래는 일반 거래와 동일하게 정산됩니다.
               </p>
             </div>
+          </div>
+        )}
+
+        {/* Order History Tab - 주문내역 */}
+        {activeTab === 'order-history' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <h1 className="text-lg lg:text-2xl font-bold flex items-center gap-2">
+                <List className="w-5 h-5 text-primary" />
+                주문내역
+              </h1>
+              <Button variant="ghost" size="sm" onClick={() => refetchOrderHistory()} className="h-8">
+                <RefreshCw className="w-4 h-4 mr-1" />새로고침
+              </Button>
+            </div>
+
+            {/* Search + Page size */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+                <Input
+                  placeholder="회원 아이디 또는 이름 검색"
+                  value={orderSearchInput}
+                  onChange={(e) => setOrderSearchInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      setOrderSearch(orderSearchInput);
+                      setOrderPage(1);
+                    }
+                  }}
+                  className="h-8 text-sm"
+                  data-testid="input-order-search"
+                />
+                <Button size="sm" className="h-8 px-3" onClick={() => { setOrderSearch(orderSearchInput); setOrderPage(1); }}>
+                  검색
+                </Button>
+                {orderSearch && (
+                  <Button size="sm" variant="ghost" className="h-8 px-2" onClick={() => { setOrderSearch(''); setOrderSearchInput(''); setOrderPage(1); }}>
+                    <X className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                <span>보기:</span>
+                <select
+                  value={orderPageSize}
+                  onChange={(e) => { setOrderPageSize(Number(e.target.value)); setOrderPage(1); }}
+                  className="h-8 rounded border border-border bg-background text-sm px-1"
+                  data-testid="select-order-page-size"
+                >
+                  {[10, 20, 50, 100].map(n => <option key={n} value={n}>{n}</option>)}
+                </select>
+                <span>개</span>
+              </div>
+            </div>
+
+            {/* Summary */}
+            {orderHistory && (
+              <p className="text-xs text-muted-foreground">
+                전체 <span className="text-foreground font-medium">{orderHistory.total.toLocaleString()}</span>건 중{' '}
+                {((orderPage - 1) * orderPageSize + 1).toLocaleString()}–{Math.min(orderPage * orderPageSize, orderHistory.total).toLocaleString()}번째
+              </p>
+            )}
+
+            {/* Table */}
+            <div className="bg-card border border-border rounded-lg overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs lg:text-sm">
+                  <thead className="bg-muted/30">
+                    <tr className="text-left text-muted-foreground">
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">거래번호</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">아이디 (이름)</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">종목</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">시간</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap text-right">회차</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap text-center">회원픽</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap text-center">리모컨</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap text-center">결과</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap text-right">거래금액</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap text-right">거래전 보유금</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap text-right">거래후 보유금</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap text-center">상태</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {!orderHistory && (
+                      <tr><td colSpan={12} className="px-3 py-8 text-center text-muted-foreground">불러오는 중...</td></tr>
+                    )}
+                    {orderHistory?.bets.length === 0 && (
+                      <tr><td colSpan={12} className="px-3 py-8 text-center text-muted-foreground">거래 내역이 없습니다</td></tr>
+                    )}
+                    {orderHistory?.bets.map((bet) => {
+                      const kstDate = new Date(new Date(bet.createdAt).getTime() + 9 * 60 * 60 * 1000);
+                      const timeStr = kstDate.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+                      const isWin = bet.outcome === 'win';
+                      const isLose = bet.outcome === 'lose';
+                      const isPending = bet.outcome === 'pending';
+                      return (
+                        <tr key={bet.id} className="border-t border-border/50 hover:bg-muted/10" data-testid={`row-order-${bet.id}`}>
+                          <td className="px-2 lg:px-3 py-1.5 font-mono text-muted-foreground">{bet.id}</td>
+                          <td className="px-2 lg:px-3 py-1.5">
+                            <div className="font-medium">{bet.username}</div>
+                            {bet.name && <div className="text-[10px] text-muted-foreground">{bet.name}</div>}
+                          </td>
+                          <td className="px-2 lg:px-3 py-1.5 whitespace-nowrap">{SYMBOL_NAMES[bet.symbol] || bet.symbol}</td>
+                          <td className="px-2 lg:px-3 py-1.5 whitespace-nowrap text-muted-foreground">{timeStr}</td>
+                          <td className="px-2 lg:px-3 py-1.5 text-right">
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-yellow-500/20 text-yellow-500">
+                              {bet.roundNumber}회차
+                            </span>
+                          </td>
+                          <td className="px-2 lg:px-3 py-1.5 text-center">
+                            <span className={cn("inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold",
+                              bet.direction === 'long' ? "bg-up/20 text-up" : "bg-down/20 text-down"
+                            )}>
+                              {bet.direction === 'long' ? '매수' : '매도'}
+                            </span>
+                          </td>
+                          <td className="px-2 lg:px-3 py-1.5 text-center">
+                            {bet.forcedOutcome ? (
+                              <span className={cn("inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold",
+                                bet.forcedOutcome === 'win' ? "bg-up/20 text-up" : "bg-down/20 text-down"
+                              )}>
+                                {bet.forcedOutcome === 'win' ? '적중' : '미적중'}
+                              </span>
+                            ) : <span className="text-muted-foreground">-</span>}
+                          </td>
+                          <td className="px-2 lg:px-3 py-1.5 text-center">
+                            {isPending ? (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-yellow-500/20 text-yellow-500">진행중</span>
+                            ) : isWin ? (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-up/20 text-up">매수</span>
+                            ) : (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-down/20 text-down">매도</span>
+                            )}
+                          </td>
+                          <td className="px-2 lg:px-3 py-1.5 text-right whitespace-nowrap font-medium">
+                            {formatMoney(parseFloat(bet.amount))}
+                          </td>
+                          <td className="px-2 lg:px-3 py-1.5 text-right whitespace-nowrap text-muted-foreground">
+                            {bet.balanceBefore ? formatMoney(parseFloat(bet.balanceBefore)) : '-'}
+                          </td>
+                          <td className="px-2 lg:px-3 py-1.5 text-right whitespace-nowrap text-muted-foreground">
+                            {bet.balanceAfter ? formatMoney(parseFloat(bet.balanceAfter)) : '-'}
+                          </td>
+                          <td className="px-2 lg:px-3 py-1.5 text-center">
+                            {isPending ? (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-yellow-500/20 text-yellow-500">대기</span>
+                            ) : isWin ? (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-up text-white">실현</span>
+                            ) : (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-down text-white">실격</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Pagination */}
+            {orderHistory && orderHistory.totalPages > 1 && (
+              <div className="flex items-center justify-center gap-1 flex-wrap">
+                <Button
+                  variant="outline" size="sm" className="h-8 w-8 p-0"
+                  onClick={() => setOrderPage(1)} disabled={orderPage === 1}
+                >
+                  <ChevronLeft className="w-3 h-3" /><ChevronLeft className="w-3 h-3 -ml-2" />
+                </Button>
+                <Button
+                  variant="outline" size="sm" className="h-8 w-8 p-0"
+                  onClick={() => setOrderPage(p => Math.max(1, p - 1))} disabled={orderPage === 1}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                {Array.from({ length: Math.min(7, orderHistory.totalPages) }, (_, i) => {
+                  const half = 3;
+                  let start = Math.max(1, orderPage - half);
+                  const end = Math.min(orderHistory.totalPages, start + 6);
+                  start = Math.max(1, end - 6);
+                  return start + i;
+                }).filter(p => p <= orderHistory.totalPages).map(p => (
+                  <Button
+                    key={p} variant={p === orderPage ? "default" : "outline"} size="sm"
+                    className="h-8 w-8 p-0 text-xs"
+                    onClick={() => setOrderPage(p)}
+                  >
+                    {p}
+                  </Button>
+                ))}
+                <Button
+                  variant="outline" size="sm" className="h-8 w-8 p-0"
+                  onClick={() => setOrderPage(p => Math.min(orderHistory.totalPages, p + 1))} disabled={orderPage === orderHistory.totalPages}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="outline" size="sm" className="h-8 w-8 p-0"
+                  onClick={() => setOrderPage(orderHistory.totalPages)} disabled={orderPage === orderHistory.totalPages}
+                >
+                  <ChevronRight className="w-3 h-3" /><ChevronRight className="w-3 h-3 -ml-2" />
+                </Button>
+                <span className="text-xs text-muted-foreground ml-2">
+                  {orderPage} / {orderHistory.totalPages} 페이지
+                </span>
+              </div>
+            )}
           </div>
         )}
 
