@@ -2717,7 +2717,7 @@ export default function Landing() {
                       {inquiry.reply && (
                         <div className="mt-3 pt-3 border-t border-white/10">
                           <div className="flex items-center gap-2 mb-2">
-                            <span className="text-amber-500 text-sm font-medium">관리자 답변</span>
+                            <span className="text-amber-500 text-sm font-medium">고객센터</span>
                             {inquiry.repliedAt && (
                               <span className="text-gray-500 text-xs">
                                 {new Date(inquiry.repliedAt).toLocaleDateString('ko-KR', {
