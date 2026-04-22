@@ -1424,6 +1424,19 @@ export default function Admin() {
   const depositRequests = transactionRequests.filter(t => t.type === 'deposit');
   const withdrawalRequests = transactionRequests.filter(t => t.type === 'withdrawal');
 
+  // 날짜별 입출금 집계 (승인된 건 기준, KST 기준)
+  const dailyTransactionMap = transactionRequests
+    .filter(t => t.status === 'approved')
+    .reduce<Record<string, { deposit: number; withdrawal: number }>>((acc, t) => {
+      const kst = new Date(new Date(t.createdAt).getTime() + 9 * 60 * 60 * 1000);
+      const dateKey = kst.toISOString().slice(0, 10);
+      if (!acc[dateKey]) acc[dateKey] = { deposit: 0, withdrawal: 0 };
+      const amt = parseFloat(t.amount) || 0;
+      if (t.type === 'deposit') acc[dateKey].deposit += amt;
+      else acc[dateKey].withdrawal += amt;
+      return acc;
+    }, {});
+
   // Inquiries (1:1 문의)
   interface Inquiry {
     id: number;
@@ -3183,7 +3196,7 @@ export default function Admin() {
               <div className="p-2 lg:p-4 border-b border-border flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center gap-1 lg:gap-2">
                   <Calendar className="w-4 lg:w-5 h-4 lg:h-5 text-primary" />
-                  <h2 className="text-sm lg:text-base font-semibold">날짜별 수익</h2>
+                  <h2 className="text-sm lg:text-base font-semibold">날짜별 입출금</h2>
                   <span className="text-[10px] lg:text-xs text-muted-foreground hidden sm:inline">(최근 30일)</span>
                 </div>
                 <Button variant="ghost" size="sm" onClick={() => refetchDailyStats()} data-testid="button-refresh-daily-stats" className="h-7 lg:h-8">
@@ -3196,10 +3209,9 @@ export default function Admin() {
                     <tr>
                       <th className="px-2 lg:px-4 py-2 lg:py-3 font-medium">날짜</th>
                       <th className="px-2 lg:px-4 py-2 lg:py-3 font-medium text-right">건수</th>
-                      <th className="px-2 lg:px-4 py-2 lg:py-3 font-medium text-right">승/패</th>
-                      <th className="px-2 lg:px-4 py-2 lg:py-3 font-medium text-right">거래액</th>
-                      <th className="px-2 lg:px-4 py-2 lg:py-3 font-medium text-right">지급액</th>
-                      <th className="px-2 lg:px-4 py-2 lg:py-3 font-medium text-right">수익</th>
+                      <th className="px-2 lg:px-4 py-2 lg:py-3 font-medium text-right">입금액</th>
+                      <th className="px-2 lg:px-4 py-2 lg:py-3 font-medium text-right">출금액</th>
+                      <th className="px-2 lg:px-4 py-2 lg:py-3 font-medium text-right">합계</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
@@ -3213,21 +3225,22 @@ export default function Admin() {
                           })}
                         </td>
                         <td className="px-2 lg:px-4 py-2 lg:py-3 text-right">{day.betCount}</td>
-                        <td className="px-2 lg:px-4 py-2 lg:py-3 text-right whitespace-nowrap">
-                          <span className="text-up">{day.winCount}</span>
-                          <span className="text-muted-foreground mx-0.5">/</span>
-                          <span className="text-down">{day.loseCount}</span>
+                        <td className="px-2 lg:px-4 py-2 lg:py-3 text-right whitespace-nowrap text-up">
+                          {formatMoney(dailyTransactionMap[day.date]?.deposit || 0)}
                         </td>
-                        <td className="px-2 lg:px-4 py-2 lg:py-3 text-right whitespace-nowrap">{formatMoney(day.totalBetAmount)}</td>
-                        <td className="px-2 lg:px-4 py-2 lg:py-3 text-right text-down whitespace-nowrap">{formatMoney(day.totalPayoutAmount)}</td>
-                        <td className={cn("px-2 lg:px-4 py-2 lg:py-3 text-right font-bold whitespace-nowrap", day.houseProfitLoss >= 0 ? "text-up" : "text-down")}>
-                          {day.houseProfitLoss >= 0 ? '+' : ''}{formatMoney(day.houseProfitLoss)}
+                        <td className="px-2 lg:px-4 py-2 lg:py-3 text-right whitespace-nowrap text-down">
+                          {formatMoney(dailyTransactionMap[day.date]?.withdrawal || 0)}
+                        </td>
+                        <td className={cn("px-2 lg:px-4 py-2 lg:py-3 text-right font-bold whitespace-nowrap",
+                          ((dailyTransactionMap[day.date]?.deposit || 0) - (dailyTransactionMap[day.date]?.withdrawal || 0)) >= 0 ? "text-up" : "text-down"
+                        )}>
+                          {formatMoney((dailyTransactionMap[day.date]?.deposit || 0) - (dailyTransactionMap[day.date]?.withdrawal || 0))}
                         </td>
                       </tr>
                     ))}
                     {dailyStats.length === 0 && (
                       <tr>
-                        <td colSpan={6} className="px-2 lg:px-4 py-6 lg:py-8 text-center text-muted-foreground">
+                        <td colSpan={5} className="px-2 lg:px-4 py-6 lg:py-8 text-center text-muted-foreground">
                           아직 정산된 거래 기록이 없습니다
                         </td>
                       </tr>
@@ -3236,15 +3249,16 @@ export default function Admin() {
                       <tr className="bg-muted/30 font-bold">
                         <td className="px-2 lg:px-4 py-2 lg:py-3">합계</td>
                         <td className="px-2 lg:px-4 py-2 lg:py-3 text-right">{dailyStats.reduce((sum, d) => sum + d.betCount, 0)}</td>
-                        <td className="px-2 lg:px-4 py-2 lg:py-3 text-right whitespace-nowrap">
-                          <span className="text-up">{dailyStats.reduce((sum, d) => sum + d.winCount, 0)}</span>
-                          <span className="text-muted-foreground mx-0.5">/</span>
-                          <span className="text-down">{dailyStats.reduce((sum, d) => sum + d.loseCount, 0)}</span>
+                        <td className="px-2 lg:px-4 py-2 lg:py-3 text-right whitespace-nowrap text-up">
+                          {formatMoney(Object.values(dailyTransactionMap).reduce((s, v) => s + v.deposit, 0))}
                         </td>
-                        <td className="px-2 lg:px-4 py-2 lg:py-3 text-right whitespace-nowrap">{formatMoney(dailyStats.reduce((sum, d) => sum + d.totalBetAmount, 0))}</td>
-                        <td className="px-2 lg:px-4 py-2 lg:py-3 text-right text-down whitespace-nowrap">{formatMoney(dailyStats.reduce((sum, d) => sum + d.totalPayoutAmount, 0))}</td>
-                        <td className={cn("px-2 lg:px-4 py-2 lg:py-3 text-right whitespace-nowrap", dailyStats.reduce((sum, d) => sum + d.houseProfitLoss, 0) >= 0 ? "text-up" : "text-down")}>
-                          {dailyStats.reduce((sum, d) => sum + d.houseProfitLoss, 0) >= 0 ? '+' : ''}{formatMoney(dailyStats.reduce((sum, d) => sum + d.houseProfitLoss, 0))}
+                        <td className="px-2 lg:px-4 py-2 lg:py-3 text-right whitespace-nowrap text-down">
+                          {formatMoney(Object.values(dailyTransactionMap).reduce((s, v) => s + v.withdrawal, 0))}
+                        </td>
+                        <td className={cn("px-2 lg:px-4 py-2 lg:py-3 text-right whitespace-nowrap",
+                          (Object.values(dailyTransactionMap).reduce((s, v) => s + v.deposit - v.withdrawal, 0)) >= 0 ? "text-up" : "text-down"
+                        )}>
+                          {formatMoney(Object.values(dailyTransactionMap).reduce((s, v) => s + v.deposit - v.withdrawal, 0))}
                         </td>
                       </tr>
                     )}
