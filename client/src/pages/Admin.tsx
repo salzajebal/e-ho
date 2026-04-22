@@ -3171,9 +3171,9 @@ export default function Admin() {
                 </p>
               </div>
               <div className="bg-card border border-border rounded-lg p-3 lg:p-4">
-                <p className="text-xs lg:text-sm text-muted-foreground">총 수익</p>
-                <p className={cn("text-lg lg:text-2xl font-bold mt-1", (stats?.profit || 0) >= 0 ? "text-up" : "text-down")}>
-                  {formatMoney(stats?.profit || 0)}
+                <p className="text-xs lg:text-sm text-muted-foreground">총 입출금 건</p>
+                <p className="text-lg lg:text-2xl font-bold mt-1">
+                  {transactionRequests.length}건
                 </p>
               </div>
             </div>
