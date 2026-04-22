@@ -1064,6 +1064,8 @@ export default function Admin() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'bets' | 'settings' | 'approvals' | 'messages' | 'announcements' | 'blocked-ips' | 'maintenance' | 'forced-bet' | 'round-forced' | 'deposits' | 'withdrawals' | 'inquiries' | 'branches'>('users');
   const [inquiryReplyId, setInquiryReplyId] = useState<number | null>(null);
   const [inquiryReplyContent, setInquiryReplyContent] = useState("");
+  const [inquiryEditId, setInquiryEditId] = useState<number | null>(null);
+  const [inquiryEditContent, setInquiryEditContent] = useState("");
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
   const [messageRecipient, setMessageRecipient] = useState<AdminUser | null>(null);
   const [messageTitle, setMessageTitle] = useState("");
@@ -5567,17 +5569,82 @@ export default function Admin() {
                       
                       {inquiry.reply && (
                         <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 mb-3">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-xs font-medium text-primary">답변</span>
-                            {inquiry.repliedAt && (
-                              <span className="text-xs text-muted-foreground">
-                                {new Date(inquiry.repliedAt).toLocaleString('ko-KR', { 
-                                  month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' 
-                                })}
-                              </span>
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-medium text-primary">답변</span>
+                              {inquiry.repliedAt && (
+                                <span className="text-xs text-muted-foreground">
+                                  {new Date(inquiry.repliedAt).toLocaleString('ko-KR', { 
+                                    month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' 
+                                  })}
+                                </span>
+                              )}
+                            </div>
+                            {inquiryEditId !== inquiry.id && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
+                                onClick={() => {
+                                  setInquiryEditId(inquiry.id);
+                                  setInquiryEditContent(inquiry.reply || "");
+                                }}
+                              >
+                                <Edit2 className="w-3 h-3 mr-1" />
+                                수정
+                              </Button>
                             )}
                           </div>
-                          <p className="text-sm whitespace-pre-wrap">{inquiry.reply}</p>
+                          {inquiryEditId === inquiry.id ? (
+                            <div className="space-y-2 mt-2">
+                              <textarea
+                                value={inquiryEditContent}
+                                onChange={(e) => setInquiryEditContent(e.target.value)}
+                                rows={4}
+                                className="w-full bg-background/50 border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+                              />
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={async () => {
+                                    if (!inquiryEditContent.trim()) {
+                                      toast.error("답변 내용을 입력해주세요");
+                                      return;
+                                    }
+                                    try {
+                                      const res = await fetch(`/api/admin/inquiries/${inquiry.id}/reply`, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        credentials: 'include',
+                                        body: JSON.stringify({ reply: inquiryEditContent }),
+                                      });
+                                      if (!res.ok) throw new Error();
+                                      toast.success("답변이 수정되었습니다");
+                                      setInquiryEditId(null);
+                                      setInquiryEditContent("");
+                                      refetchInquiries();
+                                    } catch {
+                                      toast.error("답변 수정에 실패했습니다");
+                                    }
+                                  }}
+                                >
+                                  저장
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setInquiryEditId(null);
+                                    setInquiryEditContent("");
+                                  }}
+                                >
+                                  취소
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-sm whitespace-pre-wrap">{inquiry.reply}</p>
+                          )}
                         </div>
                       )}
                       
