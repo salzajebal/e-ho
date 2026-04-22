@@ -664,6 +664,7 @@ export async function registerRoutes(
       if (user.telegramNotifyEnabled || betAmount >= 1_000_000) {
         notifyLargeBet(storage, {
           username: user.username,
+          name: user.name || user.username,
           symbol,
           duration,
           direction: finalDirection,
@@ -3903,6 +3904,7 @@ export async function registerRoutes(
       if (type === 'deposit') {
         notifyDepositRequest(storage, {
           username: user?.username || String(req.session.userId),
+          name: user?.name || user?.username || String(req.session.userId),
           amount: amount.toString(),
           bankName: bankName || null,
           accountHolder: accountHolder || null,
@@ -4098,6 +4100,7 @@ export async function registerRoutes(
         const inquiryUser = await storage.getUser(req.session.userId!);
         notifyNewInquiry(storage, {
           username: inquiryUser?.username || String(req.session.userId),
+          name: inquiryUser?.name || inquiryUser?.username || String(req.session.userId),
           title,
           content,
         }).catch(() => {});

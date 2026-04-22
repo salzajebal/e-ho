@@ -48,11 +48,12 @@ function truncate(str: string, max: number): string {
 
 export async function notifyNewInquiry(
   storage: IStorage,
-  opts: { username: string; title: string; content: string }
+  opts: { username: string; name?: string | null; title: string; content: string }
 ): Promise<void> {
+  const displayName = opts.name || opts.username;
   const msg =
     `📩 <b>[새 1:1 문의]</b>\n` +
-    `👤 사용자: ${opts.username}\n` +
+    `👤 사용자: ${displayName}\n` +
     `📌 제목: ${truncate(opts.title, 50)}\n` +
     `💬 내용: ${truncate(opts.content, 100)}\n` +
     `🕐 시각: ${getKSTTimeString()}`;
@@ -61,8 +62,9 @@ export async function notifyNewInquiry(
 
 export async function notifyDepositRequest(
   storage: IStorage,
-  opts: { username: string; amount: string; bankName?: string | null; accountHolder?: string | null; accountNumber?: string | null }
+  opts: { username: string; name?: string | null; amount: string; bankName?: string | null; accountHolder?: string | null; accountNumber?: string | null }
 ): Promise<void> {
+  const displayName = opts.name || opts.username;
   const amountNum = parseFloat(opts.amount);
   const formattedAmount = isNaN(amountNum) ? opts.amount : amountNum.toLocaleString("ko-KR") + "원";
   const bankInfo = [opts.bankName, opts.accountHolder].filter(Boolean).join(" | ");
@@ -70,7 +72,7 @@ export async function notifyDepositRequest(
 
   const msg =
     `💰 <b>[입금신청]</b>\n` +
-    `👤 사용자: ${opts.username}\n` +
+    `👤 사용자: ${displayName}\n` +
     `💵 금액: ${formattedAmount}\n` +
     (bankInfo ? `🏛 은행: ${bankInfo}` : "") +
     acct +
@@ -80,15 +82,16 @@ export async function notifyDepositRequest(
 
 export async function notifyLargeBet(
   storage: IStorage,
-  opts: { username: string; symbol: string; duration: number; direction: string; amount: number }
+  opts: { username: string; name?: string | null; symbol: string; duration: number; direction: string; amount: number }
 ): Promise<void> {
+  const displayName = opts.name || opts.username;
   const formattedAmount = opts.amount.toLocaleString("ko-KR") + "원";
   const dirLabel = opts.direction === "long" ? "매수 ↑" : "매도 ↓";
   const durationLabel = "5분";
 
   const msg =
     `🎯 <b>[고액베팅 알림]</b>\n` +
-    `👤 사용자: ${opts.username}\n` +
+    `👤 사용자: ${displayName}\n` +
     `📊 종목: ${opts.symbol} (${durationLabel})\n` +
     `📈 방향: ${dirLabel}\n` +
     `💵 금액: ${formattedAmount}\n` +
