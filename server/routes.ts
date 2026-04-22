@@ -4157,6 +4157,7 @@ export async function registerRoutes(
           return {
             ...inquiry,
             username: user?.username || 'Unknown',
+            name: user?.name || user?.username || 'Unknown',
           };
         })
       );
@@ -4179,6 +4180,7 @@ export async function registerRoutes(
           return {
             ...inquiry,
             username: user?.username || 'Unknown',
+            name: user?.name || user?.username || 'Unknown',
           };
         })
       );

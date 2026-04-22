@@ -1437,6 +1437,7 @@ export default function Admin() {
     isReplyRead: boolean;
     createdAt: string;
     username?: string;
+    name?: string;
   }
   const { data: inquiries = [], refetch: refetchInquiries } = useQuery<Inquiry[]>({
     queryKey: ["/api/admin/inquiries"],
@@ -5533,7 +5534,7 @@ export default function Admin() {
                               ? <span className="px-2 py-0.5 rounded text-xs font-bold bg-blue-500/20 text-blue-400">회원읽음</span>
                               : <span className="px-2 py-0.5 rounded text-xs font-bold bg-orange-500/20 text-orange-400">회원안읽음</span>
                           )}
-                          <span className="text-sm text-muted-foreground">{inquiry.username}</span>
+                          <span className="text-sm text-muted-foreground">{inquiry.name || inquiry.username}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-xs text-muted-foreground">
