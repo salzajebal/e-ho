@@ -3434,7 +3434,7 @@ export default function Admin() {
                         <th className="px-2 lg:px-4 py-3 text-left font-medium">아이디</th>
                         <th className="px-2 lg:px-4 py-3 text-left font-medium">이름</th>
                         <th className="px-2 lg:px-4 py-3 text-left font-medium">전화번호</th>
-                        <th className="px-2 lg:px-4 py-3 text-left font-medium">주민번호</th>
+                        <th className="px-2 lg:px-4 py-3 text-left font-medium">생년월일</th>
                         <th className="px-2 lg:px-4 py-3 text-left font-medium">은행</th>
                         <th className="px-2 lg:px-4 py-3 text-left font-medium">예금주</th>
                         <th className="px-2 lg:px-4 py-3 text-left font-medium">계좌번호</th>
