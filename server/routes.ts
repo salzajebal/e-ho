@@ -16,6 +16,8 @@ import {
   notifyNewInquiry,
   notifyDepositRequest,
   notifyLargeBet,
+  notifyNewUserRegister,
+  notifyWithdrawalRequest,
 } from "./telegramBot";
 
 const PgSessionStore = pgSession(session);
@@ -231,6 +233,14 @@ export async function registerRoutes(
         accountHolder, 
         accountNumber 
       });
+
+      // 텔레그램: 신규 가입 알림
+      notifyNewUserRegister(storage, {
+        username: user.username,
+        name: user.name,
+        phone: user.phone,
+        branchCode: branchCode || null,
+      }).catch(() => {});
 
       // Don't auto-login - user needs admin approval first
       res.json({
@@ -3915,7 +3925,7 @@ export async function registerRoutes(
         name: user?.name,
       });
 
-      // 텔레그램: 입금신청 알림 (fire-and-forget, 입금만)
+      // 텔레그램: 입출금 신청 알림
       if (type === 'deposit') {
         notifyDepositRequest(storage, {
           username: user?.username || String(req.session.userId),
@@ -3924,6 +3934,15 @@ export async function registerRoutes(
           bankName: bankName || null,
           accountHolder: accountHolder || null,
           accountNumber: accountNumber || null,
+        }).catch(() => {});
+      } else if (type === 'withdrawal') {
+        notifyWithdrawalRequest(storage, {
+          username: user?.username || String(req.session.userId),
+          name: user?.name || user?.username || String(req.session.userId),
+          amount: amount.toString(),
+          bankName: user?.bankName || null,
+          accountHolder: user?.accountHolder || null,
+          accountNumber: user?.accountNumber || null,
         }).catch(() => {});
       }
 

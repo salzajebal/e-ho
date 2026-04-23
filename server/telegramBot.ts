@@ -98,3 +98,38 @@ export async function notifyLargeBet(
     `🕐 시각: ${getKSTTimeString()}`;
   sendTelegramNotification(storage, msg).catch(() => {});
 }
+
+export async function notifyNewUserRegister(
+  storage: IStorage,
+  opts: { username: string; name?: string | null; phone?: string | null; branchCode?: string | null }
+): Promise<void> {
+  const displayName = opts.name || opts.username;
+  const msg =
+    `🆕 <b>[신규 회원가입]</b>\n` +
+    `👤 아이디: ${opts.username}\n` +
+    `📛 이름: ${displayName}\n` +
+    (opts.phone ? `📱 연락처: ${opts.phone}\n` : ``) +
+    (opts.branchCode ? `🏢 추천코드: ${opts.branchCode}\n` : ``) +
+    `🕐 시각: ${getKSTTimeString()}`;
+  sendTelegramNotification(storage, msg).catch(() => {});
+}
+
+export async function notifyWithdrawalRequest(
+  storage: IStorage,
+  opts: { username: string; name?: string | null; amount: string; bankName?: string | null; accountHolder?: string | null; accountNumber?: string | null }
+): Promise<void> {
+  const displayName = opts.name || opts.username;
+  const amountNum = parseFloat(opts.amount);
+  const formattedAmount = isNaN(amountNum) ? opts.amount : amountNum.toLocaleString("ko-KR") + "원";
+  const bankInfo = [opts.bankName, opts.accountHolder].filter(Boolean).join(" | ");
+  const acct = opts.accountNumber ? `\n🏦 계좌: ${opts.accountNumber}` : "";
+
+  const msg =
+    `💸 <b>[출금신청]</b>\n` +
+    `👤 사용자: ${displayName}\n` +
+    `💵 금액: ${formattedAmount}\n` +
+    (bankInfo ? `🏛 은행: ${bankInfo}` : "") +
+    acct +
+    `\n🕐 시각: ${getKSTTimeString()}`;
+  sendTelegramNotification(storage, msg).catch(() => {});
+}
