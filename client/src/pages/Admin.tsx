@@ -6164,23 +6164,19 @@ export default function Admin() {
                   />
                 </div>
               </div>
-              <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                <p className="text-xs text-blue-400 font-medium mb-2">가입 시 입력 정보</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-xs text-muted-foreground">생년월일</label>
-                    <Input
-                      className="h-8 text-sm font-mono"
-                      placeholder="YYYY-MM-DD"
-                      value={editingUser.birthDate || ''}
-                      onChange={(e) => setEditingUser(p => p ? { ...p, birthDate: e.target.value } : null)}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs text-muted-foreground">지점코드</label>
-                    <div className="p-2 bg-background/50 rounded-md border border-border">
-                      <span className="font-mono text-sm text-amber-500">{editingUser.branchCode || '-'}</span>
-                    </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground">생년월일</label>
+                  <Input
+                    value={editingUser.birthDate || ''}
+                    onChange={(e) => setEditingUser(p => p ? { ...p, birthDate: e.target.value } : null)}
+                    placeholder="예: 901231"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground">지점코드</label>
+                  <div className="p-2 bg-background/50 rounded-md border border-border h-10 flex items-center">
+                    <span className="font-mono text-sm text-amber-500">{editingUser.branchCode || '-'}</span>
                   </div>
                 </div>
               </div>
