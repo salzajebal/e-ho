@@ -2132,23 +2132,11 @@ export default function Landing() {
                     const data = await res.json();
                     if (!res.ok) throw new Error(data.error || '요청에 실패했습니다');
 
-                    // 입금 신청 완료 시 자동으로 계좌 안내 문의 생성
-                    await fetch('/api/inquiries', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        title: '입금계좌 안내 요청',
-                        content: `입금 신청 금액: ${Number(depositAmount).toLocaleString()}원\n보내시는 분: ${depositSenderName.trim()}\n\n입금계좌 정보를 안내해 주세요.`,
-                      }),
-                    }).catch(() => {}); // 문의 생성 실패해도 입금신청은 성공 처리
-
-                    refetchInquiries();
-                    toast.success('입금 신청이 완료되었습니다. 계좌 안내 문의가 자동 접수되었습니다.');
+                    toast.success('입금 신청이 완료되었습니다.');
                     setDepositAmount('');
                     setDepositSenderName('');
                     setShowDepositPageModal(false);
                     refetchTransactions();
-                    setShowMyInquiriesModal(true);
                   } catch (err: any) {
                     toast.error(err.message || '요청에 실패했습니다');
                   } finally {
