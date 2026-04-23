@@ -234,6 +234,9 @@ export async function registerRoutes(
         accountNumber 
       });
 
+      // WebSocket: 어드민에 실시간 알림
+      broadcastToAdmins('new_user_registered', { username: user.username, name: user.name });
+
       // 텔레그램: 신규 가입 알림
       notifyNewUserRegister(storage, {
         username: user.username,

@@ -1563,6 +1563,13 @@ export default function Admin() {
               style: { background: '#f59e0b', color: 'white', fontWeight: 'bold' },
             });
           }
+        } else if (msg.event === 'new_user_registered') {
+          debouncedRefetch('pendingUsers', () => refetchPendingUsers());
+          const displayName = msg.data?.name || msg.data?.username || '알 수 없음';
+          toast.info(`🆕 새 회원가입: ${displayName}`, {
+            duration: 8000,
+            style: { fontWeight: 'bold' },
+          });
         } else if (msg.event === 'user_connected' || msg.event === 'user_disconnected') {
           debouncedRefetch('onlineUsers', () => refetchOnlineUsers());
         }
@@ -1582,7 +1589,7 @@ export default function Admin() {
     };
 
     return () => ws.close();
-  }, [auth?.role, refetchBets, refetchTransactions, refetchUsers]);
+  }, [auth?.role, refetchBets, refetchTransactions, refetchUsers, refetchPendingUsers]);
 
   // Online users with real-time connection info
   interface OnlineUser {
