@@ -5479,11 +5479,14 @@ export default function Admin() {
                           <td className="px-2 lg:px-3 py-1.5 text-center">
                             {isPending ? (
                               <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-yellow-500/20 text-yellow-500">진행중</span>
-                            ) : isWin ? (
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-up/20 text-up">매수</span>
-                            ) : (
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-down/20 text-down">매도</span>
-                            )}
+                            ) : (() => {
+                              const resultDir = isWin
+                                ? bet.direction
+                                : (bet.direction === 'long' ? 'short' : 'long');
+                              return resultDir === 'long'
+                                ? <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-up/20 text-up">매수</span>
+                                : <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-down/20 text-down">매도</span>;
+                            })()}
                           </td>
                           <td className="px-2 lg:px-3 py-1.5 text-right whitespace-nowrap font-medium">
                             {formatMoney(parseFloat(bet.amount))}
