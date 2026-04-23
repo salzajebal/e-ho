@@ -6168,10 +6168,13 @@ export default function Admin() {
                 <p className="text-xs text-blue-400 font-medium mb-2">가입 시 입력 정보</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="text-xs text-muted-foreground">주민번호</label>
-                    <div className="p-2 bg-background/50 rounded-md border border-border">
-                      <span className="font-mono text-sm">{editingUser.birthDate || editingUser.residentNumber || '-'}</span>
-                    </div>
+                    <label className="text-xs text-muted-foreground">생년월일</label>
+                    <Input
+                      className="h-8 text-sm font-mono"
+                      placeholder="YYYY-MM-DD"
+                      value={editingUser.birthDate || ''}
+                      onChange={(e) => setEditingUser(p => p ? { ...p, birthDate: e.target.value } : null)}
+                    />
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs text-muted-foreground">지점코드</label>
@@ -6734,6 +6737,7 @@ export default function Admin() {
                     password: editingUser.password,
                     name: editingUser.name,
                     phone: editingUser.phone,
+                    birthDate: editingUser.birthDate,
                     residentNumber: editingUser.residentNumber,
                     region: editingUser.region,
                     bankName: editingUser.bankName,

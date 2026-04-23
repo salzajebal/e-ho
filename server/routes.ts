@@ -1073,13 +1073,14 @@ export async function registerRoutes(
   app.patch("/api/admin/users/:id", requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;
-      const { username, password, name, phone, residentNumber, region, bankName, accountHolder, accountNumber, balance, role, isActive, totalDeposit, totalWithdrawal, autoBetEnabled, autoBetMultiplier, isBettingBlocked, grade } = req.body;
+      const { username, password, name, phone, birthDate, residentNumber, region, bankName, accountHolder, accountNumber, balance, role, isActive, totalDeposit, totalWithdrawal, autoBetEnabled, autoBetMultiplier, isBettingBlocked, grade } = req.body;
 
       const updateData: any = {};
       if (username !== undefined) updateData.username = username;
       if (password !== undefined) updateData.password = password;
       if (name !== undefined) updateData.name = name;
       if (phone !== undefined) updateData.phone = phone;
+      if (birthDate !== undefined) updateData.birthDate = birthDate;
       if (residentNumber !== undefined) updateData.residentNumber = residentNumber;
       if (region !== undefined) updateData.region = region;
       if (bankName !== undefined) updateData.bankName = bankName;
