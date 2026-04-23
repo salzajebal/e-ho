@@ -104,6 +104,7 @@ interface AdminUser {
   name: string | null;
   phone: string | null;
   residentNumber: string | null;
+  birthDate: string | null;
   region: string | null;
   branchCode: string | null;
   bankName: string | null;
@@ -3467,7 +3468,7 @@ export default function Admin() {
                           </td>
                           <td className="px-2 lg:px-4 py-3">{user.name || '-'}</td>
                           <td className="px-2 lg:px-4 py-3">{user.phone || '-'}</td>
-                          <td className="px-2 lg:px-4 py-3 font-mono text-xs">{user.residentNumber || '-'}</td>
+                          <td className="px-2 lg:px-4 py-3 font-mono text-xs">{user.birthDate || user.residentNumber || '-'}</td>
                           <td className="px-2 lg:px-4 py-3">{user.bankName || '-'}</td>
                           <td className="px-2 lg:px-4 py-3">{user.accountHolder || '-'}</td>
                           <td className="px-2 lg:px-4 py-3 font-mono text-xs">{user.accountNumber || '-'}</td>
@@ -6169,7 +6170,7 @@ export default function Admin() {
                   <div className="space-y-1">
                     <label className="text-xs text-muted-foreground">주민번호</label>
                     <div className="p-2 bg-background/50 rounded-md border border-border">
-                      <span className="font-mono text-sm">{editingUser.residentNumber || '-'}</span>
+                      <span className="font-mono text-sm">{editingUser.birthDate || editingUser.residentNumber || '-'}</span>
                     </div>
                   </div>
                   <div className="space-y-1">

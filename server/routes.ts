@@ -907,6 +907,7 @@ export async function registerRoutes(
           createdAt: u.createdAt,
           affiliateId: u.affiliateId,
           residentNumber: u.residentNumber,
+          birthDate: u.birthDate,
           region: u.region,
           branchCode: u.branchCode,
           pendingBalanceAdjustment: u.pendingBalanceAdjustment,
