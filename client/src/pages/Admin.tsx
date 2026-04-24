@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, Component } from "react";
 import { LearnInvestLogo } from "@/components/LearnInvestLogo";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
@@ -85,6 +85,41 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, BookOpen, Building2 } from "lucide-react";
+
+class AdminErrorBoundary extends Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error('[AdminErrorBoundary] 렌더링 오류:', error, info);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="text-center space-y-4">
+            <p className="text-lg font-bold text-destructive">화면 로딩 중 오류가 발생했습니다.</p>
+            <p className="text-sm text-muted-foreground">{this.state.error?.message}</p>
+            <button
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-md"
+              onClick={() => { this.setState({ hasError: false, error: null }); window.location.reload(); }}
+            >
+              새로고침
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 interface Message {
   id: number;
@@ -2425,7 +2460,8 @@ export default function Admin() {
 
   // Filter bets based on selected filter
   // Also hide pending bets that expired more than 10 seconds ago (they should be settled by auto-settlement)
-  const filteredBets = bets.filter(bet => {
+  const safeBets = Array.isArray(bets) ? bets : [];
+  const filteredBets = safeBets.filter(bet => {
     // For pending filter, hide bets that are expired for more than 10 seconds
     if (bet.outcome === 'pending') {
       const expiresAt = new Date(bet.expiresAt).getTime();
@@ -2915,6 +2951,7 @@ export default function Admin() {
   );
 
   return (
+    <AdminErrorBoundary>
     <div className="min-h-screen bg-background flex flex-col lg:flex-row">
       {/* Mobile Header */}
       <div className="lg:hidden flex items-center justify-between p-3 bg-card border-b border-border sticky top-0 z-50">
@@ -7361,5 +7398,6 @@ export default function Admin() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+    </AdminErrorBoundary>
   );
 }
