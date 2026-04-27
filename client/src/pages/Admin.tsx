@@ -1100,7 +1100,14 @@ export default function Admin() {
     };
   }, []);
 
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'bets' | 'settings' | 'approvals' | 'messages' | 'announcements' | 'blocked-ips' | 'maintenance' | 'forced-bet' | 'round-forced' | 'deposits' | 'withdrawals' | 'inquiries' | 'branches' | 'order-history'>('users');
+  type AdminTab = 'dashboard' | 'users' | 'bets' | 'settings' | 'approvals' | 'messages' | 'announcements' | 'blocked-ips' | 'maintenance' | 'forced-bet' | 'round-forced' | 'deposits' | 'withdrawals' | 'inquiries' | 'branches' | 'order-history';
+  const VALID_TABS: AdminTab[] = ['dashboard', 'users', 'bets', 'settings', 'approvals', 'messages', 'announcements', 'blocked-ips', 'maintenance', 'forced-bet', 'round-forced', 'deposits', 'withdrawals', 'inquiries', 'branches', 'order-history'];
+  const savedTab = localStorage.getItem('admin_active_tab') as AdminTab | null;
+  const [activeTab, setActiveTabState] = useState<AdminTab>(savedTab && VALID_TABS.includes(savedTab) ? savedTab : 'users');
+  const setActiveTab = (tab: AdminTab) => {
+    localStorage.setItem('admin_active_tab', tab);
+    setActiveTabState(tab);
+  };
   const [orderPage, setOrderPage] = useState(1);
   const [orderPageSize, setOrderPageSize] = useState(20);
   const [orderSearch, setOrderSearch] = useState('');
