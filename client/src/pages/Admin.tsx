@@ -2715,6 +2715,7 @@ export default function Admin() {
       day: '2-digit',
       hour: '2-digit',
       minute: '2-digit',
+      timeZone: 'Asia/Seoul',
     });
   };
 
@@ -5487,8 +5488,11 @@ export default function Admin() {
                       <tr><td colSpan={12} className="px-3 py-8 text-center text-muted-foreground">거래 내역이 없습니다</td></tr>
                     )}
                     {orderHistory?.bets.map((bet) => {
-                      const kstDate = new Date(new Date(bet.createdAt).getTime() + 9 * 60 * 60 * 1000);
-                      const timeStr = kstDate.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+                      const timeStr = new Date(bet.createdAt).toLocaleString('ko-KR', {
+                        month: '2-digit', day: '2-digit',
+                        hour: '2-digit', minute: '2-digit',
+                        timeZone: 'Asia/Seoul',
+                      });
                       const isWin = bet.outcome === 'win';
                       const isLose = bet.outcome === 'lose';
                       const isPending = bet.outcome === 'pending';
@@ -5710,7 +5714,7 @@ export default function Admin() {
                           </span>
                         </td>
                         <td className="px-2 lg:px-4 py-3 text-xs text-muted-foreground">
-                          {new Date(request.createdAt).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          {new Date(request.createdAt).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Seoul' })}
                         </td>
                       </tr>
                     ))}
@@ -5825,7 +5829,7 @@ export default function Admin() {
                           </span>
                         </td>
                         <td className="px-2 lg:px-4 py-3 text-xs text-muted-foreground">
-                          {new Date(request.createdAt).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          {new Date(request.createdAt).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Seoul' })}
                         </td>
                       </tr>
                     ))}

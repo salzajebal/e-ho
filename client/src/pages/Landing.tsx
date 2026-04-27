@@ -1943,8 +1943,8 @@ export default function Landing() {
                           )}
                         </div>
                         <div className="text-xs text-gray-400 mt-1">
-                          {new Date(bet.createdAt).toLocaleDateString('ko-KR')}{' '}
-                          {new Date(bet.createdAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })}
+                          {new Date(bet.createdAt).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' })}{' '}
+                          {new Date(bet.createdAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Seoul' })}
                         </div>
                       </div>
                       <div className="text-right">
@@ -2179,7 +2179,7 @@ export default function Landing() {
                                 </span>
                               </td>
                               <td className="px-3 py-2 text-right text-gray-400">
-                                {new Date(t.createdAt).toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                {new Date(t.createdAt).toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Seoul' })}
                               </td>
                             </tr>
                           ))}
@@ -2834,7 +2834,7 @@ export default function Landing() {
                             {Number(tx.amount).toLocaleString('ko-KR')}원
                           </span>
                           <span className="text-gray-500 text-xs">
-                            {new Date(tx.createdAt).toLocaleString('ko-KR', {
+                            {new Date(tx.createdAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul',
                               month: '2-digit', day: '2-digit',
                               hour: '2-digit', minute: '2-digit'
                             })}
