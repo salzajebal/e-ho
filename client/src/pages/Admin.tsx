@@ -1132,6 +1132,7 @@ export default function Admin() {
   const [inquiryReplyContent, setInquiryReplyContent] = useState("");
   const [inquiryEditId, setInquiryEditId] = useState<number | null>(null);
   const [inquiryEditContent, setInquiryEditContent] = useState("");
+  const [inquirySearch, setInquirySearch] = useState("");
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
   const [messageRecipient, setMessageRecipient] = useState<AdminUser | null>(null);
   const [messageTitle, setMessageTitle] = useState("");
@@ -5849,6 +5850,27 @@ export default function Admin() {
               </Button>
             </div>
 
+            {/* 검색 입력 */}
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Input
+                  placeholder="회원 아이디, 이름, 제목, 내용 검색..."
+                  value={inquirySearch}
+                  onChange={(e) => setInquirySearch(e.target.value)}
+                  className="h-9 pl-9 text-sm"
+                  data-testid="input-inquiry-search"
+                />
+                <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              {inquirySearch && (
+                <Button size="sm" variant="ghost" className="h-9 px-2" onClick={() => setInquirySearch('')}>
+                  <X className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
+
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div className="bg-card border border-border rounded-lg p-4">
                 <p className="text-sm text-muted-foreground">총 문의</p>
@@ -5862,12 +5884,25 @@ export default function Admin() {
 
             <div className="bg-card border border-border rounded-lg overflow-hidden">
               <div className="divide-y divide-border">
-                {inquiries.length === 0 ? (
-                  <div className="p-8 text-center text-muted-foreground">
-                    등록된 문의가 없습니다
-                  </div>
-                ) : (
-                  [...inquiries].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((inquiry) => (
+                {(() => {
+                  const q = inquirySearch.trim().toLowerCase();
+                  const filtered = [...inquiries]
+                    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                    .filter((inq) => {
+                      if (!q) return true;
+                      return (
+                        (inq.username || '').toLowerCase().includes(q) ||
+                        (inq.name || '').toLowerCase().includes(q) ||
+                        (inq.title || '').toLowerCase().includes(q) ||
+                        (inq.content || '').toLowerCase().includes(q)
+                      );
+                    });
+                  if (filtered.length === 0) return (
+                    <div className="p-8 text-center text-muted-foreground">
+                      {q ? `"${inquirySearch}" 검색 결과가 없습니다` : '등록된 문의가 없습니다'}
+                    </div>
+                  );
+                  return filtered.map((inquiry) => (
                     <div key={inquiry.id} className="p-4">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2 flex-wrap">
@@ -6078,8 +6113,8 @@ export default function Admin() {
                         </div>
                       )}
                     </div>
-                  ))
-                )}
+                  ));
+                })()}
               </div>
             </div>
           </div>
