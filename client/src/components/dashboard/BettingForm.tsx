@@ -511,6 +511,14 @@ export function BettingForm({ currentPrice, game, balance, onBet, isBetting = fa
   const lockThreshold = game.duration <= 60 ? 10 : game.duration <= 180 ? 15 : 60;
   const isBettingLocked = timeRemaining <= lockThreshold;
 
+  // Check if user already has a pending bet for the current round
+  const currentRoundPendingBet = userBets.find(bet =>
+    bet.outcome === 'pending' &&
+    bet.symbol === game.symbol &&
+    bet.duration === game.duration &&
+    bet.roundNumber === currentRound
+  );
+
   const validateBet = (direction: 'long' | 'short') => {
     if (isBettingLocked) {
       toast.error("거래 마감 임박으로 주문이 불가합니다.");
@@ -692,74 +700,101 @@ export function BettingForm({ currentPrice, game, balance, onBet, isBetting = fa
           </span>
         </div>
 
-        <div className="space-y-2">
-          <label className="text-xs text-muted-foreground">주문금액 (원)</label>
-          <div className="relative">
-            <Input 
-              type="text"
-              inputMode="numeric"
-              value={amount}
-              onChange={(e) => {
-                const val = e.target.value.replace(/[^0-9]/g, '');
-                setAmount(val);
-              }}
-              onFocus={handleAmountFocus}
-              onPaste={handlePaste}
-              onCopy={handleCopy}
-              className="font-mono text-base lg:text-lg text-right pr-10 h-10 lg:h-12 bg-input border-border focus-visible:ring-primary [appearance:textfield]"
-              data-testid="input-bet-amount"
-              placeholder="금액 입력"
-            />
-            <span className="absolute right-3 top-2.5 lg:top-3.5 text-sm text-muted-foreground">원</span>
+        {currentRoundPendingBet ? (
+          /* 이미 이번 회차에 베팅한 경우 대기 화면 표시 */
+          <div className="flex flex-col items-center justify-center gap-3 py-4 px-3 rounded-lg bg-primary/10 border border-primary/20">
+            <div className="flex items-center gap-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse" />
+              <span className="text-sm font-bold text-primary">거래 체결 대기 중</span>
+            </div>
+            <div className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm",
+              currentRoundPendingBet.direction === 'long'
+                ? "bg-up/20 text-up"
+                : "bg-down/20 text-down"
+            )}>
+              {currentRoundPendingBet.direction === 'long' ? (
+                <TrendingUp className="w-4 h-4" />
+              ) : (
+                <TrendingDown className="w-4 h-4" />
+              )}
+              {currentRoundPendingBet.direction === 'long' ? '매수' : '매도'} 주문 완료
+            </div>
+            <p className="text-xs text-muted-foreground text-center">
+              #{currentRound}회차 종료 후 결과가 자동으로 반영됩니다
+            </p>
           </div>
-        </div>
+        ) : (
+          <>
+            <div className="space-y-2">
+              <label className="text-xs text-muted-foreground">주문금액 (원)</label>
+              <div className="relative">
+                <Input 
+                  type="text"
+                  inputMode="numeric"
+                  value={amount}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/[^0-9]/g, '');
+                    setAmount(val);
+                  }}
+                  onFocus={handleAmountFocus}
+                  onPaste={handlePaste}
+                  onCopy={handleCopy}
+                  className="font-mono text-base lg:text-lg text-right pr-10 h-10 lg:h-12 bg-input border-border focus-visible:ring-primary [appearance:textfield]"
+                  data-testid="input-bet-amount"
+                  placeholder="금액 입력"
+                />
+                <span className="absolute right-3 top-2.5 lg:top-3.5 text-sm text-muted-foreground">원</span>
+              </div>
+            </div>
 
+            {isBettingLocked && (
+              <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-2 text-center">
+                <span className="text-red-500 font-medium text-xs">거래 마감 ({formatDuration(game.duration)} 회차) - 다음 회차를 기다려주세요</span>
+              </div>
+            )}
 
-        {isBettingLocked && (
-          <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-2 text-center">
-            <span className="text-red-500 font-medium text-xs">거래 마감 ({formatDuration(game.duration)} 회차) - 다음 회차를 기다려주세요</span>
-          </div>
+            <div className="flex flex-col gap-1.5 pt-1 lg:pt-2">
+              <Button 
+                onClick={handleMaxFillClick}
+                className="h-9 lg:h-10 text-xs lg:text-sm font-bold text-white flex items-center justify-center gap-1 w-full bg-gray-500 hover:bg-gray-400"
+                data-testid="button-max"
+              >
+                MAX
+              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => handleBetClick('long')}
+                  disabled={isBettingLocked}
+                  className={cn(
+                    "h-11 lg:h-14 text-sm lg:text-base font-bold text-white flex items-center justify-center gap-1.5 flex-1",
+                    isBettingLocked 
+                      ? "bg-gray-500 hover:bg-gray-500 cursor-not-allowed opacity-50" 
+                      : "bg-up hover:bg-up/90"
+                  )}
+                  data-testid="button-long"
+                >
+                  <TrendingUp className="w-4 h-4 shrink-0" />
+                  매수
+                </Button>
+                <Button 
+                  onClick={() => handleBetClick('short')}
+                  disabled={isBettingLocked}
+                  className={cn(
+                    "h-11 lg:h-14 text-sm lg:text-base font-bold text-white flex items-center justify-center gap-1.5 flex-1",
+                    isBettingLocked 
+                      ? "bg-gray-500 hover:bg-gray-500 cursor-not-allowed opacity-50" 
+                      : "bg-down hover:bg-down/90"
+                  )}
+                  data-testid="button-short"
+                >
+                  <TrendingDown className="w-4 h-4 shrink-0" />
+                  매도
+                </Button>
+              </div>
+            </div>
+          </>
         )}
-
-        <div className="flex flex-col gap-1.5 pt-1 lg:pt-2">
-          <Button 
-            onClick={handleMaxFillClick}
-            className="h-9 lg:h-10 text-xs lg:text-sm font-bold text-white flex items-center justify-center gap-1 w-full bg-gray-500 hover:bg-gray-400"
-            data-testid="button-max"
-          >
-            MAX
-          </Button>
-          <div className="flex gap-2">
-            <Button 
-              onClick={() => handleBetClick('long')}
-              disabled={isBettingLocked}
-              className={cn(
-                "h-11 lg:h-14 text-sm lg:text-base font-bold text-white flex items-center justify-center gap-1.5 flex-1",
-                isBettingLocked 
-                  ? "bg-gray-500 hover:bg-gray-500 cursor-not-allowed opacity-50" 
-                  : "bg-up hover:bg-up/90"
-              )}
-              data-testid="button-long"
-            >
-              <TrendingUp className="w-4 h-4 shrink-0" />
-              매수
-            </Button>
-            <Button 
-              onClick={() => handleBetClick('short')}
-              disabled={isBettingLocked}
-              className={cn(
-                "h-11 lg:h-14 text-sm lg:text-base font-bold text-white flex items-center justify-center gap-1.5 flex-1",
-                isBettingLocked 
-                  ? "bg-gray-500 hover:bg-gray-500 cursor-not-allowed opacity-50" 
-                  : "bg-down hover:bg-down/90"
-              )}
-              data-testid="button-short"
-            >
-              <TrendingDown className="w-4 h-4 shrink-0" />
-              매도
-            </Button>
-          </div>
-        </div>
 
         {/* Game Results Section */}
         <div className="border-t border-border pt-3 lg:flex-1 lg:flex lg:flex-col lg:min-h-0">
