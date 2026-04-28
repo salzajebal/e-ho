@@ -227,6 +227,8 @@ export function BettingForm({ currentPrice, game, balance, onBet, isBetting = fa
   const [timeRemaining, setTimeRemaining] = useState(getRoundTimeRemaining(game.duration));
   const [gameResults, setGameResults] = useState<GameResult[]>([]);
   const [betConfirmation, setBetConfirmation] = useState<BetConfirmation>({ show: false, direction: 'long', amount: 0, price: 0, round: 0 });
+  // justPlacedBet: 베팅 확인 즉시 대기 화면을 보여주기 위한 로컬 상태 (API 응답 전까지 유지)
+  const [justPlacedBet, setJustPlacedBet] = useState<{ direction: 'long' | 'short'; round: number } | null>(null);
   const [timeAlert, setTimeAlert] = useState<TimeAlert>({ show: false, message: '' });
   const [settlementFlash, setSettlementFlash] = useState<{ show: boolean; direction: 'up' | 'down' }>({ show: false, direction: 'up' });
   const lastFlashedRoundRef = useRef<number>(0);
@@ -511,13 +513,39 @@ export function BettingForm({ currentPrice, game, balance, onBet, isBetting = fa
   const lockThreshold = game.duration <= 60 ? 10 : game.duration <= 180 ? 15 : 60;
   const isBettingLocked = timeRemaining <= lockThreshold;
 
+  // Clear justPlacedBet when the round changes (new round started = previous bet settled or expired)
+  useEffect(() => {
+    if (justPlacedBet && justPlacedBet.round !== currentRound) {
+      setJustPlacedBet(null);
+    }
+  }, [currentRound, justPlacedBet]);
+
+  // Calculate the current round's start time in milliseconds (for time-based check)
+  const currentRoundStartMs = (() => {
+    const kstTime = getKSTDate();
+    const secondsSinceMidnight = kstTime.getHours() * 3600 + kstTime.getMinutes() * 60 + kstTime.getSeconds();
+    const roundStartSeconds = Math.floor(secondsSinceMidnight / game.duration) * game.duration;
+    return kstTime.getTime() - (secondsSinceMidnight - roundStartSeconds) * 1000;
+  })();
+
   // Check if user already has a pending bet for the current round
-  const currentRoundPendingBet = userBets.find(bet =>
+  // Uses two methods to be robust against timing/cache issues:
+  // 1. justPlacedBet: set immediately upon confirmation (no API delay)
+  // 2. userBets check: looks for pending bet created in current round's time window (no roundNumber mismatch)
+  const pendingBetFromApi = userBets.find(bet =>
     bet.outcome === 'pending' &&
     bet.symbol === game.symbol &&
-    bet.duration === game.duration &&
-    bet.roundNumber === currentRound
+    Number(bet.duration) === game.duration &&
+    (
+      bet.roundNumber === currentRound ||
+      new Date(bet.createdAt).getTime() >= currentRoundStartMs
+    )
   );
+  const currentRoundPendingBet = pendingBetFromApi
+    ? pendingBetFromApi
+    : justPlacedBet
+      ? { direction: justPlacedBet.direction, roundNumber: justPlacedBet.round }
+      : null;
 
   const validateBet = (direction: 'long' | 'short') => {
     if (isBettingLocked) {
@@ -593,6 +621,8 @@ export function BettingForm({ currentPrice, game, balance, onBet, isBetting = fa
 
   const confirmBet = () => {
     if (isBetting) return;
+    // 즉시 대기 화면 표시 (API 응답 전에도)
+    setJustPlacedBet({ direction: betConfirmation.direction, round: betConfirmation.round });
     onBet(betConfirmation.direction, betConfirmation.amount);
     setBetConfirmation(prev => ({ ...prev, show: false }));
     setAmount("");
