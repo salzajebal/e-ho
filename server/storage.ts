@@ -145,6 +145,7 @@ export interface IStorage {
   getPendingTransactionRequests(): Promise<TransactionRequest[]>;
   getAllTransactionRequests(): Promise<TransactionRequest[]>;
   processTransactionRequest(id: number, status: 'approved' | 'rejected' | 'hold', processedBy: string, adminNote?: string): Promise<TransactionRequest>;
+  deleteTransactionRequest(id: number): Promise<void>;
 
   // Daily stats methods (날짜별 수익)
   getDailyStats(days?: number): Promise<DailyStats[]>;
@@ -1316,6 +1317,10 @@ export class DatabaseStorage implements IStorage {
       .where(eq(transactionRequests.id, id))
       .returning();
     return updated;
+  }
+
+  async deleteTransactionRequest(id: number): Promise<void> {
+    await db.delete(transactionRequests).where(eq(transactionRequests.id, id));
   }
 
   // Daily stats methods (날짜별 수익 - 한국시간 기준)

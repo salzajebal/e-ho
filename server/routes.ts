@@ -4110,6 +4110,19 @@ export async function registerRoutes(
     }
   });
 
+  // Admin: Delete transaction request
+  app.delete("/api/admin/transactions/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ error: "유효하지 않은 ID입니다" });
+      await storage.deleteTransactionRequest(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete transaction request error:", error);
+      res.status(500).json({ error: "삭제에 실패했습니다" });
+    }
+  });
+
   // ===== 1:1 Inquiry Routes (1:1 문의) =====
   
   // Create inquiry (사용자)

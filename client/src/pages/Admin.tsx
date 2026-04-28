@@ -1271,6 +1271,7 @@ export default function Admin() {
   const [createAnnouncementOpen, setCreateAnnouncementOpen] = useState(false);
   const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
   const [deleteAnnouncementConfirm, setDeleteAnnouncementConfirm] = useState<number | null>(null);
+  const [deleteTransactionConfirm, setDeleteTransactionConfirm] = useState<number | null>(null);
   const [newAnnouncement, setNewAnnouncement] = useState({
     title: '',
     content: '',
@@ -5653,6 +5654,7 @@ export default function Admin() {
                       <th className="px-2 lg:px-4 py-3 text-right font-medium">금액</th>
                       <th className="px-2 lg:px-4 py-3 text-center font-medium">상태</th>
                       <th className="px-2 lg:px-4 py-3 text-left font-medium">신청일</th>
+                      <th className="px-2 lg:px-4 py-3 text-center font-medium">삭제</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
@@ -5723,10 +5725,28 @@ export default function Admin() {
                         <td className="px-2 lg:px-4 py-3 text-xs text-muted-foreground">
                           {new Date(request.createdAt).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Seoul' })}
                         </td>
+                        <td className="px-2 lg:px-4 py-3 text-center">
+                          {deleteTransactionConfirm === request.id ? (
+                            <div className="flex gap-1 justify-center">
+                              <Button size="sm" className="h-7 px-2 bg-red-600 hover:bg-red-700 text-xs text-white" onClick={async () => {
+                                try {
+                                  const res = await fetch(`/api/admin/transactions/${request.id}`, { method: 'DELETE', credentials: 'include' });
+                                  if (!res.ok) throw new Error('삭제 실패');
+                                  toast.success('내역이 삭제되었습니다');
+                                  setDeleteTransactionConfirm(null);
+                                  refetchTransactions();
+                                } catch { toast.error('삭제에 실패했습니다'); }
+                              }}>확인</Button>
+                              <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => setDeleteTransactionConfirm(null)}>취소</Button>
+                            </div>
+                          ) : (
+                            <Button size="sm" variant="ghost" className="h-7 px-2 text-red-500 hover:text-red-600 hover:bg-red-500/10 text-xs" onClick={() => setDeleteTransactionConfirm(request.id)}>삭제</Button>
+                          )}
+                        </td>
                       </tr>
                     ))}
                     {depositRequests.length === 0 && (
-                      <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">입금 신청 내역이 없습니다</td></tr>
+                      <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">입금 신청 내역이 없습니다</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -5762,6 +5782,7 @@ export default function Admin() {
                       <th className="px-2 lg:px-4 py-3 text-left font-medium">출금계좌</th>
                       <th className="px-2 lg:px-4 py-3 text-center font-medium">상태</th>
                       <th className="px-2 lg:px-4 py-3 text-left font-medium">신청일</th>
+                      <th className="px-2 lg:px-4 py-3 text-center font-medium">삭제</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
@@ -5838,10 +5859,28 @@ export default function Admin() {
                         <td className="px-2 lg:px-4 py-3 text-xs text-muted-foreground">
                           {new Date(request.createdAt).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Seoul' })}
                         </td>
+                        <td className="px-2 lg:px-4 py-3 text-center">
+                          {deleteTransactionConfirm === request.id ? (
+                            <div className="flex gap-1 justify-center">
+                              <Button size="sm" className="h-7 px-2 bg-red-600 hover:bg-red-700 text-xs text-white" onClick={async () => {
+                                try {
+                                  const res = await fetch(`/api/admin/transactions/${request.id}`, { method: 'DELETE', credentials: 'include' });
+                                  if (!res.ok) throw new Error('삭제 실패');
+                                  toast.success('내역이 삭제되었습니다');
+                                  setDeleteTransactionConfirm(null);
+                                  refetchTransactions();
+                                } catch { toast.error('삭제에 실패했습니다'); }
+                              }}>확인</Button>
+                              <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => setDeleteTransactionConfirm(null)}>취소</Button>
+                            </div>
+                          ) : (
+                            <Button size="sm" variant="ghost" className="h-7 px-2 text-red-500 hover:text-red-600 hover:bg-red-500/10 text-xs" onClick={() => setDeleteTransactionConfirm(request.id)}>삭제</Button>
+                          )}
+                        </td>
                       </tr>
                     ))}
                     {withdrawalRequests.length === 0 && (
-                      <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">출금 신청 내역이 없습니다</td></tr>
+                      <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">출금 신청 내역이 없습니다</td></tr>
                     )}
                   </tbody>
                 </table>
