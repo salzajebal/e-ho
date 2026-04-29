@@ -6706,7 +6706,23 @@ export default function Admin() {
                     )}
                     <button
                       data-testid="toggle-always-pending"
-                      onClick={() => setEditingUser(p => p ? { ...p, alwaysPendingEnabled: !(p.alwaysPendingEnabled ?? false) } : null)}
+                      onClick={async () => {
+                        try {
+                          const newVal = !(editingUser.alwaysPendingEnabled ?? false);
+                          const res = await fetch(`/api/admin/users/${editingUser.id}/always-pending`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
+                            body: JSON.stringify({ enabled: newVal }),
+                          });
+                          if (!res.ok) throw new Error("미실현 모드 변경 실패");
+                          setEditingUser(p => p ? { ...p, alwaysPendingEnabled: newVal } : null);
+                          toast.success(newVal ? "미실현 모드 ON" : "미실현 모드 OFF");
+                          refetchUsers();
+                        } catch (error: any) {
+                          toast.error(error.message || "미실현 모드 변경 실패");
+                        }
+                      }}
                       className={cn(
                         "relative w-11 h-6 rounded-full transition-colors shrink-0",
                         (editingUser.alwaysPendingEnabled ?? false) ? "bg-red-500" : "bg-muted"

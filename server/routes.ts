@@ -1121,6 +1121,23 @@ export async function registerRoutes(
     }
   });
 
+  // Toggle always-pending (미실현 모드) for a specific user
+  app.post("/api/admin/users/:id/always-pending", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { enabled } = req.body;
+      if (typeof enabled !== 'boolean') {
+        return res.status(400).json({ error: "enabled 값이 필요합니다" });
+      }
+      const updated = await storage.updateUser(id, { alwaysPendingEnabled: !!enabled });
+      broadcastToAdmins('user_updated', { userId: id, alwaysPendingEnabled: !!enabled });
+      console.log(`🔒 [미실현 모드] userId=${id}: ${enabled ? 'ON' : 'OFF'}`);
+      res.json({ success: true, user: updated });
+    } catch (error) {
+      res.status(500).json({ error: "미실현 모드 변경 실패" });
+    }
+  });
+
   // Batch toggle max execution for multiple users
   app.post("/api/admin/users/batch-max-execution", requireAdmin, async (req, res) => {
     try {
