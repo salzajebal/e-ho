@@ -230,9 +230,10 @@ export function BettingForm({ currentPrice, game, balance, onBet, isBetting = fa
   // justPlacedBet: 베팅 확인 즉시 대기 화면을 보여주기 위한 로컬 상태 (API 응답 전까지 유지)
   const [justPlacedBet, setJustPlacedBet] = useState<{ direction: 'long' | 'short'; round: number } | null>(null);
   const [timeAlert, setTimeAlert] = useState<TimeAlert>({ show: false, message: '' });
-  const [settlementFlash, setSettlementFlash] = useState<{ show: boolean; direction: 'up' | 'down' }>({ show: false, direction: 'up' });
+  // flashKey가 바뀔 때마다 CSS 애니메이션이 새로 시작됨 (JS 타이머 불필요)
+  const [flashKey, setFlashKey] = useState<number>(0);
+  const [flashDirection, setFlashDirection] = useState<'up' | 'down'>('up');
   const lastFlashedRoundRef = useRef<number>(0);
-  const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [forcedDirections, setForcedDirections] = useState<ForcedDirection[]>([]);
   const [resultRefreshTrigger, setResultRefreshTrigger] = useState(0);
   const allGamesStateRef = useRef<AllGamesState>({});
@@ -401,7 +402,9 @@ export function BettingForm({ currentPrice, game, balance, onBet, isBetting = fa
     setGameResults(validResults);
   }, [game.id, game.duration, game.symbol, userBets, forcedDirections, resultRefreshTrigger]);
 
-  // Settlement flash: show large 매수/매도 when new round result appears
+  // Settlement flash: CSS 애니메이션으로 처리 — JS 타이머/setTimeout 완전 제거
+  // flashKey가 변경될 때마다 React가 DOM 요소를 새로 생성 → 애니메이션이 처음부터 재시작
+  // CSS animation(forwards)이 2.5s 후 자동으로 opacity:0으로 고정됨
   useEffect(() => {
     if (gameResults.length === 0) return;
     const latest = gameResults[0];
@@ -412,16 +415,9 @@ export function BettingForm({ currentPrice, game, balance, onBet, isBetting = fa
     }
     if (latest.round > lastFlashedRoundRef.current) {
       lastFlashedRoundRef.current = latest.round;
-      // 기존 타이머가 있으면 먼저 취소 (중복 방지)
-      if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
-      setSettlementFlash({ show: true, direction: latest.direction });
-      // ref에 타이머 저장 → gameResults 재업데이트로 인한 cleanup에 취소되지 않음
-      flashTimerRef.current = setTimeout(() => {
-        setSettlementFlash(prev => ({ ...prev, show: false }));
-        flashTimerRef.current = null;
-      }, 2500);
+      setFlashDirection(latest.direction);
+      setFlashKey(prev => prev + 1); // key 변경 → DOM 재생성 → 애니메이션 재시작
     }
-    // cleanup 없음: gameResults 변경 시 타이머가 취소되지 않도록 의도적으로 생략
   }, [gameResults]);
 
   // Track round changes for ALL 12 games simultaneously
@@ -649,31 +645,28 @@ export function BettingForm({ currentPrice, game, balance, onBet, isBetting = fa
 
   return (
     <div className="relative flex flex-col lg:h-full bg-card w-full">
-      {/* 결과 플래시 오버레이 */}
-      <div
-        className={cn(
-          "absolute inset-0 z-30 flex flex-col items-center justify-center pointer-events-none transition-opacity duration-500",
-          settlementFlash.show ? "opacity-100" : "opacity-0"
-        )}
-        style={{ background: settlementFlash.direction === 'up' ? 'rgba(0,200,100,0.13)' : 'rgba(220,60,60,0.13)' }}
-      >
-        <div className={cn(
-          "flex flex-col items-center gap-2 transition-transform duration-500",
-          settlementFlash.show ? "scale-100" : "scale-75"
-        )}>
-          {settlementFlash.direction === 'up' ? (
-            <TrendingUp className="w-20 h-20 text-up drop-shadow-lg" strokeWidth={2.5} />
-          ) : (
-            <TrendingDown className="w-20 h-20 text-down drop-shadow-lg" strokeWidth={2.5} />
-          )}
-          <span className={cn(
-            "text-6xl font-black tracking-tight drop-shadow-lg",
-            settlementFlash.direction === 'up' ? "text-up" : "text-down"
-          )}>
-            {settlementFlash.direction === 'up' ? '매수' : '매도'}
-          </span>
+      {/* 결과 플래시 오버레이 — CSS 애니메이션으로 정확히 2.5s 후 자동 소멸 */}
+      {flashKey > 0 && (
+        <div
+          key={flashKey}
+          className="settlement-flash absolute inset-0 z-30 flex flex-col items-center justify-center pointer-events-none"
+          style={{ background: flashDirection === 'up' ? 'rgba(0,200,100,0.13)' : 'rgba(220,60,60,0.13)' }}
+        >
+          <div className="flex flex-col items-center gap-2">
+            {flashDirection === 'up' ? (
+              <TrendingUp className="w-20 h-20 text-up drop-shadow-lg" strokeWidth={2.5} />
+            ) : (
+              <TrendingDown className="w-20 h-20 text-down drop-shadow-lg" strokeWidth={2.5} />
+            )}
+            <span className={cn(
+              "text-6xl font-black tracking-tight drop-shadow-lg",
+              flashDirection === 'up' ? "text-up" : "text-down"
+            )}>
+              {flashDirection === 'up' ? '매수' : '매도'}
+            </span>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* 점검 오버레이 */}
       {underMaintenance && (
