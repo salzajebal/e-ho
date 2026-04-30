@@ -3848,7 +3848,7 @@ export async function registerRoutes(
       const blockedIp = await storage.addBlockedIp({
         ipAddress,
         reason: reason || "",
-        blockedBy: req.session.userId!,
+        blockedBy: String(req.session.adminUserId ?? req.session.userId ?? 'admin'),
       });
       // 인메모리 캐시에도 즉시 반영
       blockedIpSet.add(ipAddress);
@@ -3922,7 +3922,7 @@ export async function registerRoutes(
       const maintenanceSymbol = await storage.addMaintenanceSymbol({
         symbol,
         reason: reason || "",
-        createdBy: req.session.userId!,
+        createdBy: String(req.session.adminUserId ?? req.session.userId ?? 'admin'),
       });
       res.json({ success: true, maintenanceSymbol });
     } catch (error: any) {
@@ -4114,13 +4114,14 @@ export async function registerRoutes(
       }
 
       // For hold status, just update the status without balance changes
+      const adminId = req.session.adminUserId ?? req.session.userId!;
       if (status === 'hold') {
-        const updated = await storage.processTransactionRequest(id, status, req.session.userId!, adminNote);
+        const updated = await storage.processTransactionRequest(id, status, adminId, adminNote);
         return res.json({ success: true, request: updated });
       }
 
       // Process the transaction
-      const updated = await storage.processTransactionRequest(id, status, req.session.userId!, adminNote);
+      const updated = await storage.processTransactionRequest(id, status, adminId, adminNote);
 
       // Handle balance updates based on status and type
       const user = await storage.getUser(request.userId);
@@ -4333,7 +4334,7 @@ export async function registerRoutes(
         return res.status(404).json({ error: "문의를 찾을 수 없습니다" });
       }
 
-      const updated = await storage.replyToInquiry(parseInt(id), reply, req.session.userId!);
+      const updated = await storage.replyToInquiry(parseInt(id), reply, req.session.adminUserId ?? req.session.userId!);
 
       // Notify user via WebSocket
       broadcastToUser(inquiry.userId, 'inquiry_replied', updated);
