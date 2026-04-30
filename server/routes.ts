@@ -115,6 +115,45 @@ export async function registerRoutes(
   // Trust proxy - always enabled for Replit (uses reverse proxy)
   app.set("trust proxy", 1);
 
+  // ─── 인메모리 IP 차단 캐시 ────────────────────────────────────────────
+  const blockedIpSet = new Set<string>();
+
+  // 서버 시작 시 DB에서 차단 IP 목록 로드
+  storage.getAllBlockedIps()
+    .then(ips => {
+      ips.forEach(ip => blockedIpSet.add(ip.ipAddress));
+      if (ips.length > 0) console.log(`🛡️ [IP Block] 캐시 로드: ${ips.length}개 차단 IP`);
+    })
+    .catch(err => console.error('[IP Block] 캐시 로드 실패:', err));
+
+  // IP 차단 미들웨어: API 요청 시 차단된 IP면 403 반환
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    // 관리자 API, IP 체크 엔드포인트, 비-API 경로는 건너뜀
+    if (
+      req.path.startsWith('/api/admin') ||
+      req.path === '/api/blocked-ip-check' ||
+      !req.path.startsWith('/api/')
+    ) {
+      return next();
+    }
+
+    if (blockedIpSet.size === 0) return next();
+
+    const clientIp =
+      (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
+      req.ip ||
+      req.socket.remoteAddress ||
+      '';
+
+    if (blockedIpSet.has(clientIp)) {
+      console.log(`🚫 [IP Block] 차단된 IP 접근: ${clientIp} → ${req.method} ${req.path}`);
+      return res.status(403).json({ error: '접근이 차단되었습니다', blocked: true });
+    }
+
+    next();
+  });
+  // ─────────────────────────────────────────────────────────────────────
+
   // Session middleware - 7 days session with rolling (extends on activity)
   app.use(
     session({
@@ -3811,6 +3850,9 @@ export async function registerRoutes(
         reason: reason || "",
         blockedBy: req.session.userId!,
       });
+      // 인메모리 캐시에도 즉시 반영
+      blockedIpSet.add(ipAddress);
+      console.log(`🛡️ [IP Block] 차단 추가: ${ipAddress} (캐시 총 ${blockedIpSet.size}개)`);
       res.json({ success: true, blockedIp });
     } catch (error: any) {
       console.error("Add blocked IP error:", error);
@@ -3825,7 +3867,15 @@ export async function registerRoutes(
   app.delete("/api/admin/blocked-ips/:id", requireAdmin, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      // 삭제 전에 IP 주소 조회 (캐시 동기화용)
+      const allIps = await storage.getAllBlockedIps();
+      const target = allIps.find(ip => ip.id === id);
       await storage.removeBlockedIp(id);
+      // 인메모리 캐시에서도 제거
+      if (target) {
+        blockedIpSet.delete(target.ipAddress);
+        console.log(`🛡️ [IP Block] 차단 해제: ${target.ipAddress} (캐시 총 ${blockedIpSet.size}개)`);
+      }
       res.json({ success: true });
     } catch (error) {
       console.error("Remove blocked IP error:", error);
@@ -3833,11 +3883,15 @@ export async function registerRoutes(
     }
   });
 
-  // Check if IP is blocked
+  // Check if IP is blocked (캐시 우선 사용)
   app.get("/api/blocked-ip-check", async (req, res) => {
     try {
-      const clientIp = req.ip || req.socket.remoteAddress || "";
-      const isBlocked = await storage.isIpBlocked(clientIp);
+      const clientIp =
+        (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
+        req.ip ||
+        req.socket.remoteAddress ||
+        '';
+      const isBlocked = blockedIpSet.has(clientIp);
       res.json({ blocked: isBlocked, ip: clientIp });
     } catch (error) {
       res.status(500).json({ error: "IP 확인에 실패했습니다" });

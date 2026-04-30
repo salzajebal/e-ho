@@ -162,6 +162,7 @@ function generateSparklinePath(prices: number[]): string {
 }
 
 export default function Landing() {
+  const [isIpBlocked, setIsIpBlocked] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
@@ -230,6 +231,14 @@ export default function Landing() {
   const marketData = useLandingMarketData();
 
   // 입금신청 "보내시는 분" 자동 세팅
+  // IP 차단 여부 확인 (페이지 최초 로드 시)
+  useEffect(() => {
+    fetch('/api/blocked-ip-check')
+      .then(res => res.json())
+      .then(data => { if (data.blocked) setIsIpBlocked(true); })
+      .catch(() => {});
+  }, []);
+
   useEffect(() => {
     if (user?.name) {
       setDepositSenderName(user.name);
@@ -543,6 +552,25 @@ export default function Landing() {
       }
     });
   };
+
+  if (isIpBlocked) {
+    return (
+      <div className="min-h-screen bg-[#100805] flex flex-col items-center justify-center px-4">
+        <div className="text-center space-y-6 max-w-md">
+          <div className="w-20 h-20 mx-auto rounded-full bg-red-500/20 border border-red-500/30 flex items-center justify-center">
+            <svg className="w-10 h-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold text-white">접근이 차단되었습니다</h1>
+          <p className="text-gray-400 text-sm leading-relaxed">
+            해당 IP 주소는 관리자에 의해 차단되었습니다.<br />
+            문의사항이 있으시면 고객센터로 연락해 주세요.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#100805] text-white">
