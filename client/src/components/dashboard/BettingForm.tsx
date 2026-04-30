@@ -232,6 +232,7 @@ export function BettingForm({ currentPrice, game, balance, onBet, isBetting = fa
   const [timeAlert, setTimeAlert] = useState<TimeAlert>({ show: false, message: '' });
   const [settlementFlash, setSettlementFlash] = useState<{ show: boolean; direction: 'up' | 'down' }>({ show: false, direction: 'up' });
   const lastFlashedRoundRef = useRef<number>(0);
+  const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [forcedDirections, setForcedDirections] = useState<ForcedDirection[]>([]);
   const [resultRefreshTrigger, setResultRefreshTrigger] = useState(0);
   const allGamesStateRef = useRef<AllGamesState>({});
@@ -411,10 +412,16 @@ export function BettingForm({ currentPrice, game, balance, onBet, isBetting = fa
     }
     if (latest.round > lastFlashedRoundRef.current) {
       lastFlashedRoundRef.current = latest.round;
+      // 기존 타이머가 있으면 먼저 취소 (중복 방지)
+      if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
       setSettlementFlash({ show: true, direction: latest.direction });
-      const timer = setTimeout(() => setSettlementFlash(prev => ({ ...prev, show: false })), 2500);
-      return () => clearTimeout(timer);
+      // ref에 타이머 저장 → gameResults 재업데이트로 인한 cleanup에 취소되지 않음
+      flashTimerRef.current = setTimeout(() => {
+        setSettlementFlash(prev => ({ ...prev, show: false }));
+        flashTimerRef.current = null;
+      }, 2500);
     }
+    // cleanup 없음: gameResults 변경 시 타이머가 취소되지 않도록 의도적으로 생략
   }, [gameResults]);
 
   // Track round changes for ALL 12 games simultaneously
