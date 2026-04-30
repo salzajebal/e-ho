@@ -1720,6 +1720,7 @@ export default function Admin() {
       const res = await fetch("/api/admin/blocked-ips", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(data),
       });
       if (!res.ok) {
@@ -1742,6 +1743,7 @@ export default function Admin() {
     mutationFn: async (id: number) => {
       const res = await fetch(`/api/admin/blocked-ips/${id}`, {
         method: "DELETE",
+        credentials: "include",
       });
       if (!res.ok) throw new Error("Failed to unblock IP");
       return res.json();
