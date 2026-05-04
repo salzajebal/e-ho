@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect, useRef, Component } from "react";
 import { useLocation } from "wouter";
 import { Navbar } from "@/components/layout/Navbar";
 import { Ticker } from "@/components/dashboard/Ticker";
@@ -6,7 +6,7 @@ import { MarketOverview } from "@/components/dashboard/MarketOverview";
 import { PriceChart } from "@/components/dashboard/PriceChart";
 import { BettingForm } from "@/components/dashboard/BettingForm";
 import { BetsPanel } from "@/components/dashboard/BetsPanel";
-import { useMarketData } from "@/lib/marketData";
+import { useMarketData, INITIAL_MARKET_DATA } from "@/lib/marketData";
 import { useBets, useBetHistory, useCreateBet, useSettleBet, useUserBalance } from "@/hooks/use-bets";
 import { useAuth } from "@/hooks/use-auth";
 import { useUnreadMessages, useMessages, useMarkMessageRead, useMarkAllMessagesRead } from "@/hooks/use-messages";
@@ -22,7 +22,42 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Message } from "@shared/schema";
 import { TRADING_GAMES } from "@/lib/tradingGames";
 
-export default function Home() {
+class HomeErrorBoundary extends Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error('[HomeErrorBoundary] 렌더링 오류:', error, info);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="text-center space-y-4 px-6">
+            <p className="text-lg font-bold text-destructive">화면 로딩 중 오류가 발생했습니다.</p>
+            <p className="text-sm text-muted-foreground">{this.state.error?.message}</p>
+            <button
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-md"
+              onClick={() => { this.setState({ hasError: false, error: null }); window.location.reload(); }}
+            >
+              새로고침
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+function HomeInner() {
   const [selectedGameId, setSelectedGameId] = useState("SP500-300");
   const [, setLocation] = useLocation();
   const marketData = useMarketData();
@@ -164,7 +199,7 @@ export default function Home() {
     return [...uniqueActiveBets, ...historyBets];
   }, [activeBets, historyBets]);
 
-  const currentMarket = marketData.find(m => m.symbol === selectedGame.symbol) || marketData[0];
+  const currentMarket = marketData.find(m => m.symbol === selectedGame.symbol) || marketData[0] || INITIAL_MARKET_DATA[0];
 
   const currentPrices = useMemo(() => {
     const prices: Record<string, number> = {};
@@ -866,5 +901,13 @@ export default function Home() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <HomeErrorBoundary>
+      <HomeInner />
+    </HomeErrorBoundary>
   );
 }
