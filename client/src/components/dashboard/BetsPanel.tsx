@@ -106,7 +106,9 @@ function BetRow({ bet, currentPrice, onExpire }: { bet: Bet; currentPrice: numbe
             "font-mono font-bold",
             bet.outcome === 'win' ? "text-up" : "text-down"
           )}>
-            {bet.outcome === 'win' ? '+' : '-'}{Math.floor(parseFloat(bet.outcome === 'win' ? bet.payout || '0' : bet.amount)).toLocaleString()}원
+            {bet.outcome === 'win'
+              ? `+${Math.floor(parseFloat(bet.payout || '0') - parseFloat(bet.amount)).toLocaleString()}`
+              : `-${Math.floor(parseFloat(bet.amount)).toLocaleString()}`}원
           </div>
           <div className={cn(
             "text-xs font-medium",
