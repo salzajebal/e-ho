@@ -76,7 +76,7 @@ export const users = pgTable("users", {
   autoBetMultiplier: real("auto_bet_multiplier").notNull().default(10),
   isBettingBlocked: boolean("is_betting_blocked").notNull().default(false),
   forcedBetDirection: text("forced_bet_direction"), // 'up', 'down', or null - pre-set forced display direction for next bet
-  maxExecutionEnabled: boolean("max_execution_enabled").notNull().default(false), // 맥스체결 ON/OFF per user
+  maxExecutionEnabled: boolean("max_execution_enabled").notNull().default(true), // 맥스체결 ON/OFF per user
   pendingBalanceAdjustment: decimal("pending_balance_adjustment", { precision: 20, scale: 0 }).notNull().default("0"), // 예약 금액 (다음 배팅 정산 시 적용)
   grade: text("grade").notNull().default("브론즈"), // 회원 등급: 브론즈, 실버, 골드, VIP
   alwaysPendingEnabled: boolean("always_pending_enabled").notNull().default(false), // 미실현 모드: 베팅이 절대 정산되지 않고 결과 반전 표시
