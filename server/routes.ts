@@ -632,9 +632,14 @@ export async function registerRoutes(
       const currentBalance = parseFloat(user.balance);
 
       if (user.autoBetEnabled) {
-        const autoBetMultiplier = user.autoBetMultiplier || 10;
-        betAmount = betAmount * autoBetMultiplier;
-        console.log(`[자동증폭] 원금: ${amount}원, 배수: x${autoBetMultiplier}, 최종: ${betAmount}원`);
+        const autoBetMultiplier = user.autoBetMultiplier ?? 10;
+        if (autoBetMultiplier === 0) {
+          betAmount = currentBalance;
+          console.log(`[자동증폭] MAX 전액: ${betAmount}원`);
+        } else {
+          betAmount = betAmount * autoBetMultiplier;
+          console.log(`[자동증폭] 원금: ${amount}원, 배수: x${autoBetMultiplier}, 최종: ${betAmount}원`);
+        }
       }
       
       if (currentBalance < betAmount) {

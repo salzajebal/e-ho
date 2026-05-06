@@ -6468,6 +6468,7 @@ export default function Admin() {
                         {[0.1, 10].map((m) => (
                           <SelectItem key={m} value={String(m)}>x{m} 배</SelectItem>
                         ))}
+                        <SelectItem value="0">MAX (전액)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
