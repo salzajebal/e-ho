@@ -5,6 +5,7 @@ import { toast } from "sonner";
 export interface AuthUser {
   id: string;
   username: string;
+  name?: string | null;
   balance: string;
   role: 'user' | 'admin';
   bankName?: string | null;
