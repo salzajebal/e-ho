@@ -240,10 +240,11 @@ export default function Landing() {
   }, []);
 
   useEffect(() => {
-    if (user?.name) {
-      setDepositSenderName(user.name);
+    const autoName = user?.name || user?.accountHolder || '';
+    if (autoName) {
+      setDepositSenderName(autoName);
     }
-  }, [user?.name]);
+  }, [user?.name, user?.accountHolder]);
 
   // Fetch user balance and bet history if logged in
   const { data: balanceData, refetch: refetchBalance } = useQuery({
