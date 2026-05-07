@@ -632,7 +632,7 @@ export default function Landing() {
                 onClick={() => {
                   if (!user) { setShowLoginModal(true); return; }
                   if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 09:00 ~ 18:00 사이에만 가능합니다"); return; }
-                  setDepositAmount(''); setDepositSenderName(''); setShowDepositPageModal(true);
+                  setDepositAmount(''); setDepositSenderName(user?.name || user?.accountHolder || ''); setShowDepositPageModal(true);
                 }}
                 className="text-gray-300 hover:text-amber-500 transition-colors text-xs font-medium whitespace-nowrap" 
                 data-testid="nav-deposit"
@@ -716,7 +716,7 @@ export default function Landing() {
                     data-testid="button-header-deposit"
                     onClick={() => { 
                       if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 09:00 ~ 18:00 사이에만 가능합니다"); return; }
-                      setDepositAmount(''); setDepositSenderName(''); setShowDepositPageModal(true);
+                      setDepositAmount(''); setDepositSenderName(user?.name || user?.accountHolder || ''); setShowDepositPageModal(true);
                     }}
                   >
                     입금
@@ -839,7 +839,7 @@ export default function Landing() {
                   onClick={() => {
                     if (!user) { setShowLoginModal(true); setMobileMenuOpen(false); return; }
                     if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 09:00 ~ 18:00 사이에만 가능합니다"); setMobileMenuOpen(false); return; }
-                    setDepositAmount(''); setDepositSenderName(''); setShowDepositPageModal(true);
+                    setDepositAmount(''); setDepositSenderName(user?.name || user?.accountHolder || ''); setShowDepositPageModal(true);
                     setMobileMenuOpen(false);
                   }}
                   className="text-left text-gray-300 hover:text-amber-500 py-3 border-b border-white/10 w-full touch-manipulation"
@@ -1567,7 +1567,7 @@ export default function Landing() {
                 <li><button onClick={() => { 
                   if (!user) { setShowLoginModal(true); return; }
                   if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 09:00 ~ 18:00 사이에만 가능합니다"); return; }
-                  setDepositAmount(''); setDepositSenderName(''); setShowDepositPageModal(true);
+                  setDepositAmount(''); setDepositSenderName(user?.name || user?.accountHolder || ''); setShowDepositPageModal(true);
                 }} className="hover:text-amber-500 transition-colors" data-testid="link-deposit">입금신청</button></li>
                 <li><button onClick={() => { 
                   if (!user) { setShowLoginModal(true); return; }
