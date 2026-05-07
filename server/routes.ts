@@ -408,6 +408,7 @@ export async function registerRoutes(
       res.json({
         id: user.id,
         username: user.username,
+        name: user.name,
         balance: user.balance,
         role: user.role,
         bankName: user.bankName,
