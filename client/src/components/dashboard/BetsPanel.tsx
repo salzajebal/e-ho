@@ -85,12 +85,25 @@ function BetRow({ bet, currentPrice, onExpire }: { bet: Bet; currentPrice: numbe
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <span className="font-semibold text-sm">{bet.symbol}</span>
+            {/* 내 베팅 방향 */}
             <span className={cn(
               "text-xs px-1.5 py-0.5 rounded",
               bet.direction === 'long' ? "bg-up/20 text-up" : "bg-down/20 text-down"
             )}>
               {bet.direction === 'long' ? '매수' : '매도'}
             </span>
+            {/* 시장 결과 방향 (실제 가격이 움직인 방향) */}
+            {(() => {
+              const marketDir = bet.outcome === 'win' ? bet.direction : (bet.direction === 'long' ? 'short' : 'long');
+              return (
+                <span className={cn(
+                  "text-xs px-1.5 py-0.5 rounded border",
+                  marketDir === 'long' ? "border-up/40 text-up" : "border-down/40 text-down"
+                )}>
+                  결과 {marketDir === 'long' ? '▲' : '▼'}
+                </span>
+              );
+            })()}
             {bet.roundNumber != null && (
               <span className="text-xs px-1.5 py-0.5 rounded bg-primary/20 text-primary font-mono">
                 #{bet.roundNumber}회차 {betDate.getHours().toString().padStart(2, '0')}:{betDate.getMinutes().toString().padStart(2, '0')}
