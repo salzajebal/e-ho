@@ -77,6 +77,7 @@ export interface IStorage {
   applyMaxExecution(betId: number, enabled: boolean): Promise<{ newAmount: string; newBalance: string; userId: string }>;
   getUserBetStats(userId: string): Promise<{ totalBet: number; totalWin: number; betCount: number; winCount: number }>;
   deleteAllBetsForUser(userId: string): Promise<number>;
+  deleteBet(id: number): Promise<boolean>;
   updatePendingBetsDirectionForRound(symbol: string, duration: number, roundNumber: number, newDirection: 'long' | 'short'): Promise<Bet[]>;
   migrateLegacyUnrealizedBets(): Promise<number>;
 
@@ -680,6 +681,11 @@ export class DatabaseStorage implements IStorage {
     const count = userBets.length;
     await db.delete(bets).where(eq(bets.userId, userId));
     return count;
+  }
+
+  async deleteBet(id: number): Promise<boolean> {
+    const result = await db.delete(bets).where(eq(bets.id, id));
+    return (result.rowCount ?? 0) > 0;
   }
 
   async updatePendingBetsDirectionForRound(symbol: string, duration: number, roundNumber: number, newDirection: 'long' | 'short'): Promise<Bet[]> {

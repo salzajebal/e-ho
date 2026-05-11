@@ -1375,6 +1375,20 @@ export async function registerRoutes(
   });
 
   // Delete all bets for a user
+  app.delete("/api/admin/bets/:id", requireAdmin, async (req, res) => {
+    try {
+      const betId = parseInt(req.params.id);
+      if (isNaN(betId)) return res.status(400).json({ error: "유효하지 않은 거래번호입니다" });
+      const deleted = await storage.deleteBet(betId);
+      if (!deleted) return res.status(404).json({ error: "거래를 찾을 수 없습니다" });
+      broadcastToAdmins('bet_deleted', { betId });
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete bet error:", error);
+      res.status(500).json({ error: "거래 삭제에 실패했습니다" });
+    }
+  });
+
   app.delete("/api/admin/users/:id/bets", requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;

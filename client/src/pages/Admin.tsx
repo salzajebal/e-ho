@@ -5177,6 +5177,7 @@ export default function Admin() {
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap text-right">거래전 보유금</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap text-right">거래후 보유금</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap text-center">상태</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap text-center">삭제</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -5254,6 +5255,28 @@ export default function Admin() {
                             ) : (
                               <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-down text-white">실격</span>
                             )}
+                          </td>
+                          <td className="px-2 lg:px-3 py-1.5 text-center">
+                            <button
+                              onClick={async () => {
+                                if (!confirm(`거래번호 ${bet.id}를 삭제하시겠습니까?\n삭제 시 회원 화면에서도 즉시 사라집니다.`)) return;
+                                try {
+                                  const res = await fetch(`/api/admin/bets/${bet.id}`, {
+                                    method: 'DELETE',
+                                    credentials: 'include',
+                                  });
+                                  if (!res.ok) throw new Error('삭제 실패');
+                                  toast.success(`거래 #${bet.id} 삭제 완료`);
+                                  refetchOrderHistory();
+                                } catch {
+                                  toast.error('거래 삭제에 실패했습니다');
+                                }
+                              }}
+                              className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-500/20 text-red-400 hover:bg-red-500/40 transition-colors"
+                              data-testid={`button-delete-bet-${bet.id}`}
+                            >
+                              삭제
+                            </button>
                           </td>
                         </tr>
                       );
