@@ -5375,8 +5375,8 @@ export default function Admin() {
                     {depositRequests.map((request) => (
                       <tr key={request.id} className={cn("hover:bg-muted/30", request.status === 'pending' && "bg-green-500/5")}>
                         <td className="px-2 lg:px-4 py-3">
-                          {(request.status === 'pending' || (request.status as string) === 'hold') && (
-                            <div className="flex gap-1">
+                          <div className="flex gap-1 flex-wrap">
+                            {request.status !== 'approved' && (
                               <Button size="sm" className="h-7 px-2 bg-up hover:bg-up/90 text-xs" onClick={async () => {
                                 try {
                                   const res = await fetch(`/api/admin/transactions/${request.id}/process`, {
@@ -5388,6 +5388,8 @@ export default function Admin() {
                                   refetchTransactions(); refetchUsers();
                                 } catch (error) { toast.error('처리에 실패했습니다'); }
                               }}>승인</Button>
+                            )}
+                            {request.status !== 'rejected' && (
                               <Button size="sm" variant="outline" className="h-7 px-2 border-red-500/50 text-red-500 hover:bg-red-500/10 text-xs" onClick={async () => {
                                 try {
                                   const res = await fetch(`/api/admin/transactions/${request.id}/process`, {
@@ -5396,25 +5398,24 @@ export default function Admin() {
                                   });
                                   if (!res.ok) throw new Error('거절 실패');
                                   toast.success('입금 신청이 거절되었습니다');
-                                  refetchTransactions();
+                                  refetchTransactions(); refetchUsers();
                                 } catch (error) { toast.error('처리에 실패했습니다'); }
                               }}>거절</Button>
-                              {request.status === 'pending' && (
-                                <Button size="sm" variant="outline" className="h-7 px-2 border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10 text-xs" onClick={async () => {
-                                  try {
-                                    const res = await fetch(`/api/admin/transactions/${request.id}/process`, {
-                                      method: 'POST', headers: { 'Content-Type': 'application/json' },
-                                      body: JSON.stringify({ status: 'hold' }),
-                                    });
-                                    if (!res.ok) throw new Error('보류 실패');
-                                    toast.success('입금 신청이 보류 처리되었습니다');
-                                    refetchTransactions();
-                                  } catch (error) { toast.error('처리에 실패했습니다'); }
-                                }}>보류</Button>
-                              )}
-                            </div>
-                          )}
-                          {request.status !== 'pending' && (request.status as string) !== 'hold' && <span className="text-xs text-muted-foreground">처리완료</span>}
+                            )}
+                            {(request.status as string) !== 'hold' && (
+                              <Button size="sm" variant="outline" className="h-7 px-2 border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10 text-xs" onClick={async () => {
+                                try {
+                                  const res = await fetch(`/api/admin/transactions/${request.id}/process`, {
+                                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ status: 'hold' }),
+                                  });
+                                  if (!res.ok) throw new Error('보류 실패');
+                                  toast.success('입금 신청이 보류 처리되었습니다');
+                                  refetchTransactions();
+                                } catch (error) { toast.error('처리에 실패했습니다'); }
+                              }}>보류</Button>
+                            )}
+                          </div>
                         </td>
                         <td className="px-2 lg:px-4 py-3">
                           <div className="font-medium">{request.username}</div>
@@ -5503,8 +5504,8 @@ export default function Admin() {
                     {withdrawalRequests.map((request) => (
                       <tr key={request.id} className={cn("hover:bg-muted/30", request.status === 'pending' && "bg-orange-500/5")}>
                         <td className="px-2 lg:px-4 py-3">
-                          {(request.status === 'pending' || (request.status as string) === 'hold') && (
-                            <div className="flex gap-1">
+                          <div className="flex gap-1 flex-wrap">
+                            {request.status !== 'approved' && (
                               <Button size="sm" className="h-7 px-2 bg-up hover:bg-up/90 text-xs" onClick={async () => {
                                 try {
                                   const res = await fetch(`/api/admin/transactions/${request.id}/process`, {
@@ -5516,6 +5517,8 @@ export default function Admin() {
                                   refetchTransactions(); refetchUsers();
                                 } catch (error) { toast.error('처리에 실패했습니다'); }
                               }}>승인</Button>
+                            )}
+                            {request.status !== 'rejected' && (
                               <Button size="sm" variant="outline" className="h-7 px-2 border-red-500/50 text-red-500 hover:bg-red-500/10 text-xs" onClick={async () => {
                                 try {
                                   const res = await fetch(`/api/admin/transactions/${request.id}/process`, {
@@ -5524,25 +5527,24 @@ export default function Admin() {
                                   });
                                   if (!res.ok) throw new Error('거절 실패');
                                   toast.success('출금 신청이 거절되었습니다');
-                                  refetchTransactions();
+                                  refetchTransactions(); refetchUsers();
                                 } catch (error) { toast.error('처리에 실패했습니다'); }
                               }}>거절</Button>
-                              {request.status === 'pending' && (
-                                <Button size="sm" variant="outline" className="h-7 px-2 border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10 text-xs" onClick={async () => {
-                                  try {
-                                    const res = await fetch(`/api/admin/transactions/${request.id}/process`, {
-                                      method: 'POST', headers: { 'Content-Type': 'application/json' },
-                                      body: JSON.stringify({ status: 'hold' }),
-                                    });
-                                    if (!res.ok) throw new Error('보류 실패');
-                                    toast.success('출금 신청이 보류 처리되었습니다');
-                                    refetchTransactions();
-                                  } catch (error) { toast.error('처리에 실패했습니다'); }
-                                }}>보류</Button>
-                              )}
-                            </div>
-                          )}
-                          {request.status !== 'pending' && (request.status as string) !== 'hold' && <span className="text-xs text-muted-foreground">처리완료</span>}
+                            )}
+                            {(request.status as string) !== 'hold' && (
+                              <Button size="sm" variant="outline" className="h-7 px-2 border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10 text-xs" onClick={async () => {
+                                try {
+                                  const res = await fetch(`/api/admin/transactions/${request.id}/process`, {
+                                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ status: 'hold' }),
+                                  });
+                                  if (!res.ok) throw new Error('보류 실패');
+                                  toast.success('출금 신청이 보류 처리되었습니다');
+                                  refetchTransactions();
+                                } catch (error) { toast.error('처리에 실패했습니다'); }
+                              }}>보류</Button>
+                            )}
+                          </div>
                         </td>
                         <td className="px-2 lg:px-4 py-3">
                           <div className="font-medium">{request.username}</div>

@@ -4130,13 +4130,29 @@ export async function registerRoutes(
         return res.status(404).json({ error: "요청을 찾을 수 없습니다" });
       }
 
-      if (request.status !== 'pending' && request.status !== 'hold') {
-        return res.status(400).json({ error: "이미 처리된 요청입니다" });
-      }
+      const adminId = req.session.adminUserId ?? req.session.userId!;
+      const prevStatus = request.status;
+      const isReprocess = prevStatus !== 'pending' && prevStatus !== 'hold';
 
       // For hold status, just update the status without balance changes
-      const adminId = req.session.adminUserId ?? req.session.userId!;
       if (status === 'hold') {
+        // If previously approved/rejected, reverse the balance effect first
+        const user = await storage.getUser(request.userId);
+        if (user && isReprocess) {
+          const currentBalance = parseFloat(user.balance);
+          const amount = parseFloat(request.amount);
+          if (request.type === 'deposit' && prevStatus === 'approved') {
+            // Reverse deposit approval: subtract balance & totalDeposit
+            await storage.updateUserBalance(user.id, (currentBalance - amount).toString());
+            await storage.updateUser(user.id, { totalDeposit: (parseFloat(user.totalDeposit) - amount).toString() });
+          } else if (request.type === 'withdrawal' && prevStatus === 'approved') {
+            // Reverse withdrawal approval: undo totalWithdrawal
+            await storage.updateUser(user.id, { totalWithdrawal: (parseFloat(user.totalWithdrawal) - amount).toString() });
+          } else if (request.type === 'withdrawal' && prevStatus === 'rejected') {
+            // Reverse withdrawal rejection: re-deduct the refunded balance
+            await storage.updateUserBalance(user.id, (currentBalance - amount).toString());
+          }
+        }
         const updated = await storage.processTransactionRequest(id, status, adminId, adminNote);
         return res.json({ success: true, request: updated });
       }
@@ -4147,29 +4163,41 @@ export async function registerRoutes(
       // Handle balance updates based on status and type
       const user = await storage.getUser(request.userId);
       if (user) {
-        const currentBalance = parseFloat(user.balance);
+        let currentBalance = parseFloat(user.balance);
         const amount = parseFloat(request.amount);
-        
+
+        // Step 1: reverse previous status effect (if re-processing)
+        if (isReprocess) {
+          if (request.type === 'deposit' && prevStatus === 'approved') {
+            currentBalance -= amount;
+            await storage.updateUserBalance(user.id, currentBalance.toString());
+            await storage.updateUser(user.id, { totalDeposit: (parseFloat(user.totalDeposit) - amount).toString() });
+          } else if (request.type === 'withdrawal' && prevStatus === 'approved') {
+            await storage.updateUser(user.id, { totalWithdrawal: (parseFloat(user.totalWithdrawal) - amount).toString() });
+          } else if (request.type === 'withdrawal' && prevStatus === 'rejected') {
+            currentBalance -= amount;
+            await storage.updateUserBalance(user.id, currentBalance.toString());
+          }
+        }
+
+        // Step 2: apply new status effect
+        const freshUser = await storage.getUser(user.id);
+        const freshBalance = parseFloat(freshUser?.balance ?? user.balance);
+
         if (request.type === 'deposit') {
-          // Deposit: add balance only if approved
           if (status === 'approved') {
-            const newBalance = currentBalance + amount;
-            await storage.updateUserBalance(user.id, newBalance.toString());
+            await storage.updateUserBalance(user.id, (freshBalance + amount).toString());
             await storage.updateUser(user.id, {
-              totalDeposit: (parseFloat(user.totalDeposit) + amount).toString(),
+              totalDeposit: (parseFloat(freshUser?.totalDeposit ?? user.totalDeposit) + amount).toString(),
             });
           }
         } else if (request.type === 'withdrawal') {
-          // Withdrawal: balance was pre-deducted at request time
           if (status === 'approved') {
-            // On approval, just update totalWithdrawal (balance already deducted)
             await storage.updateUser(user.id, {
-              totalWithdrawal: (parseFloat(user.totalWithdrawal) + amount).toString(),
+              totalWithdrawal: (parseFloat(freshUser?.totalWithdrawal ?? user.totalWithdrawal) + amount).toString(),
             });
           } else if (status === 'rejected') {
-            // On rejection, refund the pre-deducted balance
-            const newBalance = currentBalance + amount;
-            await storage.updateUserBalance(user.id, newBalance.toString());
+            await storage.updateUserBalance(user.id, (freshBalance + amount).toString());
           }
         }
 
