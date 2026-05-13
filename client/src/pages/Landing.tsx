@@ -581,13 +581,7 @@ export default function Landing() {
           {/* Logo */}
           <div className="flex items-center gap-3 md:gap-5 min-w-0">
             <Link href="/" data-testid="link-logo">
-              <div className="flex items-center gap-2 md:gap-3">
-                <div className="flex flex-col">
-                  <span className="text-lg md:text-xl font-bold tracking-wide text-primary">
-                    MIB
-                  </span>
-                </div>
-              </div>
+              <LearnInvestLogo variant="full" height={36} />
             </Link>
             
             {/* Desktop Navigation */}

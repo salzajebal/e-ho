@@ -263,13 +263,13 @@ export function LearnInvestLogo({
         x="101"
         y="64"
         fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif"
-        fontSize="9.5"
-        fontWeight="400"
-        letterSpacing="5"
+        fontSize="13"
+        fontWeight="700"
+        letterSpacing="8"
         fill="url(#mi-textsub)"
         filter="url(#mi-subtextglow)"
       >
-        GLOBAL EXCHANGE
+        INDEX
       </text>
     </svg>
   );
