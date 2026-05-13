@@ -6689,7 +6689,7 @@ export default function Admin() {
                             <span className="text-xs bg-yellow-500/20 text-yellow-500 px-2 py-0.5 rounded">안읽음</span>
                           )}
                         </div>
-                        <p className="text-sm text-muted-foreground line-clamp-2">{msg.content}</p>
+                        <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words">{msg.content}</p>
                         <p className="text-xs text-muted-foreground mt-2">
                           {new Date(msg.createdAt).toLocaleString('ko-KR')}
                         </p>

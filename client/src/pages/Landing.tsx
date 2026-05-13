@@ -2907,11 +2907,11 @@ export default function Landing() {
 
       {/* Messages Modal - 쪽지함 */}
       <Dialog open={showMessagesModal} onOpenChange={setShowMessagesModal}>
-        <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+        <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden max-h-[90vh] overflow-y-auto">
           <DialogTitle className="sr-only">쪽지함</DialogTitle>
           <div className="relative">
             <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/20 via-cyan-500/20 to-amber-500/20 rounded-2xl blur-xl" />
-            <div className="relative backdrop-blur-xl bg-[#1C1008]/95 border border-white/10 rounded-2xl p-6 shadow-2xl max-h-[80vh] overflow-y-auto">
+            <div className="relative backdrop-blur-xl bg-[#1C1008]/95 border border-white/10 rounded-2xl p-6 shadow-2xl">
               <button 
                 onClick={() => { setShowMessagesModal(false); setSelectedMessage(null); }}
                 className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
@@ -2942,7 +2942,7 @@ export default function Landing() {
                     <div className="flex items-start justify-between mb-3">
                       <h3 className="text-white font-medium text-lg">{selectedMessage.title}</h3>
                     </div>
-                    <p className="text-gray-300 text-sm whitespace-pre-wrap mb-3">{selectedMessage.content}</p>
+                    <p className="text-gray-300 text-sm whitespace-pre-wrap break-words mb-3">{selectedMessage.content}</p>
                     <p className="text-gray-500 text-xs">
                       {new Date(selectedMessage.createdAt).toLocaleDateString('ko-KR', {
                         year: 'numeric',
