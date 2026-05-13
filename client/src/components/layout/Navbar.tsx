@@ -1,4 +1,4 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Menu, LogOut, Shield, ChevronDown, Sun, Moon, Wallet } from "lucide-react";
 import { LearnInvestLogo } from "@/components/LearnInvestLogo";
 import { useAuth, useLogout } from "@/hooks/use-auth";
@@ -29,6 +29,11 @@ export function Navbar({ onSelectGame, selectedGameId }: NavbarProps) {
   const { theme, toggleTheme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { data: balanceData } = useUserBalance();
+  const [, setLocation] = useLocation();
+
+  const goTo = (tab: string) => {
+    setLocation(`/?tab=${tab}`);
+  };
   
   const selectedGame = TRADING_GAMES.find(g => g.id === selectedGameId);
   const displayBalance = balanceData?.balance != null
@@ -90,7 +95,29 @@ export function Navbar({ onSelectGame, selectedGameId }: NavbarProps) {
         </nav>
       </div>
 
-      <div className="flex items-center gap-2 lg:gap-3 shrink-0">
+      {/* Desktop: Page navigation links */}
+      {user && (
+        <nav className="hidden lg:flex items-center gap-1 border-l border-border pl-4 ml-2 shrink-0">
+          {[
+            { label: '거래내역', tab: 'history' },
+            { label: '입금신청', tab: 'deposit' },
+            { label: '출금신청', tab: 'withdraw' },
+            { label: '공지사항', tab: 'notice' },
+            { label: '고객센터', tab: 'cs' },
+            { label: '쪽지함', tab: 'messages' },
+          ].map(({ label, tab }) => (
+            <button
+              key={tab}
+              onClick={() => goTo(tab)}
+              className="text-muted-foreground hover:text-amber-500 transition-colors text-xs font-medium px-2 py-1 rounded hover:bg-muted/30 whitespace-nowrap"
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
+      )}
+
+      <div className="flex items-center gap-2 lg:gap-3 shrink-0 ml-auto">
         {/* Balance Badge */}
         {user && displayBalance !== null && (
           <div

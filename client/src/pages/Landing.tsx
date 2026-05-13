@@ -246,6 +246,27 @@ export default function Landing() {
     }
   }, [user?.name, user?.accountHolder]);
 
+  // URL ?tab= 파라미터로 모달 자동 오픈 (트레이딩 페이지에서 넘어올 때)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab');
+    if (!tab) return;
+    // 파라미터 제거
+    const url = new URL(window.location.href);
+    url.searchParams.delete('tab');
+    window.history.replaceState({}, '', url.toString());
+    const open = () => {
+      if (tab === 'history') setShowHistoryModal(true);
+      else if (tab === 'deposit') { setDepositAmount(''); setShowDepositPageModal(true); }
+      else if (tab === 'withdraw') { setWithdrawalAmount(''); setShowWithdrawalPageModal(true); }
+      else if (tab === 'notice') setShowAnnouncementsModal(true);
+      else if (tab === 'cs') setShowCustomerServiceModal(true);
+      else if (tab === 'messages') setShowMessagesModal(true);
+    };
+    // user 로드 후 열기
+    if (user !== undefined) open();
+  }, [user]);
+
   // Fetch user balance and bet history if logged in
   const { data: balanceData, refetch: refetchBalance } = useQuery({
     queryKey: ["/api/user/balance"],
