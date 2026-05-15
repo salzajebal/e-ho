@@ -1119,7 +1119,7 @@ export async function registerRoutes(
   app.patch("/api/admin/users/:id", requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;
-      const { username, password, name, phone, birthDate, residentNumber, region, bankName, accountHolder, accountNumber, balance, role, isActive, totalDeposit, totalWithdrawal, autoBetEnabled, autoBetMultiplier, isBettingBlocked, grade } = req.body;
+      const { username, password, name, phone, birthDate, residentNumber, region, bankName, accountHolder, accountNumber, balance, role, isActive, totalDeposit, totalWithdrawal, autoBetEnabled, autoBetMultiplier, isBettingBlocked, grade, affiliateId } = req.body;
 
       const updateData: any = {};
       if (username !== undefined) updateData.username = username;
@@ -1141,6 +1141,7 @@ export async function registerRoutes(
       if (autoBetMultiplier !== undefined) updateData.autoBetMultiplier = autoBetMultiplier;
       if (isBettingBlocked !== undefined) updateData.isBettingBlocked = isBettingBlocked;
       if (grade !== undefined) updateData.grade = grade;
+      if (affiliateId !== undefined) updateData.affiliateId = affiliateId === '' ? null : affiliateId;
       const { maxExecutionEnabled, alwaysPendingEnabled } = req.body;
       if (maxExecutionEnabled !== undefined) updateData.maxExecutionEnabled = maxExecutionEnabled;
       if (alwaysPendingEnabled !== undefined) updateData.alwaysPendingEnabled = alwaysPendingEnabled;

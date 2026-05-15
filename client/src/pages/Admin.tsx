@@ -6048,6 +6048,26 @@ export default function Admin() {
                   />
                 </div>
               </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">상부회원 이관 (총판)</label>
+                <Select
+                  value={editingUser.affiliateId || '__none__'}
+                  onValueChange={(v) => setEditingUser(p => p ? { ...p, affiliateId: v === '__none__' ? null : v } : null)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="총판 없음" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-border">
+                    <SelectItem value="__none__">총판 없음 (직영)</SelectItem>
+                    {affiliatesList.map(aff => (
+                      <SelectItem key={aff.id} value={aff.id}>
+                        {aff.displayName} ({aff.username}) — {aff.referralCode}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="border-t border-border pt-4">
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-sm font-medium">접속 정보</p>
