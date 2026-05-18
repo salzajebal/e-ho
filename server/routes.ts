@@ -1723,6 +1723,19 @@ export async function registerRoutes(
     }
   });
 
+  // Edit message content (admin only)
+  app.patch("/api/admin/messages/:id", requireAdmin, async (req, res) => {
+    try {
+      const messageId = parseInt(req.params.id);
+      const { title, content } = req.body;
+      if (!title && !content) return res.status(400).json({ error: "수정할 내용을 입력해주세요" });
+      const updated = await storage.updateMessage(messageId, { title, content });
+      res.json({ success: true, message: updated });
+    } catch (error) {
+      res.status(500).json({ error: "메시지 수정에 실패했습니다" });
+    }
+  });
+
   // ==================== AFFILIATE ROUTES ====================
 
   // Helper function to generate referral code

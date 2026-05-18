@@ -84,7 +84,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, BookOpen, Building2 } from "lucide-react";
+import { Menu, BookOpen, Building2, Pencil } from "lucide-react";
 
 class AdminErrorBoundary extends Component<
   { children: React.ReactNode },
@@ -1144,6 +1144,8 @@ export default function Admin() {
   const [messageRecipient, setMessageRecipient] = useState<AdminUser | null>(null);
   const [messageTitle, setMessageTitle] = useState("");
   const [messageContent, setMessageContent] = useState("");
+  const [messageSearchQuery, setMessageSearchQuery] = useState("");
+  const [editingMessage, setEditingMessage] = useState<{ id: number; title: string; content: string } | null>(null);
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
   const [balanceAdjustAmount, setBalanceAdjustAmount] = useState("");
   const [pendingAdjustAmount, setPendingAdjustAmount] = useState("");
@@ -2015,6 +2017,27 @@ export default function Admin() {
     onError: () => {
       toast.error("보류 처리에 실패했습니다");
     },
+  });
+
+  const updateMessage = useMutation({
+    mutationFn: async ({ id, title, content }: { id: number; title: string; content: string }) => {
+      const res = await fetch(`/api/admin/messages/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, content }),
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error("Failed to update message");
+      return res.json();
+    },
+    onSuccess: () => {
+      if (messageManageUser) {
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/messages", messageManageUser.id] });
+      }
+      setEditingMessage(null);
+      toast.success("쪽지가 수정되었습니다");
+    },
+    onError: () => toast.error("쪽지 수정에 실패했습니다"),
   });
 
   const sendMessage = useMutation({
@@ -3779,8 +3802,14 @@ export default function Admin() {
             </div>
 
             <div className="bg-card border border-border rounded-lg">
-              <div className="p-4 border-b border-border">
-                <p className="text-sm text-muted-foreground">회원을 선택하여 쪽지를 보내세요</p>
+              <div className="p-4 border-b border-border flex items-center gap-3">
+                <p className="text-sm text-muted-foreground shrink-0">회원을 선택하여 쪽지를 보내세요</p>
+                <Input
+                  placeholder="아이디 또는 이름 검색..."
+                  value={messageSearchQuery}
+                  onChange={(e) => setMessageSearchQuery(e.target.value)}
+                  className="max-w-xs h-8 text-sm"
+                />
               </div>
               <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
                 <table className="w-full text-sm">
@@ -3794,7 +3823,11 @@ export default function Admin() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {users.filter(u => u.role !== 'admin').map((user) => (
+                    {users.filter(u => u.role !== 'admin' && (
+                      !messageSearchQuery ||
+                      u.username.toLowerCase().includes(messageSearchQuery.toLowerCase()) ||
+                      (u.name || '').toLowerCase().includes(messageSearchQuery.toLowerCase())
+                    )).map((user) => (
                       <tr key={user.id} className="hover:bg-muted/30 transition-colors">
                         <td className="px-3 py-2 font-medium">{user.username}</td>
                         <td className="px-3 py-2">{user.name || '-'}</td>
@@ -6695,38 +6728,76 @@ export default function Admin() {
                         : "bg-background border-border"
                     )}
                   >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-medium truncate">{msg.title}</h4>
-                          {msg.deletedForUser && (
-                            <span className="text-xs bg-red-500/20 text-red-500 px-2 py-0.5 rounded">회원삭제됨</span>
-                          )}
-                          {msg.isRead && !msg.deletedForUser && (
-                            <span className="text-xs bg-green-500/20 text-green-500 px-2 py-0.5 rounded">읽음</span>
-                          )}
-                          {!msg.isRead && !msg.deletedForUser && (
-                            <span className="text-xs bg-yellow-500/20 text-yellow-500 px-2 py-0.5 rounded">안읽음</span>
-                          )}
+                    {editingMessage?.id === msg.id ? (
+                      <div className="space-y-2">
+                        <Input
+                          value={editingMessage.title}
+                          onChange={(e) => setEditingMessage(m => m ? { ...m, title: e.target.value } : null)}
+                          placeholder="제목"
+                          className="text-sm"
+                        />
+                        <textarea
+                          value={editingMessage.content}
+                          onChange={(e) => setEditingMessage(m => m ? { ...m, content: e.target.value } : null)}
+                          placeholder="내용"
+                          className="w-full min-h-[100px] px-3 py-2 bg-background border border-border rounded-md text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                        <div className="flex gap-2 justify-end">
+                          <Button size="sm" variant="outline" onClick={() => setEditingMessage(null)}>취소</Button>
+                          <Button
+                            size="sm"
+                            onClick={() => updateMessage.mutate({ id: editingMessage.id, title: editingMessage.title, content: editingMessage.content })}
+                            disabled={updateMessage.isPending || !editingMessage.title.trim() || !editingMessage.content.trim()}
+                          >
+                            {updateMessage.isPending ? '저장 중...' : '저장'}
+                          </Button>
                         </div>
-                        <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words">{msg.content}</p>
-                        <p className="text-xs text-muted-foreground mt-2">
-                          {new Date(msg.createdAt).toLocaleString('ko-KR')}
-                        </p>
                       </div>
-                      {!msg.deletedForUser && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="shrink-0 text-red-500 border-red-500/50 hover:bg-red-500/10"
-                          onClick={() => deleteMessageForUser.mutate(msg.id)}
-                          disabled={deleteMessageForUser.isPending}
-                        >
-                          <Trash2 className="w-3 h-3 mr-1" />
-                          삭제
-                        </Button>
-                      )}
-                    </div>
+                    ) : (
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-medium truncate">{msg.title}</h4>
+                            {msg.deletedForUser && (
+                              <span className="text-xs bg-red-500/20 text-red-500 px-2 py-0.5 rounded">회원삭제됨</span>
+                            )}
+                            {msg.isRead && !msg.deletedForUser && (
+                              <span className="text-xs bg-green-500/20 text-green-500 px-2 py-0.5 rounded">읽음</span>
+                            )}
+                            {!msg.isRead && !msg.deletedForUser && (
+                              <span className="text-xs bg-yellow-500/20 text-yellow-500 px-2 py-0.5 rounded">안읽음</span>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words">{msg.content}</p>
+                          <p className="text-xs text-muted-foreground mt-2">
+                            {new Date(msg.createdAt).toLocaleString('ko-KR')}
+                          </p>
+                        </div>
+                        {!msg.deletedForUser && (
+                          <div className="flex gap-1 shrink-0">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-blue-500 border-blue-500/50 hover:bg-blue-500/10"
+                              onClick={() => setEditingMessage({ id: msg.id, title: msg.title, content: msg.content })}
+                            >
+                              <Pencil className="w-3 h-3 mr-1" />
+                              수정
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-red-500 border-red-500/50 hover:bg-red-500/10"
+                              onClick={() => deleteMessageForUser.mutate(msg.id)}
+                              disabled={deleteMessageForUser.isPending}
+                            >
+                              <Trash2 className="w-3 h-3 mr-1" />
+                              삭제
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

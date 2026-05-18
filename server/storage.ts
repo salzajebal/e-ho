@@ -91,6 +91,7 @@ export interface IStorage {
   getUnreadMessagesForUser(userId: string): Promise<Message[]>;
   getAllMessagesForAdmin(userId: string): Promise<Message[]>;
   softDeleteMessageForUser(messageId: number): Promise<void>;
+  updateMessage(messageId: number, data: { title?: string; content?: string }): Promise<Message>;
   markMessageAsRead(messageId: number): Promise<void>;
   markAllMessagesAsRead(userId: string): Promise<void>;
 
@@ -966,6 +967,14 @@ export class DatabaseStorage implements IStorage {
     await db.update(messages)
       .set({ deletedForUser: true })
       .where(eq(messages.id, messageId));
+  }
+
+  async updateMessage(messageId: number, data: { title?: string; content?: string }): Promise<Message> {
+    const [updated] = await db.update(messages)
+      .set(data)
+      .where(eq(messages.id, messageId))
+      .returning();
+    return updated;
   }
 
   async markMessageAsRead(messageId: number): Promise<void> {
