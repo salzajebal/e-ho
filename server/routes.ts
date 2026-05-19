@@ -4010,6 +4010,9 @@ export async function registerRoutes(
       // For withdrawal, check if user has enough balance and pre-deduct
       if (type === 'withdrawal') {
         const user = await storage.getUser(req.session.userId!);
+        if (user?.isBettingBlocked) {
+          return res.status(403).json({ error: "거래정지 해제 이후 다시 시도해 주세요." });
+        }
         if (!user || parseFloat(user.balance) < parseFloat(amount)) {
           return res.status(400).json({ error: "잔액이 부족합니다" });
         }

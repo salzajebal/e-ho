@@ -258,7 +258,7 @@ export default function Landing() {
     const open = () => {
       if (tab === 'history') setShowHistoryModal(true);
       else if (tab === 'deposit') { setDepositAmount(''); setShowDepositPageModal(true); }
-      else if (tab === 'withdraw') { setWithdrawalAmount(''); setShowWithdrawalPageModal(true); }
+      else if (tab === 'withdraw') { if ((user as any)?.isBettingBlocked) { toast.error("거래정지 해제 이후 다시 시도해 주세요."); return; } setWithdrawalAmount(''); setShowWithdrawalPageModal(true); }
       else if (tab === 'notice') setShowAnnouncementsModal(true);
       else if (tab === 'cs') setShowCustomerServiceModal(true);
       else if (tab === 'messages') setShowMessagesModal(true);
@@ -657,6 +657,7 @@ export default function Landing() {
               <button 
                 onClick={() => {
                   if (!user) { setShowLoginModal(true); return; }
+                  if ((user as any)?.isBettingBlocked) { toast.error("거래정지 해제 이후 다시 시도해 주세요."); return; }
                   if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 09:00 ~ 18:00 사이에만 가능합니다"); return; }
                   setWithdrawalAmount(''); setShowWithdrawalPageModal(true);
                 }}
@@ -742,6 +743,7 @@ export default function Landing() {
                     className="text-red-400 hover:text-red-300 hover:bg-red-500/10 text-xs px-2"
                     data-testid="button-header-withdraw"
                     onClick={() => { 
+                      if ((user as any)?.isBettingBlocked) { toast.error("거래정지 해제 이후 다시 시도해 주세요."); return; }
                       if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 09:00 ~ 18:00 사이에만 가능합니다"); return; }
                       setWithdrawalAmount(''); setShowWithdrawalPageModal(true);
                     }}
@@ -865,6 +867,7 @@ export default function Landing() {
                 <button 
                   onClick={() => {
                     if (!user) { setShowLoginModal(true); setMobileMenuOpen(false); return; }
+                    if ((user as any)?.isBettingBlocked) { toast.error("거래정지 해제 이후 다시 시도해 주세요."); setMobileMenuOpen(false); return; }
                     if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 09:00 ~ 18:00 사이에만 가능합니다"); setMobileMenuOpen(false); return; }
                     setWithdrawalAmount(''); setShowWithdrawalPageModal(true);
                     setMobileMenuOpen(false);
@@ -1586,6 +1589,7 @@ export default function Landing() {
                 }} className="hover:text-amber-500 transition-colors" data-testid="link-deposit">입금신청</button></li>
                 <li><button onClick={() => { 
                   if (!user) { setShowLoginModal(true); return; }
+                  if ((user as any)?.isBettingBlocked) { toast.error("거래정지 해제 이후 다시 시도해 주세요."); return; }
                   if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 09:00 ~ 18:00 사이에만 가능합니다"); return; }
                   setWithdrawalAmount(''); setShowWithdrawalPageModal(true);
                 }} className="hover:text-amber-500 transition-colors" data-testid="link-withdraw">출금신청</button></li>
