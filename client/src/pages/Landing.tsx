@@ -217,7 +217,7 @@ export default function Landing() {
   const [withdrawalSuccessAmount, setWithdrawalSuccessAmount] = useState('');
   const [showMessagesModal, setShowMessagesModal] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState<{id: number; title: string; content: string; isRead: boolean; createdAt: string} | null>(null);
-  const [selectedAnnouncement, setSelectedAnnouncement] = useState<{id: number; title: string; content: string; isPinned: boolean; createdAt: string} | null>(null);
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState<{id: number; title: string; content: string; isPinned: boolean; displayDate: string; createdAt: string} | null>(null);
   const [inquiryTitle, setInquiryTitle] = useState("");
   const [inquiryContent, setInquiryContent] = useState("");
   const [inquirySubmitting, setInquirySubmitting] = useState(false);
@@ -321,7 +321,7 @@ export default function Landing() {
   });
 
   // Fetch public announcements
-  const { data: announcements = [] } = useQuery<{id: number; title: string; content: string; isPinned: boolean; createdAt: string}[]>({
+  const { data: announcements = [] } = useQuery<{id: number; title: string; content: string; isPinned: boolean; displayDate: string; createdAt: string}[]>({
     queryKey: ["/api/announcements"],
     queryFn: async () => {
       const res = await fetch("/api/announcements");
@@ -3029,12 +3029,15 @@ export default function Landing() {
                     목록으로 돌아가기
                   </button>
                   <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                    <div className="flex items-start gap-3 mb-3">
+                    <div className="flex items-start gap-3 mb-2">
                       {selectedAnnouncement.isPinned && (
                         <span className="px-2 py-0.5 bg-amber-500/20 text-amber-500 rounded text-xs font-medium">고정</span>
                       )}
                       <h3 className="text-white font-medium text-lg">{selectedAnnouncement.title}</h3>
                     </div>
+                    <p className="text-gray-500 text-xs mb-3">
+                      등록일: {new Date(selectedAnnouncement.displayDate || selectedAnnouncement.createdAt).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' })}
+                    </p>
                     <p className="text-gray-300 text-sm whitespace-pre-wrap">{selectedAnnouncement.content}</p>
                   </div>
                 </div>
@@ -3057,6 +3060,9 @@ export default function Landing() {
                           <div className="flex-1">
                             <h3 className="text-white font-medium mb-1">{ann.title}</h3>
                             <p className="text-gray-400 text-sm line-clamp-2">{ann.content}</p>
+                            <p className="text-gray-500 text-xs mt-1">
+                              {new Date(ann.displayDate || ann.createdAt).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' })}
+                            </p>
                           </div>
                         </div>
                       </button>
