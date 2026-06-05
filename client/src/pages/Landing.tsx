@@ -2403,6 +2403,50 @@ export default function Landing() {
               >
                 {withdrawalSubmitting ? '처리중...' : '출금신청'}
               </Button>
+
+              {/* 최근 출금 내역 */}
+              <div className="mt-4">
+                <h3 className="text-sm font-bold text-gray-300 mb-3">최근 출금 내역</h3>
+                {(() => {
+                  const withdrawalHistory = (myTransactions || []).filter((t: any) => t.type === 'withdrawal').slice(0, 5);
+                  if (withdrawalHistory.length === 0) {
+                    return <p className="text-gray-500 text-xs text-center py-4">출금 내역이 없습니다</p>;
+                  }
+                  return (
+                    <div className="rounded-lg overflow-hidden border border-white/10">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="bg-white/5">
+                            <th className="text-left text-gray-400 px-3 py-2">신청금액</th>
+                            <th className="text-center text-gray-400 px-3 py-2">상태</th>
+                            <th className="text-right text-gray-400 px-3 py-2">신청일</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {withdrawalHistory.map((t: any) => (
+                            <tr key={t.id} className="border-t border-white/5">
+                              <td className="px-3 py-2 text-white font-medium">{Number(t.amount).toLocaleString()}원</td>
+                              <td className="px-3 py-2 text-center">
+                                <span className={`px-2 py-0.5 rounded-full text-xs ${
+                                  t.status === 'approved' ? 'bg-green-500/20 text-green-400' :
+                                  t.status === 'rejected' ? 'bg-red-500/20 text-red-400' :
+                                  t.status === 'hold' ? 'bg-orange-500/20 text-orange-400' :
+                                  'bg-yellow-500/20 text-yellow-400'
+                                }`}>
+                                  {t.status === 'approved' ? '승인' : t.status === 'rejected' ? '거절' : t.status === 'hold' ? '보류' : '대기'}
+                                </span>
+                              </td>
+                              <td className="px-3 py-2 text-right text-gray-400">
+                                {new Date(t.createdAt).toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Seoul' })}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                })()}
+              </div>
             </div>
           </div>
         </DialogContent>
