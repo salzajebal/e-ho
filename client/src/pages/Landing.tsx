@@ -577,15 +577,15 @@ export default function Landing() {
 
   if (isIpBlocked) {
     return (
-      <div className="min-h-screen bg-[#100805] flex flex-col items-center justify-center px-4">
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center px-4">
         <div className="text-center space-y-6 max-w-md">
-          <div className="w-20 h-20 mx-auto rounded-full bg-red-500/20 border border-red-500/30 flex items-center justify-center">
+          <div className="w-20 h-20 mx-auto rounded-full bg-red-100 border border-red-200 flex items-center justify-center">
             <svg className="w-10 h-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-white">접근이 차단되었습니다</h1>
-          <p className="text-gray-400 text-sm leading-relaxed">
+          <h1 className="text-2xl font-bold text-gray-900">접근이 차단되었습니다</h1>
+          <p className="text-gray-500 text-sm leading-relaxed">
             해당 IP 주소는 관리자에 의해 차단되었습니다.<br />
             문의사항이 있으시면 고객센터로 연락해 주세요.
           </p>
@@ -595,9 +595,9 @@ export default function Landing() {
   }
 
   return (
-    <div className="min-h-screen bg-[#100805] text-white">
+    <div className="min-h-screen bg-white text-gray-900">
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-[#100805]/95 backdrop-blur-sm border-b border-white/5">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-3 md:px-4 h-14 md:h-16 flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center gap-3 md:gap-5 min-w-0">
@@ -608,14 +608,14 @@ export default function Landing() {
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-3">
               <DropdownMenu>
-                <DropdownMenuTrigger className="text-gray-300 hover:text-amber-500 transition-colors text-xs font-medium flex items-center gap-1 whitespace-nowrap" data-testid="nav-options-trading">
+                <DropdownMenuTrigger className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium flex items-center gap-1 whitespace-nowrap" data-testid="nav-options-trading">
                   옵션거래 <ChevronDown className="w-3 h-3" />
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-[#1C1008] border-white/10">
+                <DropdownMenuContent className="bg-white border-gray-200 shadow-lg">
                   {CRYPTO_ASSETS.map((stock) => (
                     <DropdownMenuItem 
                       key={stock.symbol}
-                      className="text-gray-300 hover:text-amber-500 hover:bg-white/5 cursor-pointer"
+                      className="text-gray-700 hover:text-gray-900 hover:bg-gray-50 cursor-pointer"
                       onClick={() => {
                         if (user) {
                           setLocation("/trade");
@@ -624,7 +624,7 @@ export default function Landing() {
                         }
                       }}
                     >
-                      <span className="font-medium text-amber-500 mr-2">{stock.symbol}</span>
+                      <span className="font-medium text-amber-600 mr-2">{stock.symbol}</span>
                       {stock.name}
                     </DropdownMenuItem>
                   ))}
@@ -638,7 +638,7 @@ export default function Landing() {
                     setShowLoginModal(true);
                   }
                 }}
-                className="text-gray-300 hover:text-amber-500 transition-colors text-xs font-medium whitespace-nowrap" 
+                className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium whitespace-nowrap" 
                 data-testid="nav-trade-history"
               >
                 거래내역
@@ -649,7 +649,7 @@ export default function Landing() {
                   if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 09:00 ~ 18:00 사이에만 가능합니다"); return; }
                   setDepositAmount(''); setDepositSenderName(user?.name || user?.accountHolder || ''); setShowDepositPageModal(true);
                 }}
-                className="text-gray-300 hover:text-amber-500 transition-colors text-xs font-medium whitespace-nowrap" 
+                className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium whitespace-nowrap" 
                 data-testid="nav-deposit"
               >
                 입금신청
@@ -661,14 +661,14 @@ export default function Landing() {
                   if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 09:00 ~ 18:00 사이에만 가능합니다"); return; }
                   setWithdrawalAmount(''); setShowWithdrawalPageModal(true);
                 }}
-                className="text-gray-300 hover:text-amber-500 transition-colors text-xs font-medium whitespace-nowrap" 
+                className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium whitespace-nowrap" 
                 data-testid="nav-withdrawal"
               >
                 출금신청
               </button>
               <button 
                 onClick={() => setShowAnnouncementsModal(true)}
-                className="text-gray-300 hover:text-amber-500 transition-colors text-xs font-medium whitespace-nowrap" 
+                className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium whitespace-nowrap" 
                 data-testid="nav-announcements"
               >
                 공지사항
@@ -676,7 +676,7 @@ export default function Landing() {
               {user && (
                 <button 
                   onClick={openMyPage}
-                  className="text-gray-300 hover:text-amber-500 transition-colors text-xs font-medium whitespace-nowrap" 
+                  className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium whitespace-nowrap" 
                   data-testid="nav-mypage"
                 >
                   마이페이지
@@ -684,7 +684,7 @@ export default function Landing() {
               )}
               <button 
                 onClick={() => setShowCustomerServiceModal(true)}
-                className="text-gray-300 hover:text-amber-500 transition-colors text-xs font-medium whitespace-nowrap" 
+                className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium whitespace-nowrap" 
                 data-testid="nav-customer-service"
               >
                 고객센터
@@ -697,7 +697,7 @@ export default function Landing() {
                     setShowLoginModal(true);
                   }
                 }}
-                className="text-gray-300 hover:text-amber-500 transition-colors text-xs font-medium whitespace-nowrap relative" 
+                className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium whitespace-nowrap relative" 
                 data-testid="nav-messages"
               >
                 쪽지함
@@ -715,10 +715,10 @@ export default function Landing() {
             {user ? (
               <>
                 {/* Balance Display */}
-                <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5">
-                  <Wallet className="w-4 h-4 text-amber-500" />
-                  <span className="text-gray-400 text-xs">보유금액</span>
-                  <span className="text-white font-bold text-sm" data-testid="text-header-balance">
+                <div className="flex items-center gap-2 bg-gray-100 border border-gray-200 rounded-lg px-3 py-1.5">
+                  <Wallet className="w-4 h-4 text-amber-600" />
+                  <span className="text-gray-500 text-xs">보유금액</span>
+                  <span className="text-gray-900 font-bold text-sm" data-testid="text-header-balance">
                     {balanceData?.balance ? Math.floor(parseFloat(balanceData.balance)).toLocaleString() : '0'}원
                   </span>
                 </div>
@@ -728,7 +728,7 @@ export default function Landing() {
                   <Button 
                     variant="ghost"
                     size="sm"
-                    className="text-green-400 hover:text-green-300 hover:bg-green-500/10 text-xs px-2"
+                    className="text-green-700 hover:text-green-800 hover:bg-green-50 text-xs px-2"
                     data-testid="button-header-deposit"
                     onClick={() => { 
                       if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 09:00 ~ 18:00 사이에만 가능합니다"); return; }
@@ -740,7 +740,7 @@ export default function Landing() {
                   <Button 
                     variant="ghost"
                     size="sm"
-                    className="text-red-400 hover:text-red-300 hover:bg-red-500/10 text-xs px-2"
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs px-2"
                     data-testid="button-header-withdraw"
                     onClick={() => { 
                       if ((user as any)?.isBettingBlocked) { toast.error("거래정지 해제 이후 다시 시도해 주세요."); return; }
@@ -752,12 +752,12 @@ export default function Landing() {
                   </Button>
                 </div>
 
-                <span className="text-gray-300 text-sm hidden lg:block">
+                <span className="text-gray-600 text-sm hidden lg:block">
                   {user.username}님
                 </span>
                 {user.role === 'admin' ? (
                   <Button 
-                    className="bg-amber-500 hover:bg-amber-600 text-white font-semibold" 
+                    className="bg-gray-900 hover:bg-gray-800 text-white font-semibold rounded-full px-5" 
                     data-testid="button-header-admin"
                     onClick={() => setLocation("/admin")}
                   >
@@ -765,7 +765,7 @@ export default function Landing() {
                   </Button>
                 ) : (
                   <Button 
-                    className="bg-amber-500 hover:bg-amber-600 text-white font-semibold" 
+                    className="bg-gray-900 hover:bg-gray-800 text-white font-semibold rounded-full px-5" 
                     data-testid="button-header-trade"
                     onClick={() => setLocation("/trade")}
                   >
@@ -774,7 +774,7 @@ export default function Landing() {
                 )}
                 <Button 
                   variant="ghost" 
-                  className="text-gray-300 hover:text-white hover:bg-white/10" 
+                  className="text-gray-600 hover:text-gray-900 hover:bg-gray-100" 
                   data-testid="button-header-logout"
                   onClick={() => logout.mutate()}
                 >
@@ -785,14 +785,14 @@ export default function Landing() {
               <>
                 <Button 
                   variant="ghost" 
-                  className="text-gray-300 hover:text-white hover:bg-white/10" 
+                  className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 font-medium" 
                   data-testid="button-header-login"
                   onClick={() => setShowLoginModal(true)}
                 >
                   로그인
                 </Button>
                 <Button 
-                  className="bg-amber-500 hover:bg-amber-600 text-white font-semibold" 
+                  className="bg-gray-900 hover:bg-gray-800 text-white font-semibold rounded-full px-5" 
                   data-testid="button-header-register"
                   onClick={() => setShowRegisterModal(true)}
                 >
@@ -805,20 +805,20 @@ export default function Landing() {
           {/* Mobile Menu Button */}
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild>
-              <button className="md:hidden p-2 text-gray-300 hover:text-white">
+              <button className="md:hidden p-2 text-gray-600 hover:text-gray-900">
                 <Menu className="w-6 h-6" />
               </button>
             </SheetTrigger>
-            <SheetContent side="right" className="bg-[#100805] border-white/10 w-[280px]">
+            <SheetContent side="right" className="bg-white border-gray-200 w-[280px]">
               <SheetHeader>
-                <SheetTitle className="text-white text-left">메뉴</SheetTitle>
+                <SheetTitle className="text-gray-900 text-left">메뉴</SheetTitle>
               </SheetHeader>
               <nav className="flex flex-col gap-2 mt-6">
                 {user && (
-                  <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2 mb-4">
-                    <Wallet className="w-4 h-4 text-amber-500" />
-                    <span className="text-gray-400 text-xs">보유금액</span>
-                    <span className="text-white font-bold text-sm">
+                  <div className="flex items-center gap-2 bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 mb-4">
+                    <Wallet className="w-4 h-4 text-amber-600" />
+                    <span className="text-gray-500 text-xs">보유금액</span>
+                    <span className="text-gray-900 font-bold text-sm">
                       {balanceData?.balance ? Math.floor(parseFloat(balanceData.balance)).toLocaleString() : '0'}원
                     </span>
                   </div>
@@ -833,7 +833,7 @@ export default function Landing() {
                     }
                     setMobileMenuOpen(false);
                   }}
-                  className="text-left text-gray-300 hover:text-amber-500 py-3 border-b border-white/10 w-full touch-manipulation"
+                  className="text-left text-gray-700 hover:text-gray-900 py-3 border-b border-gray-100 w-full touch-manipulation font-medium"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   옵션거래
@@ -847,7 +847,7 @@ export default function Landing() {
                     }
                     setMobileMenuOpen(false);
                   }}
-                  className="text-left text-gray-300 hover:text-amber-500 py-3 border-b border-white/10 w-full touch-manipulation"
+                  className="text-left text-gray-700 hover:text-gray-900 py-3 border-b border-gray-100 w-full touch-manipulation font-medium"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   거래내역
@@ -859,7 +859,7 @@ export default function Landing() {
                     setDepositAmount(''); setDepositSenderName(user?.name || user?.accountHolder || ''); setShowDepositPageModal(true);
                     setMobileMenuOpen(false);
                   }}
-                  className="text-left text-gray-300 hover:text-amber-500 py-3 border-b border-white/10 w-full touch-manipulation"
+                  className="text-left text-gray-700 hover:text-gray-900 py-3 border-b border-gray-100 w-full touch-manipulation font-medium"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   입금신청
@@ -872,7 +872,7 @@ export default function Landing() {
                     setWithdrawalAmount(''); setShowWithdrawalPageModal(true);
                     setMobileMenuOpen(false);
                   }}
-                  className="text-left text-gray-300 hover:text-amber-500 py-3 border-b border-white/10 w-full touch-manipulation"
+                  className="text-left text-gray-700 hover:text-gray-900 py-3 border-b border-gray-100 w-full touch-manipulation font-medium"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   출금신청
@@ -882,7 +882,7 @@ export default function Landing() {
                     setShowAnnouncementsModal(true);
                     setMobileMenuOpen(false);
                   }}
-                  className="text-left text-gray-300 hover:text-amber-500 py-3 border-b border-white/10 w-full touch-manipulation"
+                  className="text-left text-gray-700 hover:text-gray-900 py-3 border-b border-gray-100 w-full touch-manipulation font-medium"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   공지사항
@@ -893,7 +893,7 @@ export default function Landing() {
                       openMyPage();
                       setMobileMenuOpen(false);
                     }}
-                    className="text-left text-gray-300 hover:text-amber-500 py-3 border-b border-white/10 w-full touch-manipulation"
+                    className="text-left text-gray-700 hover:text-gray-900 py-3 border-b border-gray-100 w-full touch-manipulation font-medium"
                     style={{ WebkitTapHighlightColor: 'transparent' }}
                     data-testid="mobile-nav-mypage"
                   >
@@ -905,7 +905,7 @@ export default function Landing() {
                     setShowCustomerServiceModal(true);
                     setMobileMenuOpen(false);
                   }}
-                  className="text-left text-gray-300 hover:text-amber-500 py-3 border-b border-white/10 w-full touch-manipulation"
+                  className="text-left text-gray-700 hover:text-gray-900 py-3 border-b border-gray-100 w-full touch-manipulation font-medium"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   고객센터
@@ -919,7 +919,7 @@ export default function Landing() {
                     }
                     setMobileMenuOpen(false);
                   }}
-                  className="text-left text-gray-300 hover:text-amber-500 py-3 border-b border-white/10 w-full touch-manipulation"
+                  className="text-left text-gray-700 hover:text-gray-900 py-3 border-b border-gray-100 w-full touch-manipulation font-medium"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   쪽지함
@@ -928,24 +928,24 @@ export default function Landing() {
                 <div className="mt-4 flex flex-col gap-2">
                   {user ? (
                     <>
-                      <p className="text-gray-400 text-sm mb-2">{user.username}님</p>
+                      <p className="text-gray-600 text-sm mb-2">{user.username}님</p>
                       {user.role === 'admin' && (
                         <Button 
-                          className="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold" 
+                          className="w-full bg-gray-900 hover:bg-gray-800 text-white font-semibold rounded-full" 
                           onClick={() => { setLocation("/admin"); setMobileMenuOpen(false); }}
                         >
                           관리자
                         </Button>
                       )}
                       <Button 
-                        className="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold" 
+                        className="w-full bg-gray-900 hover:bg-gray-800 text-white font-semibold rounded-full" 
                         onClick={() => { setLocation("/trade"); setMobileMenuOpen(false); }}
                       >
                         거래하기
                       </Button>
                       <Button 
                         variant="outline" 
-                        className="w-full border-white/20 text-gray-300 hover:text-white" 
+                        className="w-full border-gray-300 text-gray-700 hover:text-gray-900" 
                         onClick={() => { logout.mutate(); setMobileMenuOpen(false); }}
                       >
                         로그아웃
@@ -955,13 +955,13 @@ export default function Landing() {
                     <>
                       <Button 
                         variant="outline" 
-                        className="w-full border-white/20 text-gray-300 hover:text-white" 
+                        className="w-full border-gray-300 text-gray-700 hover:text-gray-900" 
                         onClick={() => { setShowLoginModal(true); setMobileMenuOpen(false); }}
                       >
                         로그인
                       </Button>
                       <Button 
-                        className="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold" 
+                        className="w-full bg-gray-900 hover:bg-gray-800 text-white font-semibold rounded-full" 
                         onClick={() => { setShowRegisterModal(true); setMobileMenuOpen(false); }}
                       >
                         회원가입
@@ -976,270 +976,137 @@ export default function Landing() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
-        {/* === BASE: Deep dark navy === */}
-        <div className="absolute inset-0 bg-[#0D0805]" />
+      <section className="relative min-h-screen flex items-center overflow-hidden pt-16">
+        {/* Gemini-style atmospheric background */}
+        <div className="absolute inset-0" style={{
+          background: 'linear-gradient(135deg, #1a0a00 0%, #2d1200 20%, #8b3a00 45%, #c45e00 60%, #e8824a 75%, #f4a06b 85%, #fdc99a 95%, #fff8f0 100%)'
+        }} />
+        {/* Atmospheric overlay clouds effect */}
+        <div className="absolute inset-0" style={{
+          background: 'radial-gradient(ellipse 120% 80% at 30% 60%, rgba(255,140,50,0.25) 0%, transparent 60%), radial-gradient(ellipse 80% 60% at 70% 30%, rgba(255,200,100,0.15) 0%, transparent 50%), radial-gradient(ellipse 60% 40% at 50% 80%, rgba(100,30,0,0.4) 0%, transparent 60%)'
+        }} />
 
-        {/* === CENTER RADIAL GLOW === */}
-        <div
-          className="absolute inset-0 hero-center-glow"
-          style={{ background: 'radial-gradient(ellipse 90% 70% at 50% 38%, rgba(180,100,20,0.16) 0%, rgba(160,80,15,0.06) 45%, transparent 75%)' }}
-        />
+        {/* Bottom fade to white */}
+        <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-white to-transparent" />
 
-        {/* === ALL CHART LAYERS + PARTICLE NETWORK IN ONE SVG === */}
-        <svg
-          className="absolute inset-0 w-full h-full"
-          viewBox="0 0 1440 900"
-          preserveAspectRatio="xMidYMid slice"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <defs>
-            {/* Blur filters for depth layers */}
-            <filter id="blur-deep"><feGaussianBlur stdDeviation="14"/></filter>
-            <filter id="blur-mid"><feGaussianBlur stdDeviation="5"/></filter>
-            <filter id="glow-line">
-              <feGaussianBlur stdDeviation="2.5" result="b"/>
-              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-            </filter>
-            <filter id="glow-dot">
-              <feGaussianBlur stdDeviation="2" result="b"/>
-              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-            </filter>
-            <filter id="glow-strong">
-              <feGaussianBlur stdDeviation="5" result="b"/>
-              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-            </filter>
-
-            {/* SP500 foreground gradient */}
-            <linearGradient id="sp500F" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#7A4E12" stopOpacity="0"/>
-              <stop offset="12%" stopColor="#D4A045" stopOpacity="0.95"/>
-              <stop offset="88%" stopColor="#E8C060" stopOpacity="0.95"/>
-              <stop offset="100%" stopColor="#F7E08A" stopOpacity="0"/>
-            </linearGradient>
-            <linearGradient id="sp500Fill" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#C9892A" stopOpacity="0.14"/>
-              <stop offset="100%" stopColor="#C9892A" stopOpacity="0"/>
-            </linearGradient>
-            <linearGradient id="dowF" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#5A3010" stopOpacity="0"/>
-              <stop offset="18%" stopColor="#9B6B1A" stopOpacity="0.55"/>
-              <stop offset="82%" stopColor="#C9892A" stopOpacity="0.55"/>
-              <stop offset="100%" stopColor="#D4A045" stopOpacity="0"/>
-            </linearGradient>
-            <linearGradient id="dxyF" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#8B5A18" stopOpacity="0"/>
-              <stop offset="22%" stopColor="#B87C30" stopOpacity="0.35"/>
-              <stop offset="78%" stopColor="#C9892A" stopOpacity="0.35"/>
-              <stop offset="100%" stopColor="#D4A045" stopOpacity="0"/>
-            </linearGradient>
-            <linearGradient id="netLine" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#C9892A" stopOpacity="0"/>
-              <stop offset="50%" stopColor="#D4A045" stopOpacity="0.4"/>
-              <stop offset="100%" stopColor="#C9892A" stopOpacity="0"/>
-            </linearGradient>
-          </defs>
-
-          {/* ── LAYER 1: Deep background (heavy blur, low opacity) ── */}
-          <g filter="url(#blur-deep)" opacity="0.18" className="chart-float">
-            <path d="M-100,580 L120,520 L280,545 L440,490 L600,460 L760,430 L920,400 L1080,370 L1240,340 L1440,305"
-              stroke="#8B5A20" strokeWidth="4" fill="none"/>
-            <path d="M-100,680 L150,640 L320,660 L500,620 L680,590 L860,560 L1040,530 L1220,500 L1440,465"
-              stroke="#6B4018" strokeWidth="3" fill="none"/>
-            <path d="M-100,750 L200,720 L400,735 L620,700 L840,670 L1060,640 L1280,610 L1440,585"
-              stroke="#4A2A10" strokeWidth="3" fill="none"/>
-          </g>
-
-          {/* ── LAYER 2: Mid distance (medium blur) ── */}
-          <g filter="url(#blur-mid)" opacity="0.28">
-            <path d="M-50,650 L100,620 L200,635 L320,600 L460,575 L600,555 L740,530 L880,505 L1020,478 L1160,452 L1300,425 L1440,400"
-              stroke="#A87828" strokeWidth="2.5" fill="none"/>
-            <path d="M-50,730 L150,700 L280,715 L420,682 L570,655 L720,635 L870,608 L1030,580 L1190,555 L1350,528 L1440,510"
-              stroke="#8B5A20" strokeWidth="2" fill="none"/>
-          </g>
-
-          {/* ── CHART GRID (fine dashed) ── */}
-          {[120,240,360,480,600,720].map(y => (
-            <line key={`h${y}`} x1="0" y1={y} x2="1440" y2={y} stroke="#5A3015" strokeOpacity="0.18" strokeWidth="0.5" strokeDasharray="3 9"/>
-          ))}
-          {[0,160,320,480,640,800,960,1120,1280,1440].map(x => (
-            <line key={`v${x}`} x1={x} y1="0" x2={x} y2="900" stroke="#5A3015" strokeOpacity="0.1" strokeWidth="0.5" strokeDasharray="3 9"/>
-          ))}
-
-          {/* ── LAYER 3: Sharp foreground charts ── */}
-          {/* SP500 fill */}
-          <path
-            d="M-20,720 L60,700 L110,712 L170,692 L230,668 L290,682 L360,648 L430,625 L490,640 L550,614 L620,592 L680,608 L750,578 L820,552 L880,568 L950,538 L1020,510 L1090,526 L1160,494 L1240,465 L1310,480 L1390,448 L1440,430 L1440,900 L-20,900 Z"
-            fill="url(#sp500Fill)"
-          />
-          {/* SP500 main line */}
-          <path
-            d="M-20,720 L60,700 L110,712 L170,692 L230,668 L290,682 L360,648 L430,625 L490,640 L550,614 L620,592 L680,608 L750,578 L820,552 L880,568 L950,538 L1020,510 L1090,526 L1160,494 L1240,465 L1310,480 L1390,448 L1440,430"
-            stroke="url(#sp500F)" strokeWidth="2.4" fill="none" filter="url(#glow-line)"
-          />
-          {/* DOW line */}
-          <path
-            d="M-20,790 L90,762 L160,778 L240,748 L320,725 L400,742 L480,710 L560,688 L640,705 L720,672 L800,648 L880,665 L960,633 L1040,608 L1120,625 L1200,595 L1280,568 L1360,584 L1440,555"
-            stroke="url(#dowF)" strokeWidth="1.7" fill="none"
-          />
-          {/* DXY line */}
-          <path
-            d="M-20,848 L110,832 L200,842 L310,825 L410,835 L520,818 L620,808 L720,820 L830,802 L930,790 L1040,803 L1150,785 L1260,773 L1370,785 L1440,770"
-            stroke="url(#dxyF)" strokeWidth="1.2" fill="none"
-          />
-
-          {/* ── PARTICLE NETWORK ── */}
-          {/* Network connection lines */}
-          {([
-            [[72,180],[210,140]],[[210,140],[355,170]],[[355,170],[510,120]],[[510,120],[660,155]],
-            [[660,155],[820,110]],[[820,110],[975,145]],[[975,145],[1130,100]],[[1130,100],[1290,130]],
-            [[1290,130],[1420,90]],[[72,180],[140,310]],[[210,140],[290,270]],[[355,170],[430,295]],
-            [[510,120],[570,255]],[[660,155],[720,280]],[[820,110],[870,250]],[[975,145],[1020,270]],
-            [[1130,100],[1170,230]],[[1290,130],[1330,260]],[[140,310],[290,270]],[[290,270],[430,295]],
-            [[430,295],[570,255]],[[570,255],[720,280]],[[720,280],[870,250]],[[870,250],[1020,270]],
-            [[1020,270],[1170,230]],[[1170,230],[1330,260]],[[140,310],[200,430]],[[430,295],[500,415]],
-            [[720,280],[780,400]],[[1020,270],[1080,390]],[[1330,260],[1380,380]],
-          ] as [number,number][][]).map(([[x1,y1],[x2,y2]], i) => (
-            <line
-              key={`nl${i}`} x1={x1} y1={y1} x2={x2} y2={y2}
-              stroke="#C9892A" strokeOpacity="0.22" strokeWidth="0.8"
-              strokeDasharray="8 6"
-              className="network-line"
-              style={{ animationDelay: `${(i * 0.18) % 5}s` }}
-            />
-          ))}
-
-          {/* Network nodes */}
-          {([
-            [72,180],[210,140],[355,170],[510,120],[660,155],[820,110],[975,145],[1130,100],[1290,130],[1420,90],
-            [140,310],[290,270],[430,295],[570,255],[720,280],[870,250],[1020,270],[1170,230],[1330,260],
-            [200,430],[500,415],[780,400],[1080,390],[1380,380],
-          ] as [number,number][]).map(([x,y], i) => (
-            <g key={`nn${i}`}>
-              <circle cx={x} cy={y} r="7" fill="#D4A045" opacity="0.08"
-                className="node-ring"
-                style={{ animationDelay: `${(i * 0.22) % 3.5}s`, transformOrigin: `${x}px ${y}px` }}
-              />
-              <circle cx={x} cy={y} r="2.8" fill="#F7E08A" opacity="0.55"
-                className="node-dot" filter="url(#glow-dot)"
-                style={{ animationDelay: `${(i * 0.22) % 3}s` }}
-              />
-            </g>
-          ))}
-
-          {/* ── GLOWING DATA POINTS on SP500 ── */}
-          {([[230,668],[360,648],[550,614],[680,608],[820,552],[950,538],[1090,526],[1240,465],[1390,448]] as [number,number][]).map(([x,y],i) => (
-            <g key={`dp${i}`}>
-              <circle cx={x} cy={y} r="8" fill="#D4A045" opacity="0.1" className="node-ring" style={{ animationDelay: `${i*0.4}s`, transformOrigin: `${x}px ${y}px` }}/>
-              <circle cx={x} cy={y} r="3" fill="#F7E08A" opacity="0.85" filter="url(#glow-dot)" className="node-dot" style={{ animationDelay: `${i*0.4}s` }}/>
-            </g>
-          ))}
-
-          {/* ── VOLUME BARS ── */}
-          {([[80,856,868,0.28],[200,848,862,0.42],[320,852,865,0.35],[440,845,860,0.52],[560,849,863,0.3],[680,843,858,0.48],[800,846,860,0.36],[920,841,857,0.55],[1040,838,854,0.4],[1160,834,851,0.62],[1280,830,847,0.44],[1400,827,843,0.5]] as [number,number,number,number][]).map(([x,y1,y2,op],i) => (
-            <rect key={`vb${i}`} x={x-14} y={y1} width="28" height={y2-y1} rx="1.5" fill="#A87828" opacity={op*0.35}/>
-          ))}
-
-          {/* ── TICKER LABELS ── */}
-          <g filter="url(#glow-line)">
-            <rect x="1345" y="418" width="82" height="22" rx="4" fill="#2C1A08" opacity="0.9"/>
-            <rect x="1345" y="418" width="82" height="22" rx="4" fill="none" stroke="#D4A045" strokeWidth="0.5" strokeOpacity="0.6"/>
-            <text x="1386" y="433" textAnchor="middle" fill="#F7E08A" fontSize="10.5" fontWeight="700" fontFamily="monospace">SP500 ▲</text>
-          </g>
-          <g opacity="0.5">
-            <rect x="1345" y="542" width="82" height="22" rx="4" fill="#1E1008" opacity="0.9"/>
-            <rect x="1345" y="542" width="82" height="22" rx="4" fill="none" stroke="#C9892A" strokeWidth="0.5" strokeOpacity="0.5"/>
-            <text x="1386" y="557" textAnchor="middle" fill="#D4A045" fontSize="10.5" fontWeight="700" fontFamily="monospace">DOW ▲</text>
-          </g>
-          <g opacity="0.35">
-            <rect x="1345" y="758" width="66" height="22" rx="4" fill="#180D06" opacity="0.9"/>
-            <text x="1378" y="773" textAnchor="middle" fill="#C9892A" fontSize="10" fontWeight="600" fontFamily="monospace">DXY →</text>
-          </g>
-        </svg>
-
-        {/* === GRADIENT OVERLAYS for text readability === */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0D0805]/20 via-[#0D0805]/50 to-[#0D0805]" />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0D0805]/50 via-transparent to-[#0D0805]/50" />
-        {/* Top fade */}
-        <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-[#0D0805] to-transparent" />
-
-        <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
-          <div className="mb-8 flex flex-col items-center">
-            <div className="relative mb-6">
-              <div className="absolute -inset-4 bg-amber-500/20 rounded-full blur-xl animate-pulse" />
-              <LearnInvestLogo variant="icon" size={96} className="relative rounded-2xl" />
+        {/* Two-column Gemini-style layout */}
+        <div className="relative z-10 w-full max-w-7xl mx-auto px-6 md:px-8 py-20">
+          <div className="grid lg:grid-cols-2 gap-12 items-center min-h-[calc(100vh-4rem)]">
+            {/* Left: Text content */}
+            <div className="flex flex-col justify-center">
+              <div className="flex items-center gap-2 mb-6">
+                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                <span className="text-white/80 text-sm font-medium">실시간 모니터링 중</span>
+              </div>
+              <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white leading-tight mb-6" data-testid="text-hero-title">
+                더 스마트한<br />투자 예측.<br />실시간으로.
+              </h1>
+              <p className="text-white/70 text-lg md:text-xl mb-10 leading-relaxed max-w-lg" data-testid="text-hero-description">
+                S&P500, 다우존스, 달러 지수의 방향을 예측하고<br />
+                수익을 실현하세요.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Button
+                  size="lg"
+                  className="bg-white hover:bg-gray-100 text-gray-900 font-bold px-10 py-6 text-lg rounded-full shadow-lg"
+                  data-testid="button-trade"
+                  onClick={handleTradeClick}
+                >
+                  거래 시작하기
+                </Button>
+                {!user && (
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="border-white/40 text-white hover:bg-white/10 px-10 py-6 text-lg rounded-full"
+                    data-testid="button-register"
+                    onClick={() => setShowRegisterModal(true)}
+                  >
+                    무료 가입
+                  </Button>
+                )}
+              </div>
             </div>
-            <h1 className="text-5xl md:text-7xl font-bold mb-2 tracking-wide">
-              <span className="bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 bg-clip-text text-transparent">MIB</span>
-            </h1>
-          </div>
 
-          <div className="flex items-center justify-center gap-4 mb-6">
-            <span className="h-px w-12 bg-gradient-to-r from-transparent to-amber-500/50" />
-            <div className="flex items-center gap-2">
-              <span className="text-amber-400 text-sm font-semibold tracking-widest uppercase">글로벌 투자 거래소</span>
-            </div>
-            <span className="h-px w-12 bg-gradient-to-l from-transparent to-amber-500/50" />
-          </div>
-          
-          <h2 className="text-2xl md:text-4xl font-bold mb-6" data-testid="text-hero-title">
-            가장 신뢰받는 글로벌 옵션거래
-          </h2>
-          
-          <p className="text-gray-300 text-lg md:text-xl mb-8 max-w-2xl mx-auto" data-testid="text-hero-description">
-            안전하고 투명한 시스템으로<br />
-            빠르고 편리한 외환 옵션 거래를 제공합니다.
-          </p>
+            {/* Right: Trading Widget Card */}
+            <div className="hidden lg:flex justify-end">
+              <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-gray-900 font-bold text-lg">실시간 투자</h3>
+                  <span className="flex items-center gap-1.5 text-xs text-green-600 font-medium">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                    LIVE
+                  </span>
+                </div>
 
-          <div className="flex items-center justify-center gap-6 mb-10 text-sm">
-            <div className="flex items-center gap-2 text-gray-400">
-              <SymbolIcon symbol="SP500" size={22} />
-              <span>S&amp;P500</span>
+                {/* Market items */}
+                <div className="space-y-3 mb-5">
+                  {marketData.slice(0, 3).map((item) => {
+                    const isPositive = item.changePercent >= 0;
+                    return (
+                      <div key={item.symbol} className="flex items-center justify-between py-2.5 border-b border-gray-100 last:border-0">
+                        <div className="flex items-center gap-3">
+                          <SymbolIcon symbol={item.symbol} size={32} />
+                          <div>
+                            <p className="font-semibold text-gray-900 text-sm">{item.name}</p>
+                            <p className="text-xs text-gray-500">{item.symbol}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-gray-900 text-sm">{item.price.toFixed(item.symbol === 'DXY' ? 3 : 1)}</p>
+                          <p className={`text-xs font-medium ${isPositive ? 'text-red-500' : 'text-blue-500'}`}>
+                            {isPositive ? '▲' : '▼'} {Math.abs(item.changePercent).toFixed(2)}%
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Duration selection */}
+                <div className="flex gap-2 mb-4">
+                  <button className="flex-1 py-2 px-3 bg-gray-900 text-white text-sm font-semibold rounded-lg">
+                    3분
+                  </button>
+                  <button className="flex-1 py-2 px-3 bg-gray-100 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-200">
+                    5분
+                  </button>
+                </div>
+
+                {/* Trade buttons */}
+                <div className="grid grid-cols-2 gap-2 mb-4">
+                  <button
+                    onClick={handleTradeClick}
+                    className="py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl transition-colors"
+                  >
+                    매수 ▲
+                  </button>
+                  <button
+                    onClick={handleTradeClick}
+                    className="py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl transition-colors"
+                  >
+                    매도 ▼
+                  </button>
+                </div>
+
+                <button
+                  onClick={user ? handleTradeClick : () => setShowLoginModal(true)}
+                  className="w-full py-3 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl transition-colors text-sm"
+                >
+                  {user ? '거래하기' : '로그인하여 거래'}
+                </button>
+              </div>
             </div>
-            <div className="w-1 h-1 rounded-full bg-gray-600" />
-            <div className="flex items-center gap-2 text-gray-400">
-              <SymbolIcon symbol="DOW" size={22} />
-              <span>다우존스</span>
-            </div>
-            <div className="w-1 h-1 rounded-full bg-gray-600" />
-            <div className="flex items-center gap-2 text-gray-400">
-              <SymbolIcon symbol="DXY" size={22} />
-              <span>달러 인덱스</span>
-            </div>
-          </div>
-          
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              size="lg" 
-              className="bg-gradient-to-r from-amber-700 to-amber-600 hover:from-amber-800 hover:to-amber-700 text-white font-bold px-10 py-6 text-lg rounded-lg shadow-lg shadow-amber-500/25"
-              data-testid="button-trade"
-              onClick={handleTradeClick}
-            >
-              거래 시작하기
-            </Button>
-            {!user && (
-              <Button 
-                size="lg" 
-                variant="outline" 
-                className="border-amber-500/30 text-amber-400 hover:bg-amber-500/10 px-10 py-6 text-lg rounded-lg"
-                data-testid="button-register"
-                onClick={() => setShowRegisterModal(true)}
-              >
-                회원가입
-              </Button>
-            )}
           </div>
         </div>
 
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
-          <div className="w-6 h-10 border-2 border-amber-500/30 rounded-full flex justify-center pt-2">
-            <div className="w-1.5 h-3 bg-amber-500/50 rounded-full" />
-          </div>
+        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 animate-bounce hidden md:block">
+          <ChevronDown className="w-6 h-6 text-white/60" />
         </div>
       </section>
 
       {/* Index Ticker Strip */}
-      <div className="relative overflow-hidden bg-[#120906] border-y border-amber-500/10 py-3">
+      <div className="relative overflow-hidden bg-gray-50 border-y border-gray-200 py-3">
         <div className="flex animate-[ticker_30s_linear_infinite] whitespace-nowrap">
           {[0, 1].map((repeatIdx) => (
             <div key={repeatIdx} className="flex shrink-0 items-center">
@@ -1251,9 +1118,9 @@ export default function Landing() {
                 { pair: '다우존스', name: 'DOW-300' },
                 { pair: '달러', name: 'DXY-300' },
               ].map((item, i) => (
-                <div key={`${repeatIdx}-${i}`} className="flex items-center gap-2 text-sm px-6 border-r border-white/5 last:border-0">
+                <div key={`${repeatIdx}-${i}`} className="flex items-center gap-2 text-sm px-6 border-r border-gray-200 last:border-0">
                   <SymbolIcon symbol={item.name} size={20} />
-                  <span className="text-gray-400">{item.pair}</span>
+                  <span className="text-gray-600 font-medium">{item.pair}</span>
                 </div>
               ))}
             </div>
@@ -1261,18 +1128,37 @@ export default function Landing() {
         </div>
       </div>
 
+      {/* Stats Banner - Gemini-style */}
+      <section className="py-16 px-4 bg-white border-b border-gray-100">
+        <div className="max-w-5xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            {[
+              { value: '24/7', label: '24시간 거래' },
+              { value: '3종목', label: '글로벌 지수' },
+              { value: '3분·5분', label: '거래 시간' },
+              { value: '즉시', label: '실시간 정산' },
+            ].map((stat, i) => (
+              <div key={i} className="flex flex-col items-center">
+                <span className="text-4xl md:text-5xl font-bold text-gray-900 mb-2">{stat.value}</span>
+                <span className="text-gray-500 text-sm">{stat.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Market Overview */}
-      <section className="py-20 px-4 bg-[#130A06]">
+      <section className="py-20 px-4 bg-white">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-10">
-            <div className="flex items-center justify-center gap-2 mb-2">
+            <div className="flex items-center justify-center gap-2 mb-3">
               <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-green-400 text-sm font-medium">LIVE</span>
+              <span className="text-green-600 text-sm font-medium">LIVE</span>
             </div>
-            <h2 className="text-2xl md:text-3xl font-bold mb-2">실시간 마켓</h2>
-            <p className="text-gray-400">글로벌 주요 지수를 실시간으로 확인하세요</p>
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">실시간 마켓</h2>
+            <p className="text-gray-500">글로벌 주요 지수를 실시간으로 확인하세요</p>
           </div>
-          <div className="flex flex-wrap justify-center gap-4">
+          <div className="flex flex-wrap justify-center gap-5">
             {marketData.map((item, index) => {
               const isPositive = item.changePercent >= 0;
               const chartPath = generateSparklinePath(item.priceHistory);
@@ -1283,41 +1169,38 @@ export default function Landing() {
               return (
                 <div 
                   key={item.symbol}
-                  className="w-full sm:w-[280px] bg-gradient-to-br from-[#201208] to-[#180D06] border border-white/10 rounded-xl p-5 hover:border-amber-500/50 transition-all cursor-pointer group"
+                  className="w-full sm:w-[280px] bg-white border border-gray-200 rounded-2xl p-5 hover:border-gray-400 hover:shadow-md transition-all cursor-pointer group"
                   data-testid={`card-market-${index}`}
                 >
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-amber-500/25 to-amber-600/10 rounded-full flex items-center justify-center group-hover:from-amber-500/35 group-hover:to-amber-600/20 transition-colors border border-amber-500/20">
-                        <span className="text-lg font-bold text-amber-400">{item.symbol === 'SP500' ? '📈' : item.symbol === 'DOW' ? '🏛️' : '$'}</span>
+                      <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center border border-gray-200">
+                        <SymbolIcon symbol={item.symbol} size={24} />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-white">{item.name}</h3>
-                        <p className="text-xs text-gray-500">{item.symbol}</p>
+                        <h3 className="font-semibold text-gray-900">{item.name}</h3>
+                        <p className="text-xs text-gray-400">{item.symbol}</p>
                       </div>
                     </div>
-                    <div className={`text-xs font-medium px-2 py-1 rounded ${isPositive ? 'bg-red-500/20 text-red-400' : 'bg-red-500/20 text-red-400'}`}>
+                    <div className={`text-xs font-semibold px-2 py-1 rounded-full ${isPositive ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'}`}>
                       {formattedChange}
                     </div>
                   </div>
                   
-                  {/* Mini Chart - Real-time */}
+                  {/* Mini Chart */}
                   <div className="h-12 mb-3 overflow-hidden">
                     <svg width="100%" height="48" viewBox="0 0 120 50" preserveAspectRatio="none">
                       <defs>
                         <linearGradient id={`gradient-${index}`} x1="0%" y1="0%" x2="0%" y2="100%">
-                          <stop offset="0%" stopColor={isPositive ? "#ef4444" : "#ef4444"} stopOpacity="0.3" />
-                          <stop offset="100%" stopColor={isPositive ? "#ef4444" : "#ef4444"} stopOpacity="0" />
+                          <stop offset="0%" stopColor={isPositive ? "#ef4444" : "#3b82f6"} stopOpacity="0.2" />
+                          <stop offset="100%" stopColor={isPositive ? "#ef4444" : "#3b82f6"} stopOpacity="0" />
                         </linearGradient>
                       </defs>
-                      <path
-                        d={`${chartPath} L120,50 L0,50 Z`}
-                        fill={`url(#gradient-${index})`}
-                      />
+                      <path d={`${chartPath} L120,50 L0,50 Z`} fill={`url(#gradient-${index})`} />
                       <path
                         d={chartPath}
                         fill="none"
-                        stroke={isPositive ? "#ef4444" : "#ef4444"}
+                        stroke={isPositive ? "#ef4444" : "#3b82f6"}
                         strokeWidth="2"
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -1328,11 +1211,11 @@ export default function Landing() {
                   
                   <div className="flex items-end justify-between">
                     <div>
-                      <p className="text-xs text-gray-500 mb-1">현재가</p>
-                      <p className="text-lg font-bold text-white transition-all">{formattedPrice}</p>
+                      <p className="text-xs text-gray-400 mb-1">현재가</p>
+                      <p className="text-lg font-bold text-gray-900">{formattedPrice}</p>
                     </div>
                     <Link href="/trade">
-                      <Button size="sm" className="bg-amber-500/20 hover:bg-amber-500 text-amber-400 hover:text-white text-xs transition-all" data-testid={`button-trade-${item.symbol}`}>
+                      <Button size="sm" className="bg-gray-900 hover:bg-gray-800 text-white text-xs rounded-full px-4 transition-all" data-testid={`button-trade-${item.symbol}`}>
                         거래하기
                       </Button>
                     </Link>
@@ -1345,84 +1228,84 @@ export default function Landing() {
       </section>
 
       {/* Announcements & Messages Section */}
-      <section className="py-16 px-4 bg-[#100805]">
+      <section className="py-16 px-4 bg-gray-50">
         <div className="max-w-6xl mx-auto">
-          <div className="grid md:grid-cols-2 gap-8">
+          <div className="grid md:grid-cols-2 gap-6">
             {/* Announcements */}
-            <div className="bg-gradient-to-br from-[#201208] to-[#180D06] border border-white/10 rounded-xl p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-amber-500/20 rounded-full flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-gray-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
                     <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
                   </svg>
                 </div>
-                <h3 className="text-lg font-bold text-white">공지사항</h3>
+                <h3 className="text-lg font-bold text-gray-900">공지사항</h3>
               </div>
-              <div className="space-y-3 max-h-[300px] overflow-y-auto">
+              <div className="space-y-2 max-h-[300px] overflow-y-auto">
                 {announcements.length === 0 ? (
-                  <p className="text-gray-500 text-sm py-4 text-center">등록된 공지사항이 없습니다</p>
+                  <p className="text-gray-400 text-sm py-4 text-center">등록된 공지사항이 없습니다</p>
                 ) : (
                   announcements.slice(0, 5).map((ann) => (
                     <button
                       key={ann.id}
                       onClick={() => { setSelectedAnnouncement(ann); setShowAnnouncementsModal(true); }}
-                      className="w-full text-left p-3 bg-black/30 rounded-lg border border-white/5 hover:border-amber-500/30 transition-colors cursor-pointer"
+                      className="w-full text-left p-3 bg-gray-50 rounded-xl border border-gray-100 hover:border-gray-300 hover:bg-gray-100 transition-colors cursor-pointer"
                       data-testid={`landing-announcement-${ann.id}`}
                     >
                       <div className="flex items-center gap-2 mb-1">
-                        {ann.isPinned && <span className="text-[10px] px-1.5 py-0.5 bg-amber-500/20 text-amber-400 rounded">고정</span>}
-                        <span className="text-white font-medium text-sm line-clamp-1">{ann.title}</span>
+                        {ann.isPinned && <span className="text-[10px] px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded font-medium">고정</span>}
+                        <span className="text-gray-900 font-medium text-sm line-clamp-1">{ann.title}</span>
                       </div>
-                      <p className="text-gray-400 text-xs line-clamp-2">{ann.content}</p>
+                      <p className="text-gray-500 text-xs line-clamp-2">{ann.content}</p>
                     </button>
                   ))
                 )}
               </div>
             </div>
 
-            {/* Messages (for logged-in users) or Login Prompt */}
-            <div className="bg-gradient-to-br from-[#201208] to-[#180D06] border border-white/10 rounded-xl p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-amber-500/20 rounded-full flex items-center justify-center">
-                  <Mail className="w-5 h-5 text-amber-500" />
+            {/* Messages */}
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                  <Mail className="w-5 h-5 text-gray-700" />
                 </div>
-                <h3 className="text-lg font-bold text-white">쪽지함</h3>
+                <h3 className="text-lg font-bold text-gray-900">쪽지함</h3>
                 {user && messages.filter(m => !m.isRead).length > 0 && (
-                  <span className="px-2 py-0.5 bg-red-500 text-white text-xs rounded-full">
+                  <span className="px-2 py-0.5 bg-red-500 text-white text-xs rounded-full font-medium">
                     {messages.filter(m => !m.isRead).length}
                   </span>
                 )}
               </div>
-              <div className="space-y-3 max-h-[300px] overflow-y-auto">
+              <div className="space-y-2 max-h-[300px] overflow-y-auto">
                 {!user ? (
                   <div className="text-center py-8">
-                    <Mail className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-                    <p className="text-gray-400 text-sm mb-3">로그인 후 쪽지를 확인하세요</p>
+                    <Mail className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                    <p className="text-gray-500 text-sm mb-3">로그인 후 쪽지를 확인하세요</p>
                     <Button 
                       size="sm" 
-                      className="bg-amber-500 hover:bg-amber-600 text-white"
+                      className="bg-gray-900 hover:bg-gray-800 text-white rounded-full px-5"
                       onClick={() => setShowLoginModal(true)}
                     >
                       로그인
                     </Button>
                   </div>
                 ) : messages.length === 0 ? (
-                  <p className="text-gray-500 text-sm py-4 text-center">받은 쪽지가 없습니다</p>
+                  <p className="text-gray-400 text-sm py-4 text-center">받은 쪽지가 없습니다</p>
                 ) : (
                   messages.slice(0, 5).map((msg) => (
                     <button
                       key={msg.id}
                       onClick={() => handleOpenMessage(msg)}
-                      className={`w-full text-left p-3 rounded-lg border transition-colors cursor-pointer hover:border-amber-500/50 ${msg.isRead ? 'bg-black/20 border-white/5' : 'bg-amber-500/10 border-amber-500/30'}`}
+                      className={`w-full text-left p-3 rounded-xl border transition-colors cursor-pointer ${msg.isRead ? 'bg-gray-50 border-gray-100 hover:border-gray-300' : 'bg-amber-50 border-amber-200 hover:border-amber-300'}`}
                       data-testid={`message-item-${msg.id}`}
                     >
                       <div className="flex items-center gap-2 mb-1">
-                        {!msg.isRead && <span className="w-2 h-2 bg-amber-500 rounded-full" />}
-                        <span className={`font-medium text-sm line-clamp-1 ${msg.isRead ? 'text-gray-400' : 'text-white'}`}>{msg.title}</span>
+                        {!msg.isRead && <span className="w-2 h-2 bg-amber-500 rounded-full flex-shrink-0" />}
+                        <span className={`font-medium text-sm line-clamp-1 ${msg.isRead ? 'text-gray-600' : 'text-gray-900'}`}>{msg.title}</span>
                       </div>
                       <p className="text-gray-400 text-xs line-clamp-2">{msg.content}</p>
-                      <p className="text-gray-600 text-[10px] mt-1">{new Date(msg.createdAt).toLocaleDateString('ko-KR')}</p>
+                      <p className="text-gray-400 text-[10px] mt-1">{new Date(msg.createdAt).toLocaleDateString('ko-KR')}</p>
                     </button>
                   ))
                 )}
@@ -1433,14 +1316,14 @@ export default function Landing() {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 px-4">
+      <section className="py-20 px-4 bg-white">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <p className="text-amber-400 font-medium mb-2">월드 클래스</p>
-            <h2 className="text-3xl md:text-4xl font-bold" data-testid="text-features-title">트레이딩 플랫폼</h2>
+            <p className="text-amber-600 font-semibold mb-2 text-sm tracking-wide uppercase">월드 클래스</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900" data-testid="text-features-title">트레이딩 플랫폼</h2>
           </div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
               {
                 icon: Award,
@@ -1475,14 +1358,14 @@ export default function Landing() {
             ].map((feature, index) => (
               <div 
                 key={index}
-                className="bg-[#130A06] border border-white/5 rounded-2xl p-8 hover:border-amber-500/30 transition-all hover:transform hover:-translate-y-1"
+                className="bg-white border border-gray-200 rounded-2xl p-8 hover:border-gray-400 hover:shadow-md transition-all hover:-translate-y-0.5 group"
                 data-testid={`card-feature-${index}`}
               >
-                <div className="w-14 h-14 bg-amber-500/10 rounded-xl flex items-center justify-center mb-6">
-                  <feature.icon className="w-7 h-7 text-amber-400" />
+                <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mb-5 group-hover:bg-gray-900 transition-colors">
+                  <feature.icon className="w-6 h-6 text-gray-700 group-hover:text-white transition-colors" />
                 </div>
-                <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
-                <p className="text-gray-400 leading-relaxed">{feature.description}</p>
+                <h3 className="text-lg font-bold mb-2 text-gray-900">{feature.title}</h3>
+                <p className="text-gray-500 leading-relaxed text-sm">{feature.description}</p>
               </div>
             ))}
           </div>
@@ -1490,14 +1373,14 @@ export default function Landing() {
       </section>
 
       {/* Testimonials */}
-      <section className="py-20 px-4 bg-[#130A06]">
+      <section className="py-20 px-4 bg-gray-50">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <p className="text-amber-400 font-medium mb-2">플랫폼 이용 후기</p>
-            <h2 className="text-3xl md:text-4xl font-bold" data-testid="text-reviews-title">고객리뷰</h2>
+            <p className="text-amber-600 font-semibold mb-2 text-sm tracking-wide uppercase">플랫폼 이용 후기</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900" data-testid="text-reviews-title">고객리뷰</h2>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-6">
             {[
               "처음 보자마자 거래 플랫폼과 사랑에 빠졌습니다. 깔끔하고 간편한 디자인이 정말 마음에 들었거든요.",
               "이 플랫폼을 통해 옵션 거래에 대해 많은 것을 배웠어요. 이제 투자를 통해 수익을 올릴 수 있게 되었죠.",
@@ -1505,17 +1388,24 @@ export default function Landing() {
             ].map((review, index) => (
               <div 
                 key={index}
-                className="bg-[#1C1008] border border-white/10 rounded-2xl p-8"
+                className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm"
                 data-testid={`card-review-${index}`}
               >
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-amber-500 rounded-full" />
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                    {index + 1}
+                  </div>
                   <div>
-                    <p className="font-semibold">투자자 {index + 1}</p>
-                    <p className="text-sm text-gray-500">Premium 회원</p>
+                    <p className="font-semibold text-gray-900">투자자 {index + 1}</p>
+                    <p className="text-sm text-gray-400">Premium 회원</p>
                   </div>
                 </div>
-                <p className="text-gray-300 leading-relaxed">"{review}"</p>
+                <div className="flex gap-0.5 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <span key={i} className="text-amber-400 text-sm">★</span>
+                  ))}
+                </div>
+                <p className="text-gray-600 leading-relaxed text-sm">"{review}"</p>
               </div>
             ))}
           </div>
@@ -1524,20 +1414,19 @@ export default function Landing() {
 
       {/* CTA Section - Only show for non-logged-in users */}
       {!user && (
-        <section className="py-20 px-4">
+        <section className="py-24 px-4 bg-gray-900">
           <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4" data-testid="text-cta-title">
+            <h2 className="text-3xl md:text-5xl font-bold text-white mb-5" data-testid="text-cta-title">
               MIB에 가입하고<br />지금 바로 시작해보세요
             </h2>
-            <p className="text-gray-400 text-lg mb-10">
-              당신의 첫 투자,<br />
-              믿을 수 있는 MIB에서 시작하세요!
+            <p className="text-gray-400 text-lg mb-12">
+              당신의 첫 투자, 믿을 수 있는 MIB에서 시작하세요!
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
                 size="lg" 
                 variant="outline" 
-                className="border-white/30 text-white hover:bg-white/10 px-10 py-6 text-lg rounded-lg"
+                className="border-white/30 text-white hover:bg-white/10 px-10 py-6 text-lg rounded-full"
                 data-testid="button-login-cta"
                 onClick={() => setShowLoginModal(true)}
               >
@@ -1545,11 +1434,11 @@ export default function Landing() {
               </Button>
               <Button 
                 size="lg" 
-                className="bg-amber-500 hover:bg-amber-600 text-white font-bold px-10 py-6 text-lg rounded-lg"
+                className="bg-white hover:bg-gray-100 text-gray-900 font-bold px-10 py-6 text-lg rounded-full"
                 data-testid="button-register-cta"
                 onClick={() => setShowRegisterModal(true)}
               >
-                회원가입
+                무료 가입
               </Button>
             </div>
           </div>
@@ -1557,58 +1446,54 @@ export default function Landing() {
       )}
 
       {/* Footer */}
-      <footer className="bg-[#0C0705] py-16 px-4 border-t border-white/5">
+      <footer className="bg-gray-950 py-16 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-4 gap-10 mb-12">
             <div>
-              <div className="flex items-center gap-3 mb-4">
-                <h3 className="text-xl font-bold text-amber-400">
-                  MIB
-                </h3>
-              </div>
-              <p className="text-gray-500 text-sm">
+              <h3 className="text-xl font-bold text-white mb-4">MIB</h3>
+              <p className="text-gray-500 text-sm leading-relaxed">
                 안전하고 투명한 시스템으로<br />
                 빠르고 편리한 옵션 거래를 제공합니다.
               </p>
             </div>
             <div>
-              <h4 className="font-semibold mb-4 text-gray-300">지수 거래</h4>
-              <ul className="space-y-2 text-gray-500 text-sm">
-                <li><Link href="/trade" className="hover:text-amber-400 transition-colors" data-testid="link-trade-sp500">SP500 (S&amp;P500)</Link></li>
-                <li><Link href="/trade" className="hover:text-amber-400 transition-colors" data-testid="link-trade-dow">DOW (다우존스)</Link></li>
-                <li><Link href="/trade" className="hover:text-amber-400 transition-colors" data-testid="link-trade-dxy">DXY (달러)</Link></li>
+              <h4 className="font-semibold mb-4 text-gray-300 text-sm uppercase tracking-wide">지수 거래</h4>
+              <ul className="space-y-2.5 text-gray-500 text-sm">
+                <li><Link href="/trade" className="hover:text-white transition-colors" data-testid="link-trade-sp500">SP500 (S&amp;P500)</Link></li>
+                <li><Link href="/trade" className="hover:text-white transition-colors" data-testid="link-trade-dow">DOW (다우존스)</Link></li>
+                <li><Link href="/trade" className="hover:text-white transition-colors" data-testid="link-trade-dxy">DXY (달러)</Link></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-4 text-gray-300">입출금</h4>
-              <ul className="space-y-2 text-gray-500 text-sm">
+              <h4 className="font-semibold mb-4 text-gray-300 text-sm uppercase tracking-wide">입출금</h4>
+              <ul className="space-y-2.5 text-gray-500 text-sm">
                 <li><button onClick={() => { 
                   if (!user) { setShowLoginModal(true); return; }
                   if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 09:00 ~ 18:00 사이에만 가능합니다"); return; }
                   setDepositAmount(''); setDepositSenderName(user?.name || user?.accountHolder || ''); setShowDepositPageModal(true);
-                }} className="hover:text-amber-500 transition-colors" data-testid="link-deposit">입금신청</button></li>
+                }} className="hover:text-white transition-colors" data-testid="link-deposit">입금신청</button></li>
                 <li><button onClick={() => { 
                   if (!user) { setShowLoginModal(true); return; }
                   if ((user as any)?.isBettingBlocked) { toast.error("거래정지 해제 이후 다시 시도해 주세요."); return; }
                   if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 09:00 ~ 18:00 사이에만 가능합니다"); return; }
                   setWithdrawalAmount(''); setShowWithdrawalPageModal(true);
-                }} className="hover:text-amber-500 transition-colors" data-testid="link-withdraw">출금신청</button></li>
-                <li><button onClick={() => { if (user) { setShowHistoryModal(true); } else { setShowLoginModal(true); } }} className="hover:text-amber-500 transition-colors" data-testid="link-transaction-history">입출금내역</button></li>
+                }} className="hover:text-white transition-colors" data-testid="link-withdraw">출금신청</button></li>
+                <li><button onClick={() => { if (user) { setShowHistoryModal(true); } else { setShowLoginModal(true); } }} className="hover:text-white transition-colors" data-testid="link-transaction-history">입출금내역</button></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-4 text-gray-300">고객센터</h4>
-              <ul className="space-y-2 text-gray-500 text-sm">
-                <li><button onClick={() => setShowAnnouncementsModal(true)} className="hover:text-amber-500 transition-colors" data-testid="link-notice">공지사항</button></li>
-                <li><button onClick={() => setShowCustomerServiceModal(true)} className="hover:text-amber-500 transition-colors" data-testid="link-inquiry">고객센터</button></li>
+              <h4 className="font-semibold mb-4 text-gray-300 text-sm uppercase tracking-wide">고객센터</h4>
+              <ul className="space-y-2.5 text-gray-500 text-sm">
+                <li><button onClick={() => setShowAnnouncementsModal(true)} className="hover:text-white transition-colors" data-testid="link-notice">공지사항</button></li>
+                <li><button onClick={() => setShowCustomerServiceModal(true)} className="hover:text-white transition-colors" data-testid="link-inquiry">고객센터</button></li>
               </ul>
             </div>
           </div>
           
-          <div className="border-t border-white/5 pt-8 mb-6">
+          <div className="border-t border-white/10 pt-8 mb-6">
             <div className="grid md:grid-cols-3 gap-6">
               <div>
-                <h4 className="font-semibold mb-3 text-gray-300 text-sm">입·출금 및 상담 가능시간</h4>
+                <h4 className="font-semibold mb-3 text-gray-400 text-xs uppercase tracking-wider">입·출금 및 상담 가능시간</h4>
                 <p className="text-gray-600 text-xs mb-2">(주말/공휴일 제외)</p>
                 <ul className="space-y-1 text-gray-500 text-xs">
                   <li className="flex justify-between"><span>고객상담</span><span>평일 09:00 ~ 18:00</span></li>
@@ -1617,21 +1502,21 @@ export default function Landing() {
                 </ul>
               </div>
               <div>
-                <h4 className="font-semibold mb-3 text-gray-300 text-sm">거래 상품</h4>
+                <h4 className="font-semibold mb-3 text-gray-400 text-xs uppercase tracking-wider">거래 상품</h4>
                 <ul className="space-y-1 text-gray-500 text-xs">
-                  <li className="flex justify-between"><span>S&amp;P500</span><span></span></li>
-                  <li className="flex justify-between"><span>다우존스</span><span></span></li>
-                  <li className="flex justify-between"><span>US Dollar</span><span></span></li>
+                  <li>S&amp;P500</li>
+                  <li>다우존스</li>
+                  <li>US Dollar</li>
                 </ul>
               </div>
               <div>
-                <h4 className="font-semibold mb-3 text-gray-300 text-sm">지수 CFD 거래</h4>
+                <h4 className="font-semibold mb-3 text-gray-400 text-xs uppercase tracking-wider">지수 CFD 거래</h4>
                 <p className="text-gray-500 text-xs">00:00 ~ 24:00</p>
               </div>
             </div>
           </div>
 
-          <div className="border-t border-white/5 pt-6 text-center text-gray-600 text-sm space-y-2">
+          <div className="border-t border-white/10 pt-6 text-center text-gray-600 text-sm">
             <p>© 2024 MIB. All rights reserved.</p>
           </div>
         </div>
@@ -1641,83 +1526,80 @@ export default function Landing() {
       <Dialog open={showLoginModal} onOpenChange={setShowLoginModal}>
         <DialogContent className="sm:max-w-md p-0 bg-transparent border-none shadow-none [&>button]:hidden">
           <DialogTitle className="sr-only">로그인</DialogTitle>
-          <div className="relative">
-            <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/20 via-amber-500/20 to-amber-500/20 rounded-2xl blur-xl" />
-            <div className="relative backdrop-blur-xl bg-[#1C1008]/95 border border-white/10 rounded-2xl p-8 shadow-2xl">
-              <button 
-                onClick={() => setShowLoginModal(false)}
-                className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
-                data-testid="button-close-login-modal"
+          <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-2xl">
+            <button 
+              onClick={() => setShowLoginModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 transition-colors z-10"
+              data-testid="button-close-login-modal"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <div className="text-center mb-6">
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <LearnInvestLogo variant="icon" size={48} className="rounded-lg" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-1">로그인</h2>
+              <p className="text-gray-500 text-sm">계정에 접속하여 거래를 시작하세요</p>
+            </div>
+            
+            <form onSubmit={handleLoginSubmit} className="space-y-5">
+              <div className="space-y-2">
+                <label className="text-sm text-gray-700 font-medium">아이디</label>
+                <Input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="아이디를 입력하세요"
+                  className="h-12 bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-gray-900 transition-all"
+                  data-testid="input-modal-username"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm text-gray-700 font-medium">비밀번호</label>
+                <Input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="비밀번호를 입력하세요"
+                  className="h-12 bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-gray-900 transition-all"
+                  data-testid="input-modal-password"
+                  required
+                />
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full h-12 text-base font-semibold bg-gray-900 hover:bg-gray-800 text-white rounded-xl transition-all"
+                disabled={login.isPending}
+                data-testid="button-modal-login"
               >
-                <X className="w-5 h-5" />
+                {login.isPending ? "로그인 중..." : "로그인"}
+              </Button>
+            </form>
+
+            <div className="mt-6 pt-6 border-t border-gray-100 text-center text-sm text-gray-500">
+              계정이 없으신가요?{" "}
+              <button 
+                className="text-gray-900 hover:underline font-semibold transition-colors"
+                onClick={() => {
+                  setShowLoginModal(false);
+                  setShowRegisterModal(true);
+                }}
+              >
+                회원가입
               </button>
-              
-              <div className="text-center mb-6">
-                <div className="flex items-center justify-center gap-2 mb-4">
-                  <LearnInvestLogo variant="icon" size={48} className="rounded-lg" />
-                </div>
-                <h2 className="text-2xl font-bold text-white mb-1">로그인</h2>
-                <p className="text-gray-400 text-sm">계정에 접속하여 거래를 시작하세요</p>
-              </div>
-              
-              <form onSubmit={handleLoginSubmit} className="space-y-5">
-                <div className="space-y-2">
-                  <label className="text-sm text-gray-300 font-medium">아이디</label>
-                  <Input
-                    type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder="아이디를 입력하세요"
-                    className="h-12 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-amber-500/50 focus:ring-amber-500/20 transition-all"
-                    data-testid="input-modal-username"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm text-gray-300 font-medium">비밀번호</label>
-                  <Input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="비밀번호를 입력하세요"
-                    className="h-12 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-amber-500/50 focus:ring-amber-500/20 transition-all"
-                    data-testid="input-modal-password"
-                    required
-                  />
-                </div>
-
-                <Button
-                  type="submit"
-                  className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-amber-500 via-amber-500 to-amber-600 hover:from-amber-400 hover:via-amber-400 hover:to-amber-500 text-white shadow-lg shadow-amber-500/25 transition-all duration-300 hover:shadow-amber-500/40"
-                  disabled={login.isPending}
-                  data-testid="button-modal-login"
-                >
-                  {login.isPending ? "로그인 중..." : "로그인"}
-                </Button>
-              </form>
-
-              <div className="mt-6 pt-6 border-t border-white/10 text-center text-sm text-gray-400">
-                계정이 없으신가요?{" "}
-                <button 
-                  className="text-amber-500 hover:text-amber-400 font-medium transition-colors"
-                  onClick={() => {
-                    setShowLoginModal(false);
-                    setShowRegisterModal(true);
-                  }}
-                >
-                  회원가입
-                </button>
-              </div>
-              
-              <div className="mt-4 flex items-center justify-center gap-4 text-xs text-gray-500">
-                <span className="flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  실시간 거래
-                </span>
-                <span>|</span>
-                <span>24시간 운영</span>
-              </div>
+            </div>
+            
+            <div className="mt-4 flex items-center justify-center gap-4 text-xs text-gray-400">
+              <span className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                실시간 거래
+              </span>
+              <span>|</span>
+              <span>24시간 운영</span>
             </div>
           </div>
         </DialogContent>
@@ -1727,208 +1609,205 @@ export default function Landing() {
       <Dialog open={showRegisterModal} onOpenChange={(open) => { setShowRegisterModal(open); if (!open) { setRegisterErrorMessage(""); setUsernameChecked(false); setUsernameCheckMessage(""); setUsernameAvailable(false); } }}>
         <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden max-h-[90vh] overflow-y-auto">
           <DialogTitle className="sr-only">회원가입</DialogTitle>
-          <div className="relative">
-            <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/20 via-amber-500/20 to-amber-500/20 rounded-2xl blur-xl" />
-            <div className="relative backdrop-blur-xl bg-[#1C1008]/95 border border-white/10 rounded-2xl p-6 shadow-2xl">
-              <button 
-                onClick={() => setShowRegisterModal(false)}
-                className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
-                data-testid="button-close-register-modal"
-              >
-                <X className="w-5 h-5" />
-              </button>
-              
-              <div className="text-center mb-4">
-                <div className="flex items-center justify-center gap-2 mb-3">
-                  <LearnInvestLogo variant="icon" size={40} className="rounded-lg" />
-                </div>
-                <h2 className="text-xl font-bold text-white mb-1">회원가입</h2>
-                <p className="text-gray-400 text-sm">지금 가입하고 거래를 시작하세요</p>
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-2xl">
+            <button 
+              onClick={() => setShowRegisterModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 transition-colors z-10"
+              data-testid="button-close-register-modal"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <div className="text-center mb-4">
+              <div className="flex items-center justify-center gap-2 mb-3">
+                <LearnInvestLogo variant="icon" size={40} className="rounded-lg" />
               </div>
-              
-              <form onSubmit={handleRegisterSubmit} className="space-y-3">
-                <div className="space-y-1">
-                  <label className="text-xs text-gray-300 font-medium">아이디</label>
-                  <div className="flex gap-2">
-                    <Input
-                      type="text"
-                      value={regUsername}
-                      onChange={(e) => { setRegUsername(e.target.value); setUsernameChecked(false); setUsernameCheckMessage(""); setUsernameAvailable(false); }}
-                      placeholder="아이디 (3자 이상)"
-                      className="h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-amber-500/50 text-sm flex-1"
-                      data-testid="input-reg-username"
-                      required
-                    />
-                    <Button
-                      type="button"
-                      onClick={handleCheckUsername}
-                      disabled={checkingUsername || regUsername.length < 3}
-                      className="h-10 px-3 text-xs font-medium bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/30 whitespace-nowrap"
-                      data-testid="button-check-username"
-                    >
-                      {checkingUsername ? "확인중..." : "중복확인"}
-                    </Button>
-                  </div>
-                  {usernameChecked && usernameCheckMessage && (
-                    <p className={`text-xs mt-1 ${usernameAvailable ? 'text-green-400' : 'text-red-400'}`} data-testid="text-username-check">
-                      {usernameCheckMessage}
-                    </p>
-                  )}
+              <h2 className="text-xl font-bold text-gray-900 mb-1">회원가입</h2>
+              <p className="text-gray-500 text-sm">지금 가입하고 거래를 시작하세요</p>
+            </div>
+            
+            <form onSubmit={handleRegisterSubmit} className="space-y-3">
+              <div className="space-y-1">
+                <label className="text-xs text-gray-700 font-medium">아이디</label>
+                <div className="flex gap-2">
+                  <Input
+                    type="text"
+                    value={regUsername}
+                    onChange={(e) => { setRegUsername(e.target.value); setUsernameChecked(false); setUsernameCheckMessage(""); setUsernameAvailable(false); }}
+                    placeholder="아이디 (3자 이상)"
+                    className="h-10 bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-gray-900 text-sm flex-1"
+                    data-testid="input-reg-username"
+                    required
+                  />
+                  <Button
+                    type="button"
+                    onClick={handleCheckUsername}
+                    disabled={checkingUsername || regUsername.length < 3}
+                    className="h-10 px-3 text-xs font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 whitespace-nowrap"
+                    data-testid="button-check-username"
+                  >
+                    {checkingUsername ? "확인중..." : "중복확인"}
+                  </Button>
                 </div>
+                {usernameChecked && usernameCheckMessage && (
+                  <p className={`text-xs mt-1 ${usernameAvailable ? 'text-green-600' : 'text-red-500'}`} data-testid="text-username-check">
+                    {usernameCheckMessage}
+                  </p>
+                )}
+              </div>
 
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs text-gray-700 font-medium">이름</label>
+                  <Input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="실명"
+                    className="h-10 bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-gray-900 text-sm"
+                    data-testid="input-reg-name"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="text-xs text-gray-300 font-medium">이름</label>
+                    <label className="text-xs text-gray-700 font-medium">비밀번호</label>
                     <Input
-                      type="text"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="실명"
-                      className="h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-amber-500/50 text-sm"
-                      data-testid="input-reg-name"
+                      type="password"
+                      value={regPassword}
+                      onChange={(e) => setRegPassword(e.target.value)}
+                      placeholder="비밀번호 입력"
+                      className="h-10 bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-gray-900 text-sm"
+                      data-testid="input-reg-password"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-700 font-medium">비밀번호 확인</label>
+                    <Input
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="비밀번호 재입력"
+                      className="h-10 bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-gray-900 text-sm"
+                      data-testid="input-reg-confirm-password"
                       required
                     />
                   </div>
                 </div>
+                <p className="text-xs text-gray-400">대소문자, 숫자, 특수문자 필수 기입 8자리 이상</p>
+              </div>
 
+              <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
+                  <label className="text-xs text-gray-700 font-medium">휴대폰 번호</label>
+                  <Input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="01012345678"
+                    className="h-10 bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-gray-900 text-sm"
+                    data-testid="input-reg-phone"
+                    required
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-gray-700 font-medium">생년월일</label>
+                  <Input
+                    type="text"
+                    value={regBirthDate}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+                      setRegBirthDate(val);
+                    }}
+                    placeholder="예: 901231"
+                    maxLength={6}
+                    className="h-10 bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-gray-900 text-sm"
+                    data-testid="input-reg-birthdate"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-gray-100">
+                <p className="text-xs text-gray-500 mb-2">출금 계좌 정보</p>
+                
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-700 font-medium">은행 선택</label>
+                    <Select value={bankName} onValueChange={setBankName}>
+                      <SelectTrigger className="h-10 bg-gray-50 border-gray-200 text-gray-900 text-sm">
+                        <SelectValue placeholder="은행을 선택하세요" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border-gray-200 max-h-60 overflow-y-auto">
+                        {KOREAN_BANKS.map((bank) => (
+                          <SelectItem key={bank} value={bank} className="text-gray-900 hover:bg-gray-50">
+                            {bank}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <label className="text-xs text-gray-300 font-medium">비밀번호</label>
+                      <label className="text-xs text-gray-700 font-medium">예금주</label>
                       <Input
-                        type="password"
-                        value={regPassword}
-                        onChange={(e) => setRegPassword(e.target.value)}
-                        placeholder="비밀번호 입력"
-                        className="h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-amber-500/50 text-sm"
-                        data-testid="input-reg-password"
+                        type="text"
+                        value={accountHolder}
+                        onChange={(e) => setAccountHolder(e.target.value)}
+                        placeholder="예금주명"
+                        className="h-10 bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-gray-900 text-sm"
+                        data-testid="input-reg-account-holder"
                         required
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-xs text-gray-300 font-medium">비밀번호 확인</label>
+                      <label className="text-xs text-gray-700 font-medium">계좌번호</label>
                       <Input
-                        type="password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="비밀번호 재입력"
-                        className="h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-amber-500/50 text-sm"
-                        data-testid="input-reg-confirm-password"
+                        type="text"
+                        value={accountNumber}
+                        onChange={(e) => setAccountNumber(e.target.value)}
+                        placeholder="- 없이 입력"
+                        className="h-10 bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-gray-900 text-sm"
+                        data-testid="input-reg-account-number"
                         required
                       />
                     </div>
                   </div>
-                  <p className="text-xs text-gray-500">대소문자, 숫자, 특수문자 필수 기입 8자리 이상</p>
                 </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-xs text-gray-300 font-medium">휴대폰 번호</label>
-                    <Input
-                      type="tel"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="01012345678"
-                      className="h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-amber-500/50 text-sm"
-                      data-testid="input-reg-phone"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs text-gray-300 font-medium">생년월일</label>
-                    <Input
-                      type="text"
-                      value={regBirthDate}
-                      onChange={(e) => {
-                        const val = e.target.value.replace(/\D/g, '').slice(0, 6);
-                        setRegBirthDate(val);
-                      }}
-                      placeholder="예: 901231"
-                      maxLength={6}
-                      className="h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-amber-500/50 text-sm"
-                      data-testid="input-reg-birthdate"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-white/10">
-                  <p className="text-xs text-gray-400 mb-2">출금 계좌 정보</p>
-                  
-                  <div className="space-y-3">
-                    <div className="space-y-1">
-                      <label className="text-xs text-gray-300 font-medium">은행 선택</label>
-                      <Select value={bankName} onValueChange={setBankName}>
-                        <SelectTrigger className="h-10 bg-white/5 border-white/10 text-white text-sm">
-                          <SelectValue placeholder="은행을 선택하세요" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-[#1C1008] border-white/20 max-h-60 overflow-y-auto">
-                          {KOREAN_BANKS.map((bank) => (
-                            <SelectItem key={bank} value={bank} className="text-white hover:bg-white/10">
-                              {bank}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <label className="text-xs text-gray-300 font-medium">예금주</label>
-                        <Input
-                          type="text"
-                          value={accountHolder}
-                          onChange={(e) => setAccountHolder(e.target.value)}
-                          placeholder="예금주명"
-                          className="h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-amber-500/50 text-sm"
-                          data-testid="input-reg-account-holder"
-                          required
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-xs text-gray-300 font-medium">계좌번호</label>
-                        <Input
-                          type="text"
-                          value={accountNumber}
-                          onChange={(e) => setAccountNumber(e.target.value)}
-                          placeholder="- 없이 입력"
-                          className="h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-amber-500/50 text-sm"
-                          data-testid="input-reg-account-number"
-                          required
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {registerErrorMessage && (
-                  <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 mt-2" data-testid="text-register-error">
-                    <p className="text-red-400 text-sm text-center font-medium">{registerErrorMessage}</p>
-                  </div>
-                )}
-
-                <Button
-                  type="submit"
-                  className="w-full h-11 text-base font-semibold bg-gradient-to-r from-amber-500 via-amber-500 to-amber-600 hover:from-amber-400 hover:via-amber-400 hover:to-amber-500 text-white shadow-lg shadow-amber-500/25 transition-all duration-300 hover:shadow-amber-500/40 mt-4"
-                  disabled={register.isPending}
-                  data-testid="button-modal-register"
-                >
-                  {register.isPending ? "가입 중..." : "회원가입"}
-                </Button>
-              </form>
-
-              <div className="mt-4 pt-4 border-t border-white/10 text-center text-sm text-gray-400">
-                이미 계정이 있으신가요?{" "}
-                <button 
-                  className="text-amber-500 hover:text-amber-400 font-medium transition-colors"
-                  onClick={() => {
-                    setShowRegisterModal(false);
-                    setShowLoginModal(true);
-                  }}
-                >
-                  로그인
-                </button>
               </div>
+
+              {registerErrorMessage && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 mt-2" data-testid="text-register-error">
+                  <p className="text-red-600 text-sm text-center font-medium">{registerErrorMessage}</p>
+                </div>
+              )}
+
+              <Button
+                type="submit"
+                className="w-full h-11 text-base font-semibold bg-gray-900 hover:bg-gray-800 text-white rounded-xl transition-all mt-4"
+                disabled={register.isPending}
+                data-testid="button-modal-register"
+              >
+                {register.isPending ? "가입 중..." : "회원가입"}
+              </Button>
+            </form>
+
+            <div className="mt-4 pt-4 border-t border-gray-100 text-center text-sm text-gray-500">
+              이미 계정이 있으신가요?{" "}
+              <button 
+                className="text-gray-900 hover:underline font-semibold transition-colors"
+                onClick={() => {
+                  setShowRegisterModal(false);
+                  setShowLoginModal(true);
+                }}
+              >
+                로그인
+              </button>
             </div>
           </div>
         </DialogContent>
@@ -1938,90 +1817,87 @@ export default function Landing() {
       <Dialog open={showHistoryModal} onOpenChange={setShowHistoryModal}>
         <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden max-h-[90vh] overflow-y-auto">
           <DialogTitle className="sr-only">거래내역</DialogTitle>
-          <div className="relative">
-            <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/20 via-amber-500/20 to-amber-500/20 rounded-2xl blur-xl" />
-            <div className="relative backdrop-blur-xl bg-[#1C1008]/95 border border-white/10 rounded-2xl p-6 shadow-2xl">
-              <button 
-                onClick={() => setShowHistoryModal(false)}
-                className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
-              >
-                <X className="w-5 h-5" />
-              </button>
-              
-              <div className="text-center mb-6">
-                <div className="flex items-center justify-center gap-2 mb-3">
-                  <History className="w-8 h-8 text-amber-500" />
-                </div>
-                <h2 className="text-2xl font-bold text-white mb-1">거래내역</h2>
-                <p className="text-gray-400 text-sm">나의 거래 기록과 보유금액을 확인하세요</p>
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-2xl">
+            <button 
+              onClick={() => setShowHistoryModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 transition-colors z-10"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <div className="text-center mb-6">
+              <div className="flex items-center justify-center gap-2 mb-3">
+                <History className="w-8 h-8 text-gray-700" />
               </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-1">거래내역</h2>
+              <p className="text-gray-500 text-sm">나의 거래 기록과 보유금액을 확인하세요</p>
+            </div>
 
-              {/* Balance Card */}
-              <div className="bg-gradient-to-r from-amber-500/20 to-amber-500/20 border border-amber-500/30 rounded-xl p-4 mb-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Wallet className="w-6 h-6 text-amber-500" />
-                    <span className="text-gray-300">보유금액</span>
-                  </div>
-                  <span className="text-2xl font-bold text-white">
-                    {balanceData?.balance ? Number(balanceData.balance).toLocaleString() : '0'}원
-                  </span>
+            {/* Balance Card */}
+            <div className="bg-gray-100 border border-gray-200 rounded-xl p-4 mb-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Wallet className="w-6 h-6 text-amber-600" />
+                  <span className="text-gray-600">보유금액</span>
                 </div>
+                <span className="text-2xl font-bold text-gray-900">
+                  {balanceData?.balance ? Number(balanceData.balance).toLocaleString() : '0'}원
+                </span>
               </div>
+            </div>
 
-              {/* Bet History */}
-              <div className="space-y-3 max-h-[300px] overflow-y-auto">
-                <h3 className="text-sm font-medium text-gray-400 mb-2">최근 거래 내역</h3>
-                {betHistory && betHistory.length > 0 ? (
-                  betHistory.slice(0, 10).map((bet: any) => (
-                    <div 
-                      key={bet.id} 
-                      className="bg-white/5 border border-white/10 rounded-lg p-3 flex items-center justify-between"
-                    >
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className={`text-xs px-2 py-0.5 rounded ${bet.direction === 'long' ? 'bg-red-500/20 text-red-400' : 'bg-red-500/20 text-red-400'}`}>
-                            {bet.direction === 'long' ? '매수' : '매도'}
+            {/* Bet History */}
+            <div className="space-y-3 max-h-[300px] overflow-y-auto">
+              <h3 className="text-sm font-medium text-gray-500 mb-2">최근 거래 내역</h3>
+              {betHistory && betHistory.length > 0 ? (
+                betHistory.slice(0, 10).map((bet: any) => (
+                  <div 
+                    key={bet.id} 
+                    className="bg-gray-50 border border-gray-200 rounded-xl p-3 flex items-center justify-between"
+                  >
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${bet.direction === 'long' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
+                          {bet.direction === 'long' ? '매수' : '매도'}
+                        </span>
+                        <span className="text-gray-900 font-medium">{bet.symbol}</span>
+                        {bet.roundNumber && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">
+                            {bet.roundNumber}회차
                           </span>
-                          <span className="text-white font-medium">{bet.symbol}</span>
-                          {bet.roundNumber && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-400">
-                              {bet.roundNumber}회차
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-xs text-gray-400 mt-1">
-                          {new Date(bet.createdAt).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' })}{' '}
-                          {new Date(bet.createdAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Seoul' })}
-                        </div>
+                        )}
                       </div>
-                      <div className="text-right">
-                        <div className="text-white font-medium">
-                          {Number(bet.amount).toLocaleString()}원
-                        </div>
-                        <div className={`text-xs ${bet.outcome === 'win' ? 'text-green-400' : bet.outcome === 'lose' ? 'text-red-400' : 'text-yellow-400'}`}>
-                          {bet.outcome === 'win' ? '실현' : bet.outcome === 'lose' ? '실격' : '진행중'}
-                        </div>
+                      <div className="text-xs text-gray-400 mt-1">
+                        {new Date(bet.createdAt).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' })}{' '}
+                        {new Date(bet.createdAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Seoul' })}
                       </div>
                     </div>
-                  ))
-                ) : (
-                  <div className="text-center py-8 text-gray-400">
-                    거래 내역이 없습니다
+                    <div className="text-right">
+                      <div className="text-gray-900 font-medium">
+                        {Number(bet.amount).toLocaleString()}원
+                      </div>
+                      <div className={`text-xs font-medium ${bet.outcome === 'win' ? 'text-green-600' : bet.outcome === 'lose' ? 'text-red-500' : 'text-amber-500'}`}>
+                        {bet.outcome === 'win' ? '실현' : bet.outcome === 'lose' ? '실격' : '진행중'}
+                      </div>
+                    </div>
                   </div>
-                )}
-              </div>
-
-              <Button
-                className="w-full mt-4 bg-amber-500 hover:bg-amber-600 text-white"
-                onClick={() => {
-                  setShowHistoryModal(false);
-                  setLocation("/trade");
-                }}
-              >
-                거래하러 가기
-              </Button>
+                ))
+              ) : (
+                <div className="text-center py-8 text-gray-400">
+                  거래 내역이 없습니다
+                </div>
+              )}
             </div>
+
+            <Button
+              className="w-full mt-4 bg-gray-900 hover:bg-gray-800 text-white rounded-xl"
+              onClick={() => {
+                setShowHistoryModal(false);
+                setLocation("/trade");
+              }}
+            >
+              거래하러 가기
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -2030,213 +1906,210 @@ export default function Landing() {
       <Dialog open={showDepositPageModal} onOpenChange={(open) => { if (!open) { setShowDepositPageModal(false); setDepositAmount(''); setDepositSenderName(''); } }}>
         <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden max-h-[90vh] overflow-y-auto">
           <DialogTitle className="sr-only">입금 신청</DialogTitle>
-          <div className="relative">
-            <div className="absolute -inset-1 bg-gradient-to-r from-green-500/10 via-green-500/10 to-green-500/10 rounded-2xl blur-xl" />
-            <div className="relative backdrop-blur-xl bg-[#1C1008]/95 border border-white/10 rounded-2xl p-6 shadow-2xl">
-              {/* 헤더 */}
-              <div className="flex items-center justify-between mb-5">
-                <button onClick={() => { setShowDepositPageModal(false); setDepositAmount(''); setDepositSenderName(''); }}
-                  className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
-                  <ChevronRight className="w-5 h-5 rotate-180" />
-                  <span className="text-sm">뒤로가기</span>
-                </button>
-                <h2 className="text-lg font-bold text-white">입금 신청</h2>
-                <button onClick={() => { setShowDepositPageModal(false); setDepositAmount(''); setDepositSenderName(''); }}
-                  className="text-gray-400 hover:text-white transition-colors">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-2xl">
+            {/* 헤더 */}
+            <div className="flex items-center justify-between mb-5">
+              <button onClick={() => { setShowDepositPageModal(false); setDepositAmount(''); setDepositSenderName(''); }}
+                className="flex items-center gap-2 text-gray-500 hover:text-gray-900 transition-colors">
+                <ChevronRight className="w-5 h-5 rotate-180" />
+                <span className="text-sm">뒤로가기</span>
+              </button>
+              <h2 className="text-lg font-bold text-gray-900">입금 신청</h2>
+              <button onClick={() => { setShowDepositPageModal(false); setDepositAmount(''); setDepositSenderName(''); }}
+                className="text-gray-400 hover:text-gray-700 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-              {/* 현재 보유금액 */}
-              <div className="bg-gradient-to-r from-amber-500/20 to-amber-500/10 border border-amber-500/30 rounded-xl p-3 mb-5">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-400 text-sm">현재 보유금액</span>
-                  <span className="text-xl font-bold text-white">{balanceData?.balance ? Number(balanceData.balance).toLocaleString() : '0'}원</span>
-                </div>
+            {/* 현재 보유금액 */}
+            <div className="bg-gray-100 border border-gray-200 rounded-xl p-3 mb-5">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-500 text-sm">현재 보유금액</span>
+                <span className="text-xl font-bold text-gray-900">{balanceData?.balance ? Number(balanceData.balance).toLocaleString() : '0'}원</span>
               </div>
+            </div>
 
-              {/* 입금 진행 절차 STEP 1~4 */}
-              <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-5">
-                <h3 className="text-sm font-bold text-amber-400 mb-3">입금 진행 절차</h3>
-                <div className="space-y-3">
-                  {[
-                    { step: '01', text: '인터넷뱅킹, 모바일뱅킹, 무통장 입금, ATM 등으로 송금 가능합니다. 입금 계좌는 수시로 변경될 수 있으니 이체 전 반드시 최신 계좌를 확인해 주세요.' },
-                    { step: '02', text: '최소 입금 금액은 10,000원입니다. 금액을 잘못 입력하셨을 경우 정정 가능합니다.' },
-                    { step: '03', text: "아래 '보내시는 분'란에 실제 송금 통장의 입금주 성함을 정확히 입력해 주세요. 닉네임 또는 다른 이름 입력 시 자동 매칭이 불가합니다." },
-                    { step: '04', text: '입금 처리는 영업 시간(평일 오전 09:00 ~ 18:00) 내 순차적으로 진행됩니다. 입금신청 버튼 클릭 후 운영팀 확인을 거쳐 보유금액에 반영됩니다. 처리 완료 시 알림을 통해 안내드립니다.' },
-                  ].map(({ step, text }) => (
-                    <div key={step} className="flex gap-3">
-                      <span className="shrink-0 w-8 h-8 rounded-full bg-green-500/20 border border-green-500/40 flex items-center justify-center text-green-400 text-xs font-bold">{step}</span>
-                      <p className="text-gray-400 text-xs leading-relaxed pt-1">{text}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* 입금 계좌 정보 */}
-              <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-5">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-300 text-sm font-medium mb-1">입금 계좌 정보</p>
-                    <p className="text-gray-500 text-xs">입금 계좌 정보는 고객센터를 통해 개별 안내드립니다.</p>
+            {/* 입금 진행 절차 STEP 1~4 */}
+            <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-5">
+              <h3 className="text-sm font-bold text-green-700 mb-3">입금 진행 절차</h3>
+              <div className="space-y-3">
+                {[
+                  { step: '01', text: '인터넷뱅킹, 모바일뱅킹, 무통장 입금, ATM 등으로 송금 가능합니다. 입금 계좌는 수시로 변경될 수 있으니 이체 전 반드시 최신 계좌를 확인해 주세요.' },
+                  { step: '02', text: '최소 입금 금액은 10,000원입니다. 금액을 잘못 입력하셨을 경우 정정 가능합니다.' },
+                  { step: '03', text: "아래 '보내시는 분'란에 실제 송금 통장의 입금주 성함을 정확히 입력해 주세요. 닉네임 또는 다른 이름 입력 시 자동 매칭이 불가합니다." },
+                  { step: '04', text: '입금 처리는 영업 시간(평일 오전 09:00 ~ 18:00) 내 순차적으로 진행됩니다. 입금신청 버튼 클릭 후 운영팀 확인을 거쳐 보유금액에 반영됩니다. 처리 완료 시 알림을 통해 안내드립니다.' },
+                ].map(({ step, text }) => (
+                  <div key={step} className="flex gap-3">
+                    <span className="shrink-0 w-8 h-8 rounded-full bg-green-100 border border-green-300 flex items-center justify-center text-green-700 text-xs font-bold">{step}</span>
+                    <p className="text-gray-600 text-xs leading-relaxed pt-1">{text}</p>
                   </div>
-                  <button
-                    onClick={async () => {
-                      try {
-                        const res = await fetch('/api/inquiries', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({
-                            title: '입금계좌 안내 요청',
-                            content: '입금계좌 정보를 안내해 주세요.',
-                          }),
-                        });
-                        if (!res.ok) {
-                          const data = await res.json();
-                          throw new Error(data.error || '문의 생성에 실패했습니다');
-                        }
-                        refetchInquiries();
-                        toast.success('입금계좌 안내 문의가 접수되었습니다.');
-                        setShowDepositPageModal(false);
-                        setShowMyInquiriesModal(true);
-                      } catch (err: any) {
-                        toast.error(err.message || '문의 생성에 실패했습니다');
-                      }
-                    }}
-                    className="text-xs bg-amber-500/20 border border-amber-500/40 text-amber-400 px-3 py-1 rounded-full hover:bg-amber-500/30 transition-colors whitespace-nowrap"
-                    data-testid="button-deposit-inquiry"
-                  >
-                    계좌번호 문의하기
-                  </button>
-                </div>
-              </div>
-
-              {/* 보내시는 분 */}
-              <div className="mb-4">
-                <label className="block text-gray-300 text-sm mb-2">보내시는 분 <span className="text-red-400">*</span></label>
-                <Input
-                  type="text"
-                  value={depositSenderName}
-                  onChange={(e) => setDepositSenderName(e.target.value)}
-                  placeholder="실제 송금 통장의 예금주 성함 입력"
-                  className="bg-white/10 border-white/20 text-white placeholder:text-gray-500"
-                  data-testid="input-deposit-sender"
-                />
-              </div>
-
-              {/* 입금 금액 */}
-              <div className="mb-4">
-                <label className="block text-gray-300 text-sm mb-2">입금 금액 <span className="text-red-400">*</span></label>
-                <div className="relative">
-                  <Input
-                    type="text"
-                    value={depositAmount}
-                    onChange={(e) => setDepositAmount(e.target.value.replace(/[^0-9]/g, ''))}
-                    placeholder="금액을 입력하세요"
-                    className="bg-white/10 border-white/20 text-white pr-12"
-                    data-testid="input-deposit-amount"
-                  />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">원</span>
-                </div>
-                {depositAmount && <p className="text-gray-400 text-xs mt-1">{Number(depositAmount).toLocaleString()}원</p>}
-              </div>
-
-              {/* 빠른 금액 */}
-              <div className="grid grid-cols-4 gap-2 mb-2">
-                {[10000, 50000, 100000, 500000].map((amt) => (
-                  <button key={amt} onClick={() => setDepositAmount(String(Number(depositAmount || 0) + amt))}
-                    className="py-2 bg-white/10 hover:bg-white/20 text-gray-300 text-xs rounded transition-colors" data-testid={`button-deposit-quick-${amt}`}>
-                    +{amt / 10000}만
-                  </button>
                 ))}
               </div>
-              <div className="grid grid-cols-2 gap-2 mb-5">
-                <button onClick={() => setDepositAmount(String(Number(depositAmount || 0) + 1000000))}
-                  className="py-2 bg-white/10 hover:bg-white/20 text-gray-300 text-xs rounded transition-colors" data-testid="button-deposit-quick-100">
-                  +100만
-                </button>
-                <button onClick={() => setDepositAmount('')}
-                  className="py-2 bg-white/10 hover:bg-white/20 text-gray-300 text-xs rounded transition-colors" data-testid="button-deposit-reset">
-                  초기화
+            </div>
+
+            {/* 입금 계좌 정보 */}
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-800 text-sm font-medium mb-1">입금 계좌 정보</p>
+                  <p className="text-gray-500 text-xs">입금 계좌 정보는 고객센터를 통해 개별 안내드립니다.</p>
+                </div>
+                <button
+                  onClick={async () => {
+                    try {
+                      const res = await fetch('/api/inquiries', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          title: '입금계좌 안내 요청',
+                          content: '입금계좌 정보를 안내해 주세요.',
+                        }),
+                      });
+                      if (!res.ok) {
+                        const data = await res.json();
+                        throw new Error(data.error || '문의 생성에 실패했습니다');
+                      }
+                      refetchInquiries();
+                      toast.success('입금계좌 안내 문의가 접수되었습니다.');
+                      setShowDepositPageModal(false);
+                      setShowMyInquiriesModal(true);
+                    } catch (err: any) {
+                      toast.error(err.message || '문의 생성에 실패했습니다');
+                    }
+                  }}
+                  className="text-xs bg-gray-900 text-white px-3 py-1.5 rounded-full hover:bg-gray-700 transition-colors whitespace-nowrap"
+                  data-testid="button-deposit-inquiry"
+                >
+                  계좌번호 문의하기
                 </button>
               </div>
+            </div>
 
-              {/* 입금신청 버튼 */}
-              <Button
-                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold mb-6"
-                disabled={depositSubmitting || !depositAmount || Number(depositAmount) <= 0 || !depositSenderName.trim()}
-                data-testid="button-deposit-submit"
-                onClick={async () => {
-                  if (!depositSenderName.trim()) { toast.error('보내시는 분 성함을 입력해주세요'); return; }
-                  if (!depositAmount || Number(depositAmount) <= 0) { toast.error('금액을 입력해주세요'); return; }
-                  if (Number(depositAmount) < 10000) { toast.error('최소 입금금액은 10,000원입니다'); return; }
-                  setDepositSubmitting(true);
-                  try {
-                    const res = await fetch('/api/transactions', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ type: 'deposit', amount: depositAmount, senderName: depositSenderName.trim() }),
-                    });
-                    const data = await res.json();
-                    if (!res.ok) throw new Error(data.error || '요청에 실패했습니다');
+            {/* 보내시는 분 */}
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm mb-2">보내시는 분 <span className="text-red-500">*</span></label>
+              <Input
+                type="text"
+                value={depositSenderName}
+                onChange={(e) => setDepositSenderName(e.target.value)}
+                placeholder="실제 송금 통장의 예금주 성함 입력"
+                className="bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400"
+                data-testid="input-deposit-sender"
+              />
+            </div>
 
-                    toast.success('입금 신청이 완료되었습니다.');
-                    setDepositAmount('');
-                    setDepositSenderName('');
-                    setShowDepositPageModal(false);
-                    refetchTransactions();
-                  } catch (err: any) {
-                    toast.error(err.message || '요청에 실패했습니다');
-                  } finally {
-                    setDepositSubmitting(false);
-                  }
-                }}
-              >
-                {depositSubmitting ? '처리중...' : '입금신청'}
-              </Button>
+            {/* 입금 금액 */}
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm mb-2">입금 금액 <span className="text-red-500">*</span></label>
+              <div className="relative">
+                <Input
+                  type="text"
+                  value={depositAmount}
+                  onChange={(e) => setDepositAmount(e.target.value.replace(/[^0-9]/g, ''))}
+                  placeholder="금액을 입력하세요"
+                  className="bg-gray-50 border-gray-200 text-gray-900 pr-12"
+                  data-testid="input-deposit-amount"
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500">원</span>
+              </div>
+              {depositAmount && <p className="text-gray-500 text-xs mt-1">{Number(depositAmount).toLocaleString()}원</p>}
+            </div>
 
-              {/* 최근 입금 내역 */}
-              <div>
-                <h3 className="text-sm font-bold text-gray-300 mb-3">최근 입금 내역</h3>
-                {(() => {
-                  const depositHistory = (myTransactions || []).filter((t: any) => t.type === 'deposit').slice(0, 5);
-                  if (depositHistory.length === 0) {
-                    return <p className="text-gray-500 text-xs text-center py-4">입금 내역이 없습니다</p>;
-                  }
-                  return (
-                    <div className="rounded-lg overflow-hidden border border-white/10">
-                      <table className="w-full text-xs">
-                        <thead>
-                          <tr className="bg-white/5">
-                            <th className="text-left text-gray-400 px-3 py-2">신청금액</th>
-                            <th className="text-center text-gray-400 px-3 py-2">상태</th>
-                            <th className="text-right text-gray-400 px-3 py-2">신청일</th>
+            {/* 빠른 금액 */}
+            <div className="grid grid-cols-4 gap-2 mb-2">
+              {[10000, 50000, 100000, 500000].map((amt) => (
+                <button key={amt} onClick={() => setDepositAmount(String(Number(depositAmount || 0) + amt))}
+                  className="py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs rounded-lg transition-colors font-medium" data-testid={`button-deposit-quick-${amt}`}>
+                  +{amt / 10000}만
+                </button>
+              ))}
+            </div>
+            <div className="grid grid-cols-2 gap-2 mb-5">
+              <button onClick={() => setDepositAmount(String(Number(depositAmount || 0) + 1000000))}
+                className="py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs rounded-lg transition-colors font-medium" data-testid="button-deposit-quick-100">
+                +100만
+              </button>
+              <button onClick={() => setDepositAmount('')}
+                className="py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs rounded-lg transition-colors font-medium" data-testid="button-deposit-reset">
+                초기화
+              </button>
+            </div>
+
+            {/* 입금신청 버튼 */}
+            <Button
+              className="w-full bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl mb-6"
+              disabled={depositSubmitting || !depositAmount || Number(depositAmount) <= 0 || !depositSenderName.trim()}
+              data-testid="button-deposit-submit"
+              onClick={async () => {
+                if (!depositSenderName.trim()) { toast.error('보내시는 분 성함을 입력해주세요'); return; }
+                if (!depositAmount || Number(depositAmount) <= 0) { toast.error('금액을 입력해주세요'); return; }
+                if (Number(depositAmount) < 10000) { toast.error('최소 입금금액은 10,000원입니다'); return; }
+                setDepositSubmitting(true);
+                try {
+                  const res = await fetch('/api/transactions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type: 'deposit', amount: depositAmount, senderName: depositSenderName.trim() }),
+                  });
+                  const data = await res.json();
+                  if (!res.ok) throw new Error(data.error || '요청에 실패했습니다');
+
+                  toast.success('입금 신청이 완료되었습니다.');
+                  setDepositAmount('');
+                  setDepositSenderName('');
+                  setShowDepositPageModal(false);
+                  refetchTransactions();
+                } catch (err: any) {
+                  toast.error(err.message || '요청에 실패했습니다');
+                } finally {
+                  setDepositSubmitting(false);
+                }
+              }}
+            >
+              {depositSubmitting ? '처리중...' : '입금신청'}
+            </Button>
+
+            {/* 최근 입금 내역 */}
+            <div>
+              <h3 className="text-sm font-bold text-gray-700 mb-3">최근 입금 내역</h3>
+              {(() => {
+                const depositHistory = (myTransactions || []).filter((t: any) => t.type === 'deposit').slice(0, 5);
+                if (depositHistory.length === 0) {
+                  return <p className="text-gray-400 text-xs text-center py-4">입금 내역이 없습니다</p>;
+                }
+                return (
+                  <div className="rounded-xl overflow-hidden border border-gray-200">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="bg-gray-50">
+                          <th className="text-left text-gray-500 px-3 py-2 font-medium">신청금액</th>
+                          <th className="text-center text-gray-500 px-3 py-2 font-medium">상태</th>
+                          <th className="text-right text-gray-500 px-3 py-2 font-medium">신청일</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {depositHistory.map((t: any) => (
+                          <tr key={t.id} className="border-t border-gray-100">
+                            <td className="px-3 py-2 text-gray-900 font-medium">{Number(t.amount).toLocaleString()}원</td>
+                            <td className="px-3 py-2 text-center">
+                              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                                t.status === 'approved' ? 'bg-green-100 text-green-700' :
+                                t.status === 'rejected' ? 'bg-red-100 text-red-600' :
+                                'bg-amber-100 text-amber-700'
+                              }`}>
+                                {t.status === 'approved' ? '승인' : t.status === 'rejected' ? '거절' : '대기'}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2 text-right text-gray-400">
+                              {new Date(t.createdAt).toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Seoul' })}
+                            </td>
                           </tr>
-                        </thead>
-                        <tbody>
-                          {depositHistory.map((t: any) => (
-                            <tr key={t.id} className="border-t border-white/5">
-                              <td className="px-3 py-2 text-white font-medium">{Number(t.amount).toLocaleString()}원</td>
-                              <td className="px-3 py-2 text-center">
-                                <span className={`px-2 py-0.5 rounded-full text-xs ${
-                                  t.status === 'approved' ? 'bg-green-500/20 text-green-400' :
-                                  t.status === 'rejected' ? 'bg-red-500/20 text-red-400' :
-                                  'bg-yellow-500/20 text-yellow-400'
-                                }`}>
-                                  {t.status === 'approved' ? '승인' : t.status === 'rejected' ? '거절' : '대기'}
-                                </span>
-                              </td>
-                              <td className="px-3 py-2 text-right text-gray-400">
-                                {new Date(t.createdAt).toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Seoul' })}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  );
-                })()}
-              </div>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </DialogContent>
@@ -2246,207 +2119,204 @@ export default function Landing() {
       <Dialog open={showWithdrawalPageModal} onOpenChange={(open) => { if (!open) { setShowWithdrawalPageModal(false); setWithdrawalAmount(''); } }}>
         <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden max-h-[90vh] overflow-y-auto">
           <DialogTitle className="sr-only">출금 신청</DialogTitle>
-          <div className="relative">
-            <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/10 via-blue-500/10 to-blue-500/10 rounded-2xl blur-xl" />
-            <div className="relative backdrop-blur-xl bg-[#1C1008]/95 border border-white/10 rounded-2xl p-6 shadow-2xl">
-              {/* 헤더 */}
-              <div className="flex items-center justify-between mb-5">
-                <button onClick={() => { setShowWithdrawalPageModal(false); setWithdrawalAmount(''); }}
-                  className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
-                  <ChevronRight className="w-5 h-5 rotate-180" />
-                  <span className="text-sm">뒤로가기</span>
-                </button>
-                <h2 className="text-lg font-bold text-white">출금 신청</h2>
-                <button onClick={() => { setShowWithdrawalPageModal(false); setWithdrawalAmount(''); }}
-                  className="text-gray-400 hover:text-white transition-colors">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-2xl">
+            {/* 헤더 */}
+            <div className="flex items-center justify-between mb-5">
+              <button onClick={() => { setShowWithdrawalPageModal(false); setWithdrawalAmount(''); }}
+                className="flex items-center gap-2 text-gray-500 hover:text-gray-900 transition-colors">
+                <ChevronRight className="w-5 h-5 rotate-180" />
+                <span className="text-sm">뒤로가기</span>
+              </button>
+              <h2 className="text-lg font-bold text-gray-900">출금 신청</h2>
+              <button onClick={() => { setShowWithdrawalPageModal(false); setWithdrawalAmount(''); }}
+                className="text-gray-400 hover:text-gray-700 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-              {/* 현재 보유금액 */}
-              <div className="bg-gradient-to-r from-amber-500/20 to-amber-500/10 border border-amber-500/30 rounded-xl p-3 mb-5">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-400 text-sm">현재 보유금액</span>
-                  <span className="text-xl font-bold text-white">{balanceData?.balance ? Number(balanceData.balance).toLocaleString() : '0'}원</span>
-                </div>
+            {/* 현재 보유금액 */}
+            <div className="bg-gray-100 border border-gray-200 rounded-xl p-3 mb-5">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-500 text-sm">현재 보유금액</span>
+                <span className="text-xl font-bold text-gray-900">{balanceData?.balance ? Number(balanceData.balance).toLocaleString() : '0'}원</span>
               </div>
+            </div>
 
-              {/* 출금 진행 절차 STEP 1~4 */}
-              <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-5">
-                <h3 className="text-sm font-bold text-blue-400 mb-3">출금 진행 절차</h3>
-                <div className="space-y-3">
-                  {[
-                    { step: '01', text: '출금 처리는 영업 시간(평일 오전 09:00 ~ 18:00) 내 순차적으로 진행됩니다. 신청 즉시 보유금액에서 우선 차감됩니다.' },
-                    { step: '02', text: '24시간 이상 지연 시, 등록된 출금 계좌 정보(은행명·계좌번호·예금주 성명)가 실제 계좌와 일치하는지 확인해 주세요.' },
-                    { step: '03', text: '등록되지 않은 계좌로 출금을 원하실 경우 반드시 고객센터를 통해 사전에 변경 요청을 해주시기 바랍니다.' },
-                    { step: '04', text: '출금신청 버튼 클릭 후 운영팀 검수를 거쳐 은행 이체가 진행됩니다. 처리 완료 시 알림을 통해 안내드립니다.' },
-                  ].map(({ step, text }) => (
-                    <div key={step} className="flex gap-3">
-                      <span className="shrink-0 w-8 h-8 rounded-full bg-blue-500/20 border border-blue-500/40 flex items-center justify-center text-blue-400 text-xs font-bold">{step}</span>
-                      <p className="text-gray-400 text-xs leading-relaxed pt-1">{text}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* 출금 계좌 정보 (읽기전용) */}
-              <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-5 space-y-3">
-                <h3 className="text-sm font-bold text-gray-300 mb-1">출금 계좌 정보</h3>
-                {!user?.bankName && !user?.accountNumber ? (
-                  <div className="text-center py-2">
-                    <p className="text-yellow-400 text-xs mb-2">등록된 출금 계좌가 없습니다.</p>
-                    <button onClick={() => { setShowWithdrawalPageModal(false); openMyPage(); }}
-                      className="text-amber-400 text-xs underline hover:text-amber-300 transition-colors">
-                      마이페이지에서 계좌 등록하기
-                    </button>
+            {/* 출금 진행 절차 STEP 1~4 */}
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-5">
+              <h3 className="text-sm font-bold text-blue-700 mb-3">출금 진행 절차</h3>
+              <div className="space-y-3">
+                {[
+                  { step: '01', text: '출금 처리는 영업 시간(평일 오전 09:00 ~ 18:00) 내 순차적으로 진행됩니다. 신청 즉시 보유금액에서 우선 차감됩니다.' },
+                  { step: '02', text: '24시간 이상 지연 시, 등록된 출금 계좌 정보(은행명·계좌번호·예금주 성명)가 실제 계좌와 일치하는지 확인해 주세요.' },
+                  { step: '03', text: '등록되지 않은 계좌로 출금을 원하실 경우 반드시 고객센터를 통해 사전에 변경 요청을 해주시기 바랍니다.' },
+                  { step: '04', text: '출금신청 버튼 클릭 후 운영팀 검수를 거쳐 은행 이체가 진행됩니다. 처리 완료 시 알림을 통해 안내드립니다.' },
+                ].map(({ step, text }) => (
+                  <div key={step} className="flex gap-3">
+                    <span className="shrink-0 w-8 h-8 rounded-full bg-blue-100 border border-blue-300 flex items-center justify-center text-blue-700 text-xs font-bold">{step}</span>
+                    <p className="text-gray-600 text-xs leading-relaxed pt-1">{text}</p>
                   </div>
-                ) : (
-                  <>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500 text-xs">거래은행</span>
-                      <span className="text-white text-xs font-medium">{user?.bankName || '-'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500 text-xs">계좌번호</span>
-                      <span className="text-white text-xs font-medium">{user?.accountNumber || '-'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500 text-xs">예금주</span>
-                      <span className="text-white text-xs font-medium">{user?.accountHolder || '-'}</span>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {/* 출금 가능액 */}
-              <div className="flex justify-between items-center bg-white/5 border border-white/10 rounded-xl px-4 py-3 mb-4">
-                <span className="text-gray-400 text-sm">출금가능액</span>
-                <span className="text-white font-bold">{balanceData?.balance ? Number(balanceData.balance).toLocaleString() : '0'}원</span>
-              </div>
-
-              {/* 출금 금액 */}
-              <div className="mb-4">
-                <label className="block text-gray-300 text-sm mb-2">출금 금액 <span className="text-red-400">*</span></label>
-                <div className="relative">
-                  <Input
-                    type="text"
-                    value={withdrawalAmount}
-                    onChange={(e) => setWithdrawalAmount(e.target.value.replace(/[^0-9]/g, ''))}
-                    placeholder="금액을 입력하세요"
-                    className="bg-white/10 border-white/20 text-white pr-12"
-                    data-testid="input-withdrawal-amount"
-                  />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">원</span>
-                </div>
-                {withdrawalAmount && <p className="text-gray-400 text-xs mt-1">{Number(withdrawalAmount).toLocaleString()}원</p>}
-                {withdrawalAmount && Number(withdrawalAmount) > Number(balanceData?.balance || 0) && (
-                  <p className="text-red-400 text-xs mt-1">보유금액을 초과할 수 없습니다</p>
-                )}
-              </div>
-
-              {/* 빠른 금액 */}
-              <div className="grid grid-cols-4 gap-2 mb-2">
-                {[10000, 50000, 100000, 500000].map((amt) => (
-                  <button key={amt} onClick={() => setWithdrawalAmount(String(Math.min(Number(withdrawalAmount || 0) + amt, Number(balanceData?.balance || 0))))}
-                    className="py-2 bg-white/10 hover:bg-white/20 text-gray-300 text-xs rounded transition-colors" data-testid={`button-withdrawal-quick-${amt}`}>
-                    +{amt / 10000}만
-                  </button>
                 ))}
               </div>
-              <div className="grid grid-cols-2 gap-2 mb-5">
-                <button onClick={() => setWithdrawalAmount(String(balanceData?.balance ? Math.floor(Number(balanceData.balance)) : 0))}
-                  className="py-2 bg-white/10 hover:bg-white/20 text-gray-300 text-xs rounded transition-colors" data-testid="button-withdrawal-all">
-                  전액
-                </button>
-                <button onClick={() => setWithdrawalAmount('')}
-                  className="py-2 bg-white/10 hover:bg-white/20 text-gray-300 text-xs rounded transition-colors" data-testid="button-withdrawal-reset">
-                  초기화
-                </button>
-              </div>
+            </div>
 
-              {/* 출금신청 버튼 */}
-              <Button
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold"
-                disabled={
-                  withdrawalSubmitting ||
-                  !withdrawalAmount ||
-                  Number(withdrawalAmount) <= 0 ||
-                  Number(withdrawalAmount) > Number(balanceData?.balance || 0) ||
-                  (!user?.bankName && !user?.accountNumber)
+            {/* 출금 계좌 정보 (읽기전용) */}
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-5 space-y-3">
+              <h3 className="text-sm font-bold text-gray-700 mb-1">출금 계좌 정보</h3>
+              {!user?.bankName && !user?.accountNumber ? (
+                <div className="text-center py-2">
+                  <p className="text-amber-600 text-xs mb-2">등록된 출금 계좌가 없습니다.</p>
+                  <button onClick={() => { setShowWithdrawalPageModal(false); openMyPage(); }}
+                    className="text-gray-900 text-xs underline hover:text-gray-700 transition-colors font-medium">
+                    마이페이지에서 계좌 등록하기
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 text-xs">거래은행</span>
+                    <span className="text-gray-900 text-xs font-medium">{user?.bankName || '-'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 text-xs">계좌번호</span>
+                    <span className="text-gray-900 text-xs font-medium">{user?.accountNumber || '-'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 text-xs">예금주</span>
+                    <span className="text-gray-900 text-xs font-medium">{user?.accountHolder || '-'}</span>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* 출금 가능액 */}
+            <div className="flex justify-between items-center bg-gray-100 border border-gray-200 rounded-xl px-4 py-3 mb-4">
+              <span className="text-gray-500 text-sm">출금가능액</span>
+              <span className="text-gray-900 font-bold">{balanceData?.balance ? Number(balanceData.balance).toLocaleString() : '0'}원</span>
+            </div>
+
+            {/* 출금 금액 */}
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm mb-2">출금 금액 <span className="text-red-500">*</span></label>
+              <div className="relative">
+                <Input
+                  type="text"
+                  value={withdrawalAmount}
+                  onChange={(e) => setWithdrawalAmount(e.target.value.replace(/[^0-9]/g, ''))}
+                  placeholder="금액을 입력하세요"
+                  className="bg-gray-50 border-gray-200 text-gray-900 pr-12"
+                  data-testid="input-withdrawal-amount"
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500">원</span>
+              </div>
+              {withdrawalAmount && <p className="text-gray-500 text-xs mt-1">{Number(withdrawalAmount).toLocaleString()}원</p>}
+              {withdrawalAmount && Number(withdrawalAmount) > Number(balanceData?.balance || 0) && (
+                <p className="text-red-500 text-xs mt-1">보유금액을 초과할 수 없습니다</p>
+              )}
+            </div>
+
+            {/* 빠른 금액 */}
+            <div className="grid grid-cols-4 gap-2 mb-2">
+              {[10000, 50000, 100000, 500000].map((amt) => (
+                <button key={amt} onClick={() => setWithdrawalAmount(String(Math.min(Number(withdrawalAmount || 0) + amt, Number(balanceData?.balance || 0))))}
+                  className="py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs rounded-lg transition-colors font-medium" data-testid={`button-withdrawal-quick-${amt}`}>
+                  +{amt / 10000}만
+                </button>
+              ))}
+            </div>
+            <div className="grid grid-cols-2 gap-2 mb-5">
+              <button onClick={() => setWithdrawalAmount(String(balanceData?.balance ? Math.floor(Number(balanceData.balance)) : 0))}
+                className="py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs rounded-lg transition-colors font-medium" data-testid="button-withdrawal-all">
+                전액
+              </button>
+              <button onClick={() => setWithdrawalAmount('')}
+                className="py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs rounded-lg transition-colors font-medium" data-testid="button-withdrawal-reset">
+                초기화
+              </button>
+            </div>
+
+            {/* 출금신청 버튼 */}
+            <Button
+              className="w-full bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl"
+              disabled={
+                withdrawalSubmitting ||
+                !withdrawalAmount ||
+                Number(withdrawalAmount) <= 0 ||
+                Number(withdrawalAmount) > Number(balanceData?.balance || 0) ||
+                (!user?.bankName && !user?.accountNumber)
+              }
+              data-testid="button-withdrawal-submit"
+              onClick={async () => {
+                if (!user?.bankName && !user?.accountNumber) { toast.error('출금 계좌를 먼저 등록해주세요'); return; }
+                if (!withdrawalAmount || Number(withdrawalAmount) <= 0) { toast.error('금액을 입력해주세요'); return; }
+                if (Number(withdrawalAmount) < 10000) { toast.error('최소 출금금액은 10,000원입니다'); return; }
+                if (Number(withdrawalAmount) > Number(balanceData?.balance || 0)) { toast.error('보유금액을 초과할 수 없습니다'); return; }
+                setWithdrawalSubmitting(true);
+                try {
+                  const res = await fetch('/api/transactions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type: 'withdrawal', amount: withdrawalAmount }),
+                  });
+                  const data = await res.json();
+                  if (!res.ok) throw new Error(data.error || '요청에 실패했습니다');
+                  setWithdrawalSuccessAmount(withdrawalAmount);
+                  setShowWithdrawalPageModal(false);
+                  setWithdrawalAmount('');
+                  refetchBalance();
+                  setShowWithdrawalSuccessModal(true);
+                } catch (err: any) {
+                  toast.error(err.message || '요청에 실패했습니다');
+                } finally {
+                  setWithdrawalSubmitting(false);
                 }
-                data-testid="button-withdrawal-submit"
-                onClick={async () => {
-                  if (!user?.bankName && !user?.accountNumber) { toast.error('출금 계좌를 먼저 등록해주세요'); return; }
-                  if (!withdrawalAmount || Number(withdrawalAmount) <= 0) { toast.error('금액을 입력해주세요'); return; }
-                  if (Number(withdrawalAmount) < 10000) { toast.error('최소 출금금액은 10,000원입니다'); return; }
-                  if (Number(withdrawalAmount) > Number(balanceData?.balance || 0)) { toast.error('보유금액을 초과할 수 없습니다'); return; }
-                  setWithdrawalSubmitting(true);
-                  try {
-                    const res = await fetch('/api/transactions', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ type: 'withdrawal', amount: withdrawalAmount }),
-                    });
-                    const data = await res.json();
-                    if (!res.ok) throw new Error(data.error || '요청에 실패했습니다');
-                    setWithdrawalSuccessAmount(withdrawalAmount);
-                    setShowWithdrawalPageModal(false);
-                    setWithdrawalAmount('');
-                    refetchBalance();
-                    setShowWithdrawalSuccessModal(true);
-                  } catch (err: any) {
-                    toast.error(err.message || '요청에 실패했습니다');
-                  } finally {
-                    setWithdrawalSubmitting(false);
-                  }
-                }}
-              >
-                {withdrawalSubmitting ? '처리중...' : '출금신청'}
-              </Button>
+              }}
+            >
+              {withdrawalSubmitting ? '처리중...' : '출금신청'}
+            </Button>
 
-              {/* 최근 출금 내역 */}
-              <div className="mt-4">
-                <h3 className="text-sm font-bold text-gray-300 mb-3">최근 출금 내역</h3>
-                {(() => {
-                  const withdrawalHistory = (myTransactions || []).filter((t: any) => t.type === 'withdrawal').slice(0, 5);
-                  if (withdrawalHistory.length === 0) {
-                    return <p className="text-gray-500 text-xs text-center py-4">출금 내역이 없습니다</p>;
-                  }
-                  return (
-                    <div className="rounded-lg overflow-hidden border border-white/10">
-                      <table className="w-full text-xs">
-                        <thead>
-                          <tr className="bg-white/5">
-                            <th className="text-left text-gray-400 px-3 py-2">신청금액</th>
-                            <th className="text-center text-gray-400 px-3 py-2">상태</th>
-                            <th className="text-right text-gray-400 px-3 py-2">신청일</th>
+            {/* 최근 출금 내역 */}
+            <div className="mt-4">
+              <h3 className="text-sm font-bold text-gray-700 mb-3">최근 출금 내역</h3>
+              {(() => {
+                const withdrawalHistory = (myTransactions || []).filter((t: any) => t.type === 'withdrawal').slice(0, 5);
+                if (withdrawalHistory.length === 0) {
+                  return <p className="text-gray-400 text-xs text-center py-4">출금 내역이 없습니다</p>;
+                }
+                return (
+                  <div className="rounded-xl overflow-hidden border border-gray-200">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="bg-gray-50">
+                          <th className="text-left text-gray-500 px-3 py-2 font-medium">신청금액</th>
+                          <th className="text-center text-gray-500 px-3 py-2 font-medium">상태</th>
+                          <th className="text-right text-gray-500 px-3 py-2 font-medium">신청일</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {withdrawalHistory.map((t: any) => (
+                          <tr key={t.id} className="border-t border-gray-100">
+                            <td className="px-3 py-2 text-gray-900 font-medium">{Number(t.amount).toLocaleString()}원</td>
+                            <td className="px-3 py-2 text-center">
+                              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                                t.status === 'approved' ? 'bg-green-100 text-green-700' :
+                                t.status === 'rejected' ? 'bg-red-100 text-red-600' :
+                                t.status === 'hold' ? 'bg-orange-100 text-orange-700' :
+                                'bg-amber-100 text-amber-700'
+                              }`}>
+                                {t.status === 'approved' ? '승인' : t.status === 'rejected' ? '거절' : t.status === 'hold' ? '보류' : '대기'}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2 text-right text-gray-400">
+                              {new Date(t.createdAt).toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Seoul' })}
+                            </td>
                           </tr>
-                        </thead>
-                        <tbody>
-                          {withdrawalHistory.map((t: any) => (
-                            <tr key={t.id} className="border-t border-white/5">
-                              <td className="px-3 py-2 text-white font-medium">{Number(t.amount).toLocaleString()}원</td>
-                              <td className="px-3 py-2 text-center">
-                                <span className={`px-2 py-0.5 rounded-full text-xs ${
-                                  t.status === 'approved' ? 'bg-green-500/20 text-green-400' :
-                                  t.status === 'rejected' ? 'bg-red-500/20 text-red-400' :
-                                  t.status === 'hold' ? 'bg-orange-500/20 text-orange-400' :
-                                  'bg-yellow-500/20 text-yellow-400'
-                                }`}>
-                                  {t.status === 'approved' ? '승인' : t.status === 'rejected' ? '거절' : t.status === 'hold' ? '보류' : '대기'}
-                                </span>
-                              </td>
-                              <td className="px-3 py-2 text-right text-gray-400">
-                                {new Date(t.createdAt).toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Seoul' })}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  );
-                })()}
-              </div>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </DialogContent>
@@ -2456,169 +2326,166 @@ export default function Landing() {
       <Dialog open={showCustomerServiceModal} onOpenChange={setShowCustomerServiceModal}>
         <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden">
           <DialogTitle className="sr-only">고객센터</DialogTitle>
-          <div className="relative">
-            <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/20 via-amber-500/20 to-amber-500/20 rounded-2xl blur-xl" />
-            <div className="relative backdrop-blur-xl bg-[#1C1008]/95 border border-white/10 rounded-2xl p-6 shadow-2xl">
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-2xl">
+            <button 
+              onClick={() => setShowCustomerServiceModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 transition-colors z-10"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <div className="text-center mb-6">
+              <div className="flex items-center justify-center gap-2 mb-3">
+                <Headphones className="w-8 h-8 text-gray-700" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-1">고객센터</h2>
+              <p className="text-gray-500 text-sm">문의를 남기시면 빠르게 답변드립니다</p>
+            </div>
+
+            <div className="space-y-3">
+              {/* 문의 작성하기 */}
               <button 
-                onClick={() => setShowCustomerServiceModal(false)}
-                className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
+                className="w-full block bg-amber-50 border border-amber-200 rounded-xl p-4 hover:border-amber-400 transition-colors cursor-pointer text-left"
+                onClick={() => {
+                  if (!user) {
+                    toast.error("로그인이 필요합니다");
+                    setShowCustomerServiceModal(false);
+                    setShowLoginModal(true);
+                    return;
+                  }
+                  const hasPending = myInquiries.some(inq => inq.status === 'pending');
+                  if (hasPending) {
+                    toast.error("이전 문의에 답변이 완료된 후 새로운 문의를 작성할 수 있습니다.");
+                    return;
+                  }
+                  setShowCustomerServiceModal(false);
+                  setShowInquiryFormModal(true);
+                }}
               >
-                <X className="w-5 h-5" />
-              </button>
-              
-              <div className="text-center mb-6">
-                <div className="flex items-center justify-center gap-2 mb-3">
-                  <Headphones className="w-8 h-8 text-amber-500" />
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
+                    <FileText className="w-6 h-6 text-amber-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-gray-900 font-medium">문의 작성하기</h3>
+                    <p className="text-amber-600 text-sm">새로운 문의를 작성합니다</p>
+                    <p className="text-gray-400 text-xs">빠른 답변 보장</p>
+                  </div>
+                  <div className="text-gray-400">
+                    <ChevronRight className="w-5 h-5" />
+                  </div>
                 </div>
-                <h2 className="text-2xl font-bold text-white mb-1">고객센터</h2>
-                <p className="text-gray-400 text-sm">문의를 남기시면 빠르게 답변드립니다</p>
-              </div>
+              </button>
 
-              <div className="space-y-3">
-                {/* 문의 작성하기 */}
-                <button 
-                  className="w-full block bg-gradient-to-r from-amber-500/10 to-amber-500/10 border border-amber-500/30 rounded-xl p-4 hover:border-amber-500/50 transition-colors cursor-pointer text-left"
-                  onClick={() => {
-                    if (!user) {
-                      toast.error("로그인이 필요합니다");
-                      setShowCustomerServiceModal(false);
-                      setShowLoginModal(true);
-                      return;
-                    }
-                    const hasPending = myInquiries.some(inq => inq.status === 'pending');
-                    if (hasPending) {
-                      toast.error("이전 문의에 답변이 완료된 후 새로운 문의를 작성할 수 있습니다.");
-                      return;
-                    }
+              {/* 내 문의 내역 */}
+              <button 
+                className="w-full block bg-gray-50 border border-gray-200 rounded-xl p-4 hover:border-gray-400 transition-colors cursor-pointer text-left"
+                onClick={() => {
+                  if (!user) {
+                    toast.error("로그인이 필요합니다");
                     setShowCustomerServiceModal(false);
-                    setShowInquiryFormModal(true);
-                  }}
+                    setShowLoginModal(true);
+                    return;
+                  }
+                  setShowCustomerServiceModal(false);
+                  setShowMyInquiriesModal(true);
+                }}
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+                    <MessageCircle className="w-6 h-6 text-gray-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-gray-900 font-medium">내 문의 내역</h3>
+                    <p className="text-gray-600 text-sm">작성한 문의와 답변 확인</p>
+                    <p className="text-gray-400 text-xs">{myInquiries.length}건의 문의</p>
+                  </div>
+                  <div className="text-gray-400">
+                    <ChevronRight className="w-5 h-5" />
+                  </div>
+                </div>
+              </button>
+
+              {/* 입출금 내역 */}
+              <button
+                className="w-full block bg-gray-50 border border-gray-200 rounded-xl p-4 hover:border-gray-400 transition-colors cursor-pointer text-left"
+                onClick={() => {
+                  if (!user) {
+                    toast.error("로그인이 필요합니다");
+                    setShowCustomerServiceModal(false);
+                    setShowLoginModal(true);
+                    return;
+                  }
+                  setShowCustomerServiceModal(false);
+                  refetchTransactions().then(() => setShowTransactionsModal(true));
+                }}
+                data-testid="button-my-transactions"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+                    <History className="w-6 h-6 text-gray-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-gray-900 font-medium">입출금 내역</h3>
+                    <p className="text-gray-600 text-sm">입금·출금 신청 및 처리 현황</p>
+                    <p className="text-gray-400 text-xs">{myTransactions.length}건의 거래 내역</p>
+                  </div>
+                  <div className="text-gray-400">
+                    <ChevronRight className="w-5 h-5" />
+                  </div>
+                </div>
+              </button>
+
+              {/* 고객센터 (텔레그램) */}
+              {telegramData?.telegramLink && (
+                <a 
+                  href={telegramData.telegramLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full block bg-sky-50 border border-sky-200 rounded-xl p-4 hover:border-sky-400 transition-colors cursor-pointer text-left"
+                  onClick={() => setShowCustomerServiceModal(false)}
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-amber-500/20 rounded-full flex items-center justify-center">
-                      <FileText className="w-6 h-6 text-amber-500" />
+                    <div className="w-12 h-12 bg-sky-100 rounded-full flex items-center justify-center">
+                      <Phone className="w-6 h-6 text-sky-600" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-white font-medium">문의 작성하기</h3>
-                      <p className="text-amber-400 text-sm">새로운 문의를 작성합니다</p>
-                      <p className="text-gray-400 text-xs">빠른 답변 보장</p>
+                      <h3 className="text-gray-900 font-medium">텔레그램 고객센터</h3>
+                      <p className="text-sky-600 text-sm">텔레그램으로 바로 문의</p>
+                      <p className="text-gray-400 text-xs">실시간 상담 가능</p>
                     </div>
-                    <div className="text-amber-500">
+                    <div className="text-gray-400">
                       <ChevronRight className="w-5 h-5" />
                     </div>
                   </div>
-                </button>
+                </a>
+              )}
 
-                {/* 내 문의 내역 */}
-                <button 
-                  className="w-full block bg-white/5 border border-white/10 rounded-xl p-4 hover:border-amber-500/50 transition-colors cursor-pointer text-left"
-                  onClick={() => {
-                    if (!user) {
-                      toast.error("로그인이 필요합니다");
-                      setShowCustomerServiceModal(false);
-                      setShowLoginModal(true);
-                      return;
-                    }
-                    setShowCustomerServiceModal(false);
-                    setShowMyInquiriesModal(true);
-                  }}
+              {/* 고객센터 (카카오톡) */}
+              {kakaoData?.kakaoLink && (
+                <a 
+                  href={kakaoData.kakaoLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full block bg-yellow-50 border border-yellow-200 rounded-xl p-4 hover:border-yellow-400 transition-colors cursor-pointer text-left"
+                  onClick={() => setShowCustomerServiceModal(false)}
+                  data-testid="link-kakao"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-amber-500/20 rounded-full flex items-center justify-center">
-                      <MessageCircle className="w-6 h-6 text-amber-500" />
+                    <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                      <MessageCircle className="w-6 h-6 text-yellow-600" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-white font-medium">내 문의 내역</h3>
-                      <p className="text-amber-400 text-sm">작성한 문의와 답변 확인</p>
-                      <p className="text-gray-400 text-xs">{myInquiries.length}건의 문의</p>
+                      <h3 className="text-gray-900 font-medium">카카오톡 고객센터</h3>
+                      <p className="text-yellow-600 text-sm">카카오톡으로 바로 문의</p>
+                      <p className="text-gray-400 text-xs">실시간 상담 가능</p>
                     </div>
-                    <div className="text-amber-500">
+                    <div className="text-gray-400">
                       <ChevronRight className="w-5 h-5" />
                     </div>
                   </div>
-                </button>
-
-                {/* 입출금 내역 */}
-                <button
-                  className="w-full block bg-white/5 border border-white/10 rounded-xl p-4 hover:border-amber-500/50 transition-colors cursor-pointer text-left"
-                  onClick={() => {
-                    if (!user) {
-                      toast.error("로그인이 필요합니다");
-                      setShowCustomerServiceModal(false);
-                      setShowLoginModal(true);
-                      return;
-                    }
-                    setShowCustomerServiceModal(false);
-                    refetchTransactions().then(() => setShowTransactionsModal(true));
-                  }}
-                  data-testid="button-my-transactions"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-amber-500/20 rounded-full flex items-center justify-center">
-                      <History className="w-6 h-6 text-amber-400" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-white font-medium">입출금 내역</h3>
-                      <p className="text-amber-400 text-sm">입금·출금 신청 및 처리 현황</p>
-                      <p className="text-gray-400 text-xs">{myTransactions.length}건의 거래 내역</p>
-                    </div>
-                    <div className="text-amber-400">
-                      <ChevronRight className="w-5 h-5" />
-                    </div>
-                  </div>
-                </button>
-
-                {/* 고객센터 (텔레그램) */}
-                {telegramData?.telegramLink && (
-                  <a 
-                    href={telegramData.telegramLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full block bg-gradient-to-r from-sky-500/10 to-cyan-500/10 border border-sky-500/30 rounded-xl p-4 hover:border-sky-500/50 transition-colors cursor-pointer text-left"
-                    onClick={() => setShowCustomerServiceModal(false)}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-sky-500/20 rounded-full flex items-center justify-center">
-                        <Phone className="w-6 h-6 text-sky-500" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="text-white font-medium">텔레그램 고객센터</h3>
-                        <p className="text-sky-400 text-sm">텔레그램으로 바로 문의</p>
-                        <p className="text-gray-400 text-xs">실시간 상담 가능</p>
-                      </div>
-                      <div className="text-sky-500">
-                        <ChevronRight className="w-5 h-5" />
-                      </div>
-                    </div>
-                  </a>
-                )}
-
-                {/* 고객센터 (카카오톡) */}
-                {kakaoData?.kakaoLink && (
-                  <a 
-                    href={kakaoData.kakaoLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full block bg-gradient-to-r from-yellow-500/10 to-amber-500/10 border border-yellow-500/30 rounded-xl p-4 hover:border-yellow-500/50 transition-colors cursor-pointer text-left"
-                    onClick={() => setShowCustomerServiceModal(false)}
-                    data-testid="link-kakao"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-yellow-500/20 rounded-full flex items-center justify-center">
-                        <MessageCircle className="w-6 h-6 text-yellow-500" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="text-white font-medium">카카오톡 고객센터</h3>
-                        <p className="text-yellow-400 text-sm">카카오톡으로 바로 문의</p>
-                        <p className="text-gray-400 text-xs">실시간 상담 가능</p>
-                      </div>
-                      <div className="text-yellow-500">
-                        <ChevronRight className="w-5 h-5" />
-                      </div>
-                    </div>
-                  </a>
-                )}
-              </div>
+                </a>
+              )}
             </div>
           </div>
         </DialogContent>
@@ -2626,26 +2493,26 @@ export default function Landing() {
 
       {/* Withdrawal Success Modal */}
       <AlertDialog open={showWithdrawalSuccessModal} onOpenChange={setShowWithdrawalSuccessModal}>
-        <AlertDialogContent className="bg-[#1C1008] border border-white/10">
+        <AlertDialogContent className="bg-white border border-gray-200">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white flex items-center gap-2">
-              <div className="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center">
-                <Check className="w-5 h-5 text-green-500" />
+            <AlertDialogTitle className="text-gray-900 flex items-center gap-2">
+              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                <Check className="w-5 h-5 text-green-600" />
               </div>
               출금 신청 완료
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-gray-400 space-y-3">
+            <AlertDialogDescription className="text-gray-600 space-y-3">
               <p className="text-lg">
-                <span className="text-green-400 font-bold">{Number(withdrawalSuccessAmount).toLocaleString()}원</span> 출금 신청이 완료되었습니다.
+                <span className="text-green-600 font-bold">{Number(withdrawalSuccessAmount).toLocaleString()}원</span> 출금 신청이 완료되었습니다.
               </p>
               <p>처리까지 약 30분이 소요됩니다.</p>
-              <p className="text-sm text-gray-500">가입 시 등록한 계좌로 입금됩니다.</p>
+              <p className="text-sm text-gray-400">가입 시 등록한 계좌로 입금됩니다.</p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogAction 
               onClick={() => setShowWithdrawalSuccessModal(false)}
-              className="bg-gradient-to-r from-amber-500 to-amber-500 hover:from-amber-600 hover:to-amber-600 text-white"
+              className="bg-gray-900 hover:bg-gray-800 text-white"
             >
               확인
             </AlertDialogAction>
@@ -2657,79 +2524,76 @@ export default function Landing() {
       <Dialog open={showInquiryFormModal} onOpenChange={setShowInquiryFormModal}>
         <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden">
           <DialogTitle className="sr-only">문의 작성</DialogTitle>
-          <div className="relative">
-            <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/20 via-amber-500/20 to-amber-500/20 rounded-2xl blur-xl" />
-            <div className="relative backdrop-blur-xl bg-[#1C1008]/95 border border-white/10 rounded-2xl p-6 shadow-2xl">
-              <button 
-                onClick={() => setShowInquiryFormModal(false)}
-                className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
-              >
-                <X className="w-5 h-5" />
-              </button>
-              
-              <div className="text-center mb-6">
-                <div className="flex items-center justify-center gap-2 mb-3">
-                  <FileText className="w-8 h-8 text-amber-500" />
-                </div>
-                <h2 className="text-2xl font-bold text-white mb-1">문의 작성</h2>
-                <p className="text-gray-400 text-sm">문의를 남기시면 빠르게 답변드립니다</p>
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-2xl">
+            <button 
+              onClick={() => setShowInquiryFormModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 transition-colors z-10"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <div className="text-center mb-6">
+              <div className="flex items-center justify-center gap-2 mb-3">
+                <FileText className="w-8 h-8 text-gray-700" />
               </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-1">문의 작성</h2>
+              <p className="text-gray-500 text-sm">문의를 남기시면 빠르게 답변드립니다</p>
+            </div>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">제목</label>
-                  <input
-                    type="text"
-                    placeholder="문의 제목을 입력해주세요"
-                    value={inquiryTitle}
-                    onChange={(e) => setInquiryTitle(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-amber-500"
-                    data-testid="input-inquiry-title"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">내용</label>
-                  <textarea
-                    placeholder="문의 내용을 자세히 작성해주세요"
-                    value={inquiryContent}
-                    onChange={(e) => setInquiryContent(e.target.value)}
-                    rows={5}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-amber-500 resize-none"
-                    data-testid="input-inquiry-content"
-                  />
-                </div>
-                <Button
-                  className="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3"
-                  disabled={inquirySubmitting || !inquiryTitle.trim() || !inquiryContent.trim()}
-                  onClick={async () => {
-                    try {
-                      setInquirySubmitting(true);
-                      const res = await fetch('/api/inquiries', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ title: inquiryTitle, content: inquiryContent }),
-                      });
-                      const data = await res.json();
-                      if (!res.ok) {
-                        throw new Error(data.error || '문의 등록에 실패했습니다');
-                      }
-                      toast.success('문의가 등록되었습니다. 빠른 시일 내에 답변드리겠습니다.');
-                      setInquiryTitle('');
-                      setInquiryContent('');
-                      setShowInquiryFormModal(false);
-                      refetchInquiries();
-                      setShowMyInquiriesModal(true);
-                    } catch (error: any) {
-                      toast.error(error.message || '문의 등록에 실패했습니다');
-                    } finally {
-                      setInquirySubmitting(false);
-                    }
-                  }}
-                  data-testid="button-submit-inquiry"
-                >
-                  {inquirySubmitting ? '등록 중...' : '문의 등록하기'}
-                </Button>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm text-gray-700 mb-2">제목</label>
+                <input
+                  type="text"
+                  placeholder="문의 제목을 입력해주세요"
+                  value={inquiryTitle}
+                  onChange={(e) => setInquiryTitle(e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-900"
+                  data-testid="input-inquiry-title"
+                />
               </div>
+              <div>
+                <label className="block text-sm text-gray-700 mb-2">내용</label>
+                <textarea
+                  placeholder="문의 내용을 자세히 작성해주세요"
+                  value={inquiryContent}
+                  onChange={(e) => setInquiryContent(e.target.value)}
+                  rows={5}
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-900 resize-none"
+                  data-testid="input-inquiry-content"
+                />
+              </div>
+              <Button
+                className="w-full bg-gray-900 hover:bg-gray-800 text-white font-semibold py-3 rounded-xl"
+                disabled={inquirySubmitting || !inquiryTitle.trim() || !inquiryContent.trim()}
+                onClick={async () => {
+                  try {
+                    setInquirySubmitting(true);
+                    const res = await fetch('/api/inquiries', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ title: inquiryTitle, content: inquiryContent }),
+                    });
+                    const data = await res.json();
+                    if (!res.ok) {
+                      throw new Error(data.error || '문의 등록에 실패했습니다');
+                    }
+                    toast.success('문의가 등록되었습니다. 빠른 시일 내에 답변드리겠습니다.');
+                    setInquiryTitle('');
+                    setInquiryContent('');
+                    setShowInquiryFormModal(false);
+                    refetchInquiries();
+                    setShowMyInquiriesModal(true);
+                  } catch (error: any) {
+                    toast.error(error.message || '문의 등록에 실패했습니다');
+                  } finally {
+                    setInquirySubmitting(false);
+                  }
+                }}
+                data-testid="button-submit-inquiry"
+              >
+                {inquirySubmitting ? '등록 중...' : '문의 등록하기'}
+              </Button>
             </div>
           </div>
         </DialogContent>
@@ -2739,95 +2603,92 @@ export default function Landing() {
       <Dialog open={showMyInquiriesModal} onOpenChange={setShowMyInquiriesModal}>
         <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden">
           <DialogTitle className="sr-only">내 문의 내역</DialogTitle>
-          <div className="relative">
-            <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/20 via-amber-500/20 to-amber-500/20 rounded-2xl blur-xl" />
-            <div className="relative backdrop-blur-xl bg-[#1C1008]/95 border border-white/10 rounded-2xl p-6 shadow-2xl max-h-[80vh] overflow-y-auto">
-              <button 
-                onClick={() => setShowMyInquiriesModal(false)}
-                className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
-              >
-                <X className="w-5 h-5" />
-              </button>
-              
-              <div className="text-center mb-6">
-                <div className="flex items-center justify-center gap-2 mb-3">
-                  <MessageCircle className="w-8 h-8 text-amber-500" />
-                </div>
-                <div className="flex items-center justify-center gap-2 mb-1">
-                  <h2 className="text-2xl font-bold text-white">내 문의 내역</h2>
-                  <button
-                    onClick={() => refetchInquiries()}
-                    className="p-1.5 text-gray-400 hover:text-amber-500 hover:bg-amber-500/10 rounded-lg transition-colors"
-                    title="새로고침"
-                    data-testid="button-refresh-inquiries"
-                  >
-                    <RefreshCw className="w-5 h-5" />
-                  </button>
-                </div>
-                <p className="text-gray-400 text-sm">총 {myInquiries.length}건의 문의</p>
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-2xl max-h-[80vh] overflow-y-auto">
+            <button 
+              onClick={() => setShowMyInquiriesModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 transition-colors z-10"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <div className="text-center mb-6">
+              <div className="flex items-center justify-center gap-2 mb-3">
+                <MessageCircle className="w-8 h-8 text-gray-700" />
               </div>
-
-              <div className="space-y-3">
-                {myInquiries.length === 0 ? (
-                  <p className="text-gray-500 text-sm py-8 text-center">등록된 문의가 없습니다</p>
-                ) : (
-                  myInquiries.map((inquiry) => (
-                    <div key={inquiry.id} className="bg-white/5 border border-white/10 rounded-xl p-4">
-                      <div className="flex items-start justify-between mb-2">
-                        <h3 className="text-white font-medium">{inquiry.title}</h3>
-                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                          inquiry.status === 'answered' 
-                            ? 'bg-red-500/20 text-red-400' 
-                            : 'bg-amber-500/20 text-yellow-400'
-                        }`}>
-                          {inquiry.status === 'answered' ? '답변완료' : '대기중'}
-                        </span>
-                      </div>
-                      <p className="text-gray-400 text-sm mb-2 whitespace-pre-wrap">{inquiry.content}</p>
-                      <p className="text-gray-500 text-xs mb-3">
-                        {new Date(inquiry.createdAt).toLocaleDateString('ko-KR', {
-                          year: 'numeric',
-                          month: '2-digit',
-                          day: '2-digit',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </p>
-                      
-                      {inquiry.reply && (
-                        <div className="mt-3 pt-3 border-t border-white/10">
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="text-amber-500 text-sm font-medium">고객센터</span>
-                            {inquiry.repliedAt && (
-                              <span className="text-gray-500 text-xs">
-                                {new Date(inquiry.repliedAt).toLocaleDateString('ko-KR', {
-                                  year: 'numeric',
-                                  month: '2-digit',
-                                  day: '2-digit',
-                                  hour: '2-digit',
-                                  minute: '2-digit'
-                                })}
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-gray-300 text-sm whitespace-pre-wrap bg-amber-500/10 p-3 rounded-lg">{inquiry.reply}</p>
-                        </div>
-                      )}
-                    </div>
-                  ))
-                )}
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <h2 className="text-2xl font-bold text-gray-900">내 문의 내역</h2>
+                <button
+                  onClick={() => refetchInquiries()}
+                  className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                  title="새로고침"
+                  data-testid="button-refresh-inquiries"
+                >
+                  <RefreshCw className="w-5 h-5" />
+                </button>
               </div>
-              
-              <Button
-                className="w-full mt-4 bg-amber-500 hover:bg-amber-600 text-white font-semibold"
-                onClick={() => {
-                  setShowMyInquiriesModal(false);
-                  setShowInquiryFormModal(true);
-                }}
-              >
-                새 문의 작성하기
-              </Button>
+              <p className="text-gray-500 text-sm">총 {myInquiries.length}건의 문의</p>
             </div>
+
+            <div className="space-y-3">
+              {myInquiries.length === 0 ? (
+                <p className="text-gray-400 text-sm py-8 text-center">등록된 문의가 없습니다</p>
+              ) : (
+                myInquiries.map((inquiry) => (
+                  <div key={inquiry.id} className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <h3 className="text-gray-900 font-medium">{inquiry.title}</h3>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                        inquiry.status === 'answered' 
+                          ? 'bg-green-100 text-green-700' 
+                          : 'bg-amber-100 text-amber-700'
+                      }`}>
+                        {inquiry.status === 'answered' ? '답변완료' : '대기중'}
+                      </span>
+                    </div>
+                    <p className="text-gray-600 text-sm mb-2 whitespace-pre-wrap">{inquiry.content}</p>
+                    <p className="text-gray-400 text-xs mb-3">
+                      {new Date(inquiry.createdAt).toLocaleDateString('ko-KR', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                    
+                    {inquiry.reply && (
+                      <div className="mt-3 pt-3 border-t border-gray-200">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-gray-900 text-sm font-semibold">고객센터</span>
+                          {inquiry.repliedAt && (
+                            <span className="text-gray-400 text-xs">
+                              {new Date(inquiry.repliedAt).toLocaleDateString('ko-KR', {
+                                year: 'numeric',
+                                month: '2-digit',
+                                day: '2-digit',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-gray-700 text-sm whitespace-pre-wrap bg-amber-50 border border-amber-200 p-3 rounded-xl">{inquiry.reply}</p>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+            
+            <Button
+              className="w-full mt-4 bg-gray-900 hover:bg-gray-800 text-white font-semibold rounded-xl"
+              onClick={() => {
+                setShowMyInquiriesModal(false);
+                setShowInquiryFormModal(true);
+              }}
+            >
+              새 문의 작성하기
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -2836,118 +2697,115 @@ export default function Landing() {
       <Dialog open={showTransactionsModal} onOpenChange={(open) => { setShowTransactionsModal(open); if (open) refetchTransactions(); }}>
         <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden">
           <DialogTitle className="sr-only">입출금 내역</DialogTitle>
-          <div className="relative">
-            <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-500/20 rounded-2xl blur-xl" />
-            <div className="relative backdrop-blur-xl bg-[#1C1008]/95 border border-white/10 rounded-2xl p-6 shadow-2xl max-h-[85vh] flex flex-col">
-              <button
-                onClick={() => setShowTransactionsModal(false)}
-                className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
-              >
-                <X className="w-5 h-5" />
-              </button>
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-2xl max-h-[85vh] flex flex-col">
+            <button
+              onClick={() => setShowTransactionsModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 transition-colors z-10"
+            >
+              <X className="w-5 h-5" />
+            </button>
 
-              {/* Header */}
-              <div className="text-center mb-5">
-                <div className="flex items-center justify-center gap-2 mb-3">
-                  <History className="w-8 h-8 text-amber-500" />
-                </div>
-                <div className="flex items-center justify-center gap-2 mb-1">
-                  <h2 className="text-2xl font-bold text-white">입출금 내역</h2>
-                  <button
-                    onClick={() => refetchTransactions()}
-                    className="p-1.5 text-gray-400 hover:text-amber-500 hover:bg-amber-500/10 rounded-lg transition-colors"
-                    title="새로고침"
-                  >
-                    <RefreshCw className="w-5 h-5" />
-                  </button>
-                </div>
-                <p className="text-gray-400 text-sm">총 {myTransactions.length}건의 거래 내역</p>
+            {/* Header */}
+            <div className="text-center mb-5">
+              <div className="flex items-center justify-center gap-2 mb-3">
+                <History className="w-8 h-8 text-gray-700" />
               </div>
-
-              {/* Filter Tabs */}
-              <div className="flex gap-2 mb-4">
-                {(['all', 'deposit', 'withdrawal'] as const).map((f) => (
-                  <button
-                    key={f}
-                    onClick={() => setTransactionFilter(f)}
-                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
-                      transactionFilter === f
-                        ? 'bg-amber-500 text-white'
-                        : 'bg-white/5 text-gray-400 hover:bg-white/10'
-                    }`}
-                    data-testid={`tab-transaction-${f}`}
-                  >
-                    {f === 'all' ? '전체' : f === 'deposit' ? '입금' : '출금'}
-                  </button>
-                ))}
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <h2 className="text-2xl font-bold text-gray-900">입출금 내역</h2>
+                <button
+                  onClick={() => refetchTransactions()}
+                  className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                  title="새로고침"
+                >
+                  <RefreshCw className="w-5 h-5" />
+                </button>
               </div>
+              <p className="text-gray-500 text-sm">총 {myTransactions.length}건의 거래 내역</p>
+            </div>
 
-              {/* List */}
-              <div className="overflow-y-auto flex-1 space-y-3 pr-1">
-                {(() => {
-                  const filtered = myTransactions.filter((t: any) =>
-                    transactionFilter === 'all' || t.type === transactionFilter
+            {/* Filter Tabs */}
+            <div className="flex gap-2 mb-4">
+              {(['all', 'deposit', 'withdrawal'] as const).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setTransactionFilter(f)}
+                  className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all ${
+                    transactionFilter === f
+                      ? 'bg-gray-900 text-white'
+                      : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                  }`}
+                  data-testid={`tab-transaction-${f}`}
+                >
+                  {f === 'all' ? '전체' : f === 'deposit' ? '입금' : '출금'}
+                </button>
+              ))}
+            </div>
+
+            {/* List */}
+            <div className="overflow-y-auto flex-1 space-y-3 pr-1">
+              {(() => {
+                const filtered = myTransactions.filter((t: any) =>
+                  transactionFilter === 'all' || t.type === transactionFilter
+                );
+                if (filtered.length === 0) {
+                  return (
+                    <div className="text-center py-12 text-gray-400">
+                      <History className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                      <p className="text-sm">거래 내역이 없습니다</p>
+                    </div>
                   );
-                  if (filtered.length === 0) {
-                    return (
-                      <div className="text-center py-12 text-gray-500">
-                        <History className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                        <p className="text-sm">거래 내역이 없습니다</p>
-                      </div>
-                    );
-                  }
-                  const statusMap: Record<string, { label: string; color: string; icon: JSX.Element }> = {
-                    pending: { label: '대기중', color: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30', icon: <Clock className="w-3 h-3" /> },
-                    approved: { label: '승인', color: 'text-green-400 bg-green-500/10 border-green-500/30', icon: <CheckCircle className="w-3 h-3" /> },
-                    rejected: { label: '거절', color: 'text-red-400 bg-red-500/10 border-red-500/30', icon: <XCircle className="w-3 h-3" /> },
-                    hold: { label: '보류', color: 'text-orange-400 bg-orange-500/10 border-orange-500/30', icon: <Clock className="w-3 h-3" /> },
-                  };
-                  return filtered.map((tx: any) => {
-                    const isDeposit = tx.type === 'deposit';
-                    const status = statusMap[tx.status] || statusMap.pending;
-                    return (
-                      <div key={tx.id} className="bg-white/5 border border-white/10 rounded-xl p-4" data-testid={`tx-item-${tx.id}`}>
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            {isDeposit
-                              ? <ArrowDownCircle className="w-5 h-5 text-blue-400" />
-                              : <ArrowUpCircle className="w-5 h-5 text-red-400" />
-                            }
-                            <span className={`font-semibold text-base ${isDeposit ? 'text-blue-400' : 'text-red-400'}`}>
-                              {isDeposit ? '입금' : '출금'}
-                            </span>
-                          </div>
-                          <span className={`flex items-center gap-1 text-xs px-2 py-1 rounded border ${status.color}`}>
-                            {status.icon}{status.label}
+                }
+                const statusMap: Record<string, { label: string; color: string; icon: JSX.Element }> = {
+                  pending: { label: '대기중', color: 'text-amber-700 bg-amber-100 border-amber-200', icon: <Clock className="w-3 h-3" /> },
+                  approved: { label: '승인', color: 'text-green-700 bg-green-100 border-green-200', icon: <CheckCircle className="w-3 h-3" /> },
+                  rejected: { label: '거절', color: 'text-red-600 bg-red-100 border-red-200', icon: <XCircle className="w-3 h-3" /> },
+                  hold: { label: '보류', color: 'text-orange-700 bg-orange-100 border-orange-200', icon: <Clock className="w-3 h-3" /> },
+                };
+                return filtered.map((tx: any) => {
+                  const isDeposit = tx.type === 'deposit';
+                  const status = statusMap[tx.status] || statusMap.pending;
+                  return (
+                    <div key={tx.id} className="bg-gray-50 border border-gray-200 rounded-xl p-4" data-testid={`tx-item-${tx.id}`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          {isDeposit
+                            ? <ArrowDownCircle className="w-5 h-5 text-blue-500" />
+                            : <ArrowUpCircle className="w-5 h-5 text-red-500" />
+                          }
+                          <span className={`font-semibold text-base ${isDeposit ? 'text-blue-600' : 'text-red-600'}`}>
+                            {isDeposit ? '입금' : '출금'}
                           </span>
                         </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-white font-bold text-lg">
-                            {Number(tx.amount).toLocaleString('ko-KR')}원
-                          </span>
-                          <span className="text-gray-500 text-xs">
-                            {new Date(tx.createdAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul',
-                              month: '2-digit', day: '2-digit',
-                              hour: '2-digit', minute: '2-digit'
-                            })}
-                          </span>
-                        </div>
-                        {tx.bankName && (
-                          <p className="text-gray-400 text-xs mt-1">
-                            {tx.bankName} · {tx.accountHolder} · {tx.accountNumber}
-                          </p>
-                        )}
-                        {tx.adminNote && (
-                          <div className="mt-2 pt-2 border-t border-white/10">
-                            <p className="text-amber-400 text-xs font-medium mb-0.5">관리자 메모</p>
-                            <p className="text-gray-300 text-xs">{tx.adminNote}</p>
-                          </div>
-                        )}
+                        <span className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full border font-medium ${status.color}`}>
+                          {status.icon}{status.label}
+                        </span>
                       </div>
-                    );
-                  });
-                })()}
-              </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-900 font-bold text-lg">
+                          {Number(tx.amount).toLocaleString('ko-KR')}원
+                        </span>
+                        <span className="text-gray-400 text-xs">
+                          {new Date(tx.createdAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul',
+                            month: '2-digit', day: '2-digit',
+                            hour: '2-digit', minute: '2-digit'
+                          })}
+                        </span>
+                      </div>
+                      {tx.bankName && (
+                        <p className="text-gray-500 text-xs mt-1">
+                          {tx.bankName} · {tx.accountHolder} · {tx.accountNumber}
+                        </p>
+                      )}
+                      {tx.adminNote && (
+                        <div className="mt-2 pt-2 border-t border-gray-200">
+                          <p className="text-amber-600 text-xs font-medium mb-0.5">관리자 메모</p>
+                          <p className="text-gray-700 text-xs">{tx.adminNote}</p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                });
+              })()}
             </div>
           </div>
         </DialogContent>
@@ -2957,84 +2815,81 @@ export default function Landing() {
       <Dialog open={showMessagesModal} onOpenChange={setShowMessagesModal}>
         <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden max-h-[90vh] overflow-y-auto">
           <DialogTitle className="sr-only">쪽지함</DialogTitle>
-          <div className="relative">
-            <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/20 via-cyan-500/20 to-amber-500/20 rounded-2xl blur-xl" />
-            <div className="relative backdrop-blur-xl bg-[#1C1008]/95 border border-white/10 rounded-2xl p-6 shadow-2xl">
-              <button 
-                onClick={() => { setShowMessagesModal(false); setSelectedMessage(null); }}
-                className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
-              >
-                <X className="w-5 h-5" />
-              </button>
-              
-              <div className="text-center mb-6">
-                <div className="flex items-center justify-center gap-2 mb-3">
-                  <Mail className="w-8 h-8 text-amber-500" />
-                </div>
-                <h2 className="text-2xl font-bold text-white mb-1">쪽지함</h2>
-                <p className="text-gray-400 text-sm">
-                  {selectedMessage ? '쪽지 내용' : `총 ${messages.length}건의 쪽지`}
-                </p>
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-2xl">
+            <button 
+              onClick={() => { setShowMessagesModal(false); setSelectedMessage(null); }}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 transition-colors z-10"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <div className="text-center mb-6">
+              <div className="flex items-center justify-center gap-2 mb-3">
+                <Mail className="w-8 h-8 text-gray-700" />
               </div>
-
-              {selectedMessage ? (
-                <div className="space-y-4">
-                  <button
-                    onClick={() => setSelectedMessage(null)}
-                    className="flex items-center gap-2 text-amber-400 hover:text-amber-300 text-sm"
-                  >
-                    <ChevronRight className="w-4 h-4 rotate-180" />
-                    목록으로 돌아가기
-                  </button>
-                  <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <h3 className="text-white font-medium text-lg">{selectedMessage.title}</h3>
-                    </div>
-                    <p className="text-gray-300 text-sm whitespace-pre-wrap break-words mb-3">{selectedMessage.content}</p>
-                    <p className="text-gray-500 text-xs">
-                      {new Date(selectedMessage.createdAt).toLocaleDateString('ko-KR', {
-                        year: 'numeric',
-                        month: '2-digit',
-                        day: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {messages.length === 0 ? (
-                    <p className="text-gray-500 text-sm py-8 text-center">받은 쪽지가 없습니다</p>
-                  ) : (
-                    messages.map((msg) => (
-                      <button
-                        key={msg.id}
-                        onClick={() => handleOpenMessage(msg)}
-                        className={`w-full text-left bg-white/5 border rounded-xl p-4 hover:border-amber-500/50 transition-colors ${msg.isRead ? 'border-white/10' : 'border-amber-500/30 bg-amber-500/10'}`}
-                      >
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            {!msg.isRead && <span className="w-2 h-2 bg-amber-500 rounded-full" />}
-                            <h3 className={`font-medium ${msg.isRead ? 'text-gray-400' : 'text-white'}`}>{msg.title}</h3>
-                          </div>
-                        </div>
-                        <p className="text-gray-400 text-sm line-clamp-2">{msg.content}</p>
-                        <p className="text-gray-500 text-xs mt-2">
-                          {new Date(msg.createdAt).toLocaleDateString('ko-KR', {
-                            year: 'numeric',
-                            month: '2-digit',
-                            day: '2-digit',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </p>
-                      </button>
-                    ))
-                  )}
-                </div>
-              )}
+              <h2 className="text-2xl font-bold text-gray-900 mb-1">쪽지함</h2>
+              <p className="text-gray-500 text-sm">
+                {selectedMessage ? '쪽지 내용' : `총 ${messages.length}건의 쪽지`}
+              </p>
             </div>
+
+            {selectedMessage ? (
+              <div className="space-y-4">
+                <button
+                  onClick={() => setSelectedMessage(null)}
+                  className="flex items-center gap-2 text-gray-700 hover:text-gray-900 text-sm font-medium"
+                >
+                  <ChevronRight className="w-4 h-4 rotate-180" />
+                  목록으로 돌아가기
+                </button>
+                <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <h3 className="text-gray-900 font-medium text-lg">{selectedMessage.title}</h3>
+                  </div>
+                  <p className="text-gray-700 text-sm whitespace-pre-wrap break-words mb-3">{selectedMessage.content}</p>
+                  <p className="text-gray-400 text-xs">
+                    {new Date(selectedMessage.createdAt).toLocaleDateString('ko-KR', {
+                      year: 'numeric',
+                      month: '2-digit',
+                      day: '2-digit',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {messages.length === 0 ? (
+                  <p className="text-gray-400 text-sm py-8 text-center">받은 쪽지가 없습니다</p>
+                ) : (
+                  messages.map((msg) => (
+                    <button
+                      key={msg.id}
+                      onClick={() => handleOpenMessage(msg)}
+                      className={`w-full text-left border rounded-xl p-4 hover:border-gray-400 transition-colors ${msg.isRead ? 'bg-gray-50 border-gray-200' : 'border-amber-300 bg-amber-50'}`}
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          {!msg.isRead && <span className="w-2 h-2 bg-amber-500 rounded-full" />}
+                          <h3 className={`font-medium ${msg.isRead ? 'text-gray-600' : 'text-gray-900'}`}>{msg.title}</h3>
+                        </div>
+                      </div>
+                      <p className="text-gray-500 text-sm line-clamp-2">{msg.content}</p>
+                      <p className="text-gray-400 text-xs mt-2">
+                        {new Date(msg.createdAt).toLocaleDateString('ko-KR', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
@@ -3043,78 +2898,75 @@ export default function Landing() {
       <Dialog open={showAnnouncementsModal} onOpenChange={(open) => { setShowAnnouncementsModal(open); if (!open) setSelectedAnnouncement(null); }}>
         <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden">
           <DialogTitle className="sr-only">공지사항</DialogTitle>
-          <div className="relative">
-            <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/20 via-amber-500/20 to-amber-500/20 rounded-2xl blur-xl" />
-            <div className="relative backdrop-blur-xl bg-[#1C1008]/95 border border-white/10 rounded-2xl p-6 shadow-2xl max-h-[80vh] overflow-y-auto">
-              <button 
-                onClick={() => { setShowAnnouncementsModal(false); setSelectedAnnouncement(null); }}
-                className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
-              >
-                <X className="w-5 h-5" />
-              </button>
-              
-              <div className="text-center mb-6">
-                <div className="flex items-center justify-center gap-2 mb-3">
-                  <Bell className="w-8 h-8 text-amber-500" />
-                </div>
-                <h2 className="text-2xl font-bold text-white mb-1">공지사항</h2>
-                <p className="text-gray-400 text-sm">
-                  {selectedAnnouncement ? '공지사항 상세' : '중요한 안내사항을 확인하세요'}
-                </p>
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-2xl max-h-[80vh] overflow-y-auto">
+            <button 
+              onClick={() => { setShowAnnouncementsModal(false); setSelectedAnnouncement(null); }}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 transition-colors z-10"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <div className="text-center mb-6">
+              <div className="flex items-center justify-center gap-2 mb-3">
+                <Bell className="w-8 h-8 text-gray-700" />
               </div>
-
-              {selectedAnnouncement ? (
-                <div className="space-y-4">
-                  <button
-                    onClick={() => setSelectedAnnouncement(null)}
-                    className="flex items-center gap-2 text-amber-400 hover:text-amber-300 text-sm"
-                  >
-                    <ChevronRight className="w-4 h-4 rotate-180" />
-                    목록으로 돌아가기
-                  </button>
-                  <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                    <div className="flex items-start gap-3 mb-2">
-                      {selectedAnnouncement.isPinned && (
-                        <span className="px-2 py-0.5 bg-amber-500/20 text-amber-500 rounded text-xs font-medium">고정</span>
-                      )}
-                      <h3 className="text-white font-medium text-lg">{selectedAnnouncement.title}</h3>
-                    </div>
-                    <p className="text-gray-500 text-xs mb-3">
-                      등록일: {new Date(selectedAnnouncement.displayDate || selectedAnnouncement.createdAt).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' })}
-                    </p>
-                    <p className="text-gray-300 text-sm whitespace-pre-wrap">{selectedAnnouncement.content}</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {announcements.length === 0 ? (
-                    <p className="text-gray-500 text-sm py-8 text-center">등록된 공지사항이 없습니다</p>
-                  ) : (
-                    announcements.map((ann) => (
-                      <button
-                        key={ann.id}
-                        onClick={() => setSelectedAnnouncement(ann)}
-                        className="w-full text-left bg-white/5 border border-white/10 rounded-xl p-4 hover:border-amber-500/50 transition-colors"
-                        data-testid={`announcement-item-${ann.id}`}
-                      >
-                        <div className="flex items-start gap-3">
-                          {ann.isPinned && (
-                            <span className="px-2 py-0.5 bg-amber-500/20 text-amber-500 rounded text-xs font-medium">고정</span>
-                          )}
-                          <div className="flex-1">
-                            <h3 className="text-white font-medium mb-1">{ann.title}</h3>
-                            <p className="text-gray-400 text-sm line-clamp-2">{ann.content}</p>
-                            <p className="text-gray-500 text-xs mt-1">
-                              {new Date(ann.displayDate || ann.createdAt).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' })}
-                            </p>
-                          </div>
-                        </div>
-                      </button>
-                    ))
-                  )}
-                </div>
-              )}
+              <h2 className="text-2xl font-bold text-gray-900 mb-1">공지사항</h2>
+              <p className="text-gray-500 text-sm">
+                {selectedAnnouncement ? '공지사항 상세' : '중요한 안내사항을 확인하세요'}
+              </p>
             </div>
+
+            {selectedAnnouncement ? (
+              <div className="space-y-4">
+                <button
+                  onClick={() => setSelectedAnnouncement(null)}
+                  className="flex items-center gap-2 text-gray-700 hover:text-gray-900 text-sm font-medium"
+                >
+                  <ChevronRight className="w-4 h-4 rotate-180" />
+                  목록으로 돌아가기
+                </button>
+                <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                  <div className="flex items-start gap-3 mb-2">
+                    {selectedAnnouncement.isPinned && (
+                      <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full text-xs font-medium">고정</span>
+                    )}
+                    <h3 className="text-gray-900 font-medium text-lg">{selectedAnnouncement.title}</h3>
+                  </div>
+                  <p className="text-gray-400 text-xs mb-3">
+                    등록일: {new Date(selectedAnnouncement.displayDate || selectedAnnouncement.createdAt).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' })}
+                  </p>
+                  <p className="text-gray-700 text-sm whitespace-pre-wrap">{selectedAnnouncement.content}</p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {announcements.length === 0 ? (
+                  <p className="text-gray-400 text-sm py-8 text-center">등록된 공지사항이 없습니다</p>
+                ) : (
+                  announcements.map((ann) => (
+                    <button
+                      key={ann.id}
+                      onClick={() => setSelectedAnnouncement(ann)}
+                      className="w-full text-left bg-gray-50 border border-gray-200 rounded-xl p-4 hover:border-gray-400 transition-colors"
+                      data-testid={`announcement-item-${ann.id}`}
+                    >
+                      <div className="flex items-start gap-3">
+                        {ann.isPinned && (
+                          <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full text-xs font-medium">고정</span>
+                        )}
+                        <div className="flex-1">
+                          <h3 className="text-gray-900 font-medium mb-1">{ann.title}</h3>
+                          <p className="text-gray-500 text-sm line-clamp-2">{ann.content}</p>
+                          <p className="text-gray-400 text-xs mt-1">
+                            {new Date(ann.displayDate || ann.createdAt).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' })}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
