@@ -953,7 +953,7 @@ export default function Landing() {
               </h1>
               <p className="text-white/70 text-lg md:text-xl mb-10 leading-relaxed max-w-lg" data-testid="text-hero-description">
                 비트코인, 이더리움, 금의 방향을 예측하고<br />
-                수익을 실현하세요. 3분·5분 단위 고수익 옵션거래.
+                수익을 실현하세요. 2분 단위 고수익 옵션거래.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button
@@ -1113,7 +1113,7 @@ export default function Landing() {
             {[
               { value: '24/7', label: '24시간 거래' },
               { value: '3종목', label: '글로벌 지수' },
-              { value: '3분·5분', label: '거래 시간' },
+              { value: '2분', label: '거래 시간' },
               { value: '즉시', label: '실시간 정산' },
             ].map((stat, i) => (
               <div key={i} className="flex flex-col items-center">

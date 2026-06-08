@@ -244,7 +244,7 @@ const SYMBOL_NAMES: Record<string, string> = {
 };
 
 const DURATION_NAMES: Record<number, string> = {
-  300: '5분',
+  120: '2분',
 };
 
 function AdminLogin() {
@@ -374,7 +374,7 @@ function AdminLogin() {
 // Round Forced Directions Tab Component
 function RoundForcedTab() {
   const [selectedSymbol, setSelectedSymbol] = useState<string>('BTC');
-  const [selectedDuration, setSelectedDuration] = useState<number>(300);
+  const [selectedDuration, setSelectedDuration] = useState<number>(120);
   const [timeLeft, setTimeLeft] = useState({ minutes: 0, seconds: 0 });
   const [currentRound, setCurrentRound] = useState(1);
   const [isToggling, setIsToggling] = useState(false);
@@ -724,7 +724,7 @@ function RoundForcedTab() {
             <div className="space-y-3">
               <label className="text-sm text-muted-foreground font-medium">시간 선택</label>
               <div className="flex gap-2">
-                {[300].map(d => (
+                {[120].map(d => (
                   <Button
                     key={d}
                     type="button"
@@ -1377,7 +1377,7 @@ export default function Admin() {
   // Forced betting states
   const [forcedBetUserId, setForcedBetUserId] = useState("");
   const [forcedBetSymbol, setForcedBetSymbol] = useState("BTC");
-  const [forcedBetDuration, setForcedBetDuration] = useState<number>(300);
+  const [forcedBetDuration, setForcedBetDuration] = useState<number>(120);
   const [forcedBetDirection, setForcedBetDirection] = useState<"long" | "short">("long");
   const [forcedBetAmount, setForcedBetAmount] = useState("");
   const [forcedBetUserSearch, setForcedBetUserSearch] = useState("");
@@ -4996,7 +4996,7 @@ export default function Admin() {
                 <div className="space-y-2">
                   <label className="text-sm text-muted-foreground">거래 시간 *</label>
                   <div className="flex gap-2">
-                    {[300].map(d => (
+                    {[120].map(d => (
                       <Button
                         key={d}
                         type="button"
@@ -5095,7 +5095,7 @@ export default function Admin() {
                       toast.success('강제 거래가 성공적으로 등록되었습니다');
                       setForcedBetUserId('');
                       setForcedBetSymbol('BTC');
-                      setForcedBetDuration(300);
+                      setForcedBetDuration(120);
                       setForcedBetDirection('long');
                       setForcedBetAmount('');
                       setForcedBetUserSearch('');

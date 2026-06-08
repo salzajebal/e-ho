@@ -597,8 +597,8 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Direction must be 'long' or 'short'" });
       }
 
-      if (![300].includes(duration)) {
-        return res.status(400).json({ error: "Duration must be 300 seconds" });
+      if (![120].includes(duration)) {
+        return res.status(400).json({ error: "Duration must be 120 seconds" });
       }
 
       const VALID_SYMBOLS = ['BTC', 'ETH', 'GOLD'];
@@ -2552,7 +2552,7 @@ export async function registerRoutes(
   app.get("/api/admin/global-forced", requireAdmin, async (req, res) => {
     try {
       const symbols = ['BTC', 'ETH', 'GOLD'];
-      const durations = [180, 300];
+      const durations = [120];
       const result: Record<string, string> = {};
       for (const sym of symbols) {
         for (const dur of durations) {

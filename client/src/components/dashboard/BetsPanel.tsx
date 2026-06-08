@@ -31,7 +31,7 @@ interface BetsPanelProps {
 function BetRow({ bet, currentPrice, onExpire }: { bet: Bet; currentPrice: number; onExpire: (price: number) => void }) {
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
   const [hasExpired, setHasExpired] = useState(false);
-  const betLockThreshold = bet.duration <= 60 ? 10 : bet.duration <= 180 ? 15 : 60;
+  const betLockThreshold = bet.duration <= 120 ? 15 : 20;
 
   useEffect(() => {
     const calculateRemaining = () => {

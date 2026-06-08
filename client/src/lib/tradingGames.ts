@@ -14,9 +14,9 @@ export const FINNHUB_TICKER_MAP: Record<ForexSymbol, string> = {
 };
 
 export const TRADING_GAMES = [
-  { id: 'BTC-300', symbol: 'BTC', duration: 300, label: '비트코인' },
-  { id: 'ETH-300', symbol: 'ETH', duration: 300, label: '이더리움' },
-  { id: 'GOLD-300', symbol: 'GOLD', duration: 300, label: '금' },
+  { id: 'BTC-120', symbol: 'BTC', duration: 120, label: '비트코인' },
+  { id: 'ETH-120', symbol: 'ETH', duration: 120, label: '이더리움' },
+  { id: 'GOLD-120', symbol: 'GOLD', duration: 120, label: '금' },
 ] as const;
 
 export type TradingGame = typeof TRADING_GAMES[number];
