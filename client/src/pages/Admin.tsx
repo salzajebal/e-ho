@@ -298,7 +298,7 @@ function AdminLogin() {
         <div className="text-center mb-8">
           <LearnInvestLogo variant="icon" size={64} className="rounded-xl mx-auto mb-4" />
           <h1 className="text-3xl font-bold text-white mb-2">
-            <span className="text-amber-400 font-bold">MIB</span>
+            <span className="text-amber-400 font-bold">GEMINI</span>
             <span className="text-white ml-2">관리자</span>
           </h1>
           <p className="text-gray-400 text-sm">관리자 계정으로 로그인하세요</p>
@@ -2980,7 +2980,7 @@ export default function Admin() {
       <div className="lg:hidden flex items-center justify-between p-3 bg-card border-b border-border sticky top-0 z-50">
         <div className="flex items-center gap-2">
           <LearnInvestLogo variant="icon" size={28} className="rounded-lg" />
-          <span className="font-bold text-sm text-amber-400">MIB</span>
+          <span className="font-bold text-sm text-amber-400">GEMINI</span>
           <span className="text-xs text-muted-foreground">관리자</span>
         </div>
         <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
@@ -3026,7 +3026,7 @@ export default function Admin() {
           <div className="flex items-center gap-2">
             <LearnInvestLogo variant="icon" size={32} className="rounded-lg" />
             <div>
-              <span className="font-bold text-lg text-amber-400">MIB</span>
+              <span className="font-bold text-lg text-amber-400">GEMINI</span>
             </div>
           </div>
           <p className="text-xs text-muted-foreground mt-1">관리자 패널</p>

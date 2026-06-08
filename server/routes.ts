@@ -432,9 +432,6 @@ export async function registerRoutes(
         return res.status(400).json({ error: "아이디와 비밀번호를 입력해주세요" });
       }
 
-      const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "gemi488";
-      const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "488153";
-      
       const user = await storage.getUserByUsername(username);
       
       // Only allow admin role users
@@ -442,8 +439,8 @@ export async function registerRoutes(
         return res.status(401).json({ error: "관리자 계정이 아닙니다" });
       }
 
-      // Check admin credentials
-      if (username !== ADMIN_USERNAME || password !== ADMIN_PASSWORD) {
+      // Check password against DB
+      if (user.password !== password) {
         return res.status(401).json({ error: "아이디 또는 비밀번호가 올바르지 않습니다" });
       }
 
