@@ -3247,6 +3247,18 @@ export default function Admin() {
             서버 점검
           </button>
           <button
+            onClick={() => setActiveTab('branches')}
+            className={cn(
+              "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+              activeTab === 'branches'
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+            )}
+          >
+            <Building2 className="w-4 h-4" />
+            지점코드 관리
+          </button>
+          <button
             onClick={() => setActiveTab('settings')}
             className={cn(
               "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
