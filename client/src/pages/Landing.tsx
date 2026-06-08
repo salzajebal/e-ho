@@ -1111,7 +1111,7 @@ export default function Landing() {
         <div className="absolute left-0 top-0 bottom-0 z-10 flex items-center pl-4 pr-8 bg-white border-r border-gray-200" style={{ minWidth: '148px' }}>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gray-900 flex items-center justify-center shrink-0">
-              <span className="text-white font-bold text-xs">G</span>
+              <LearnInvestLogo variant="icon" size={26} dark={true} />
             </div>
             <div>
               <p className="text-xs text-gray-500 leading-tight">실시간</p>
