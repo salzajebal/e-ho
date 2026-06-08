@@ -606,9 +606,9 @@ export default function Landing() {
             </Link>
             
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center gap-3">
+            <nav className="hidden md:flex items-center gap-1">
               <DropdownMenu>
-                <DropdownMenuTrigger className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium flex items-center gap-1 whitespace-nowrap" data-testid="nav-options-trading">
+                <DropdownMenuTrigger className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium flex items-center gap-1 px-2 py-1 rounded hover:bg-gray-100 whitespace-nowrap" data-testid="nav-options-trading">
                   옵션거래 <ChevronDown className="w-3 h-3" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="bg-white border-gray-100 shadow-xl">
@@ -631,78 +631,28 @@ export default function Landing() {
                 </DropdownMenuContent>
               </DropdownMenu>
               <button 
-                onClick={() => {
-                  if (user) {
-                    setShowHistoryModal(true);
-                  } else {
-                    setShowLoginModal(true);
-                  }
-                }}
-                className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium whitespace-nowrap" 
+                onClick={() => { if (user) { setShowHistoryModal(true); } else { setShowLoginModal(true); } }}
+                className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium px-2 py-1 rounded hover:bg-gray-100 whitespace-nowrap" 
                 data-testid="nav-trade-history"
-              >
-                거래내역
-              </button>
-              <button 
-                onClick={() => {
-                  if (!user) { setShowLoginModal(true); return; }
-                  if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 09:00 ~ 18:00 사이에만 가능합니다"); return; }
-                  setDepositAmount(''); setDepositSenderName(user?.name || user?.accountHolder || ''); setShowDepositPageModal(true);
-                }}
-                className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium whitespace-nowrap" 
-                data-testid="nav-deposit"
-              >
-                입금신청
-              </button>
-              <button 
-                onClick={() => {
-                  if (!user) { setShowLoginModal(true); return; }
-                  if ((user as any)?.isBettingBlocked) { toast.error("거래정지 해제 이후 다시 시도해 주세요."); return; }
-                  if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 09:00 ~ 18:00 사이에만 가능합니다"); return; }
-                  setWithdrawalAmount(''); setShowWithdrawalPageModal(true);
-                }}
-                className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium whitespace-nowrap" 
-                data-testid="nav-withdrawal"
-              >
-                출금신청
-              </button>
+              >거래내역</button>
               <button 
                 onClick={() => setShowAnnouncementsModal(true)}
-                className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium whitespace-nowrap" 
+                className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium px-2 py-1 rounded hover:bg-gray-100 whitespace-nowrap" 
                 data-testid="nav-announcements"
-              >
-                공지사항
-              </button>
-              {user && (
-                <button 
-                  onClick={openMyPage}
-                  className="text-gray-400 hover:text-white transition-colors text-sm font-medium whitespace-nowrap" 
-                  data-testid="nav-mypage"
-                >
-                  마이페이지
-                </button>
-              )}
+              >공지사항</button>
               <button 
                 onClick={() => setShowCustomerServiceModal(true)}
-                className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium whitespace-nowrap" 
+                className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium px-2 py-1 rounded hover:bg-gray-100 whitespace-nowrap" 
                 data-testid="nav-customer-service"
-              >
-                고객센터
-              </button>
+              >고객센터</button>
               <button 
-                onClick={() => {
-                  if (user) {
-                    setShowMessagesModal(true);
-                  } else {
-                    setShowLoginModal(true);
-                  }
-                }}
-                className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium whitespace-nowrap relative" 
+                onClick={() => { if (user) { setShowMessagesModal(true); } else { setShowLoginModal(true); } }}
+                className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium px-2 py-1 rounded hover:bg-gray-100 whitespace-nowrap relative" 
                 data-testid="nav-messages"
               >
                 쪽지함
                 {user && messages.filter(m => !m.isRead).length > 0 && (
-                  <span className="absolute -top-1 -right-3 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
                     {messages.filter(m => !m.isRead).length}
                   </span>
                 )}
@@ -715,71 +665,71 @@ export default function Landing() {
             {user ? (
               <>
                 {/* Balance Display */}
-                <div className="flex items-center gap-2 bg-gray-100 border border-gray-200 rounded-lg px-3 py-1.5">
-                  <Wallet className="w-4 h-4 text-gray-500" />
-                  <span className="text-gray-500 text-xs">보유금액</span>
+                <div className="flex items-center gap-1.5 bg-gray-100 border border-gray-200 rounded-lg px-2.5 py-1.5">
+                  <Wallet className="w-3.5 h-3.5 text-gray-500 shrink-0" />
                   <span className="text-gray-900 font-bold text-sm" data-testid="text-header-balance">
                     {balanceData?.balance ? Math.floor(parseFloat(balanceData.balance)).toLocaleString() : '0'}원
                   </span>
                 </div>
-                
-                {/* Deposit/Withdraw Buttons */}
-                <div className="flex items-center gap-1">
-                  <Button 
-                    variant="ghost"
-                    size="sm"
-                    className="text-green-600 hover:text-green-700 hover:bg-green-50 text-xs px-2"
-                    data-testid="button-header-deposit"
-                    onClick={() => { 
-                      if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 09:00 ~ 18:00 사이에만 가능합니다"); return; }
-                      setDepositAmount(''); setDepositSenderName(user?.name || user?.accountHolder || ''); setShowDepositPageModal(true);
-                    }}
-                  >
-                    입금
-                  </Button>
-                  <Button 
-                    variant="ghost"
-                    size="sm"
-                    className="text-red-500 hover:text-red-600 hover:bg-red-50 text-xs px-2"
-                    data-testid="button-header-withdraw"
-                    onClick={() => { 
-                      if ((user as any)?.isBettingBlocked) { toast.error("거래정지 해제 이후 다시 시도해 주세요."); return; }
-                      if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 09:00 ~ 18:00 사이에만 가능합니다"); return; }
-                      setWithdrawalAmount(''); setShowWithdrawalPageModal(true);
-                    }}
-                  >
-                    출금
-                  </Button>
-                </div>
 
-                <span className="text-gray-500 text-sm hidden lg:block">
-                  {user.username}님
-                </span>
+                {/* User Dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="gap-1 font-medium px-2 text-gray-700 hover:text-gray-900">
+                      {user.username}님 <ChevronDown className="w-3 h-3" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-44 bg-white border-gray-100 shadow-xl">
+                    <DropdownMenuItem
+                      data-testid="dropdown-deposit"
+                      className="text-green-600 cursor-pointer"
+                      onClick={() => {
+                        if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 09:00 ~ 18:00 사이에만 가능합니다"); return; }
+                        setDepositAmount(''); setDepositSenderName(user?.name || user?.accountHolder || ''); setShowDepositPageModal(true);
+                      }}
+                    >입금신청</DropdownMenuItem>
+                    <DropdownMenuItem
+                      data-testid="dropdown-withdraw"
+                      className="text-red-500 cursor-pointer"
+                      onClick={() => {
+                        if ((user as any)?.isBettingBlocked) { toast.error("거래정지 해제 이후 다시 시도해 주세요."); return; }
+                        if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 09:00 ~ 18:00 사이에만 가능합니다"); return; }
+                        setWithdrawalAmount(''); setShowWithdrawalPageModal(true);
+                      }}
+                    >출금신청</DropdownMenuItem>
+                    <DropdownMenuItem
+                      data-testid="dropdown-mypage"
+                      className="cursor-pointer"
+                      onClick={openMyPage}
+                    >마이페이지</DropdownMenuItem>
+                    {user.role === 'admin' && (
+                      <DropdownMenuItem
+                        className="cursor-pointer"
+                        onClick={() => setLocation("/admin")}
+                      >관리자 패널</DropdownMenuItem>
+                    )}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      data-testid="dropdown-logout"
+                      className="text-gray-500 cursor-pointer"
+                      onClick={() => logout.mutate()}
+                    >로그아웃</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
                 {user.role === 'admin' ? (
                   <Button 
-                    className="bg-gray-900 hover:bg-black text-white font-bold rounded-full px-5" 
+                    className="bg-gray-900 hover:bg-black text-white font-bold rounded-full px-4 text-sm" 
                     data-testid="button-header-admin"
                     onClick={() => setLocation("/admin")}
-                  >
-                    관리자
-                  </Button>
+                  >관리자</Button>
                 ) : (
                   <Button 
-                    className="bg-gray-900 hover:bg-black text-white font-bold rounded-full px-5" 
+                    className="bg-gray-900 hover:bg-black text-white font-bold rounded-full px-4 text-sm" 
                     data-testid="button-header-trade"
                     onClick={() => setLocation("/trade")}
-                  >
-                    거래하기
-                  </Button>
+                  >거래하기</Button>
                 )}
-                <Button 
-                  variant="ghost" 
-                  className="text-gray-500 hover:text-gray-900 hover:bg-gray-100" 
-                  data-testid="button-header-logout"
-                  onClick={() => logout.mutate()}
-                >
-                  로그아웃
-                </Button>
               </>
             ) : (
               <>
