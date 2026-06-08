@@ -981,10 +981,9 @@ export default function Landing() {
         {/* Real photo background */}
         <div className="absolute inset-0" style={{
           backgroundImage: 'url(/hero-bg.jpg)',
-          backgroundSize: '100% auto',
-          backgroundPosition: 'center top',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center center',
           backgroundRepeat: 'no-repeat',
-          backgroundColor: '#c9a0b8',
         }} />
         {/* Overlay for text readability */}
         <div className="absolute inset-0 bg-black/30" />
