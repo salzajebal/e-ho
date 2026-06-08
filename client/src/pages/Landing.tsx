@@ -977,14 +977,116 @@ export default function Landing() {
 
       {/* Hero Section - Gemini Style */}
       <section className="relative min-h-screen flex items-center overflow-hidden pt-16">
-        {/* Atmospheric background photo - like Gemini */}
+        {/* Atmospheric sky background — layered CSS + SVG clouds */}
+        {/* Layer 1: Base sky — blue-gray at top → warm amber at bottom */}
         <div className="absolute inset-0" style={{
-          backgroundImage: 'url(https://images.unsplash.com/photo-1504608524841-42584120d693?w=1920&q=80)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center top',
+          background: 'linear-gradient(180deg, #3d5068 0%, #4e6278 6%, #627a91 12%, #8a9daa 20%, #b8a080 30%, #cc8e60 42%, #c47a48 55%, #b06235 68%, #945028 80%, #7a4020 92%, #633318 100%)',
         }} />
-        {/* Subtle overlay for text readability */}
-        <div className="absolute inset-0 bg-black/35" />
+        {/* Layer 2: Moon glow — upper right area, soft warm white */}
+        <div className="absolute inset-0" style={{
+          background: 'radial-gradient(ellipse 18% 22% at 65% 14%, rgba(255,248,220,0.75) 0%, rgba(255,235,180,0.5) 30%, rgba(255,210,140,0.2) 60%, transparent 80%)',
+        }} />
+        {/* Layer 3: Secondary sky brightening behind clouds */}
+        <div className="absolute inset-0" style={{
+          background: 'radial-gradient(ellipse 70% 50% at 60% 35%, rgba(220,170,100,0.35) 0%, transparent 70%)',
+        }} />
+        {/* Layer 4: Warm horizon glow */}
+        <div className="absolute inset-0" style={{
+          background: 'radial-gradient(ellipse 120% 40% at 50% 100%, rgba(180,100,40,0.6) 0%, rgba(160,80,30,0.3) 50%, transparent 75%)',
+        }} />
+        {/* Layer 5: SVG cumulus clouds */}
+        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="cb1" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="18" result="blur"/>
+            </filter>
+            <filter id="cb2" x="-25%" y="-25%" width="150%" height="150%">
+              <feGaussianBlur stdDeviation="10" result="blur"/>
+            </filter>
+            <filter id="cb3" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="5" result="blur"/>
+            </filter>
+            {/* Warm lit cloud top */}
+            <radialGradient id="cloudTop" cx="50%" cy="30%" r="55%">
+              <stop offset="0%" stopColor="#fde8c8" stopOpacity="0.98"/>
+              <stop offset="35%" stopColor="#f0c890" stopOpacity="0.9"/>
+              <stop offset="70%" stopColor="#d8a060" stopOpacity="0.7"/>
+              <stop offset="100%" stopColor="#b87040" stopOpacity="0.4"/>
+            </radialGradient>
+            {/* Cloud mid-tone */}
+            <radialGradient id="cloudMid" cx="50%" cy="45%" r="58%">
+              <stop offset="0%" stopColor="#eec080" stopOpacity="0.92"/>
+              <stop offset="50%" stopColor="#d09050" stopOpacity="0.78"/>
+              <stop offset="100%" stopColor="#a86030" stopOpacity="0.45"/>
+            </radialGradient>
+            {/* Cloud shadow/dark underside */}
+            <radialGradient id="cloudShadow" cx="50%" cy="60%" r="55%">
+              <stop offset="0%" stopColor="#c47840" stopOpacity="0.82"/>
+              <stop offset="55%" stopColor="#9c5828" stopOpacity="0.6"/>
+              <stop offset="100%" stopColor="#703018" stopOpacity="0.3"/>
+            </radialGradient>
+            {/* Deep dark base cloud */}
+            <radialGradient id="cloudDark" cx="50%" cy="65%" r="55%">
+              <stop offset="0%" stopColor="#8a4820" stopOpacity="0.75"/>
+              <stop offset="60%" stopColor="#5c2e10" stopOpacity="0.5"/>
+              <stop offset="100%" stopColor="#3a1808" stopOpacity="0.2"/>
+            </radialGradient>
+            {/* Bright highlight — lit tops */}
+            <radialGradient id="cloudHighlight" cx="50%" cy="25%" r="45%">
+              <stop offset="0%" stopColor="#fff4e0" stopOpacity="0.55"/>
+              <stop offset="50%" stopColor="#ffe0b0" stopOpacity="0.3"/>
+              <stop offset="100%" stopColor="#ffd090" stopOpacity="0"/>
+            </radialGradient>
+          </defs>
+
+          {/* === BACKGROUND cloud mass — large, diffuse === */}
+          <ellipse cx="780" cy="480" rx="580" ry="280" fill="url(#cloudShadow)" filter="url(#cb1)" />
+          <ellipse cx="700" cy="420" rx="500" ry="240" fill="url(#cloudMid)" filter="url(#cb1)" />
+          <ellipse cx="820" cy="340" rx="440" ry="210" fill="url(#cloudTop)" filter="url(#cb1)" />
+
+          {/* === CENTER cumulus tower === */}
+          <ellipse cx="880" cy="500" rx="280" ry="220" fill="url(#cloudShadow)" filter="url(#cb2)" />
+          <ellipse cx="840" cy="400" rx="260" ry="240" fill="url(#cloudMid)" filter="url(#cb2)" />
+          <ellipse cx="860" cy="280" rx="240" ry="220" fill="url(#cloudTop)" filter="url(#cb2)" />
+          <ellipse cx="900" cy="180" rx="190" ry="170" fill="url(#cloudTop)" filter="url(#cb2)" />
+          <ellipse cx="850" cy="120" rx="150" ry="130" fill="url(#cloudHighlight)" filter="url(#cb2)" />
+
+          {/* === RIGHT tall cloud pillar === */}
+          <ellipse cx="1160" cy="520" rx="220" ry="200" fill="url(#cloudDark)" filter="url(#cb2)" />
+          <ellipse cx="1120" cy="400" rx="210" ry="230" fill="url(#cloudShadow)" filter="url(#cb2)" />
+          <ellipse cx="1140" cy="280" rx="190" ry="210" fill="url(#cloudMid)" filter="url(#cb2)" />
+          <ellipse cx="1100" cy="160" rx="160" ry="180" fill="url(#cloudTop)" filter="url(#cb2)" />
+          <ellipse cx="1080" cy="80" rx="130" ry="120" fill="url(#cloudHighlight)" filter="url(#cb3)" />
+
+          {/* === LEFT cloud mass === */}
+          <ellipse cx="250" cy="480" rx="340" ry="200" fill="url(#cloudShadow)" filter="url(#cb1)" />
+          <ellipse cx="220" cy="380" rx="300" ry="190" fill="url(#cloudMid)" filter="url(#cb1)" />
+          <ellipse cx="280" cy="280" rx="260" ry="170" fill="url(#cloudTop)" filter="url(#cb2)" />
+          <ellipse cx="320" cy="180" rx="180" ry="140" fill="url(#cloudTop)" filter="url(#cb2)" />
+
+          {/* === Far left background clouds === */}
+          <ellipse cx="-20" cy="400" rx="280" ry="160" fill="url(#cloudMid)" filter="url(#cb1)" />
+          <ellipse cx="80" cy="300" rx="200" ry="140" fill="url(#cloudTop)" filter="url(#cb2)" />
+
+          {/* === Wispy upper atmosphere clouds === */}
+          <ellipse cx="560" cy="200" rx="220" ry="80" fill="url(#cloudTop)" filter="url(#cb2)" opacity="0.6" />
+          <ellipse cx="480" cy="150" rx="160" ry="60" fill="url(#cloudHighlight)" filter="url(#cb2)" opacity="0.5" />
+          <ellipse cx="1280" cy="180" rx="200" ry="70" fill="url(#cloudTop)" filter="url(#cb2)" opacity="0.55" />
+
+          {/* === Cloud bright highlights — lit by sun === */}
+          <ellipse cx="870" cy="230" rx="200" ry="90" fill="url(#cloudHighlight)" filter="url(#cb3)" />
+          <ellipse cx="1090" cy="120" rx="130" ry="70" fill="url(#cloudHighlight)" filter="url(#cb3)" />
+          <ellipse cx="300" cy="210" rx="160" ry="75" fill="url(#cloudHighlight)" filter="url(#cb3)" />
+
+          {/* === Horizon dark cloud base — grounding the scene === */}
+          <ellipse cx="500" cy="720" rx="650" ry="140" fill="url(#cloudDark)" filter="url(#cb1)" opacity="0.85" />
+          <ellipse cx="1050" cy="740" rx="520" ry="120" fill="url(#cloudDark)" filter="url(#cb1)" opacity="0.8" />
+          <ellipse cx="720" cy="800" rx="750" ry="110" fill="rgba(45,20,8,0.5)" filter="url(#cb1)" />
+        </svg>
+        {/* Layer 6: Left-side text readability */}
+        <div className="absolute inset-0" style={{
+          background: 'linear-gradient(105deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.28) 40%, rgba(0,0,0,0.08) 70%, rgba(0,0,0,0) 100%)',
+        }} />
 
         <div className="relative z-10 w-full max-w-7xl mx-auto px-6 md:px-8 py-20">
           <div className="grid lg:grid-cols-2 gap-12 items-center min-h-[calc(100vh-4rem)]">
