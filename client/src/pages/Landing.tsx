@@ -980,7 +980,7 @@ export default function Landing() {
         {/* Atmospheric sky background — layered CSS + SVG clouds */}
         {/* Real photo background */}
         <div className="absolute inset-0" style={{
-          backgroundImage: 'url(/hero-bg.jpg)',
+          backgroundImage: 'url(/hero-bg3.jpg)',
           backgroundSize: 'cover',
           backgroundPosition: 'center 30%',
           backgroundRepeat: 'no-repeat',
