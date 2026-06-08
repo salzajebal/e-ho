@@ -363,23 +363,32 @@ export async function initializeDatabase(): Promise<void> {
     client.release();
 
     console.log('Seeding admin user...');
-    const [existingAdmin] = await db.select().from(schema.users).where(eq(schema.users.username, 'admin'));
+    // Check for old admin username first (migration)
+    const [oldAdmin] = await db.select().from(schema.users).where(eq(schema.users.username, 'admin'));
+    if (oldAdmin) {
+      await db.update(schema.users)
+        .set({ username: 'gemi488', password: '488153', approvalStatus: 'approved' })
+        .where(eq(schema.users.username, 'admin'));
+      console.log('Admin user migrated: admin → gemi488');
+    }
+
+    const [existingAdmin] = await db.select().from(schema.users).where(eq(schema.users.username, 'gemi488'));
 
     if (!existingAdmin) {
       await db.insert(schema.users).values({
-        username: 'admin',
-        password: 'admin123',
+        username: 'gemi488',
+        password: '488153',
         name: '관리자',
         role: 'admin',
         balance: '100000000',
         approvalStatus: 'approved',
       });
-      console.log('Admin user created: admin/admin123');
+      console.log('Admin user created: gemi488');
     } else {
       await db.update(schema.users)
-        .set({ approvalStatus: 'approved', password: 'admin123' })
-        .where(eq(schema.users.username, 'admin'));
-      console.log('Admin user verified and updated: admin/admin123');
+        .set({ approvalStatus: 'approved', password: '488153' })
+        .where(eq(schema.users.username, 'gemi488'));
+      console.log('Admin user verified: gemi488');
     }
 
     console.log('Database initialization complete');

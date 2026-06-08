@@ -58,7 +58,7 @@ class HomeErrorBoundary extends Component<
 }
 
 function HomeInner() {
-  const [selectedGameId, setSelectedGameId] = useState("SP500-300");
+  const [selectedGameId, setSelectedGameId] = useState("BTC-300");
   const [, setLocation] = useLocation();
   const marketData = useMarketData();
   

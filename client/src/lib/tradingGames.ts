@@ -1,22 +1,22 @@
-export const FOREX_SYMBOLS = ['SP500', 'DOW', 'DXY'] as const;
+export const FOREX_SYMBOLS = ['BTC', 'ETH', 'GOLD'] as const;
 export type ForexSymbol = typeof FOREX_SYMBOLS[number];
 
 export const FOREX_DISPLAY: Record<ForexSymbol, { name: string; pair: string; flag: string }> = {
-  SP500: { name: 'S&P500', pair: 'S&P 500 Index', flag: '📈' },
-  DOW: { name: '다우존스', pair: 'Dow Jones', flag: '📊' },
-  DXY: { name: '달러', pair: 'Dollar Index', flag: '🇺🇸' },
+  BTC: { name: '비트코인', pair: 'BTC/USDT', flag: '₿' },
+  ETH: { name: '이더리움', pair: 'ETH/USDT', flag: 'Ξ' },
+  GOLD: { name: '금', pair: 'XAU/USD', flag: '🥇' },
 };
 
 export const FINNHUB_TICKER_MAP: Record<ForexSymbol, string> = {
-  SP500: 'SP500',
-  DOW: 'DOW',
-  DXY: 'DXY',
+  BTC: 'BTCUSDT',
+  ETH: 'ETHUSDT',
+  GOLD: 'GC=F',
 };
 
 export const TRADING_GAMES = [
-  { id: 'SP500-300', symbol: 'SP500', duration: 300, label: 'S&P500' },
-  { id: 'DOW-300', symbol: 'DOW', duration: 300, label: '다우존스' },
-  { id: 'DXY-300', symbol: 'DXY', duration: 300, label: '달러' },
+  { id: 'BTC-300', symbol: 'BTC', duration: 300, label: '비트코인' },
+  { id: 'ETH-300', symbol: 'ETH', duration: 300, label: '이더리움' },
+  { id: 'GOLD-300', symbol: 'GOLD', duration: 300, label: '금' },
 ] as const;
 
 export type TradingGame = typeof TRADING_GAMES[number];

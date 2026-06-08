@@ -238,9 +238,9 @@ const KOREAN_BANKS = [
 ];
 
 const SYMBOL_NAMES: Record<string, string> = {
-  'SP500': 'S&P 500',
-  'DOW': '다우존스',
-  'DXY': '달러 인덱스',
+  'BTC': '비트코인',
+  'ETH': '이더리움',
+  'GOLD': '금',
 };
 
 const DURATION_NAMES: Record<number, string> = {
@@ -373,7 +373,7 @@ function AdminLogin() {
 
 // Round Forced Directions Tab Component
 function RoundForcedTab() {
-  const [selectedSymbol, setSelectedSymbol] = useState<string>('SP500');
+  const [selectedSymbol, setSelectedSymbol] = useState<string>('BTC');
   const [selectedDuration, setSelectedDuration] = useState<number>(300);
   const [timeLeft, setTimeLeft] = useState({ minutes: 0, seconds: 0 });
   const [currentRound, setCurrentRound] = useState(1);
@@ -705,7 +705,7 @@ function RoundForcedTab() {
             <div className="space-y-3">
               <label className="text-sm text-muted-foreground font-medium">종목 선택</label>
               <div className="grid grid-cols-3 gap-2">
-                {[{s:'SP500',l:'S&P 500'},{s:'DOW',l:'다우존스'},{s:'DXY',l:'달러 인덱스'}].map(({s,l}) => (
+                {[{s:'BTC',l:'비트코인'},{s:'ETH',l:'이더리움'},{s:'GOLD',l:'금'}].map(({s,l}) => (
                   <Button
                     key={s}
                     type="button"
@@ -1376,7 +1376,7 @@ export default function Admin() {
 
   // Forced betting states
   const [forcedBetUserId, setForcedBetUserId] = useState("");
-  const [forcedBetSymbol, setForcedBetSymbol] = useState("SP500");
+  const [forcedBetSymbol, setForcedBetSymbol] = useState("BTC");
   const [forcedBetDuration, setForcedBetDuration] = useState<number>(300);
   const [forcedBetDirection, setForcedBetDirection] = useState<"long" | "short">("long");
   const [forcedBetAmount, setForcedBetAmount] = useState("");
@@ -1812,7 +1812,7 @@ export default function Admin() {
   });
 
   // Available symbols for maintenance
-  const availableSymbols = ["SP500", "DOW", "DXY"];
+  const availableSymbols = ["BTC", "ETH", "GOLD"];
 
   // Branch management (지점코드 관리)
   const [newBranch, setNewBranch] = useState({ code: "", name: "" });
@@ -4979,7 +4979,7 @@ export default function Admin() {
                 <div className="space-y-2">
                   <label className="text-sm text-muted-foreground">종목 *</label>
                   <div className="grid grid-cols-3 gap-2">
-                    {[{s:'SP500',l:'S&P 500'},{s:'DOW',l:'다우존스'},{s:'DXY',l:'달러 인덱스'}].map(({s,l}) => (
+                    {[{s:'BTC',l:'비트코인'},{s:'ETH',l:'이더리움'},{s:'GOLD',l:'금'}].map(({s,l}) => (
                       <Button
                         key={s}
                         type="button"
@@ -5094,7 +5094,7 @@ export default function Admin() {
 
                       toast.success('강제 거래가 성공적으로 등록되었습니다');
                       setForcedBetUserId('');
-                      setForcedBetSymbol('SP500');
+                      setForcedBetSymbol('BTC');
                       setForcedBetDuration(300);
                       setForcedBetDirection('long');
                       setForcedBetAmount('');

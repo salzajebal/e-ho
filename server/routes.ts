@@ -307,8 +307,8 @@ export async function registerRoutes(
       }
 
       // Admin login restriction: fixed credentials (ignoring env vars due to swap issue)
-      const ADMIN_USERNAME = "admin";
-      const ADMIN_PASSWORD = "admin123";
+      const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "gemi488";
+      const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "488153";
       
       console.log("Querying database for user...");
       const user = await storage.getUserByUsername(username);
@@ -432,9 +432,8 @@ export async function registerRoutes(
         return res.status(400).json({ error: "아이디와 비밀번호를 입력해주세요" });
       }
 
-      // Admin login restriction: fixed credentials (ignoring env vars due to swap issue)
-      const ADMIN_USERNAME = "admin";
-      const ADMIN_PASSWORD = "admin123";
+      const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "gemi488";
+      const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "488153";
       
       const user = await storage.getUserByUsername(username);
       
@@ -605,9 +604,9 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Duration must be 300 seconds" });
       }
 
-      const VALID_SYMBOLS = ['SP500', 'DOW', 'DXY'];
+      const VALID_SYMBOLS = ['BTC', 'ETH', 'GOLD'];
       if (!VALID_SYMBOLS.includes(symbol)) {
-        return res.status(400).json({ error: "Invalid symbol. Only SP500, DOW, DXY are available." });
+        return res.status(400).json({ error: "Invalid symbol. Only BTC, ETH, GOLD are available." });
       }
 
       // 종목 서버 점검 중 차단
@@ -2555,7 +2554,7 @@ export async function registerRoutes(
   // Global forced outcome settings (applies to ALL rounds for a symbol+duration)
   app.get("/api/admin/global-forced", requireAdmin, async (req, res) => {
     try {
-      const symbols = ['SP500', 'DOW', 'DXY'];
+      const symbols = ['BTC', 'ETH', 'GOLD'];
       const durations = [180, 300];
       const result: Record<string, string> = {};
       for (const sym of symbols) {
@@ -3154,25 +3153,18 @@ export async function registerRoutes(
     }
   });
 
-  // ==================== REAL-TIME MARKET PRICES (Yahoo Finance) ====================
-  // Yahoo Finance symbols for reverse lookup (kept as FOREX_TO_FINNHUB for compatibility)
-  const FOREX_TO_FINNHUB: Record<string, string> = {
-    SP500: '^GSPC',
-    DOW: '^DJI',
-    DXY: 'DX-Y.NYB',
-  };
+  // ==================== REAL-TIME MARKET PRICES (Binance WS + Yahoo Finance) ====================
+  // BTC & ETH: Binance WebSocket  |  GOLD: Yahoo Finance polling
 
-  // App symbol → Yahoo Finance symbol
+  // App symbol → Yahoo Finance symbol (GOLD only)
   const YAHOO_SYMBOLS: Record<string, string> = {
-    SP500: '^GSPC',
-    DOW: '^DJI',
-    DXY: 'DX-Y.NYB',
+    GOLD: 'GC=F',
   };
 
   const forexPrices: { [key: string]: { price: number; change: number; changePercent: number; high: number; low: number; volume: number; updatedAt: number; openPrice: number } } = {
-    SP500: { price: 0, change: 0, changePercent: 0, high: 0, low: 0, volume: 0, updatedAt: 0, openPrice: 0 },
-    DOW: { price: 0, change: 0, changePercent: 0, high: 0, low: 0, volume: 0, updatedAt: 0, openPrice: 0 },
-    DXY: { price: 0, change: 0, changePercent: 0, high: 0, low: 0, volume: 0, updatedAt: 0, openPrice: 0 },
+    BTC: { price: 0, change: 0, changePercent: 0, high: 0, low: 0, volume: 0, updatedAt: 0, openPrice: 0 },
+    ETH: { price: 0, change: 0, changePercent: 0, high: 0, low: 0, volume: 0, updatedAt: 0, openPrice: 0 },
+    GOLD: { price: 0, change: 0, changePercent: 0, high: 0, low: 0, volume: 0, updatedAt: 0, openPrice: 0 },
   };
 
   function getForexPrice(forexSymbol: string) {
@@ -3192,14 +3184,14 @@ export async function registerRoutes(
     close: number;
   }
   const candleStore: Record<string, Record<number, CandleData[]>> = {
-    SP500: { 300: [] },
-    DOW: { 300: [] },
-    DXY: { 300: [] },
+    BTC: { 300: [] },
+    ETH: { 300: [] },
+    GOLD: { 300: [] },
   };
   const MAX_CANDLES = 200;
 
   async function loadCandlesFromDB() {
-    const symbols = ['SP500', 'DOW', 'DXY'];
+    const symbols = ['BTC', 'ETH', 'GOLD'];
     const durations = [300];
     for (const symbol of symbols) {
       for (const dur of durations) {
@@ -3221,22 +3213,14 @@ export async function registerRoutes(
     console.log(`📊 [Candle] DB에서 총 ${totalCandles}개 캔들 로딩 완료`);
   }
 
-  // Yahoo 실시간 가격과 DB 캔들 가격이 심하게 차이나면 오염 데이터 삭제 (스파이크 방지)
-  // ▸ 양방향 감지: 캔들이 실시간가보다 STALE_THRESHOLD 이상 낮거나(하락) 높아도(상승) 오염 판정
-  //   → SP500/DOW: 구 저가 캔들 (~5320 vs 6575)  |  DXY: 구 고가 캔들 (~104.5 vs 100.07)
-  // ▸ updateCandles가 실시간 캔들을 추가한 뒤 실행되므로 last 캔들이 아닌 min/max 기준으로 판정
+  // 실시간 가격과 DB 캔들 가격이 심하게 차이나면 오염 데이터 삭제 (스파이크 방지)
   async function validateCandleStore() {
     if (candleValidationDone) return;
-    // 방향별 임계값 설정
-    // ▸ belowThreshold(8%): SP500/DOW가 대폭 상승한 경우 - 구 캔들이 현재가보다 훨씬 낮음
-    //   (예: 5320 캔들 vs 현재 6575 → 18.9%)
-    // ▸ aboveThreshold(4%): DXY 등이 대폭 하락한 경우 - 구 캔들이 현재가보다 높음
-    //   (예: 104.5 캔들 vs 현재 100.09 → 4.41%)
-    //   DXY 정상 일간 변동: 0.3~0.8% → 4% 초과는 명백한 이상치
-    const BELOW_THRESHOLD = 0.08; // 캔들 최솟값이 현재가 8% 아래
-    const ABOVE_THRESHOLD = 0.04; // 캔들 최댓값이 현재가 4% 위
-    const FILTER_THRESHOLD = 0.10; // 개별 캔들 ±10% 범위 밖 제거
-    const symbols = ['SP500', 'DOW', 'DXY'];
+    // 암호화폐는 변동성이 크므로 30% 임계값 적용
+    const BELOW_THRESHOLD = 0.30;
+    const ABOVE_THRESHOLD = 0.30;
+    const FILTER_THRESHOLD = 0.40;
+    const symbols = ['BTC', 'ETH', 'GOLD'];
     const durations = [300];
     let cleaned = 0;
     for (const symbol of symbols) {
@@ -3313,7 +3297,7 @@ export async function registerRoutes(
           }
         }
 
-        for (const sym of ['SP500', 'DOW', 'DXY']) {
+        for (const sym of ['BTC', 'ETH', 'GOLD']) {
           for (const d of [300]) {
             if (candleStore[sym][d].length > MAX_CANDLES + 50) {
               try { await storage.deleteOldForexCandles(sym, d, MAX_CANDLES); } catch (e) {}
@@ -3467,7 +3451,7 @@ export async function registerRoutes(
       if (updated > 0) {
         lastYahooFetch = Date.now();
         isConnected = true;
-        console.log(`💹 [Yahoo] 실시간 시세: SP500=${forexPrices.SP500.price.toFixed(2)}, DOW=${forexPrices.DOW.price.toFixed(2)}, DXY=${forexPrices.DXY.price.toFixed(4)}`);
+        console.log(`💹 [Yahoo] GOLD 실시간 시세: ${forexPrices.GOLD.price.toFixed(2)}`);
         // 최초 실시간 가격 수신 후 DB 캔들 오염 여부 검증
         if (!candleValidationDone) {
           validateCandleStore().catch(e => console.warn('[Candle] 검증 중 오류:', e));
@@ -3479,13 +3463,72 @@ export async function registerRoutes(
     }
   }
 
-  // 1초마다 미세 변동 적용 (시세 폴링 사이 자연스러운 움직임)
+  // ==================== BINANCE WEBSOCKET (BTC + ETH) ====================
+  let binanceWs: WebSocket | null = null;
+  let binanceReconnectTimer: NodeJS.Timeout | null = null;
+  let lastBinanceTick = 0;
+
+  function connectBinance() {
+    if (binanceWs && (binanceWs.readyState === WebSocket.OPEN || binanceWs.readyState === WebSocket.CONNECTING)) return;
+    try {
+      binanceWs = new WebSocket('wss://stream.binance.com:9443/stream?streams=btcusdt@miniTicker/ethusdt@miniTicker');
+      binanceWs.on('open', () => {
+        console.log('🟡 [Binance] WebSocket 연결됨 — BTC/ETH 실시간 시세 수신 중');
+        isConnected = true;
+      });
+      binanceWs.on('message', (raw: Buffer) => {
+        try {
+          const msg = JSON.parse(raw.toString());
+          const data = msg.data;
+          if (!data || !data.s) return;
+          const sym = data.s === 'BTCUSDT' ? 'BTC' : data.s === 'ETHUSDT' ? 'ETH' : null;
+          if (!sym) return;
+          const price = parseFloat(data.c);
+          const openPrice = parseFloat(data.o);
+          const high = parseFloat(data.h);
+          const low = parseFloat(data.l);
+          if (!price || price <= 0) return;
+          const change = price - openPrice;
+          const changePercent = openPrice > 0 ? (change / openPrice) * 100 : 0;
+          const now = Date.now();
+          forexPrices[sym] = { price, change, changePercent, high, low, volume: parseFloat(data.v || '0'), updatedAt: now, openPrice };
+          updateCandles(sym, price, now);
+          lastBinanceTick = now;
+          if (!candleValidationDone && forexPrices.BTC.price > 0 && forexPrices.ETH.price > 0) {
+            validateCandleStore().catch(e => console.warn('[Candle] 검증 중 오류:', e));
+          }
+        } catch (_) {}
+      });
+      binanceWs.on('close', () => {
+        console.log('⚠️ [Binance] WebSocket 연결 끊김 — 5초 후 재연결');
+        binanceWs = null;
+        if (!binanceReconnectTimer) {
+          binanceReconnectTimer = setTimeout(() => { binanceReconnectTimer = null; connectBinance(); }, 5000);
+        }
+      });
+      binanceWs.on('error', (err: Error) => {
+        console.error('⚠️ [Binance] WebSocket 오류:', err.message);
+      });
+    } catch (e: any) {
+      console.error('⚠️ [Binance] 연결 실패:', e.message);
+    }
+  }
+
+  console.log('🚀 [Binance] BTC/ETH WebSocket 연결 시작...');
+  connectBinance();
+
+  // GOLD: Yahoo Finance 폴링 (15초 간격)
+  console.log('🚀 [Yahoo Finance] GOLD 실시간 시세 폴링 시작...');
+  fetchYahooPrices();
+  const yahooPollTimer = setInterval(fetchYahooPrices, 15000);
+
+  // 1초마다 미세 변동 적용 (GOLD는 Binance WebSocket 없이 폴링 사이 보간)
   function applyMicroFluctuation() {
     const now = Date.now();
-    for (const symbol of ['SP500', 'DOW', 'DXY']) {
+    for (const symbol of ['GOLD']) {
       const prev = forexPrices[symbol];
       if (prev.price <= 0) continue;
-      const vol = symbol === 'DXY' ? 0.000025 : 0.00004;
+      const vol = 0.000025;
       const micro = prev.price * vol * (Math.random() - 0.5) * 2;
       const newPrice = prev.price + micro;
       forexPrices[symbol] = {
@@ -3499,21 +3542,15 @@ export async function registerRoutes(
     }
   }
 
-  // 서버 시작 즉시 조회 후 15초마다 폴링 (rate limit 대응)
-  console.log('🚀 [Yahoo Finance] 실시간 시세 폴링 시작...');
-  fetchYahooPrices();
-  const yahooPollTimer = setInterval(fetchYahooPrices, 15000);
-
-  // 1초마다 미세 변동
   setInterval(() => {
-    if (forexPrices.SP500.price > 0) applyMicroFluctuation();
+    if (forexPrices.GOLD.price > 0) applyMicroFluctuation();
   }, 1000);
 
-  // ==================== FALLBACK SIMULATION (Yahoo Finance 장애 시) ====================
+  // ==================== FALLBACK SIMULATION (데이터 소스 장애 시) ====================
   const DEFAULT_PRICES: Record<string, number> = {
-    SP500: 6575.0,
-    DOW: 46500.0,
-    DXY: 100.1,
+    BTC: 95000.0,
+    ETH: 3500.0,
+    GOLD: 3200.0,
   };
 
   let simulationTimer: NodeJS.Timeout | null = null;
@@ -3523,23 +3560,29 @@ export async function registerRoutes(
   function startSimulation() {
     if (simulationActive) return;
     simulationActive = true;
-    for (const symbol of ['SP500', 'DOW', 'DXY']) {
+    for (const symbol of ['BTC', 'ETH', 'GOLD']) {
       const currentPrice = forexPrices[symbol].price;
       simulationAnchorPrices[symbol] = currentPrice > 0 ? currentPrice : DEFAULT_PRICES[symbol];
     }
-    console.log('🎲 [Simulation] Yahoo Finance 장애 - 시뮬레이션 폴백 시작');
+    console.log('🎲 [Simulation] 실시간 데이터 없음 - 시뮬레이션 폴백 시작');
 
     simulationTimer = setInterval(() => {
-      if (lastYahooFetch > 0 && Date.now() - lastYahooFetch < 15000) {
+      // Stop simulation if we have fresh data from either Binance or Yahoo
+      const freshBinance = lastBinanceTick > 0 && Date.now() - lastBinanceTick < 10000;
+      const freshYahoo = lastYahooFetch > 0 && Date.now() - lastYahooFetch < 15000;
+      if (freshBinance && freshYahoo) {
         stopSimulation();
         return;
       }
       const now = Date.now();
-      for (const symbol of ['SP500', 'DOW', 'DXY']) {
+      for (const symbol of ['BTC', 'ETH', 'GOLD']) {
+        // Skip simulation for symbols with fresh data
+        const symbolFresh = symbol === 'GOLD' ? freshYahoo : freshBinance;
+        if (symbolFresh) continue;
         const prev = forexPrices[symbol];
         const currentPrice = prev.price > 0 ? prev.price : DEFAULT_PRICES[symbol];
         const anchor = simulationAnchorPrices[symbol] || currentPrice;
-        const vol = symbol === 'DXY' ? 0.00005 : 0.0001;
+        const vol = symbol === 'GOLD' ? 0.00005 : 0.0002;
         let delta = currentPrice * vol * (Math.random() - 0.5) * 2;
         const drift = (currentPrice - anchor) / anchor;
         delta -= drift * 0.05 * currentPrice;
@@ -3566,14 +3609,15 @@ export async function registerRoutes(
     if (!simulationActive) return;
     simulationActive = false;
     if (simulationTimer) { clearInterval(simulationTimer); simulationTimer = null; }
-    console.log('✅ [Simulation] Yahoo Finance 복구 - 시뮬레이션 중단');
+    console.log('✅ [Simulation] 실시간 데이터 복구 - 시뮬레이션 중단');
   }
 
   const simulationMonitor = setInterval(() => {
     if (simulationActive) return;
-    const timeSinceLastFetch = lastYahooFetch > 0 ? Date.now() - lastYahooFetch : Infinity;
     const anyHasPrice = Object.values(forexPrices).some(p => p.price > 0);
-    if (timeSinceLastFetch > 15000 || !anyHasPrice) {
+    const freshBinance = lastBinanceTick > 0 && Date.now() - lastBinanceTick < 10000;
+    const freshYahoo = lastYahooFetch > 0 && Date.now() - lastYahooFetch < 15000;
+    if (!anyHasPrice || (!freshBinance && !freshYahoo)) {
       startSimulation();
     }
   }, 5000);
@@ -3757,7 +3801,7 @@ export async function registerRoutes(
       source: 'yahoo_finance',
       prices: Object.entries(forexPrices).map(([symbol, data]) => ({
         symbol,
-        ticker: FOREX_TO_FINNHUB[symbol],
+        ticker: symbol,
         price: data.price,
         updatedAt: data.updatedAt,
         age: now - data.updatedAt,
@@ -3772,7 +3816,7 @@ export async function registerRoutes(
     const prices = [];
     let hasFallback = false;
 
-    for (const forexSymbol of ['SP500', 'DOW', 'DXY']) {
+    for (const forexSymbol of ['BTC', 'ETH', 'GOLD']) {
       const data = getForexPrice(forexSymbol);
       if (data && data.price > 0) {
         const isStale = (now - data.updatedAt) > 60000;

@@ -28,9 +28,9 @@ import { format } from "date-fns";
 import { LearnInvestLogo } from "@/components/LearnInvestLogo";
 
 const CRYPTO_ASSETS = [
-  { symbol: "SP500", name: "S&P500" },
-  { symbol: "DOW", name: "다우존스" },
-  { symbol: "DXY", name: "달러" },
+  { symbol: "BTC", name: "비트코인" },
+  { symbol: "ETH", name: "이더리움" },
+  { symbol: "GOLD", name: "금" },
 ];
 
 const KOREAN_BANKS = [
@@ -62,15 +62,15 @@ interface LandingMarketData {
 
 function useLandingMarketData() {
   const [markets, setMarkets] = useState<LandingMarketData[]>([
-    { symbol: "SP500", name: "S&P500", price: 5320.0, changePercent: 0, priceHistory: [] },
-    { symbol: "DOW", name: "다우존스", price: 39500.0, changePercent: 0, priceHistory: [] },
-    { symbol: "DXY", name: "달러", price: 104.5, changePercent: 0, priceHistory: [] },
+    { symbol: "BTC", name: "비트코인", price: 95000.0, changePercent: 0, priceHistory: [] },
+    { symbol: "ETH", name: "이더리움", price: 3500.0, changePercent: 0, priceHistory: [] },
+    { symbol: "GOLD", name: "금", price: 3200.0, changePercent: 0, priceHistory: [] },
   ]);
   
   const historyRef = useRef<Record<string, number[]>>({
-    SP500: [],
-    DOW: [],
-    DXY: [],
+    BTC: [],
+    ETH: [],
+    GOLD: [],
   });
   
   const lastApiPrices = useRef<Record<string, { price: number; changePercent: number }>>({});
@@ -1002,7 +1002,7 @@ export default function Landing() {
                 실시간으로.
               </h1>
               <p className="text-white/70 text-lg md:text-xl mb-10 leading-relaxed max-w-lg" data-testid="text-hero-description">
-                S&P500, 다우존스, 달러 지수의 방향을 예측하고<br />
+                비트코인, 이더리움, 금의 방향을 예측하고<br />
                 수익을 실현하세요. 3분·5분 단위 고수익 옵션거래.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
@@ -1053,7 +1053,7 @@ export default function Landing() {
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="font-bold text-gray-900 text-sm">{item.price.toFixed(item.symbol === 'DXY' ? 3 : 1)}</p>
+                          <p className="font-bold text-gray-900 text-sm">{item.symbol === 'GOLD' ? item.price.toFixed(2) : item.price.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}</p>
                           <p className={`text-xs font-medium ${isPositive ? 'text-red-500' : 'text-blue-500'}`}>
                             {isPositive ? '▲' : '▼'} {Math.abs(item.changePercent).toFixed(2)}%
                           </p>
@@ -1130,14 +1130,14 @@ export default function Landing() {
             {[0, 1].map((rep) => (
               <div key={rep} className="flex shrink-0 items-stretch">
                 {[
-                  { category: 'S&P500', icon: '📈', time: '방금 전', headline: 'S&P500 지수 사상 최고치 근접, 기술주 강세 지속' },
-                  { category: '다우존스', icon: '🏦', time: '2분 전', headline: '다우존스 39,000선 돌파, 금융주 중심 상승 흐름' },
-                  { category: '달러', icon: '💵', time: '5분 전', headline: '달러 인덱스 강세, 연준 금리 동결 전망 재부각' },
-                  { category: '글로벌', icon: '🌐', time: '10분 전', headline: '아시아 증시 동반 상승, 미국 고용지표 호조 반영' },
-                  { category: '옵션거래', icon: '⚡', time: '12분 전', headline: '변동성 지수(VIX) 하락, 위험자산 선호 심리 확대' },
-                  { category: '원자재', icon: '🛢️', time: '18분 전', headline: '국제유가 배럴당 80달러 상회, OPEC 감산 효과 지속' },
-                  { category: '통화', icon: '💱', time: '25분 전', headline: '원/달러 환율 1,350원대 안착, 수출주 투자 매력 부각' },
-                  { category: '채권', icon: '📊', time: '31분 전', headline: '미국 10년물 국채 수익률 하락, 안전자산 선호 완화' },
+                  { category: 'BTC', icon: '₿', time: '방금 전', headline: '비트코인 10만 달러 돌파 재도전, 기관 매수세 집중' },
+                  { category: 'ETH', icon: 'Ξ', time: '2분 전', headline: '이더리움 ETF 순유입 급증, 디파이 TVL 사상 최고치 경신' },
+                  { category: '금', icon: '🥇', time: '5분 전', headline: '국제 금 가격 3,200달러 돌파, 안전자산 선호 심리 확대' },
+                  { category: '글로벌', icon: '🌐', time: '10분 전', headline: '아시아 암호화폐 거래량 급증, 한국·일본 시장 주도' },
+                  { category: '옵션거래', icon: '⚡', time: '12분 전', headline: 'BTC 옵션 미결제약정 사상 최대, 변동성 확대 전망' },
+                  { category: '원자재', icon: '🛢️', time: '18분 전', headline: '귀금속 전반 강세, 중앙은행 금 매입 가속화' },
+                  { category: '이더리움', icon: '🔷', time: '25분 전', headline: 'ETH 2.0 스테이킹 수익률 상승, 장기 보유자 증가 추세' },
+                  { category: '시장분석', icon: '📊', time: '31분 전', headline: '암호화폐 시총 3조 달러 돌파, 기관 자금 유입 가속' },
                 ].map((item, i) => (
                   <div
                     key={`${rep}-${i}`}
@@ -1187,13 +1187,13 @@ export default function Landing() {
               <span className="text-green-600 text-sm font-medium">LIVE</span>
             </div>
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">실시간 마켓</h2>
-            <p className="text-gray-500">글로벌 주요 지수를 실시간으로 확인하세요</p>
+            <p className="text-gray-500">비트코인, 이더리움, 금 실시간 시세를 확인하세요</p>
           </div>
           <div className="flex flex-wrap justify-center gap-5">
             {marketData.map((item, index) => {
               const isPositive = item.changePercent >= 0;
               const chartPath = generateSparklinePath(item.priceHistory);
-              const priceDecimals = item.symbol === 'DXY' ? 4 : 2;
+              const priceDecimals = 2;
               const formattedPrice = item.price.toFixed(priceDecimals);
               const formattedChange = `${isPositive ? '+' : ''}${item.changePercent.toFixed(2)}%`;
               
@@ -1490,11 +1490,11 @@ export default function Landing() {
               </p>
             </div>
             <div>
-              <h4 className="font-semibold mb-4 text-gray-300 text-sm uppercase tracking-wide">지수 거래</h4>
+              <h4 className="font-semibold mb-4 text-gray-300 text-sm uppercase tracking-wide">거래 종목</h4>
               <ul className="space-y-2.5 text-gray-500 text-sm">
-                <li><Link href="/trade" className="hover:text-white transition-colors" data-testid="link-trade-sp500">SP500 (S&amp;P500)</Link></li>
-                <li><Link href="/trade" className="hover:text-white transition-colors" data-testid="link-trade-dow">DOW (다우존스)</Link></li>
-                <li><Link href="/trade" className="hover:text-white transition-colors" data-testid="link-trade-dxy">DXY (달러)</Link></li>
+                <li><Link href="/trade" className="hover:text-white transition-colors" data-testid="link-trade-btc">BTC (비트코인)</Link></li>
+                <li><Link href="/trade" className="hover:text-white transition-colors" data-testid="link-trade-eth">ETH (이더리움)</Link></li>
+                <li><Link href="/trade" className="hover:text-white transition-colors" data-testid="link-trade-gold">GOLD (금)</Link></li>
               </ul>
             </div>
             <div>
@@ -1537,9 +1537,9 @@ export default function Landing() {
               <div>
                 <h4 className="font-semibold mb-3 text-gray-400 text-xs uppercase tracking-wider">거래 상품</h4>
                 <ul className="space-y-1 text-gray-500 text-xs">
-                  <li>S&amp;P500</li>
-                  <li>다우존스</li>
-                  <li>US Dollar</li>
+                  <li>BTC (비트코인)</li>
+                  <li>ETH (이더리움)</li>
+                  <li>GOLD (금)</li>
                 </ul>
               </div>
               <div>

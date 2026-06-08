@@ -1,18 +1,21 @@
-# Learn-invest - 글로벌 투자 플랫폼
+# GEMINI INVESTMENT - 글로벌 투자 플랫폼
 
 ## Overview
 
-한국어 이진 옵션 투자 플랫폼. 사용자가 S&P500, 다우존스(DOW), 달러(DXY)의 가격 변동 방향(상승/하락)에 베팅합니다. Finnhub WebSocket API를 통한 실시간 시장 데이터, lightweight-charts 캔들스틱 차트, 계좌 시스템을 제공합니다.
+한국어 이진 옵션 투자 플랫폼 (GEMINI INVESTMENT 브랜딩). 사용자가 BTC(비트코인), ETH(이더리움), GOLD(금)의 가격 변동 방향(상승/하락)에 베팅합니다. Binance WebSocket(BTC/ETH)과 Yahoo Finance(GOLD) 실시간 시세, lightweight-charts 캔들스틱 차트, 계좌 시스템을 제공합니다.
 
 ## Admin Credentials
-- Username: `admin`
-- Password: `admin123`
+- Username: `gemi488`
+- Password: `488153`
 
 ## Trading Rules
 - **Operating Hours**: 24시간 (24/7)
-- **Trading Assets**: SP500 (S&P500), DOW (다우존스), DXY (달러)
+- **Trading Assets**: BTC (비트코인), ETH (이더리움), GOLD (금)
 - **Trading Durations**: 3분 (180s), 5분 (300s) — 1분 없음
 - **Min Bet**: 10,000원
+- **Max Bet**: 1,000,000,000원
+- **Max Withdrawal**: 500,000,000원
+- **Payout**: 2x (100% profit)
 - **Buy = RED button (상승)**, **Sell = BLUE button (하락)** — 한국 관례
 
 ## User Preferences
@@ -50,10 +53,12 @@ Preferred communication style: Simple, everyday language.
 - 프론트엔드: `/api/market/prices`, `/api/market/candles` 폴링
 - 베팅은 strike price로 생성, 타이머 만료 시 현재가 비교로 정산
 
-### Market Simulation
-- 실시간 WebSocket 데이터 없을 시 자동 시뮬레이션 (1초 간격)
-- DEFAULT_PRICES: SP500=5320.0, DOW=39500.0, DXY=104.5
-- Volatility: DXY=0.00005, SP500/DOW=0.0001 (최대 ±0.3%)
+### Market Data Sources
+- **BTC/ETH**: Binance WebSocket (`wss://stream.binance.com:9443/stream?streams=btcusdt@miniTicker/ethusdt@miniTicker`)
+- **GOLD**: Yahoo Finance polling (`GC=F`, 15초 간격)
+- 실시간 데이터 없을 시 자동 시뮬레이션 폴백 (1초 간격)
+- DEFAULT_PRICES: BTC=95000, ETH=3500, GOLD=3200
+- Volatility: GOLD=0.00005, BTC/ETH=0.0002
 
 ### Key Design Patterns
 - Shared schema definitions between frontend and backend (`shared/schema.ts`)
