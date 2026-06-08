@@ -82,22 +82,22 @@ function BetRow({ bet, currentPrice, onExpire }: { bet: Bet; currentPrice: numbe
             <XCircle className="w-5 h-5 text-down" />
           )}
         </div>
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <span className="font-semibold text-sm">{bet.symbol}</span>
             {/* 내 베팅 방향 */}
             <span className={cn(
-              "text-xs px-1.5 py-0.5 rounded",
+              "text-xs px-1.5 py-0.5 rounded shrink-0",
               bet.direction === 'long' ? "bg-up/20 text-up" : "bg-down/20 text-down"
             )}>
               {bet.direction === 'long' ? '매수' : '매도'}
             </span>
-            {/* 시장 결과 방향 (실제 가격이 움직인 방향) */}
+            {/* 시장 결과 방향 */}
             {(() => {
               const marketDir = bet.outcome === 'win' ? bet.direction : (bet.direction === 'long' ? 'short' : 'long');
               return (
                 <span className={cn(
-                  "text-xs px-1.5 py-0.5 rounded border",
+                  "text-xs px-1.5 py-0.5 rounded border shrink-0",
                   marketDir === 'long' ? "border-up/40 text-up" : "border-down/40 text-down"
                 )}>
                   결과 {marketDir === 'long' ? '▲' : '▼'}
@@ -105,8 +105,8 @@ function BetRow({ bet, currentPrice, onExpire }: { bet: Bet; currentPrice: numbe
               );
             })()}
             {bet.roundNumber != null && (
-              <span className="text-xs px-1.5 py-0.5 rounded bg-primary/20 text-primary font-mono">
-                #{bet.roundNumber}회차 {betDate.getHours().toString().padStart(2, '0')}:{betDate.getMinutes().toString().padStart(2, '0')}
+              <span className="text-xs px-1.5 py-0.5 rounded bg-primary/20 text-primary font-mono shrink-0">
+                #{bet.roundNumber}회차
               </span>
             )}
           </div>
@@ -149,8 +149,8 @@ function BetRow({ bet, currentPrice, onExpire }: { bet: Bet; currentPrice: numbe
       </div>
       
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="font-semibold text-sm truncate">{bet.symbol}</span>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="font-semibold text-sm">{bet.symbol}</span>
           <span className={cn(
             "text-xs px-1.5 py-0.5 rounded shrink-0",
             bet.direction === 'long' ? "bg-up/20 text-up" : "bg-down/20 text-down"
@@ -159,7 +159,7 @@ function BetRow({ bet, currentPrice, onExpire }: { bet: Bet; currentPrice: numbe
           </span>
           {bet.outcome === 'pending' && bet.roundNumber != null && (
             <span className="text-xs px-1.5 py-0.5 rounded shrink-0 bg-primary/20 text-primary font-mono">
-              #{bet.roundNumber}회차 {new Date(bet.createdAt).getHours().toString().padStart(2, '0')}:{new Date(bet.createdAt).getMinutes().toString().padStart(2, '0')}
+              #{bet.roundNumber}회차
             </span>
           )}
         </div>

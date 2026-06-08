@@ -938,8 +938,8 @@ export default function Landing() {
         {/* Overlay for text readability */}
         <div className="absolute inset-0 bg-black/30" />
 
-        <div className="relative z-10 w-full max-w-7xl mx-auto px-6 md:px-8 py-20">
-          <div className="grid lg:grid-cols-2 gap-12 items-center min-h-[calc(100vh-4rem)]">
+        <div className="relative z-10 w-full max-w-7xl mx-auto px-5 md:px-8 py-12 md:py-20">
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center min-h-[calc(100vh-4rem)]">
             {/* Left: Text content */}
             <div className="flex flex-col justify-center">
               <div className="flex items-center gap-2 mb-6">
@@ -975,6 +975,52 @@ export default function Landing() {
                     무료 가입
                   </Button>
                 )}
+              </div>
+
+              {/* Mobile: Compact live price strip */}
+              <div className="lg:hidden mt-6 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-white/90 font-semibold text-sm">실시간 시세</span>
+                  <span className="flex items-center gap-1 text-xs text-green-400 font-medium">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                    LIVE
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {marketData.slice(0, 3).map((item) => {
+                    const isPositive = item.changePercent >= 0;
+                    return (
+                      <div key={item.symbol} className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <SymbolIcon symbol={item.symbol} size={24} />
+                          <span className="text-white font-medium text-sm">{item.name}</span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-white font-bold text-sm">
+                            {item.symbol === 'GOLD' ? item.price.toFixed(2) : item.price.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}
+                          </span>
+                          <span className={`ml-2 text-xs font-semibold ${isPositive ? 'text-red-400' : 'text-blue-400'}`}>
+                            {isPositive ? '▲' : '▼'}{Math.abs(item.changePercent).toFixed(2)}%
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="grid grid-cols-2 gap-2 mt-4">
+                  <button
+                    onClick={handleTradeClick}
+                    className="py-2.5 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl text-sm transition-colors"
+                  >
+                    매수 ▲
+                  </button>
+                  <button
+                    onClick={handleTradeClick}
+                    className="py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl text-sm transition-colors"
+                  >
+                    매도 ▼
+                  </button>
+                </div>
               </div>
             </div>
 

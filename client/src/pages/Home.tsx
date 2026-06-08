@@ -250,9 +250,9 @@ function HomeInner() {
         </div>
 
         {/* Mobile Layout: Full scrollable container with all sections */}
-        <div className="lg:hidden flex-1 min-h-0 overflow-auto">
+        <div className="lg:hidden flex-1 min-h-0 overflow-auto pb-safe">
           {/* Chart */}
-          <div className="h-[35vh] min-h-[180px] border-b border-border">
+          <div className="h-[38vh] min-h-[200px] border-b border-border">
             <PriceChart symbol={selectedGame.symbol} data={currentMarket} duration={selectedGame.duration} />
           </div>
           
@@ -271,7 +271,7 @@ function HomeInner() {
           </div>
           
           {/* Bets Panel */}
-          <div className="min-h-[200px]">
+          <div className="min-h-[220px]">
             <BetsPanel 
               bets={allBets} 
               currentPrices={currentPrices}

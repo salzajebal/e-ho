@@ -841,7 +841,7 @@ export function BettingForm({ currentPrice, game, balance, onBet, isBetting = fa
               아직 기록된 게임이 없습니다
             </div>
           ) : (
-            <ScrollArea className="h-[200px] lg:flex-1 lg:h-0 lg:min-h-[120px]">
+            <ScrollArea className="h-[130px] lg:flex-1 lg:h-0 lg:min-h-[120px]">
               <div className="space-y-1">
                 {gameResults.map((result, idx) => (
                   <div

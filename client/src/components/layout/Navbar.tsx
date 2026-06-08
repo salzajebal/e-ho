@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Menu, LogOut, Shield, ChevronDown, Sun, Moon, Wallet } from "lucide-react";
+import { Menu, LogOut, Shield, ChevronDown, Sun, Moon, Wallet, History, ArrowDownCircle, ArrowUpCircle, Bell, Headphones, MessageSquare } from "lucide-react";
 import { LearnInvestLogo } from "@/components/LearnInvestLogo";
 import { useAuth, useLogout } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,11 @@ export function Navbar({ onSelectGame, selectedGameId }: NavbarProps) {
   const goTo = (tab: string) => {
     setLocation(`/?tab=${tab}`);
   };
+
+  const goToAndClose = (tab: string) => {
+    setMobileMenuOpen(false);
+    setLocation(`/?tab=${tab}`);
+  };
   
   const selectedGame = TRADING_GAMES.find(g => g.id === selectedGameId);
   const displayBalance = balanceData?.balance != null
@@ -41,6 +46,15 @@ export function Navbar({ onSelectGame, selectedGameId }: NavbarProps) {
     : user?.balance != null
       ? Math.floor(parseFloat(user.balance))
       : null;
+
+  const mobileNavLinks = [
+    { label: '거래내역', tab: 'history', icon: <History className="w-4 h-4" /> },
+    { label: '입금신청', tab: 'deposit', icon: <ArrowDownCircle className="w-4 h-4 text-up" /> },
+    { label: '출금신청', tab: 'withdraw', icon: <ArrowUpCircle className="w-4 h-4 text-down" /> },
+    { label: '공지사항', tab: 'notice', icon: <Bell className="w-4 h-4" /> },
+    { label: '고객센터', tab: 'cs', icon: <Headphones className="w-4 h-4" /> },
+    { label: '쪽지함', tab: 'messages', icon: <MessageSquare className="w-4 h-4" /> },
+  ];
 
   return (
     <header className="flex h-14 lg:h-16 items-center border-b border-border bg-card px-3 lg:px-6">
@@ -53,7 +67,8 @@ export function Navbar({ onSelectGame, selectedGameId }: NavbarProps) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="lg:hidden flex items-center gap-1 text-xs h-8 px-2">
-              <span className="max-w-[80px] truncate">{selectedGame?.label || '종목선택'}</span>
+              {selectedGame && <SymbolIcon symbol={selectedGame.symbol} size={14} />}
+              <span className="max-w-[60px] truncate">{selectedGame?.label || '종목선택'}</span>
               <ChevronDown className="w-3 h-3" />
             </Button>
           </DropdownMenuTrigger>
@@ -63,10 +78,11 @@ export function Navbar({ onSelectGame, selectedGameId }: NavbarProps) {
                 key={game.id}
                 onClick={() => onSelectGame?.(game.id)}
                 className={cn(
-                  "cursor-pointer",
+                  "cursor-pointer gap-2",
                   selectedGameId === game.id && "bg-primary/10 text-primary"
                 )}
               >
+                <SymbolIcon symbol={game.symbol} size={16} />
                 {game.label}
               </DropdownMenuItem>
             ))}
@@ -116,7 +132,7 @@ export function Navbar({ onSelectGame, selectedGameId }: NavbarProps) {
         </nav>
       )}
 
-      <div className="flex items-center gap-2 lg:gap-3 shrink-0 ml-auto">
+      <div className="flex items-center gap-1.5 lg:gap-3 shrink-0 ml-auto">
         {/* Balance Badge */}
         {user && displayBalance !== null && (
           <div
@@ -132,13 +148,13 @@ export function Navbar({ onSelectGame, selectedGameId }: NavbarProps) {
           </div>
         )}
 
-        {/* Theme Toggle */}
+        {/* Theme Toggle — desktop only (in mobile sheet) */}
         <Button
           variant="ghost"
           size="sm"
           onClick={toggleTheme}
           data-testid="button-theme-toggle"
-          className="w-8 h-8 p-0"
+          className="hidden lg:flex w-8 h-8 p-0"
           title={theme === 'dark' ? '라이트 모드' : '다크 모드'}
         >
           {theme === 'dark' ? (
@@ -148,10 +164,11 @@ export function Navbar({ onSelectGame, selectedGameId }: NavbarProps) {
           )}
         </Button>
 
+        {/* Desktop: User dropdown */}
         {user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="gap-1 lg:gap-2 font-medium px-2 lg:px-3">
+              <Button variant="ghost" size="sm" className="hidden lg:flex gap-1 lg:gap-2 font-medium px-2 lg:px-3">
                 <span className="text-foreground text-xs lg:text-sm max-w-[60px] lg:max-w-none truncate">{user.username}</span>
                 {user.role === 'admin' && (
                   <Shield className="w-3 h-3 lg:w-4 lg:h-4 text-primary" />
@@ -192,6 +209,137 @@ export function Navbar({ onSelectGame, selectedGameId }: NavbarProps) {
             </DropdownMenuContent>
           </DropdownMenu>
         ) : null}
+
+        {/* Mobile: Hamburger Menu */}
+        <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="sm" className="lg:hidden w-9 h-9 p-0">
+              <Menu className="w-5 h-5" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="right" className="w-[280px] flex flex-col p-0">
+            <SheetHeader className="px-4 pt-5 pb-4 border-b border-border">
+              <SheetTitle className="text-left">
+                <LearnInvestLogo variant="full" height={30} dark={theme === 'dark'} />
+              </SheetTitle>
+            </SheetHeader>
+
+            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-5">
+              {/* User info */}
+              {user ? (
+                <div className="bg-primary/10 border border-primary/20 rounded-xl p-3 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-sm text-foreground">{user.username}</span>
+                    {user.role === 'admin' && (
+                      <span className="flex items-center gap-1 text-xs text-primary font-medium">
+                        <Shield className="w-3 h-3" />관리자
+                      </span>
+                    )}
+                  </div>
+                  {(user as any).grade && (
+                    <p className="text-xs text-primary font-medium">등급: {(user as any).grade}</p>
+                  )}
+                  <div className="flex items-center gap-1.5 pt-1">
+                    <Wallet className="w-3.5 h-3.5 text-primary" />
+                    <span className="text-xs text-primary/70">보유금액</span>
+                    <span className="font-bold font-mono text-sm text-primary ml-auto">
+                      ₩{displayBalance?.toLocaleString() ?? '0'}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  <Button
+                    className="w-full bg-gray-900 hover:bg-black text-white font-bold rounded-xl"
+                    onClick={() => { setMobileMenuOpen(false); setLocation('/?tab=login'); }}
+                  >
+                    로그인
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full rounded-xl"
+                    onClick={() => { setMobileMenuOpen(false); setLocation('/?tab=register'); }}
+                  >
+                    회원가입
+                  </Button>
+                </div>
+              )}
+
+              {/* Symbol selection */}
+              <div>
+                <p className="text-xs text-muted-foreground font-medium mb-2 uppercase tracking-wide">거래 종목</p>
+                <div className="flex flex-col gap-1">
+                  {TRADING_GAMES.map(game => (
+                    <button
+                      key={game.id}
+                      onClick={() => { onSelectGame?.(game.id); setMobileMenuOpen(false); }}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-left",
+                        selectedGameId === game.id
+                          ? 'bg-primary/20 text-primary'
+                          : 'text-foreground hover:bg-muted/50'
+                      )}
+                    >
+                      <SymbolIcon symbol={game.symbol} size={22} />
+                      <span>{game.label}</span>
+                      {selectedGameId === game.id && (
+                        <span className="ml-auto text-xs bg-primary/20 text-primary px-1.5 py-0.5 rounded-full">선택중</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Nav links */}
+              {user && (
+                <div>
+                  <p className="text-xs text-muted-foreground font-medium mb-2 uppercase tracking-wide">메뉴</p>
+                  <div className="flex flex-col gap-0.5">
+                    {mobileNavLinks.map(({ label, tab, icon }) => (
+                      <button
+                        key={tab}
+                        onClick={() => goToAndClose(tab)}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-foreground hover:bg-muted/50 transition-colors text-left"
+                      >
+                        {icon}
+                        {label}
+                      </button>
+                    ))}
+                    {user.role === 'admin' && (
+                      <button
+                        onClick={() => { setMobileMenuOpen(false); setLocation('/admin'); }}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-primary hover:bg-primary/10 transition-colors text-left"
+                      >
+                        <Shield className="w-4 h-4" />
+                        관리자 패널
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Bottom actions */}
+            <div className="px-4 py-4 border-t border-border space-y-2">
+              <button
+                onClick={toggleTheme}
+                className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium text-foreground hover:bg-muted/50 transition-colors"
+              >
+                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                {theme === 'dark' ? '라이트 모드' : '다크 모드'}
+              </button>
+              {user && (
+                <button
+                  onClick={() => { logout.mutate(); setMobileMenuOpen(false); }}
+                  className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  로그아웃
+                </button>
+              )}
+            </div>
+          </SheetContent>
+        </Sheet>
       </div>
     </header>
   );
