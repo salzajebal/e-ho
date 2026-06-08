@@ -12,6 +12,12 @@ uri = "file://client/public/mib-icon.png"
 type = "image"
 title = "MIB favicon icon"
 
+[[generated]]
+id = "mnSTWFEh_fW3T_jmOKgJs"
+uri = "file://public/og-image.png"
+type = "image"
+title = "gemini investment og banner clean"
+
 [[outputs]]
 id = "JxbMG6iCwgkLYXFE8yWL5"
 uri = "file://forced_settlement_questions.md"
