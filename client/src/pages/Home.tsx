@@ -222,7 +222,7 @@ function HomeInner() {
       amount,
       duration: selectedGame.duration,
       strikePrice: currentMarket.price,
-      multiplier: 1.95,
+      multiplier: 2.00,
     });
   };
 

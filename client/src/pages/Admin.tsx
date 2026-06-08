@@ -5083,7 +5083,7 @@ export default function Admin() {
                           amount: parseFloat(forcedBetAmount),
                           duration: forcedBetDuration,
                           strikePrice: symbolPrice.price,
-                          multiplier: 1.95,
+                          multiplier: 2.00,
                         }),
                       });
 

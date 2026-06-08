@@ -46,7 +46,7 @@ interface GameResult {
   displayAfter?: number;
 }
 
-const MULTIPLIER = 1.95;
+const MULTIPLIER = 2.00;
 
 // Get KST Date
 const getKSTDate = (): Date => {
