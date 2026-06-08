@@ -84,7 +84,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, BookOpen, Building2, Pencil } from "lucide-react";
+import { Menu, BookOpen, Building2, Pencil, Activity } from "lucide-react";
 
 class AdminErrorBoundary extends Component<
   { children: React.ReactNode },
@@ -2784,6 +2784,23 @@ export default function Admin() {
         회원 관리
       </button>
       <button
+        onClick={() => { setActiveTab('bets'); setMobileMenuOpen(false); }}
+        className={cn(
+          "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors relative",
+          activeTab === 'bets'
+            ? "bg-primary/10 text-primary"
+            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+        )}
+      >
+        <Activity className="w-4 h-4" />
+        거래 관리
+        {safeBets.filter(b => b.outcome === 'pending').length > 0 && (
+          <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-yellow-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center animate-pulse">
+            {safeBets.filter(b => b.outcome === 'pending').length}
+          </span>
+        )}
+      </button>
+      <button
         onClick={() => { setActiveTab('approvals'); setMobileMenuOpen(false); }}
         className={cn(
           "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors relative",
@@ -3124,6 +3141,23 @@ export default function Admin() {
           >
             <Users className="w-4 h-4" />
             회원 관리
+          </button>
+          <button
+            onClick={() => setActiveTab('bets')}
+            className={cn(
+              "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors relative",
+              activeTab === 'bets'
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+            )}
+          >
+            <Activity className="w-4 h-4" />
+            거래 관리
+            {safeBets.filter(b => b.outcome === 'pending').length > 0 && (
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-yellow-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center animate-pulse">
+                {safeBets.filter(b => b.outcome === 'pending').length}
+              </span>
+            )}
           </button>
           <button
             onClick={() => setActiveTab('order-history')}
@@ -3794,6 +3828,175 @@ export default function Admin() {
           </div>
         )}
 
+        {activeTab === 'bets' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h1 className="text-xl lg:text-2xl font-bold">거래 관리</h1>
+              <Button variant="outline" size="sm" onClick={() => refetchBets()}>
+                <RefreshCw className="w-4 h-4 lg:mr-2" />
+                <span className="hidden lg:inline">새로고침</span>
+              </Button>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              {(['pending', 'all', 'win', 'lose'] as const).map(f => (
+                <Button
+                  key={f}
+                  size="sm"
+                  variant={betFilter === f ? 'default' : 'outline'}
+                  onClick={() => setBetFilter(f)}
+                >
+                  {f === 'pending' ? `진행중 (${safeBets.filter(b => b.outcome === 'pending').length})` :
+                   f === 'all' ? '전체' :
+                   f === 'win' ? '승리' : '패배'}
+                </Button>
+              ))}
+            </div>
+
+            <div className="bg-card border border-border rounded-lg overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs lg:text-sm">
+                  <thead className="bg-muted/30">
+                    <tr className="text-left text-muted-foreground">
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">ID</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">사용자</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">종목</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">방향</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">금액</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">결과</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">예약결과</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">남은시간</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap">관리</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredBets.length === 0 ? (
+                      <tr>
+                        <td colSpan={9} className="px-3 py-8 text-center text-muted-foreground">
+                          거래 내역이 없습니다
+                        </td>
+                      </tr>
+                    ) : filteredBets.map((bet) => {
+                      const expiresAt = new Date(bet.expiresAt).getTime();
+                      const remaining = Math.max(0, Math.ceil((expiresAt - currentTime) / 1000));
+                      return (
+                        <tr key={bet.id} className="border-t border-border/50 hover:bg-muted/10">
+                          <td className="px-2 lg:px-3 py-1.5 text-muted-foreground">#{bet.id}</td>
+                          <td className="px-2 lg:px-3 py-1.5 font-medium">{bet.username}</td>
+                          <td className="px-2 lg:px-3 py-1.5">{bet.symbol}</td>
+                          <td className="px-2 lg:px-3 py-1.5">
+                            <div className="flex items-center gap-1">
+                              <span className={cn(
+                                "px-1.5 py-0.5 rounded text-[10px] font-bold",
+                                bet.direction === 'long' ? "bg-up/20 text-up" : "bg-down/20 text-down"
+                              )}>
+                                {bet.direction === 'long' ? '매수' : '매도'}
+                              </span>
+                              {bet.outcome === 'pending' && (
+                                <button
+                                  onClick={() => changeBetDirection.mutate({ betId: bet.id, direction: bet.direction === 'long' ? 'short' : 'long' })}
+                                  className="text-muted-foreground hover:text-foreground p-0.5"
+                                  title="방향 전환"
+                                >
+                                  <ArrowUpDown className="w-3 h-3" />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-2 lg:px-3 py-1.5">
+                            {editingBetId === bet.id ? (
+                              <div className="flex items-center gap-1">
+                                <Input
+                                  value={editingBetAmount}
+                                  onChange={e => setEditingBetAmount(e.target.value)}
+                                  className="h-6 w-24 text-xs px-1"
+                                  onKeyDown={e => {
+                                    if (e.key === 'Enter') updateBetAmount.mutate({ betId: bet.id, amount: editingBetAmount });
+                                    if (e.key === 'Escape') { setEditingBetId(null); setEditingBetAmount(""); }
+                                  }}
+                                />
+                                <button onClick={() => updateBetAmount.mutate({ betId: bet.id, amount: editingBetAmount })} className="text-up hover:text-up/80"><Check className="w-3 h-3" /></button>
+                                <button onClick={() => { setEditingBetId(null); setEditingBetAmount(""); }} className="text-muted-foreground hover:text-foreground"><X className="w-3 h-3" /></button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1">
+                                <span>{parseInt(bet.amount).toLocaleString()}원</span>
+                                {bet.outcome === 'pending' && (
+                                  <button onClick={() => { setEditingBetId(bet.id); setEditingBetAmount(bet.amount); }} className="text-muted-foreground hover:text-foreground p-0.5">
+                                    <Pencil className="w-3 h-3" />
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-2 lg:px-3 py-1.5">
+                            <span className={cn(
+                              "px-1.5 py-0.5 rounded text-[10px] font-bold",
+                              bet.outcome === 'pending' ? "bg-muted text-muted-foreground" :
+                              bet.outcome === 'win' ? "bg-up/20 text-up" : "bg-down/20 text-down"
+                            )}>
+                              {bet.outcome === 'pending' ? '진행중' : bet.outcome === 'win' ? '승리' : '패배'}
+                            </span>
+                          </td>
+                          <td className="px-2 lg:px-3 py-1.5">
+                            {bet.outcome === 'pending' ? (
+                              <div className="flex items-center gap-1">
+                                <button
+                                  onClick={() => forceBetOutcome.mutate({ betId: bet.id, forcedOutcome: 'win' })}
+                                  className={cn("px-1.5 py-0.5 rounded text-[10px] font-bold border transition-colors",
+                                    bet.forcedOutcome === 'win' ? "bg-up text-white border-up" : "border-up/50 text-up hover:bg-up/10")}
+                                >승</button>
+                                <button
+                                  onClick={() => forceBetOutcome.mutate({ betId: bet.id, forcedOutcome: 'lose' })}
+                                  className={cn("px-1.5 py-0.5 rounded text-[10px] font-bold border transition-colors",
+                                    bet.forcedOutcome === 'lose' ? "bg-down text-white border-down" : "border-down/50 text-down hover:bg-down/10")}
+                                >패</button>
+                                {bet.forcedOutcome && (
+                                  <button
+                                    onClick={() => forceBetOutcome.mutate({ betId: bet.id, forcedOutcome: null })}
+                                    className="text-muted-foreground hover:text-foreground p-0.5"
+                                    title="예약 취소"
+                                  ><X className="w-3 h-3" /></button>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground text-[10px]">-</span>
+                            )}
+                          </td>
+                          <td className="px-2 lg:px-3 py-1.5">
+                            {bet.outcome === 'pending' ? (
+                              <span className={cn("font-mono text-xs", remaining <= 10 ? "text-down font-bold" : "text-muted-foreground")}>
+                                {remaining}초
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground text-[10px]">-</span>
+                            )}
+                          </td>
+                          <td className="px-2 lg:px-3 py-1.5">
+                            <div className="flex items-center gap-1">
+                              {bet.outcome !== 'pending' && (
+                                <>
+                                  <button
+                                    onClick={() => updateBetOutcome.mutate({ betId: bet.id, outcome: 'win' })}
+                                    className="px-1.5 py-0.5 rounded text-[10px] font-bold border border-up/50 text-up hover:bg-up/10"
+                                  >승</button>
+                                  <button
+                                    onClick={() => updateBetOutcome.mutate({ betId: bet.id, outcome: 'lose' })}
+                                    className="px-1.5 py-0.5 rounded text-[10px] font-bold border border-down/50 text-down hover:bg-down/10"
+                                  >패</button>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
 
         {activeTab === 'messages' && (
           <div className="space-y-6">
