@@ -65,7 +65,35 @@ export async function initializeDatabase(): Promise<void> {
   try {
     console.log('Initializing database schema...');
     const client = await pool.connect();
-    
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS branches (
+        id SERIAL PRIMARY KEY,
+        code TEXT NOT NULL UNIQUE,
+        name TEXT NOT NULL,
+        is_active BOOLEAN NOT NULL DEFAULT true,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )
+    `);
+    console.log('Branches table ready');
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS affiliates (
+        id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+        username TEXT NOT NULL UNIQUE,
+        password TEXT NOT NULL,
+        display_name TEXT NOT NULL,
+        phone TEXT,
+        referral_code TEXT NOT NULL UNIQUE,
+        commission_rate DECIMAL(5, 2) NOT NULL DEFAULT '5.00',
+        total_commission DECIMAL(20, 0) NOT NULL DEFAULT '0',
+        pending_commission DECIMAL(20, 0) NOT NULL DEFAULT '0',
+        is_active BOOLEAN NOT NULL DEFAULT true,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )
+    `);
+    console.log('Affiliates table ready');
+
     await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -73,6 +101,9 @@ export async function initializeDatabase(): Promise<void> {
         password TEXT NOT NULL,
         name TEXT,
         phone TEXT,
+        birth_date TEXT,
+        resident_number TEXT,
+        region TEXT,
         bank_name TEXT,
         account_holder TEXT,
         account_number TEXT,
@@ -82,17 +113,24 @@ export async function initializeDatabase(): Promise<void> {
         total_bet DECIMAL(20, 0) NOT NULL DEFAULT '0',
         total_win DECIMAL(20, 0) NOT NULL DEFAULT '0',
         role TEXT NOT NULL DEFAULT 'user',
-        grade TEXT NOT NULL DEFAULT '브론즈',
+        branch_code TEXT,
+        affiliate_id VARCHAR,
         is_active BOOLEAN NOT NULL DEFAULT true,
+        approval_status TEXT NOT NULL DEFAULT 'pending',
         last_login_at TIMESTAMP,
+        last_login_ip TEXT,
+        auto_bet_enabled BOOLEAN NOT NULL DEFAULT false,
+        auto_bet_multiplier REAL NOT NULL DEFAULT 10,
+        is_betting_blocked BOOLEAN NOT NULL DEFAULT false,
+        forced_bet_direction TEXT,
+        max_execution_enabled BOOLEAN NOT NULL DEFAULT true,
+        pending_balance_adjustment DECIMAL(20, 0) NOT NULL DEFAULT '0',
+        grade TEXT NOT NULL DEFAULT '브론즈',
+        always_pending_enabled BOOLEAN NOT NULL DEFAULT false,
+        telegram_notify_enabled BOOLEAN NOT NULL DEFAULT false,
         created_at TIMESTAMP NOT NULL DEFAULT NOW()
       )
     `);
-
-    // Add grade column to existing tables if not exists
-    await client.query(`
-      ALTER TABLE users ADD COLUMN IF NOT EXISTS grade TEXT NOT NULL DEFAULT '브론즈'
-    `).catch(() => {});
     console.log('Users table ready');
 
     await client.query(`
@@ -103,11 +141,17 @@ export async function initializeDatabase(): Promise<void> {
         direction TEXT NOT NULL,
         amount DECIMAL(20, 8) NOT NULL,
         duration INTEGER NOT NULL,
+        round_number INTEGER NOT NULL DEFAULT 1,
         strike_price DECIMAL(20, 8) NOT NULL,
         close_price DECIMAL(20, 8),
         payout DECIMAL(20, 8),
         multiplier DECIMAL(5, 2) NOT NULL DEFAULT '2.00',
         outcome TEXT NOT NULL DEFAULT 'pending',
+        forced_outcome TEXT,
+        max_execution_applied BOOLEAN NOT NULL DEFAULT false,
+        original_amount DECIMAL(20, 8),
+        balance_before DECIMAL(20, 8),
+        balance_after DECIMAL(20, 8),
         expires_at TIMESTAMP NOT NULL,
         created_at TIMESTAMP NOT NULL DEFAULT NOW(),
         settled_at TIMESTAMP
@@ -115,10 +159,18 @@ export async function initializeDatabase(): Promise<void> {
     `);
     console.log('Bets table ready');
 
-    try {
-      await client.query(`DROP INDEX IF EXISTS idx_bets_user_round`);
-    } catch (e) {
-    }
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS round_forced_directions (
+        id SERIAL PRIMARY KEY,
+        symbol TEXT NOT NULL,
+        duration INTEGER NOT NULL,
+        round_number INTEGER NOT NULL,
+        forced_direction TEXT NOT NULL,
+        date_key TEXT NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )
+    `);
+    console.log('Round forced directions table ready');
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS settings (
@@ -137,10 +189,40 @@ export async function initializeDatabase(): Promise<void> {
         title TEXT NOT NULL,
         content TEXT NOT NULL,
         is_read BOOLEAN NOT NULL DEFAULT false,
+        deleted_for_user BOOLEAN NOT NULL DEFAULT false,
         created_at TIMESTAMP NOT NULL DEFAULT NOW()
       )
     `);
     console.log('Messages table ready');
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS announcements (
+        id SERIAL PRIMARY KEY,
+        title TEXT NOT NULL,
+        content TEXT NOT NULL,
+        is_active BOOLEAN NOT NULL DEFAULT true,
+        is_pinned BOOLEAN NOT NULL DEFAULT false,
+        display_date TIMESTAMP NOT NULL DEFAULT NOW(),
+        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )
+    `);
+    console.log('Announcements table ready');
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS affiliate_commissions (
+        id SERIAL PRIMARY KEY,
+        affiliate_id VARCHAR NOT NULL,
+        user_id VARCHAR NOT NULL,
+        bet_id INTEGER NOT NULL,
+        bet_amount DECIMAL(20, 0) NOT NULL,
+        commission_amount DECIMAL(20, 0) NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending',
+        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        settled_at TIMESTAMP
+      )
+    `);
+    console.log('Affiliate commissions table ready');
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS affiliate_settlements (
@@ -155,6 +237,80 @@ export async function initializeDatabase(): Promise<void> {
     console.log('Affiliate settlements table ready');
 
     await client.query(`
+      CREATE TABLE IF NOT EXISTS blocked_ips (
+        id SERIAL PRIMARY KEY,
+        ip_address TEXT NOT NULL UNIQUE,
+        reason TEXT,
+        blocked_by VARCHAR NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )
+    `);
+    console.log('Blocked IPs table ready');
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS maintenance_symbols (
+        id SERIAL PRIMARY KEY,
+        symbol TEXT NOT NULL UNIQUE,
+        reason TEXT,
+        started_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        created_by VARCHAR NOT NULL
+      )
+    `);
+    console.log('Maintenance symbols table ready');
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS transaction_requests (
+        id SERIAL PRIMARY KEY,
+        user_id VARCHAR NOT NULL REFERENCES users(id),
+        type TEXT NOT NULL,
+        amount DECIMAL(20, 0) NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending',
+        bank_name TEXT,
+        account_holder TEXT,
+        account_number TEXT,
+        sender_name TEXT,
+        admin_note TEXT,
+        processed_by VARCHAR,
+        processed_at TIMESTAMP,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )
+    `);
+    console.log('Transaction requests table ready');
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS inquiries (
+        id SERIAL PRIMARY KEY,
+        user_id VARCHAR NOT NULL REFERENCES users(id),
+        title TEXT NOT NULL,
+        content TEXT NOT NULL,
+        reply TEXT,
+        status TEXT NOT NULL DEFAULT 'pending',
+        replied_by VARCHAR,
+        replied_at TIMESTAMP,
+        is_reply_read BOOLEAN NOT NULL DEFAULT false,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )
+    `);
+    console.log('Inquiries table ready');
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS round_results (
+        id SERIAL PRIMARY KEY,
+        symbol TEXT NOT NULL,
+        duration INTEGER NOT NULL,
+        round_number INTEGER NOT NULL,
+        round_date TEXT NOT NULL,
+        open_price DECIMAL(20, 8) NOT NULL,
+        close_price DECIMAL(20, 8) NOT NULL,
+        high_price DECIMAL(20, 8) NOT NULL,
+        low_price DECIMAL(20, 8) NOT NULL,
+        direction TEXT NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )
+    `);
+    console.log('Round results table ready');
+
+    await client.query(`
       CREATE TABLE IF NOT EXISTS login_history (
         id SERIAL PRIMARY KEY,
         user_id VARCHAR NOT NULL REFERENCES users(id),
@@ -165,6 +321,16 @@ export async function initializeDatabase(): Promise<void> {
       )
     `);
     console.log('Login history table ready');
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS inquiry_templates (
+        id SERIAL PRIMARY KEY,
+        title TEXT NOT NULL,
+        content TEXT NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )
+    `);
+    console.log('Inquiry templates table ready');
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS forex_candles (
@@ -194,17 +360,11 @@ export async function initializeDatabase(): Promise<void> {
     `);
     console.log('Session table ready');
 
-    // Ensure all admin users are approved (migration for existing data)
-    await client.query(`
-      UPDATE users SET approval_status = 'approved' WHERE role = 'admin' AND approval_status != 'approved'
-    `);
-    console.log('Admin users approval status verified');
-    
     client.release();
 
-    console.log('Seeding admin user if not exists...');
+    console.log('Seeding admin user...');
     const [existingAdmin] = await db.select().from(schema.users).where(eq(schema.users.username, 'admin'));
-    
+
     if (!existingAdmin) {
       await db.insert(schema.users).values({
         username: 'admin',
@@ -216,34 +376,10 @@ export async function initializeDatabase(): Promise<void> {
       });
       console.log('Admin user created: admin/admin123');
     } else {
-      // Ensure existing admin is approved and has correct password
       await db.update(schema.users)
         .set({ approvalStatus: 'approved', password: 'admin123' })
         .where(eq(schema.users.username, 'admin'));
-      console.log('Admin user verified and updated');
-    }
-
-    const [existingDemo] = await db.select().from(schema.users).where(eq(schema.users.username, 'demo'));
-    
-    if (!existingDemo) {
-      await db.insert(schema.users).values({
-        username: 'demo',
-        password: 'demo123',
-        name: '데모 사용자',
-        role: 'user',
-        balance: '10000000',
-        approvalStatus: 'approved',
-      });
-      console.log('Demo user created: demo/demo123 (일반 사용자)');
-    } else {
-      // Ensure existing demo is approved
-      if (existingDemo.approvalStatus !== 'approved') {
-        await db.update(schema.users)
-          .set({ approvalStatus: 'approved' })
-          .where(eq(schema.users.username, 'demo'));
-        console.log('Demo user approval status updated');
-      }
-      console.log('Demo user already exists');
+      console.log('Admin user verified and updated: admin/admin123');
     }
 
     console.log('Database initialization complete');
