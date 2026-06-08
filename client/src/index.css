@@ -161,6 +161,11 @@
   100% { transform: translateX(-50%); }
 }
 
+@keyframes news-ticker {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
 @keyframes particle-pulse {
   0%, 100% { opacity: 0.4; }
   50% { opacity: 1; }

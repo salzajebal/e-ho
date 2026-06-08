@@ -1103,26 +1103,57 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Index Ticker Strip */}
-      <div className="relative overflow-hidden bg-gray-50 border-y border-gray-200 py-3">
-        <div className="flex animate-[ticker_30s_linear_infinite] whitespace-nowrap">
-          {[0, 1].map((repeatIdx) => (
-            <div key={repeatIdx} className="flex shrink-0 items-center">
-              {[
-                { pair: 'S&P500', name: 'SP500' },
-                { pair: '다우존스', name: 'DOW' },
-                { pair: '달러', name: 'DXY' },
-                { pair: 'S&P500', name: 'SP500-300' },
-                { pair: '다우존스', name: 'DOW-300' },
-                { pair: '달러', name: 'DXY-300' },
-              ].map((item, i) => (
-                <div key={`${repeatIdx}-${i}`} className="flex items-center gap-2 text-sm px-6 border-r border-gray-200 last:border-0">
-                  <SymbolIcon symbol={item.name} size={20} />
-                  <span className="text-gray-600 font-medium">{item.pair}</span>
-                </div>
-              ))}
+      {/* Gemini-style News Ticker Strip */}
+      <div className="relative bg-white border-y border-gray-200 overflow-hidden" style={{ height: '88px' }}>
+        {/* Left fade + app promo */}
+        <div className="absolute left-0 top-0 bottom-0 z-10 flex items-center pl-4 pr-8 bg-white border-r border-gray-200" style={{ minWidth: '148px' }}>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gray-900 flex items-center justify-center shrink-0">
+              <span className="text-white font-bold text-xs">G</span>
             </div>
-          ))}
+            <div>
+              <p className="text-xs text-gray-500 leading-tight">실시간</p>
+              <p className="text-xs font-bold text-gray-900 leading-tight">시장 분석</p>
+            </div>
+          </div>
+        </div>
+        {/* Left gradient fade */}
+        <div className="absolute left-[148px] top-0 bottom-0 w-12 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
+        {/* Right gradient fade */}
+        <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
+
+        {/* Scrolling news cards */}
+        <div className="absolute inset-0 flex items-center overflow-hidden" style={{ paddingLeft: '160px' }}>
+          <div className="flex animate-[news-ticker_60s_linear_infinite] whitespace-nowrap gap-0">
+            {[0, 1].map((rep) => (
+              <div key={rep} className="flex shrink-0 items-stretch">
+                {[
+                  { category: 'S&P500', icon: '📈', time: '방금 전', headline: 'S&P500 지수 사상 최고치 근접, 기술주 강세 지속' },
+                  { category: '다우존스', icon: '🏦', time: '2분 전', headline: '다우존스 39,000선 돌파, 금융주 중심 상승 흐름' },
+                  { category: '달러', icon: '💵', time: '5분 전', headline: '달러 인덱스 강세, 연준 금리 동결 전망 재부각' },
+                  { category: '글로벌', icon: '🌐', time: '10분 전', headline: '아시아 증시 동반 상승, 미국 고용지표 호조 반영' },
+                  { category: '옵션거래', icon: '⚡', time: '12분 전', headline: '변동성 지수(VIX) 하락, 위험자산 선호 심리 확대' },
+                  { category: '원자재', icon: '🛢️', time: '18분 전', headline: '국제유가 배럴당 80달러 상회, OPEC 감산 효과 지속' },
+                  { category: '통화', icon: '💱', time: '25분 전', headline: '원/달러 환율 1,350원대 안착, 수출주 투자 매력 부각' },
+                  { category: '채권', icon: '📊', time: '31분 전', headline: '미국 10년물 국채 수익률 하락, 안전자산 선호 완화' },
+                ].map((item, i) => (
+                  <div
+                    key={`${rep}-${i}`}
+                    className="flex items-center gap-4 px-6 border-r border-gray-100 shrink-0"
+                    style={{ minWidth: '280px' }}
+                  >
+                    <div className="flex flex-col justify-center min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-bold text-gray-900">{item.category}</span>
+                        <span className="text-xs text-gray-400">{item.time}</span>
+                      </div>
+                      <p className="text-sm text-gray-600 leading-snug truncate max-w-[220px]">{item.headline}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
