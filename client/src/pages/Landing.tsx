@@ -982,7 +982,7 @@ export default function Landing() {
         <div className="absolute inset-0" style={{
           backgroundImage: 'url(/hero-bg.jpg)',
           backgroundSize: 'cover',
-          backgroundPosition: 'center center',
+          backgroundPosition: 'center 30%',
           backgroundRepeat: 'no-repeat',
         }} />
         {/* Overlay for text readability */}
