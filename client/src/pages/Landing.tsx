@@ -595,9 +595,9 @@ export default function Landing() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0b0f] text-white">
+    <div className="min-h-screen bg-white text-gray-900">
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-[#0a0b0f]/95 backdrop-blur-md border-b border-white/8">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-3 md:px-4 h-14 md:h-16 flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center gap-3 md:gap-5 min-w-0">
@@ -608,14 +608,14 @@ export default function Landing() {
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-3">
               <DropdownMenu>
-                <DropdownMenuTrigger className="text-gray-400 hover:text-white transition-colors text-sm font-medium flex items-center gap-1 whitespace-nowrap" data-testid="nav-options-trading">
+                <DropdownMenuTrigger className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium flex items-center gap-1 whitespace-nowrap" data-testid="nav-options-trading">
                   옵션거래 <ChevronDown className="w-3 h-3" />
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-[#111318] border-white/10 shadow-xl">
+                <DropdownMenuContent className="bg-white border-gray-100 shadow-xl">
                   {CRYPTO_ASSETS.map((stock) => (
                     <DropdownMenuItem 
                       key={stock.symbol}
-                      className="text-gray-300 hover:text-white hover:bg-white/5 cursor-pointer"
+                      className="text-gray-700 hover:text-gray-900 hover:bg-gray-50 cursor-pointer"
                       onClick={() => {
                         if (user) {
                           setLocation("/trade");
@@ -624,7 +624,7 @@ export default function Landing() {
                         }
                       }}
                     >
-                      <span className="font-medium text-amber-400 mr-2">{stock.symbol}</span>
+                      <span className="font-medium text-gray-900 mr-2">{stock.symbol}</span>
                       {stock.name}
                     </DropdownMenuItem>
                   ))}
@@ -638,7 +638,7 @@ export default function Landing() {
                     setShowLoginModal(true);
                   }
                 }}
-                className="text-gray-400 hover:text-white transition-colors text-sm font-medium whitespace-nowrap" 
+                className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium whitespace-nowrap" 
                 data-testid="nav-trade-history"
               >
                 거래내역
@@ -649,7 +649,7 @@ export default function Landing() {
                   if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 09:00 ~ 18:00 사이에만 가능합니다"); return; }
                   setDepositAmount(''); setDepositSenderName(user?.name || user?.accountHolder || ''); setShowDepositPageModal(true);
                 }}
-                className="text-gray-400 hover:text-white transition-colors text-sm font-medium whitespace-nowrap" 
+                className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium whitespace-nowrap" 
                 data-testid="nav-deposit"
               >
                 입금신청
@@ -661,14 +661,14 @@ export default function Landing() {
                   if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 09:00 ~ 18:00 사이에만 가능합니다"); return; }
                   setWithdrawalAmount(''); setShowWithdrawalPageModal(true);
                 }}
-                className="text-gray-400 hover:text-white transition-colors text-sm font-medium whitespace-nowrap" 
+                className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium whitespace-nowrap" 
                 data-testid="nav-withdrawal"
               >
                 출금신청
               </button>
               <button 
                 onClick={() => setShowAnnouncementsModal(true)}
-                className="text-gray-400 hover:text-white transition-colors text-sm font-medium whitespace-nowrap" 
+                className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium whitespace-nowrap" 
                 data-testid="nav-announcements"
               >
                 공지사항
@@ -684,7 +684,7 @@ export default function Landing() {
               )}
               <button 
                 onClick={() => setShowCustomerServiceModal(true)}
-                className="text-gray-400 hover:text-white transition-colors text-sm font-medium whitespace-nowrap" 
+                className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium whitespace-nowrap" 
                 data-testid="nav-customer-service"
               >
                 고객센터
@@ -697,7 +697,7 @@ export default function Landing() {
                     setShowLoginModal(true);
                   }
                 }}
-                className="text-gray-400 hover:text-white transition-colors text-sm font-medium whitespace-nowrap relative" 
+                className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium whitespace-nowrap relative" 
                 data-testid="nav-messages"
               >
                 쪽지함
@@ -715,10 +715,10 @@ export default function Landing() {
             {user ? (
               <>
                 {/* Balance Display */}
-                <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5">
-                  <Wallet className="w-4 h-4 text-amber-400" />
-                  <span className="text-gray-400 text-xs">보유금액</span>
-                  <span className="text-white font-bold text-sm" data-testid="text-header-balance">
+                <div className="flex items-center gap-2 bg-gray-100 border border-gray-200 rounded-lg px-3 py-1.5">
+                  <Wallet className="w-4 h-4 text-gray-500" />
+                  <span className="text-gray-500 text-xs">보유금액</span>
+                  <span className="text-gray-900 font-bold text-sm" data-testid="text-header-balance">
                     {balanceData?.balance ? Math.floor(parseFloat(balanceData.balance)).toLocaleString() : '0'}원
                   </span>
                 </div>
@@ -728,7 +728,7 @@ export default function Landing() {
                   <Button 
                     variant="ghost"
                     size="sm"
-                    className="text-green-400 hover:text-green-300 hover:bg-green-400/10 text-xs px-2"
+                    className="text-green-600 hover:text-green-700 hover:bg-green-50 text-xs px-2"
                     data-testid="button-header-deposit"
                     onClick={() => { 
                       if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 09:00 ~ 18:00 사이에만 가능합니다"); return; }
@@ -740,7 +740,7 @@ export default function Landing() {
                   <Button 
                     variant="ghost"
                     size="sm"
-                    className="text-red-400 hover:text-red-300 hover:bg-red-400/10 text-xs px-2"
+                    className="text-red-500 hover:text-red-600 hover:bg-red-50 text-xs px-2"
                     data-testid="button-header-withdraw"
                     onClick={() => { 
                       if ((user as any)?.isBettingBlocked) { toast.error("거래정지 해제 이후 다시 시도해 주세요."); return; }
@@ -752,12 +752,12 @@ export default function Landing() {
                   </Button>
                 </div>
 
-                <span className="text-gray-400 text-sm hidden lg:block">
+                <span className="text-gray-500 text-sm hidden lg:block">
                   {user.username}님
                 </span>
                 {user.role === 'admin' ? (
                   <Button 
-                    className="bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-full px-5" 
+                    className="bg-gray-900 hover:bg-black text-white font-bold rounded-full px-5" 
                     data-testid="button-header-admin"
                     onClick={() => setLocation("/admin")}
                   >
@@ -765,7 +765,7 @@ export default function Landing() {
                   </Button>
                 ) : (
                   <Button 
-                    className="bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-full px-5" 
+                    className="bg-gray-900 hover:bg-black text-white font-bold rounded-full px-5" 
                     data-testid="button-header-trade"
                     onClick={() => setLocation("/trade")}
                   >
@@ -774,7 +774,7 @@ export default function Landing() {
                 )}
                 <Button 
                   variant="ghost" 
-                  className="text-gray-400 hover:text-white hover:bg-white/5" 
+                  className="text-gray-500 hover:text-gray-900 hover:bg-gray-100" 
                   data-testid="button-header-logout"
                   onClick={() => logout.mutate()}
                 >
@@ -785,18 +785,18 @@ export default function Landing() {
               <>
                 <Button 
                   variant="ghost" 
-                  className="text-gray-300 hover:text-white hover:bg-white/5 font-medium" 
+                  className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 font-medium" 
                   data-testid="button-header-login"
                   onClick={() => setShowLoginModal(true)}
                 >
                   로그인
                 </Button>
                 <Button 
-                  className="bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-full px-5" 
+                  className="bg-gray-900 hover:bg-black text-white font-bold rounded-full px-5" 
                   data-testid="button-header-register"
                   onClick={() => setShowRegisterModal(true)}
                 >
-                  회원가입
+                  시작하기
                 </Button>
               </>
             )}
@@ -805,20 +805,20 @@ export default function Landing() {
           {/* Mobile Menu Button */}
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild>
-              <button className="md:hidden p-2 text-gray-400 hover:text-white">
+              <button className="md:hidden p-2 text-gray-600 hover:text-gray-900">
                 <Menu className="w-6 h-6" />
               </button>
             </SheetTrigger>
-            <SheetContent side="right" className="bg-[#0f1117] border-white/10 w-[280px]">
+            <SheetContent side="right" className="bg-white border-gray-100 w-[280px]">
               <SheetHeader>
-                <SheetTitle className="text-white text-left">메뉴</SheetTitle>
+                <SheetTitle className="text-gray-900 text-left">메뉴</SheetTitle>
               </SheetHeader>
               <nav className="flex flex-col gap-2 mt-6">
                 {user && (
-                  <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2 mb-4">
-                    <Wallet className="w-4 h-4 text-amber-400" />
-                    <span className="text-gray-400 text-xs">보유금액</span>
-                    <span className="text-white font-bold text-sm">
+                  <div className="flex items-center gap-2 bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 mb-4">
+                    <Wallet className="w-4 h-4 text-gray-500" />
+                    <span className="text-gray-500 text-xs">보유금액</span>
+                    <span className="text-gray-900 font-bold text-sm">
                       {balanceData?.balance ? Math.floor(parseFloat(balanceData.balance)).toLocaleString() : '0'}원
                     </span>
                   </div>
@@ -833,7 +833,7 @@ export default function Landing() {
                     }
                     setMobileMenuOpen(false);
                   }}
-                  className="text-left text-gray-300 hover:text-white py-3 border-b border-white/8 w-full touch-manipulation font-medium"
+                  className="text-left text-gray-700 hover:text-gray-900 py-3 border-b border-gray-100 w-full touch-manipulation font-medium"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   옵션거래
@@ -847,7 +847,7 @@ export default function Landing() {
                     }
                     setMobileMenuOpen(false);
                   }}
-                  className="text-left text-gray-300 hover:text-white py-3 border-b border-white/8 w-full touch-manipulation font-medium"
+                  className="text-left text-gray-700 hover:text-gray-900 py-3 border-b border-gray-100 w-full touch-manipulation font-medium"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   거래내역
@@ -859,7 +859,7 @@ export default function Landing() {
                     setDepositAmount(''); setDepositSenderName(user?.name || user?.accountHolder || ''); setShowDepositPageModal(true);
                     setMobileMenuOpen(false);
                   }}
-                  className="text-left text-gray-300 hover:text-white py-3 border-b border-white/8 w-full touch-manipulation font-medium"
+                  className="text-left text-gray-700 hover:text-gray-900 py-3 border-b border-gray-100 w-full touch-manipulation font-medium"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   입금신청
@@ -872,7 +872,7 @@ export default function Landing() {
                     setWithdrawalAmount(''); setShowWithdrawalPageModal(true);
                     setMobileMenuOpen(false);
                   }}
-                  className="text-left text-gray-300 hover:text-white py-3 border-b border-white/8 w-full touch-manipulation font-medium"
+                  className="text-left text-gray-700 hover:text-gray-900 py-3 border-b border-gray-100 w-full touch-manipulation font-medium"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   출금신청
@@ -882,7 +882,7 @@ export default function Landing() {
                     setShowAnnouncementsModal(true);
                     setMobileMenuOpen(false);
                   }}
-                  className="text-left text-gray-300 hover:text-white py-3 border-b border-white/8 w-full touch-manipulation font-medium"
+                  className="text-left text-gray-700 hover:text-gray-900 py-3 border-b border-gray-100 w-full touch-manipulation font-medium"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   공지사항
@@ -893,7 +893,7 @@ export default function Landing() {
                       openMyPage();
                       setMobileMenuOpen(false);
                     }}
-                    className="text-left text-gray-300 hover:text-white py-3 border-b border-white/8 w-full touch-manipulation font-medium"
+                    className="text-left text-gray-700 hover:text-gray-900 py-3 border-b border-gray-100 w-full touch-manipulation font-medium"
                     style={{ WebkitTapHighlightColor: 'transparent' }}
                     data-testid="mobile-nav-mypage"
                   >
@@ -905,7 +905,7 @@ export default function Landing() {
                     setShowCustomerServiceModal(true);
                     setMobileMenuOpen(false);
                   }}
-                  className="text-left text-gray-300 hover:text-white py-3 border-b border-white/8 w-full touch-manipulation font-medium"
+                  className="text-left text-gray-700 hover:text-gray-900 py-3 border-b border-gray-100 w-full touch-manipulation font-medium"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   고객센터
@@ -919,7 +919,7 @@ export default function Landing() {
                     }
                     setMobileMenuOpen(false);
                   }}
-                  className="text-left text-gray-300 hover:text-white py-3 border-b border-white/8 w-full touch-manipulation font-medium"
+                  className="text-left text-gray-700 hover:text-gray-900 py-3 border-b border-gray-100 w-full touch-manipulation font-medium"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   쪽지함
@@ -928,24 +928,24 @@ export default function Landing() {
                 <div className="mt-4 flex flex-col gap-2">
                   {user ? (
                     <>
-                      <p className="text-gray-400 text-sm mb-2">{user.username}님</p>
+                      <p className="text-gray-500 text-sm mb-2">{user.username}님</p>
                       {user.role === 'admin' && (
                         <Button 
-                          className="w-full bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-full" 
+                          className="w-full bg-gray-900 hover:bg-black text-white font-bold rounded-full" 
                           onClick={() => { setLocation("/admin"); setMobileMenuOpen(false); }}
                         >
                           관리자
                         </Button>
                       )}
                       <Button 
-                        className="w-full bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-full" 
+                        className="w-full bg-gray-900 hover:bg-black text-white font-bold rounded-full" 
                         onClick={() => { setLocation("/trade"); setMobileMenuOpen(false); }}
                       >
                         거래하기
                       </Button>
                       <Button 
                         variant="outline" 
-                        className="w-full border-white/20 text-gray-300 hover:text-white hover:bg-white/5" 
+                        className="w-full border-gray-200 text-gray-600 hover:text-gray-900 hover:bg-gray-50" 
                         onClick={() => { logout.mutate(); setMobileMenuOpen(false); }}
                       >
                         로그아웃
@@ -955,16 +955,16 @@ export default function Landing() {
                     <>
                       <Button 
                         variant="outline" 
-                        className="w-full border-white/20 text-gray-300 hover:text-white hover:bg-white/5" 
+                        className="w-full border-gray-200 text-gray-600 hover:text-gray-900 hover:bg-gray-50" 
                         onClick={() => { setShowLoginModal(true); setMobileMenuOpen(false); }}
                       >
                         로그인
                       </Button>
                       <Button 
-                        className="w-full bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-full" 
+                        className="w-full bg-gray-900 hover:bg-black text-white font-bold rounded-full" 
                         onClick={() => { setShowRegisterModal(true); setMobileMenuOpen(false); }}
                       >
-                        회원가입
+                        시작하기
                       </Button>
                     </>
                   )}
@@ -975,46 +975,38 @@ export default function Landing() {
         </div>
       </header>
 
-      {/* Hero Section */}
+      {/* Hero Section - Gemini Style */}
       <section className="relative min-h-screen flex items-center overflow-hidden pt-16">
-        {/* Dark premium background */}
-        <div className="absolute inset-0 bg-[#0a0b0f]" />
-        {/* Finance background image */}
+        {/* Atmospheric background photo - like Gemini */}
         <div className="absolute inset-0" style={{
-          backgroundImage: 'url(https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1600&q=80)',
+          backgroundImage: 'url(https://images.unsplash.com/photo-1504608524841-42584120d693?w=1920&q=80)',
           backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          opacity: 0.12
+          backgroundPosition: 'center top',
         }} />
-        {/* Radial gradient overlay */}
-        <div className="absolute inset-0" style={{
-          background: 'radial-gradient(ellipse 80% 60% at 20% 50%, rgba(212,168,67,0.08) 0%, transparent 60%), radial-gradient(ellipse 60% 80% at 80% 20%, rgba(59,130,246,0.06) 0%, transparent 50%)'
-        }} />
-        {/* Bottom fade */}
-        <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-[#0a0b0f] to-transparent" />
+        {/* Subtle overlay for text readability */}
+        <div className="absolute inset-0 bg-black/35" />
 
         <div className="relative z-10 w-full max-w-7xl mx-auto px-6 md:px-8 py-20">
           <div className="grid lg:grid-cols-2 gap-12 items-center min-h-[calc(100vh-4rem)]">
             {/* Left: Text content */}
             <div className="flex flex-col justify-center">
               <div className="flex items-center gap-2 mb-6">
-                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                <span className="text-green-400 text-sm font-medium tracking-wide">실시간 거래 중</span>
+                <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                <span className="text-white/80 text-sm font-medium tracking-wide">실시간 모니터링 · AI 분석 기반</span>
               </div>
-              <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white leading-tight mb-6" data-testid="text-hero-title">
+              <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight mb-6" data-testid="text-hero-title">
                 더 스마트한<br />
-                <span style={{ color: '#d4a843' }}>투자 예측.</span><br />
+                투자 예측.<br />
                 실시간으로.
               </h1>
-              <p className="text-gray-400 text-lg md:text-xl mb-10 leading-relaxed max-w-lg" data-testid="text-hero-description">
+              <p className="text-white/70 text-lg md:text-xl mb-10 leading-relaxed max-w-lg" data-testid="text-hero-description">
                 S&P500, 다우존스, 달러 지수의 방향을 예측하고<br />
                 수익을 실현하세요. 3분·5분 단위 고수익 옵션거래.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button
                   size="lg"
-                  className="font-bold px-10 py-6 text-lg rounded-full shadow-lg text-black"
-                  style={{ backgroundColor: '#d4a843' }}
+                  className="bg-white text-gray-900 hover:bg-gray-100 font-bold px-10 py-6 text-lg rounded-full shadow-lg"
                   data-testid="button-trade"
                   onClick={handleTradeClick}
                 >
@@ -1024,7 +1016,7 @@ export default function Landing() {
                   <Button
                     size="lg"
                     variant="outline"
-                    className="border-white/20 text-white hover:bg-white/8 px-10 py-6 text-lg rounded-full"
+                    className="border-white/40 text-white hover:bg-white/10 px-10 py-6 text-lg rounded-full"
                     data-testid="button-register"
                     onClick={() => setShowRegisterModal(true)}
                   >
@@ -1034,13 +1026,13 @@ export default function Landing() {
               </div>
             </div>
 
-            {/* Right: Trading Widget Card */}
+            {/* Right: Trading Widget Card - Gemini style white card */}
             <div className="hidden lg:flex justify-end">
-              <div className="bg-[#111318] border border-white/10 rounded-2xl shadow-2xl p-6 w-full max-w-sm">
+              <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-white font-bold text-lg">실시간 투자</h3>
-                  <span className="flex items-center gap-1.5 text-xs text-green-400 font-medium">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                  <h3 className="text-gray-900 font-bold text-lg">예측하기</h3>
+                  <span className="flex items-center gap-1.5 text-xs text-green-600 font-medium">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
                     LIVE
                   </span>
                 </div>
@@ -1050,17 +1042,17 @@ export default function Landing() {
                   {marketData.slice(0, 3).map((item) => {
                     const isPositive = item.changePercent >= 0;
                     return (
-                      <div key={item.symbol} className="flex items-center justify-between py-2.5 border-b border-white/8 last:border-0">
+                      <div key={item.symbol} className="flex items-center justify-between py-2.5 border-b border-gray-100 last:border-0">
                         <div className="flex items-center gap-3">
                           <SymbolIcon symbol={item.symbol} size={32} />
                           <div>
-                            <p className="font-semibold text-white text-sm">{item.name}</p>
-                            <p className="text-xs text-gray-500">{item.symbol}</p>
+                            <p className="font-semibold text-gray-900 text-sm">{item.name}</p>
+                            <p className="text-xs text-gray-400">{item.symbol}</p>
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="font-bold text-white text-sm">{item.price.toFixed(item.symbol === 'DXY' ? 3 : 1)}</p>
-                          <p className={`text-xs font-medium ${isPositive ? 'text-red-400' : 'text-blue-400'}`}>
+                          <p className="font-bold text-gray-900 text-sm">{item.price.toFixed(item.symbol === 'DXY' ? 3 : 1)}</p>
+                          <p className={`text-xs font-medium ${isPositive ? 'text-red-500' : 'text-blue-500'}`}>
                             {isPositive ? '▲' : '▼'} {Math.abs(item.changePercent).toFixed(2)}%
                           </p>
                         </div>
@@ -1071,10 +1063,10 @@ export default function Landing() {
 
                 {/* Duration selection */}
                 <div className="flex gap-2 mb-4">
-                  <button className="flex-1 py-2 px-3 text-black text-sm font-semibold rounded-lg" style={{ backgroundColor: '#d4a843' }}>
+                  <button className="flex-1 py-2 px-3 bg-gray-900 text-white text-sm font-semibold rounded-lg">
                     3분
                   </button>
-                  <button className="flex-1 py-2 px-3 bg-white/8 text-gray-400 text-sm font-medium rounded-lg hover:bg-white/12">
+                  <button className="flex-1 py-2 px-3 bg-gray-100 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-200">
                     5분
                   </button>
                 </div>
@@ -1083,13 +1075,13 @@ export default function Landing() {
                 <div className="grid grid-cols-2 gap-2 mb-4">
                   <button
                     onClick={handleTradeClick}
-                    className="py-3 bg-red-500 hover:bg-red-400 text-white font-bold rounded-xl transition-colors"
+                    className="py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl transition-colors"
                   >
                     매수 ▲
                   </button>
                   <button
                     onClick={handleTradeClick}
-                    className="py-3 bg-blue-500 hover:bg-blue-400 text-white font-bold rounded-xl transition-colors"
+                    className="py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl transition-colors"
                   >
                     매도 ▼
                   </button>
@@ -1097,7 +1089,7 @@ export default function Landing() {
 
                 <button
                   onClick={user ? handleTradeClick : () => setShowLoginModal(true)}
-                  className="w-full py-3 bg-white/8 hover:bg-white/12 text-white font-bold rounded-xl transition-colors text-sm border border-white/10"
+                  className="w-full py-3 bg-gray-900 hover:bg-black text-white font-bold rounded-xl transition-colors text-sm"
                 >
                   {user ? '거래하기' : '로그인하여 거래'}
                 </button>
@@ -1112,7 +1104,7 @@ export default function Landing() {
       </section>
 
       {/* Index Ticker Strip */}
-      <div className="relative overflow-hidden bg-[#0f1117] border-y border-white/8 py-3">
+      <div className="relative overflow-hidden bg-gray-50 border-y border-gray-200 py-3">
         <div className="flex animate-[ticker_30s_linear_infinite] whitespace-nowrap">
           {[0, 1].map((repeatIdx) => (
             <div key={repeatIdx} className="flex shrink-0 items-center">
@@ -1124,9 +1116,9 @@ export default function Landing() {
                 { pair: '다우존스', name: 'DOW-300' },
                 { pair: '달러', name: 'DXY-300' },
               ].map((item, i) => (
-                <div key={`${repeatIdx}-${i}`} className="flex items-center gap-2 text-sm px-6 border-r border-white/8 last:border-0">
+                <div key={`${repeatIdx}-${i}`} className="flex items-center gap-2 text-sm px-6 border-r border-gray-200 last:border-0">
                   <SymbolIcon symbol={item.name} size={20} />
-                  <span className="text-gray-400 font-medium">{item.pair}</span>
+                  <span className="text-gray-600 font-medium">{item.pair}</span>
                 </div>
               ))}
             </div>
@@ -1135,7 +1127,7 @@ export default function Landing() {
       </div>
 
       {/* Stats Banner */}
-      <section className="py-16 px-4 bg-[#0a0b0f] border-b border-white/8">
+      <section className="py-16 px-4 bg-white border-b border-gray-100">
         <div className="max-w-5xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             {[
@@ -1145,7 +1137,7 @@ export default function Landing() {
               { value: '즉시', label: '실시간 정산' },
             ].map((stat, i) => (
               <div key={i} className="flex flex-col items-center">
-                <span className="text-4xl md:text-5xl font-bold mb-2" style={{ color: '#d4a843' }}>{stat.value}</span>
+                <span className="text-4xl md:text-5xl font-bold mb-2 text-gray-900">{stat.value}</span>
                 <span className="text-gray-500 text-sm">{stat.label}</span>
               </div>
             ))}
@@ -1154,14 +1146,14 @@ export default function Landing() {
       </section>
 
       {/* Market Overview */}
-      <section className="py-20 px-4 bg-[#0a0b0f]">
+      <section className="py-20 px-4 bg-[#f5f4f0]">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-10">
             <div className="flex items-center justify-center gap-2 mb-3">
-              <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-              <span className="text-green-400 text-sm font-medium">LIVE</span>
+              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              <span className="text-green-600 text-sm font-medium">LIVE</span>
             </div>
-            <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">실시간 마켓</h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">실시간 마켓</h2>
             <p className="text-gray-500">글로벌 주요 지수를 실시간으로 확인하세요</p>
           </div>
           <div className="flex flex-wrap justify-center gap-5">
@@ -1175,20 +1167,20 @@ export default function Landing() {
               return (
                 <div 
                   key={item.symbol}
-                  className="w-full sm:w-[280px] bg-[#111318] border border-white/8 rounded-2xl p-5 hover:border-white/20 hover:shadow-2xl transition-all cursor-pointer group"
+                  className="w-full sm:w-[280px] bg-white border border-gray-200 rounded-2xl p-5 hover:border-gray-300 hover:shadow-lg transition-all cursor-pointer group"
                   data-testid={`card-market-${index}`}
                 >
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-white/8 rounded-full flex items-center justify-center border border-white/10">
+                      <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center border border-gray-200">
                         <SymbolIcon symbol={item.symbol} size={24} />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-white">{item.name}</h3>
-                        <p className="text-xs text-gray-500">{item.symbol}</p>
+                        <h3 className="font-semibold text-gray-900">{item.name}</h3>
+                        <p className="text-xs text-gray-400">{item.symbol}</p>
                       </div>
                     </div>
-                    <div className={`text-xs font-semibold px-2 py-1 rounded-full ${isPositive ? 'bg-red-500/15 text-red-400' : 'bg-blue-500/15 text-blue-400'}`}>
+                    <div className={`text-xs font-semibold px-2 py-1 rounded-full ${isPositive ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-500'}`}>
                       {formattedChange}
                     </div>
                   </div>
@@ -1198,7 +1190,7 @@ export default function Landing() {
                     <svg width="100%" height="48" viewBox="0 0 120 50" preserveAspectRatio="none">
                       <defs>
                         <linearGradient id={`gradient-${index}`} x1="0%" y1="0%" x2="0%" y2="100%">
-                          <stop offset="0%" stopColor={isPositive ? "#ef4444" : "#3b82f6"} stopOpacity="0.3" />
+                          <stop offset="0%" stopColor={isPositive ? "#ef4444" : "#3b82f6"} stopOpacity="0.15" />
                           <stop offset="100%" stopColor={isPositive ? "#ef4444" : "#3b82f6"} stopOpacity="0" />
                         </linearGradient>
                       </defs>
@@ -1217,11 +1209,11 @@ export default function Landing() {
                   
                   <div className="flex items-end justify-between">
                     <div>
-                      <p className="text-xs text-gray-500 mb-1">현재가</p>
-                      <p className="text-lg font-bold text-white">{formattedPrice}</p>
+                      <p className="text-xs text-gray-400 mb-1">현재가</p>
+                      <p className="text-lg font-bold text-gray-900">{formattedPrice}</p>
                     </div>
                     <Link href="/trade">
-                      <Button size="sm" className="text-black text-xs rounded-full px-4 transition-all font-bold" style={{ backgroundColor: '#d4a843' }} data-testid={`button-trade-${item.symbol}`}>
+                      <Button size="sm" className="bg-gray-900 hover:bg-black text-white text-xs rounded-full px-4 transition-all font-bold" data-testid={`button-trade-${item.symbol}`}>
                         거래하기
                       </Button>
                     </Link>
@@ -1234,19 +1226,19 @@ export default function Landing() {
       </section>
 
       {/* Announcements & Messages Section */}
-      <section className="py-16 px-4 bg-[#0f1117]">
+      <section className="py-16 px-4 bg-white">
         <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-2 gap-6">
             {/* Announcements */}
-            <div className="bg-[#111318] border border-white/8 rounded-2xl p-6">
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
               <div className="flex items-center gap-3 mb-5">
-                <div className="w-10 h-10 bg-white/8 rounded-full flex items-center justify-center border border-white/10">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center border border-gray-200">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
                     <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
                   </svg>
                 </div>
-                <h3 className="text-lg font-bold text-white">공지사항</h3>
+                <h3 className="text-lg font-bold text-gray-900">공지사항</h3>
               </div>
               <div className="space-y-2 max-h-[300px] overflow-y-auto">
                 {announcements.length === 0 ? (
@@ -1256,12 +1248,12 @@ export default function Landing() {
                     <button
                       key={ann.id}
                       onClick={() => { setSelectedAnnouncement(ann); setShowAnnouncementsModal(true); }}
-                      className="w-full text-left p-3 bg-white/5 rounded-xl border border-white/8 hover:border-white/20 hover:bg-white/8 transition-colors cursor-pointer"
+                      className="w-full text-left p-3 bg-gray-50 rounded-xl border border-gray-100 hover:border-gray-300 hover:bg-gray-100 transition-colors cursor-pointer"
                       data-testid={`landing-announcement-${ann.id}`}
                     >
                       <div className="flex items-center gap-2 mb-1">
-                        {ann.isPinned && <span className="text-[10px] px-1.5 py-0.5 bg-amber-500/20 text-amber-400 rounded font-medium">고정</span>}
-                        <span className="text-white font-medium text-sm line-clamp-1">{ann.title}</span>
+                        {ann.isPinned && <span className="text-[10px] px-1.5 py-0.5 bg-gray-200 text-gray-600 rounded font-medium">고정</span>}
+                        <span className="text-gray-900 font-medium text-sm line-clamp-1">{ann.title}</span>
                       </div>
                       <p className="text-gray-500 text-xs line-clamp-2">{ann.content}</p>
                     </button>
@@ -1271,12 +1263,12 @@ export default function Landing() {
             </div>
 
             {/* Messages */}
-            <div className="bg-[#111318] border border-white/8 rounded-2xl p-6">
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
               <div className="flex items-center gap-3 mb-5">
-                <div className="w-10 h-10 bg-white/8 rounded-full flex items-center justify-center border border-white/10">
-                  <Mail className="w-5 h-5 text-amber-400" />
+                <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center border border-gray-200">
+                  <Mail className="w-5 h-5 text-gray-600" />
                 </div>
-                <h3 className="text-lg font-bold text-white">쪽지함</h3>
+                <h3 className="text-lg font-bold text-gray-900">쪽지함</h3>
                 {user && messages.filter(m => !m.isRead).length > 0 && (
                   <span className="px-2 py-0.5 bg-red-500 text-white text-xs rounded-full font-medium">
                     {messages.filter(m => !m.isRead).length}
@@ -1286,12 +1278,11 @@ export default function Landing() {
               <div className="space-y-2 max-h-[300px] overflow-y-auto">
                 {!user ? (
                   <div className="text-center py-8">
-                    <Mail className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+                    <Mail className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                     <p className="text-gray-500 text-sm mb-3">로그인 후 쪽지를 확인하세요</p>
                     <Button 
                       size="sm" 
-                      className="text-black rounded-full px-5 font-bold"
-                      style={{ backgroundColor: '#d4a843' }}
+                      className="bg-gray-900 hover:bg-black text-white rounded-full px-5 font-bold"
                       onClick={() => setShowLoginModal(true)}
                     >
                       로그인
@@ -1304,15 +1295,15 @@ export default function Landing() {
                     <button
                       key={msg.id}
                       onClick={() => handleOpenMessage(msg)}
-                      className={`w-full text-left p-3 rounded-xl border transition-colors cursor-pointer ${msg.isRead ? 'bg-white/5 border-white/8 hover:border-white/20' : 'bg-amber-500/10 border-amber-500/30 hover:border-amber-500/50'}`}
+                      className={`w-full text-left p-3 rounded-xl border transition-colors cursor-pointer ${msg.isRead ? 'bg-gray-50 border-gray-100 hover:border-gray-300' : 'bg-blue-50 border-blue-200 hover:border-blue-300'}`}
                       data-testid={`message-item-${msg.id}`}
                     >
                       <div className="flex items-center gap-2 mb-1">
-                        {!msg.isRead && <span className="w-2 h-2 bg-amber-400 rounded-full flex-shrink-0" />}
-                        <span className={`font-medium text-sm line-clamp-1 ${msg.isRead ? 'text-gray-400' : 'text-white'}`}>{msg.title}</span>
+                        {!msg.isRead && <span className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0" />}
+                        <span className={`font-medium text-sm line-clamp-1 ${msg.isRead ? 'text-gray-600' : 'text-gray-900'}`}>{msg.title}</span>
                       </div>
                       <p className="text-gray-500 text-xs line-clamp-2">{msg.content}</p>
-                      <p className="text-gray-600 text-[10px] mt-1">{new Date(msg.createdAt).toLocaleDateString('ko-KR')}</p>
+                      <p className="text-gray-400 text-[10px] mt-1">{new Date(msg.createdAt).toLocaleDateString('ko-KR')}</p>
                     </button>
                   ))
                 )}
@@ -1323,11 +1314,11 @@ export default function Landing() {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 px-4 bg-[#0a0b0f]">
+      <section className="py-20 px-4 bg-[#f5f4f0]">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <p className="font-semibold mb-2 text-sm tracking-wide uppercase" style={{ color: '#d4a843' }}>월드 클래스</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-white" data-testid="text-features-title">트레이딩 플랫폼</h2>
+            <p className="font-semibold mb-2 text-sm tracking-wide uppercase text-gray-500">월드 클래스</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900" data-testid="text-features-title">트레이딩 플랫폼</h2>
           </div>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -1365,13 +1356,13 @@ export default function Landing() {
             ].map((feature, index) => (
               <div 
                 key={index}
-                className="bg-[#111318] border border-white/8 rounded-2xl p-8 hover:border-amber-500/30 transition-all hover:-translate-y-0.5 group"
+                className="bg-white border border-gray-200 rounded-2xl p-8 hover:border-gray-300 hover:shadow-md transition-all hover:-translate-y-0.5 group"
                 data-testid={`card-feature-${index}`}
               >
-                <div className="w-12 h-12 bg-white/8 rounded-xl flex items-center justify-center mb-5 group-hover:bg-amber-500/20 transition-colors border border-white/10">
-                  <feature.icon className="w-6 h-6 text-gray-400 group-hover:text-amber-400 transition-colors" />
+                <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mb-5 group-hover:bg-gray-200 transition-colors border border-gray-200">
+                  <feature.icon className="w-6 h-6 text-gray-500 group-hover:text-gray-800 transition-colors" />
                 </div>
-                <h3 className="text-lg font-bold mb-2 text-white">{feature.title}</h3>
+                <h3 className="text-lg font-bold mb-2 text-gray-900">{feature.title}</h3>
                 <p className="text-gray-500 leading-relaxed text-sm">{feature.description}</p>
               </div>
             ))}
@@ -1380,11 +1371,11 @@ export default function Landing() {
       </section>
 
       {/* Testimonials */}
-      <section className="py-20 px-4 bg-[#0f1117]">
+      <section className="py-20 px-4 bg-white">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <p className="font-semibold mb-2 text-sm tracking-wide uppercase" style={{ color: '#d4a843' }}>플랫폼 이용 후기</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-white" data-testid="text-reviews-title">고객리뷰</h2>
+            <p className="font-semibold mb-2 text-sm tracking-wide uppercase text-gray-500">플랫폼 이용 후기</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900" data-testid="text-reviews-title">고객리뷰</h2>
           </div>
           
           <div className="grid md:grid-cols-3 gap-6">
@@ -1395,24 +1386,24 @@ export default function Landing() {
             ].map((review, index) => (
               <div 
                 key={index}
-                className="bg-[#111318] border border-white/8 rounded-2xl p-8"
+                className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm"
                 data-testid={`card-review-${index}`}
               >
                 <div className="flex items-center gap-3 mb-5">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-black font-bold text-sm" style={{ background: 'linear-gradient(135deg, #d4a843, #f0c060)' }}>
+                  <div className="w-10 h-10 rounded-full bg-gray-900 flex items-center justify-center text-white font-bold text-sm">
                     {index + 1}
                   </div>
                   <div>
-                    <p className="font-semibold text-white">투자자 {index + 1}</p>
+                    <p className="font-semibold text-gray-900">투자자 {index + 1}</p>
                     <p className="text-sm text-gray-500">Premium 회원</p>
                   </div>
                 </div>
                 <div className="flex gap-0.5 mb-4">
                   {[...Array(5)].map((_, i) => (
-                    <span key={i} className="text-amber-400 text-sm">★</span>
+                    <span key={i} className="text-gray-900 text-sm">★</span>
                   ))}
                 </div>
-                <p className="text-gray-400 leading-relaxed text-sm">"{review}"</p>
+                <p className="text-gray-600 leading-relaxed text-sm">"{review}"</p>
               </div>
             ))}
           </div>
@@ -1421,20 +1412,19 @@ export default function Landing() {
 
       {/* CTA Section - Only show for non-logged-in users */}
       {!user && (
-        <section className="py-24 px-4 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #0f1117 0%, #1a1408 50%, #0f1117 100%)' }}>
-          <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 60% 60% at 50% 50%, rgba(212,168,67,0.08) 0%, transparent 70%)' }} />
+        <section className="py-24 px-4 relative overflow-hidden bg-gray-900">
           <div className="relative z-10 max-w-4xl mx-auto text-center">
             <h2 className="text-3xl md:text-5xl font-bold text-white mb-5" data-testid="text-cta-title">
-              MIB에 가입하고<br />지금 바로 시작해보세요
+              GEMINI에 가입하고<br />지금 바로 시작해보세요
             </h2>
             <p className="text-gray-400 text-lg mb-12">
-              당신의 첫 투자, 믿을 수 있는 MIB에서 시작하세요!
+              당신의 첫 투자, 믿을 수 있는 GEMINI에서 시작하세요!
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
                 size="lg" 
                 variant="outline" 
-                className="border-white/20 text-white hover:bg-white/8 px-10 py-6 text-lg rounded-full"
+                className="border-white/30 text-white hover:bg-white/10 px-10 py-6 text-lg rounded-full"
                 data-testid="button-login-cta"
                 onClick={() => setShowLoginModal(true)}
               >
@@ -1442,8 +1432,7 @@ export default function Landing() {
               </Button>
               <Button 
                 size="lg" 
-                className="font-bold px-10 py-6 text-lg rounded-full text-black"
-                style={{ backgroundColor: '#d4a843' }}
+                className="bg-white text-gray-900 hover:bg-gray-100 font-bold px-10 py-6 text-lg rounded-full"
                 data-testid="button-register-cta"
                 onClick={() => setShowRegisterModal(true)}
               >
@@ -1459,7 +1448,9 @@ export default function Landing() {
         <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-4 gap-10 mb-12">
             <div>
-              <h3 className="text-xl font-bold text-white mb-4">MIB</h3>
+              <div className="mb-4">
+                <LearnInvestLogo variant="full" height={28} dark={true} />
+              </div>
               <p className="text-gray-500 text-sm leading-relaxed">
                 안전하고 투명한 시스템으로<br />
                 빠르고 편리한 옵션 거래를 제공합니다.
@@ -1526,7 +1517,7 @@ export default function Landing() {
           </div>
 
           <div className="border-t border-white/10 pt-6 text-center text-gray-600 text-sm">
-            <p>© 2024 MIB. All rights reserved.</p>
+            <p>© 2024 GEMINI. All rights reserved.</p>
           </div>
         </div>
       </footer>
@@ -1535,10 +1526,10 @@ export default function Landing() {
       <Dialog open={showLoginModal} onOpenChange={setShowLoginModal}>
         <DialogContent className="sm:max-w-md p-0 bg-transparent border-none shadow-none [&>button]:hidden">
           <DialogTitle className="sr-only">로그인</DialogTitle>
-          <div className="bg-[#111318] border border-white/10 rounded-2xl p-8 shadow-2xl">
+          <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-2xl">
             <button 
               onClick={() => setShowLoginModal(false)}
-              className="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors z-10"
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 transition-colors z-10"
               data-testid="button-close-login-modal"
             >
               <X className="w-5 h-5" />
@@ -1546,34 +1537,34 @@ export default function Landing() {
             
             <div className="text-center mb-6">
               <div className="flex items-center justify-center gap-2 mb-4">
-                <LearnInvestLogo variant="icon" size={48} className="rounded-lg" />
+                <LearnInvestLogo variant="full" height={32} />
               </div>
-              <h2 className="text-2xl font-bold text-white mb-1">로그인</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-1">로그인</h2>
               <p className="text-gray-500 text-sm">계정에 접속하여 거래를 시작하세요</p>
             </div>
             
             <form onSubmit={handleLoginSubmit} className="space-y-5">
               <div className="space-y-2">
-                <label className="text-sm text-gray-400 font-medium">아이디</label>
+                <label className="text-sm text-gray-600 font-medium">아이디</label>
                 <Input
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="아이디를 입력하세요"
-                  className="h-12 bg-white/5 border-white/10 text-white placeholder:text-gray-600 focus:border-amber-500/50 transition-all"
+                  className="h-12 bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-gray-400 transition-all"
                   data-testid="input-modal-username"
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm text-gray-400 font-medium">비밀번호</label>
+                <label className="text-sm text-gray-600 font-medium">비밀번호</label>
                 <Input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="비밀번호를 입력하세요"
-                  className="h-12 bg-white/5 border-white/10 text-white placeholder:text-gray-600 focus:border-amber-500/50 transition-all"
+                  className="h-12 bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-gray-400 transition-all"
                   data-testid="input-modal-password"
                   required
                 />
@@ -1581,8 +1572,7 @@ export default function Landing() {
 
               <Button
                 type="submit"
-                className="w-full h-12 text-base font-bold rounded-xl transition-all text-black"
-                style={{ backgroundColor: '#d4a843' }}
+                className="w-full h-12 text-base font-bold rounded-xl transition-all bg-gray-900 hover:bg-black text-white"
                 disabled={login.isPending}
                 data-testid="button-modal-login"
               >
@@ -1590,10 +1580,10 @@ export default function Landing() {
               </Button>
             </form>
 
-            <div className="mt-6 pt-6 border-t border-white/10 text-center text-sm text-gray-500">
+            <div className="mt-6 pt-6 border-t border-gray-100 text-center text-sm text-gray-500">
               계정이 없으신가요?{" "}
               <button 
-                className="text-amber-400 hover:underline font-semibold transition-colors"
+                className="text-gray-900 hover:underline font-semibold transition-colors"
                 onClick={() => {
                   setShowLoginModal(false);
                   setShowRegisterModal(true);
@@ -1603,9 +1593,9 @@ export default function Landing() {
               </button>
             </div>
             
-            <div className="mt-4 flex items-center justify-center gap-4 text-xs text-gray-500">
+            <div className="mt-4 flex items-center justify-center gap-4 text-xs text-gray-400">
               <span className="flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 실시간 거래
               </span>
               <span>|</span>
@@ -1619,10 +1609,10 @@ export default function Landing() {
       <Dialog open={showRegisterModal} onOpenChange={(open) => { setShowRegisterModal(open); if (!open) { setRegisterErrorMessage(""); setUsernameChecked(false); setUsernameCheckMessage(""); setUsernameAvailable(false); } }}>
         <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden max-h-[90vh] overflow-y-auto">
           <DialogTitle className="sr-only">회원가입</DialogTitle>
-          <div className="bg-[#111318] border border-white/10 rounded-2xl p-6 shadow-2xl">
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-2xl">
             <button 
               onClick={() => setShowRegisterModal(false)}
-              className="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors z-10"
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 transition-colors z-10"
               data-testid="button-close-register-modal"
             >
               <X className="w-5 h-5" />
@@ -1630,22 +1620,22 @@ export default function Landing() {
             
             <div className="text-center mb-4">
               <div className="flex items-center justify-center gap-2 mb-3">
-                <LearnInvestLogo variant="icon" size={40} className="rounded-lg" />
+                <LearnInvestLogo variant="full" height={28} />
               </div>
-              <h2 className="text-xl font-bold text-white mb-1">회원가입</h2>
+              <h2 className="text-xl font-bold text-gray-900 mb-1">회원가입</h2>
               <p className="text-gray-500 text-sm">지금 가입하고 거래를 시작하세요</p>
             </div>
             
             <form onSubmit={handleRegisterSubmit} className="space-y-3">
               <div className="space-y-1">
-                <label className="text-xs text-gray-400 font-medium">아이디</label>
+                <label className="text-xs text-gray-600 font-medium">아이디</label>
                 <div className="flex gap-2">
                   <Input
                     type="text"
                     value={regUsername}
                     onChange={(e) => { setRegUsername(e.target.value); setUsernameChecked(false); setUsernameCheckMessage(""); setUsernameAvailable(false); }}
                     placeholder="아이디 (3자 이상)"
-                    className="h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-600 focus:border-amber-500/50 text-sm flex-1"
+                    className="h-10 bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 text-sm flex-1"
                     data-testid="input-reg-username"
                     required
                   />
@@ -1653,14 +1643,14 @@ export default function Landing() {
                     type="button"
                     onClick={handleCheckUsername}
                     disabled={checkingUsername || regUsername.length < 3}
-                    className="h-10 px-3 text-xs font-medium bg-white/8 hover:bg-white/12 text-gray-300 border border-white/10 whitespace-nowrap"
+                    className="h-10 px-3 text-xs font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200 whitespace-nowrap"
                     data-testid="button-check-username"
                   >
                     {checkingUsername ? "확인중..." : "중복확인"}
                   </Button>
                 </div>
                 {usernameChecked && usernameCheckMessage && (
-                  <p className={`text-xs mt-1 ${usernameAvailable ? 'text-green-400' : 'text-red-400'}`} data-testid="text-username-check">
+                  <p className={`text-xs mt-1 ${usernameAvailable ? 'text-green-600' : 'text-red-500'}`} data-testid="text-username-check">
                     {usernameCheckMessage}
                   </p>
                 )}
@@ -1668,13 +1658,13 @@ export default function Landing() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-xs text-gray-400 font-medium">이름</label>
+                  <label className="text-xs text-gray-600 font-medium">이름</label>
                   <Input
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="실명"
-                    className="h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-600 focus:border-amber-500/50 text-sm"
+                    className="h-10 bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 text-sm"
                     data-testid="input-reg-name"
                     required
                   />
@@ -1684,25 +1674,25 @@ export default function Landing() {
               <div className="space-y-1">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="text-xs text-gray-400 font-medium">비밀번호</label>
+                    <label className="text-xs text-gray-600 font-medium">비밀번호</label>
                     <Input
                       type="password"
                       value={regPassword}
                       onChange={(e) => setRegPassword(e.target.value)}
                       placeholder="비밀번호 입력"
-                      className="h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-600 focus:border-amber-500/50 text-sm"
+                      className="h-10 bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 text-sm"
                       data-testid="input-reg-password"
                       required
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs text-gray-400 font-medium">비밀번호 확인</label>
+                    <label className="text-xs text-gray-600 font-medium">비밀번호 확인</label>
                     <Input
                       type="password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="비밀번호 재입력"
-                      className="h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-600 focus:border-amber-500/50 text-sm"
+                      className="h-10 bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 text-sm"
                       data-testid="input-reg-confirm-password"
                       required
                     />
@@ -1713,19 +1703,19 @@ export default function Landing() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-xs text-gray-400 font-medium">휴대폰 번호</label>
+                  <label className="text-xs text-gray-600 font-medium">휴대폰 번호</label>
                   <Input
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="01012345678"
-                    className="h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-600 focus:border-amber-500/50 text-sm"
+                    className="h-10 bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 text-sm"
                     data-testid="input-reg-phone"
                     required
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs text-gray-400 font-medium">생년월일</label>
+                  <label className="text-xs text-gray-600 font-medium">생년월일</label>
                   <Input
                     type="text"
                     value={regBirthDate}
@@ -1735,26 +1725,26 @@ export default function Landing() {
                     }}
                     placeholder="예: 901231"
                     maxLength={6}
-                    className="h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-600 focus:border-amber-500/50 text-sm"
+                    className="h-10 bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 text-sm"
                     data-testid="input-reg-birthdate"
                     required
                   />
                 </div>
               </div>
 
-              <div className="pt-2 border-t border-white/10">
+              <div className="pt-2 border-t border-gray-100">
                 <p className="text-xs text-gray-500 mb-2">출금 계좌 정보</p>
                 
                 <div className="space-y-3">
                   <div className="space-y-1">
-                    <label className="text-xs text-gray-400 font-medium">은행 선택</label>
+                    <label className="text-xs text-gray-600 font-medium">은행 선택</label>
                     <Select value={bankName} onValueChange={setBankName}>
-                      <SelectTrigger className="h-10 bg-white/5 border-white/10 text-white text-sm">
+                      <SelectTrigger className="h-10 bg-white border-gray-200 text-gray-900 text-sm">
                         <SelectValue placeholder="은행을 선택하세요" />
                       </SelectTrigger>
-                      <SelectContent className="bg-[#1a1d24] border-white/10 max-h-60 overflow-y-auto">
+                      <SelectContent className="bg-white border-gray-200 max-h-60 overflow-y-auto">
                         {KOREAN_BANKS.map((bank) => (
-                          <SelectItem key={bank} value={bank} className="text-gray-300 hover:bg-white/5 focus:bg-white/5">
+                          <SelectItem key={bank} value={bank} className="text-gray-700 hover:bg-gray-50 focus:bg-gray-50">
                             {bank}
                           </SelectItem>
                         ))}
@@ -1764,25 +1754,25 @@ export default function Landing() {
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <label className="text-xs text-gray-400 font-medium">예금주</label>
+                      <label className="text-xs text-gray-600 font-medium">예금주</label>
                       <Input
                         type="text"
                         value={accountHolder}
                         onChange={(e) => setAccountHolder(e.target.value)}
                         placeholder="예금주명"
-                        className="h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-600 focus:border-amber-500/50 text-sm"
+                        className="h-10 bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 text-sm"
                         data-testid="input-reg-account-holder"
                         required
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-xs text-gray-400 font-medium">계좌번호</label>
+                      <label className="text-xs text-gray-600 font-medium">계좌번호</label>
                       <Input
                         type="text"
                         value={accountNumber}
                         onChange={(e) => setAccountNumber(e.target.value)}
                         placeholder="- 없이 입력"
-                        className="h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-600 focus:border-amber-500/50 text-sm"
+                        className="h-10 bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 text-sm"
                         data-testid="input-reg-account-number"
                         required
                       />
@@ -1792,15 +1782,14 @@ export default function Landing() {
               </div>
 
               {registerErrorMessage && (
-                <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 mt-2" data-testid="text-register-error">
-                  <p className="text-red-400 text-sm text-center font-medium">{registerErrorMessage}</p>
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 mt-2" data-testid="text-register-error">
+                  <p className="text-red-600 text-sm text-center font-medium">{registerErrorMessage}</p>
                 </div>
               )}
 
               <Button
                 type="submit"
-                className="w-full h-11 text-base font-bold rounded-xl transition-all mt-4 text-black"
-                style={{ backgroundColor: '#d4a843' }}
+                className="w-full h-11 text-base font-bold rounded-xl transition-all mt-4 bg-gray-900 hover:bg-black text-white"
                 disabled={register.isPending}
                 data-testid="button-modal-register"
               >
@@ -1808,10 +1797,10 @@ export default function Landing() {
               </Button>
             </form>
 
-            <div className="mt-4 pt-4 border-t border-white/10 text-center text-sm text-gray-500">
+            <div className="mt-4 pt-4 border-t border-gray-100 text-center text-sm text-gray-500">
               이미 계정이 있으신가요?{" "}
               <button 
-                className="text-amber-400 hover:underline font-semibold transition-colors"
+                className="text-gray-900 hover:underline font-semibold transition-colors"
                 onClick={() => {
                   setShowRegisterModal(false);
                   setShowLoginModal(true);
@@ -1828,30 +1817,30 @@ export default function Landing() {
       <Dialog open={showHistoryModal} onOpenChange={setShowHistoryModal}>
         <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden max-h-[90vh] overflow-y-auto">
           <DialogTitle className="sr-only">거래내역</DialogTitle>
-          <div className="bg-[#111318] border border-white/10 rounded-2xl p-6 shadow-2xl">
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-2xl">
             <button 
               onClick={() => setShowHistoryModal(false)}
-              className="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors z-10"
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 transition-colors z-10"
             >
               <X className="w-5 h-5" />
             </button>
             
             <div className="text-center mb-6">
               <div className="flex items-center justify-center gap-2 mb-3">
-                <History className="w-8 h-8 text-amber-400" />
+                <History className="w-8 h-8 text-gray-600" />
               </div>
-              <h2 className="text-2xl font-bold text-white mb-1">거래내역</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-1">거래내역</h2>
               <p className="text-gray-500 text-sm">나의 거래 기록과 보유금액을 확인하세요</p>
             </div>
 
             {/* Balance Card */}
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-6">
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <Wallet className="w-6 h-6 text-amber-400" />
-                  <span className="text-gray-400">보유금액</span>
+                  <Wallet className="w-6 h-6 text-gray-600" />
+                  <span className="text-gray-600">보유금액</span>
                 </div>
-                <span className="text-2xl font-bold text-white">
+                <span className="text-2xl font-bold text-gray-900">
                   {balanceData?.balance ? Number(balanceData.balance).toLocaleString() : '0'}원
                 </span>
               </div>
@@ -1864,30 +1853,30 @@ export default function Landing() {
                 betHistory.slice(0, 10).map((bet: any) => (
                   <div 
                     key={bet.id} 
-                    className="bg-white/5 border border-white/8 rounded-xl p-3 flex items-center justify-between"
+                    className="bg-gray-50 border border-gray-100 rounded-xl p-3 flex items-center justify-between"
                   >
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${bet.direction === 'long' ? 'bg-red-500/15 text-red-400' : 'bg-blue-500/15 text-blue-400'}`}>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${bet.direction === 'long' ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-500'}`}>
                           {bet.direction === 'long' ? '매수' : '매도'}
                         </span>
-                        <span className="text-white font-medium">{bet.symbol}</span>
+                        <span className="text-gray-900 font-medium">{bet.symbol}</span>
                         {bet.roundNumber && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400 font-medium">
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-200 text-gray-600 font-medium">
                             {bet.roundNumber}회차
                           </span>
                         )}
                       </div>
-                      <div className="text-xs text-gray-500 mt-1">
+                      <div className="text-xs text-gray-400 mt-1">
                         {new Date(bet.createdAt).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' })}{' '}
                         {new Date(bet.createdAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Seoul' })}
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-white font-medium">
+                      <div className="text-gray-900 font-medium">
                         {Number(bet.amount).toLocaleString()}원
                       </div>
-                      <div className={`text-xs font-medium ${bet.outcome === 'win' ? 'text-green-400' : bet.outcome === 'lose' ? 'text-red-400' : 'text-amber-400'}`}>
+                      <div className={`text-xs font-medium ${bet.outcome === 'win' ? 'text-green-600' : bet.outcome === 'lose' ? 'text-red-500' : 'text-gray-500'}`}>
                         {bet.outcome === 'win' ? '실현' : bet.outcome === 'lose' ? '실격' : '진행중'}
                       </div>
                     </div>
@@ -1901,8 +1890,7 @@ export default function Landing() {
             </div>
 
             <Button
-              className="w-full mt-4 text-black font-bold rounded-xl"
-              style={{ backgroundColor: '#d4a843' }}
+              className="w-full mt-4 bg-gray-900 hover:bg-black text-white font-bold rounded-xl"
               onClick={() => {
                 setShowHistoryModal(false);
                 setLocation("/trade");
@@ -1918,32 +1906,32 @@ export default function Landing() {
       <Dialog open={showDepositPageModal} onOpenChange={(open) => { if (!open) { setShowDepositPageModal(false); setDepositAmount(''); setDepositSenderName(''); } }}>
         <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden max-h-[90vh] overflow-y-auto">
           <DialogTitle className="sr-only">입금 신청</DialogTitle>
-          <div className="bg-[#111318] border border-white/10 rounded-2xl p-6 shadow-2xl">
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-2xl">
             {/* 헤더 */}
             <div className="flex items-center justify-between mb-5">
               <button onClick={() => { setShowDepositPageModal(false); setDepositAmount(''); setDepositSenderName(''); }}
-                className="flex items-center gap-2 text-gray-500 hover:text-white transition-colors">
+                className="flex items-center gap-2 text-gray-500 hover:text-gray-700 transition-colors">
                 <ChevronRight className="w-5 h-5 rotate-180" />
                 <span className="text-sm">뒤로가기</span>
               </button>
-              <h2 className="text-lg font-bold text-white">입금 신청</h2>
+              <h2 className="text-lg font-bold text-gray-900">입금 신청</h2>
               <button onClick={() => { setShowDepositPageModal(false); setDepositAmount(''); setDepositSenderName(''); }}
-                className="text-gray-500 hover:text-white transition-colors">
+                className="text-gray-400 hover:text-gray-700 transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* 현재 보유금액 */}
-            <div className="bg-white/5 border border-white/10 rounded-xl p-3 mb-5">
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 mb-5">
               <div className="flex items-center justify-between">
-                <span className="text-gray-400 text-sm">현재 보유금액</span>
-                <span className="text-xl font-bold text-white">{balanceData?.balance ? Number(balanceData.balance).toLocaleString() : '0'}원</span>
+                <span className="text-gray-500 text-sm">현재 보유금액</span>
+                <span className="text-xl font-bold text-gray-900">{balanceData?.balance ? Number(balanceData.balance).toLocaleString() : '0'}원</span>
               </div>
             </div>
 
             {/* 입금 진행 절차 STEP 1~4 */}
-            <div className="bg-amber-500/8 border border-amber-500/20 rounded-xl p-4 mb-5">
-              <h3 className="text-sm font-bold text-amber-400 mb-3">입금 진행 절차</h3>
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-5">
+              <h3 className="text-sm font-bold text-gray-700 mb-3">입금 진행 절차</h3>
               <div className="space-y-3">
                 {[
                   { step: '01', text: '인터넷뱅킹, 모바일뱅킹, 무통장 입금, ATM 등으로 송금 가능합니다. 입금 계좌는 수시로 변경될 수 있으니 이체 전 반드시 최신 계좌를 확인해 주세요.' },
@@ -1952,18 +1940,18 @@ export default function Landing() {
                   { step: '04', text: '입금 처리는 영업 시간(평일 오전 09:00 ~ 18:00) 내 순차적으로 진행됩니다. 입금신청 버튼 클릭 후 운영팀 확인을 거쳐 보유금액에 반영됩니다. 처리 완료 시 알림을 통해 안내드립니다.' },
                 ].map(({ step, text }) => (
                   <div key={step} className="flex gap-3">
-                    <span className="shrink-0 w-8 h-8 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 text-xs font-bold">{step}</span>
-                    <p className="text-gray-400 text-xs leading-relaxed pt-1">{text}</p>
+                    <span className="shrink-0 w-8 h-8 rounded-full bg-gray-200 border border-gray-300 flex items-center justify-center text-gray-700 text-xs font-bold">{step}</span>
+                    <p className="text-gray-600 text-xs leading-relaxed pt-1">{text}</p>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* 입금 계좌 정보 */}
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-5">
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-white text-sm font-medium">입금 계좌 정보</p>
+                  <p className="text-gray-900 text-sm font-medium">입금 계좌 정보</p>
                 </div>
                 <button
                   onClick={async () => {
@@ -1988,8 +1976,7 @@ export default function Landing() {
                       toast.error(err.message || '문의 생성에 실패했습니다');
                     }
                   }}
-                  className="text-xs text-black px-3 py-1.5 rounded-full transition-colors whitespace-nowrap font-bold"
-                  style={{ backgroundColor: '#d4a843' }}
+                  className="text-xs text-white bg-gray-900 hover:bg-black px-3 py-1.5 rounded-full transition-colors whitespace-nowrap font-bold"
                   data-testid="button-deposit-inquiry"
                 >
                   계좌번호 문의하기
@@ -1999,27 +1986,27 @@ export default function Landing() {
 
             {/* 보내시는 분 */}
             <div className="mb-4">
-              <label className="block text-gray-400 text-sm mb-2">보내시는 분 <span className="text-red-400">*</span></label>
+              <label className="block text-gray-600 text-sm mb-2">보내시는 분 <span className="text-red-500">*</span></label>
               <Input
                 type="text"
                 value={depositSenderName}
                 onChange={(e) => setDepositSenderName(e.target.value)}
                 placeholder="실제 송금 통장의 예금주 성함 입력"
-                className="bg-white/5 border-white/10 text-white placeholder:text-gray-600"
+                className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400"
                 data-testid="input-deposit-sender"
               />
             </div>
 
             {/* 입금 금액 */}
             <div className="mb-4">
-              <label className="block text-gray-400 text-sm mb-2">입금 금액 <span className="text-red-400">*</span></label>
+              <label className="block text-gray-600 text-sm mb-2">입금 금액 <span className="text-red-500">*</span></label>
               <div className="relative">
                 <Input
                   type="text"
                   value={depositAmount}
                   onChange={(e) => setDepositAmount(e.target.value.replace(/[^0-9]/g, ''))}
                   placeholder="금액을 입력하세요"
-                  className="bg-white/5 border-white/10 text-white pr-12 placeholder:text-gray-600"
+                  className="bg-white border-gray-200 text-gray-900 pr-12 placeholder:text-gray-400"
                   data-testid="input-deposit-amount"
                 />
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500">원</span>
@@ -2031,26 +2018,25 @@ export default function Landing() {
             <div className="grid grid-cols-4 gap-2 mb-2">
               {[10000, 50000, 100000, 500000].map((amt) => (
                 <button key={amt} onClick={() => setDepositAmount(String(Number(depositAmount || 0) + amt))}
-                  className="py-2 bg-white/8 hover:bg-white/12 text-gray-300 text-xs rounded-lg transition-colors font-medium border border-white/8" data-testid={`button-deposit-quick-${amt}`}>
+                  className="py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs rounded-lg transition-colors font-medium border border-gray-200" data-testid={`button-deposit-quick-${amt}`}>
                   +{amt / 10000}만
                 </button>
               ))}
             </div>
             <div className="grid grid-cols-2 gap-2 mb-5">
               <button onClick={() => setDepositAmount(String(Number(depositAmount || 0) + 1000000))}
-                className="py-2 bg-white/8 hover:bg-white/12 text-gray-300 text-xs rounded-lg transition-colors font-medium border border-white/8" data-testid="button-deposit-quick-100">
+                className="py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs rounded-lg transition-colors font-medium border border-gray-200" data-testid="button-deposit-quick-100">
                 +100만
               </button>
               <button onClick={() => setDepositAmount('')}
-                className="py-2 bg-white/8 hover:bg-white/12 text-gray-300 text-xs rounded-lg transition-colors font-medium border border-white/8" data-testid="button-deposit-reset">
+                className="py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs rounded-lg transition-colors font-medium border border-gray-200" data-testid="button-deposit-reset">
                 초기화
               </button>
             </div>
 
             {/* 입금신청 버튼 */}
             <Button
-              className="w-full text-black font-bold rounded-xl mb-6"
-              style={{ backgroundColor: '#d4a843' }}
+              className="w-full bg-gray-900 hover:bg-black text-white font-bold rounded-xl mb-6"
               disabled={depositSubmitting || !depositAmount || Number(depositAmount) <= 0 || !depositSenderName.trim()}
               data-testid="button-deposit-submit"
               onClick={async () => {
@@ -2084,17 +2070,17 @@ export default function Landing() {
 
             {/* 최근 입금 내역 */}
             <div>
-              <h3 className="text-sm font-bold text-gray-400 mb-3">최근 입금 내역</h3>
+              <h3 className="text-sm font-bold text-gray-700 mb-3">최근 입금 내역</h3>
               {(() => {
                 const depositHistory = (myTransactions || []).filter((t: any) => t.type === 'deposit').slice(0, 5);
                 if (depositHistory.length === 0) {
                   return <p className="text-gray-500 text-xs text-center py-4">입금 내역이 없습니다</p>;
                 }
                 return (
-                  <div className="rounded-xl overflow-hidden border border-white/10">
+                  <div className="rounded-xl overflow-hidden border border-gray-200">
                     <table className="w-full text-xs">
                       <thead>
-                        <tr className="bg-white/5">
+                        <tr className="bg-gray-50">
                           <th className="text-left text-gray-500 px-3 py-2 font-medium">신청금액</th>
                           <th className="text-center text-gray-500 px-3 py-2 font-medium">상태</th>
                           <th className="text-right text-gray-500 px-3 py-2 font-medium">신청일</th>
@@ -2102,18 +2088,18 @@ export default function Landing() {
                       </thead>
                       <tbody>
                         {depositHistory.map((t: any) => (
-                          <tr key={t.id} className="border-t border-white/8">
-                            <td className="px-3 py-2 text-white font-medium">{Number(t.amount).toLocaleString()}원</td>
+                          <tr key={t.id} className="border-t border-gray-100">
+                            <td className="px-3 py-2 text-gray-900 font-medium">{Number(t.amount).toLocaleString()}원</td>
                             <td className="px-3 py-2 text-center">
                               <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                                t.status === 'approved' ? 'bg-green-500/15 text-green-400' :
-                                t.status === 'rejected' ? 'bg-red-500/15 text-red-400' :
-                                'bg-amber-500/15 text-amber-400'
+                                t.status === 'approved' ? 'bg-green-100 text-green-700' :
+                                t.status === 'rejected' ? 'bg-red-100 text-red-600' :
+                                'bg-gray-100 text-gray-600'
                               }`}>
                                 {t.status === 'approved' ? '승인' : t.status === 'rejected' ? '거절' : '대기'}
                               </span>
                             </td>
-                            <td className="px-3 py-2 text-right text-gray-500">
+                            <td className="px-3 py-2 text-right text-gray-400">
                               {new Date(t.createdAt).toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Seoul' })}
                             </td>
                           </tr>
@@ -2685,7 +2671,7 @@ export default function Landing() {
                             </span>
                           )}
                         </div>
-                        <p className="text-gray-700 text-sm whitespace-pre-wrap bg-amber-50 border border-amber-200 p-3 rounded-xl">{inquiry.reply}</p>
+                        <p className="text-gray-700 text-sm whitespace-pre-wrap bg-gray-50 border border-gray-200 p-3 rounded-xl">{inquiry.reply}</p>
                       </div>
                     )}
                   </div>
@@ -2880,11 +2866,11 @@ export default function Landing() {
                     <button
                       key={msg.id}
                       onClick={() => handleOpenMessage(msg)}
-                      className={`w-full text-left border rounded-xl p-4 hover:border-gray-400 transition-colors ${msg.isRead ? 'bg-gray-50 border-gray-200' : 'border-amber-300 bg-amber-50'}`}
+                      className={`w-full text-left border rounded-xl p-4 hover:border-gray-400 transition-colors ${msg.isRead ? 'bg-gray-50 border-gray-200' : 'bg-blue-50 border-blue-200'}`}
                     >
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          {!msg.isRead && <span className="w-2 h-2 bg-amber-500 rounded-full" />}
+                          {!msg.isRead && <span className="w-2 h-2 bg-blue-500 rounded-full" />}
                           <h3 className={`font-medium ${msg.isRead ? 'text-gray-600' : 'text-gray-900'}`}>{msg.title}</h3>
                         </div>
                       </div>
@@ -2941,7 +2927,7 @@ export default function Landing() {
                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
                   <div className="flex items-start gap-3 mb-2">
                     {selectedAnnouncement.isPinned && (
-                      <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full text-xs font-medium">고정</span>
+                      <span className="px-2 py-0.5 bg-gray-200 text-gray-600 rounded-full text-xs font-medium">고정</span>
                     )}
                     <h3 className="text-gray-900 font-medium text-lg">{selectedAnnouncement.title}</h3>
                   </div>
@@ -2965,7 +2951,7 @@ export default function Landing() {
                     >
                       <div className="flex items-start gap-3">
                         {ann.isPinned && (
-                          <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full text-xs font-medium">고정</span>
+                          <span className="px-2 py-0.5 bg-gray-200 text-gray-600 rounded-full text-xs font-medium">고정</span>
                         )}
                         <div className="flex-1">
                           <h3 className="text-gray-900 font-medium mb-1">{ann.title}</h3>
@@ -2986,135 +2972,135 @@ export default function Landing() {
 
       {/* My Page Modal */}
       <Dialog open={showMyPageModal} onOpenChange={setShowMyPageModal}>
-        <DialogContent className="bg-[#0f1117] border border-white/10 text-white max-w-lg w-full max-h-[90vh] overflow-y-auto p-0">
+        <DialogContent className="bg-white border border-gray-200 text-gray-900 max-w-lg w-full max-h-[90vh] overflow-y-auto p-0">
           <div className="p-6">
-            <DialogTitle className="text-xl font-bold text-white mb-6">마이페이지</DialogTitle>
+            <DialogTitle className="text-xl font-bold text-gray-900 mb-6">마이페이지</DialogTitle>
 
             {/* 계정 정보 */}
             <div className="mb-6">
-              <h3 className="text-base font-semibold text-white mb-4 pb-2 border-b border-white/10">계정 정보</h3>
+              <h3 className="text-base font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-100">계정 정보</h3>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs text-gray-400 mb-1">아이디</label>
+                  <label className="block text-xs text-gray-500 mb-1">아이디</label>
                   <input
                     type="text"
                     value={user?.username || ""}
                     readOnly
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-gray-300 text-sm cursor-not-allowed"
+                    className="w-full bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 text-gray-500 text-sm cursor-not-allowed"
                     data-testid="input-mypage-username"
                   />
-                  <p className="text-xs text-gray-500 mt-1">로그인에 사용되는 고유 아이디입니다.</p>
+                  <p className="text-xs text-gray-400 mt-1">로그인에 사용되는 고유 아이디입니다.</p>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs text-gray-400 mb-1">새 비밀번호</label>
+                    <label className="block text-xs text-gray-500 mb-1">새 비밀번호</label>
                     <Input
                       type="password"
                       placeholder="새 비밀번호"
                       value={myPageNewPassword}
                       onChange={e => setMyPageNewPassword(e.target.value)}
-                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 text-sm"
+                      className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 text-sm"
                       data-testid="input-mypage-new-password"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-400 mb-1">비밀번호 확인</label>
+                    <label className="block text-xs text-gray-500 mb-1">비밀번호 확인</label>
                     <Input
                       type="password"
                       placeholder="새 비밀번호 확인"
                       value={myPageConfirmPassword}
                       onChange={e => setMyPageConfirmPassword(e.target.value)}
-                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 text-sm"
+                      className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 text-sm"
                       data-testid="input-mypage-confirm-password"
                     />
                   </div>
                 </div>
-                <p className="text-xs text-gray-500">영문, 숫자, 기호를 조합하여 안전한 비밀번호를 설정해 주세요. (비워두면 변경 안됨)</p>
+                <p className="text-xs text-gray-400">영문, 숫자, 기호를 조합하여 안전한 비밀번호를 설정해 주세요. (비워두면 변경 안됨)</p>
               </div>
             </div>
 
             {/* 본인 정보 */}
             <div className="mb-6">
-              <h3 className="text-base font-semibold text-white mb-4 pb-2 border-b border-white/10">본인 정보</h3>
+              <h3 className="text-base font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-100">본인 정보</h3>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs text-gray-400 mb-1">이름</label>
+                  <label className="block text-xs text-gray-500 mb-1">이름</label>
                   <input
                     type="text"
                     value={(user as any)?.name || ""}
                     readOnly
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-gray-300 text-sm cursor-not-allowed"
+                    className="w-full bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 text-gray-500 text-sm cursor-not-allowed"
                     data-testid="input-mypage-name"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-400 mb-1">생년월일 (YYMMDD)</label>
+                  <label className="block text-xs text-gray-500 mb-1">생년월일 (YYMMDD)</label>
                   <input
                     type="text"
                     value={(user as any)?.birthDate || ""}
                     readOnly
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-gray-300 text-sm cursor-not-allowed"
+                    className="w-full bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 text-gray-500 text-sm cursor-not-allowed"
                     data-testid="input-mypage-birthdate"
                   />
-                  <p className="text-xs text-gray-500 mt-1">회원 가입 시 등록한 정보 기준으로 표시됩니다.</p>
+                  <p className="text-xs text-gray-400 mt-1">회원 가입 시 등록한 정보 기준으로 표시됩니다.</p>
                 </div>
               </div>
             </div>
 
             {/* 출금 계좌 */}
             <div className="mb-6">
-              <h3 className="text-base font-semibold text-white mb-4 pb-2 border-b border-white/10">출금 계좌</h3>
+              <h3 className="text-base font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-100">출금 계좌</h3>
               <div className="space-y-3">
                 <div>
-                  <label className="block text-xs text-gray-400 mb-1">은행명</label>
+                  <label className="block text-xs text-gray-500 mb-1">은행명</label>
                   <Select value={myPageBankName} onValueChange={setMyPageBankName}>
-                    <SelectTrigger className="bg-white/5 border-white/10 text-white text-sm" data-testid="select-mypage-bank">
+                    <SelectTrigger className="bg-white border-gray-200 text-gray-900 text-sm" data-testid="select-mypage-bank">
                       <SelectValue placeholder="은행 선택" />
                     </SelectTrigger>
-                    <SelectContent className="bg-[#1C1008] border-white/10 max-h-60">
+                    <SelectContent className="bg-white border-gray-200 max-h-60">
                       {KOREAN_BANKS.map(bank => (
-                        <SelectItem key={bank} value={bank} className="text-gray-300 focus:bg-white/10 focus:text-white">{bank}</SelectItem>
+                        <SelectItem key={bank} value={bank} className="text-gray-700 focus:bg-gray-50 focus:text-gray-900">{bank}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-gray-500 mt-1">정산 및 출금 시 사용될 계좌 정보를 정확히 입력해 주세요.</p>
+                  <p className="text-xs text-gray-400 mt-1">정산 및 출금 시 사용될 계좌 정보를 정확히 입력해 주세요.</p>
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-400 mb-1">계좌번호</label>
+                  <label className="block text-xs text-gray-500 mb-1">계좌번호</label>
                   <Input
                     type="text"
                     placeholder="계좌번호 (숫자만)"
                     value={myPageAccountNumber}
                     onChange={e => setMyPageAccountNumber(e.target.value)}
-                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 text-sm"
+                    className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 text-sm"
                     data-testid="input-mypage-account-number"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-400 mb-1">예금주</label>
+                  <label className="block text-xs text-gray-500 mb-1">예금주</label>
                   <Input
                     type="text"
                     placeholder="예금주명"
                     value={myPageAccountHolder}
                     onChange={e => setMyPageAccountHolder(e.target.value)}
-                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 text-sm"
+                    className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 text-sm"
                     data-testid="input-mypage-account-holder"
                   />
-                  <p className="text-xs text-gray-500 mt-1">회원 실명과 동일해야 정상 출금이 가능합니다.</p>
+                  <p className="text-xs text-gray-400 mt-1">회원 실명과 동일해야 정상 출금이 가능합니다.</p>
                 </div>
               </div>
             </div>
 
             {/* 보유금 */}
             <div className="mb-6">
-              <h3 className="text-base font-semibold text-white mb-4 pb-2 border-b border-white/10">보유금</h3>
+              <h3 className="text-base font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-100">보유금</h3>
               <div>
-                <label className="block text-xs text-gray-400 mb-1">보유금액</label>
+                <label className="block text-xs text-gray-500 mb-1">보유금액</label>
                 <input
                   type="text"
                   value={`₩ ${balanceData?.balance ? Math.floor(parseFloat(balanceData.balance)).toLocaleString() : '0'}`}
                   readOnly
-                  className="w-full bg-amber-500/5 border border-amber-500/20 rounded-lg px-3 py-2 text-amber-400 font-bold text-sm cursor-not-allowed"
+                  className="w-full bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 text-gray-900 font-bold text-sm cursor-not-allowed"
                   data-testid="input-mypage-balance"
                 />
               </div>
@@ -3124,7 +3110,7 @@ export default function Landing() {
             <Button
               onClick={handleMyPageSave}
               disabled={myPageSaving}
-              className="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold h-11"
+              className="w-full bg-gray-900 hover:bg-black text-white font-semibold h-11"
               data-testid="button-mypage-save"
             >
               {myPageSaving ? "저장 중..." : "저장하기"}
@@ -3135,20 +3121,20 @@ export default function Landing() {
 
       {/* Login Error Alert Dialog */}
       <AlertDialog open={!!loginErrorMessage} onOpenChange={() => setLoginErrorMessage("")}>
-        <AlertDialogContent className="bg-[#1C1008] border border-red-500/30">
+        <AlertDialogContent className="bg-white border border-gray-200">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-red-500 flex items-center gap-2">
               <X className="w-5 h-5" />
               로그인 실패
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-gray-300">
+            <AlertDialogDescription className="text-gray-600">
               {loginErrorMessage}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogAction 
               onClick={() => setLoginErrorMessage("")}
-              className="bg-amber-500 hover:bg-amber-600 text-white"
+              className="bg-gray-900 hover:bg-black text-white"
             >
               확인
             </AlertDialogAction>
