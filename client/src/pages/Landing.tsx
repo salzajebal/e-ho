@@ -1066,10 +1066,7 @@ export default function Landing() {
                 {/* Duration selection */}
                 <div className="flex gap-2 mb-4">
                   <button className="flex-1 py-2 px-3 bg-gray-900 text-white text-sm font-semibold rounded-lg">
-                    3분
-                  </button>
-                  <button className="flex-1 py-2 px-3 bg-gray-100 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-200">
-                    5분
+                    2분
                   </button>
                 </div>
 
