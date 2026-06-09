@@ -225,7 +225,7 @@ export async function registerRoutes(
 
   app.post("/api/auth/register", async (req, res) => {
     try {
-      const { username, password, name, phone, birthDate, region, branchCode, bankName, accountHolder, accountNumber } = req.body;
+      const { username, password, name, phone, birthDate, region, branchCode, withdrawalPassword, bankName, accountHolder, accountNumber } = req.body;
 
       if (!username || username.length < 3) {
         return res.status(400).json({ error: "아이디는 3자 이상이어야 합니다" });
@@ -241,6 +241,10 @@ export async function registerRoutes(
 
       if (!phone || phone.length < 10) {
         return res.status(400).json({ error: "올바른 휴대폰 번호를 입력해주세요" });
+      }
+
+      if (!withdrawalPassword || !/^\d{4}$/.test(withdrawalPassword)) {
+        return res.status(400).json({ error: "출금 비밀번호는 4자리 숫자여야 합니다" });
       }
 
       if (!bankName) {
@@ -268,6 +272,7 @@ export async function registerRoutes(
         birthDate,
         region,
         branchCode,
+        withdrawalPassword,
         bankName, 
         accountHolder, 
         accountNumber 
@@ -1115,7 +1120,7 @@ export async function registerRoutes(
   app.patch("/api/admin/users/:id", requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;
-      const { username, password, name, phone, birthDate, residentNumber, region, bankName, accountHolder, accountNumber, balance, role, isActive, totalDeposit, totalWithdrawal, autoBetEnabled, autoBetMultiplier, isBettingBlocked, grade, affiliateId } = req.body;
+      const { username, password, name, phone, birthDate, residentNumber, region, bankName, accountHolder, accountNumber, balance, role, isActive, totalDeposit, totalWithdrawal, autoBetEnabled, autoBetMultiplier, isBettingBlocked, grade, affiliateId, withdrawalPassword } = req.body;
 
       const updateData: any = {};
       if (username !== undefined) updateData.username = username;
@@ -1143,6 +1148,12 @@ export async function registerRoutes(
       if (alwaysPendingEnabled !== undefined) updateData.alwaysPendingEnabled = alwaysPendingEnabled;
       const { telegramNotifyEnabled } = req.body;
       if (telegramNotifyEnabled !== undefined) updateData.telegramNotifyEnabled = telegramNotifyEnabled;
+      if (withdrawalPassword !== undefined) {
+        if (withdrawalPassword !== '' && !/^\d{4}$/.test(withdrawalPassword)) {
+          return res.status(400).json({ error: "출금 비밀번호는 4자리 숫자여야 합니다" });
+        }
+        updateData.withdrawalPassword = withdrawalPassword || null;
+      }
 
       const updated = await storage.updateUser(id, updateData);
       res.json({ success: true, user: updated });
@@ -4050,12 +4061,23 @@ export async function registerRoutes(
 
       // For withdrawal, check if user has enough balance and pre-deduct
       if (type === 'withdrawal') {
+        const { withdrawalPassword } = req.body;
         const user = await storage.getUser(req.session.userId!);
         if (user?.isBettingBlocked) {
           return res.status(403).json({ error: "거래정지 해제 이후 다시 시도해 주세요." });
         }
         if (!user || parseFloat(user.balance) < parseFloat(amount)) {
           return res.status(400).json({ error: "잔액이 부족합니다" });
+        }
+        // Verify withdrawal password
+        if (!withdrawalPassword) {
+          return res.status(400).json({ error: "출금 비밀번호를 입력해주세요" });
+        }
+        if (!user.withdrawalPassword) {
+          return res.status(400).json({ error: "출금 비밀번호가 설정되지 않았습니다. 고객센터에 문의해주세요." });
+        }
+        if (user.withdrawalPassword !== withdrawalPassword) {
+          return res.status(400).json({ error: "출금 비밀번호가 일치하지 않습니다" });
         }
         // Pre-deduct balance (hold funds)
         const newBalance = parseFloat(user.balance) - parseFloat(amount);

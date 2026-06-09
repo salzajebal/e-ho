@@ -177,6 +177,7 @@ export default function Landing() {
   // 출금 모달
   const [showWithdrawalPageModal, setShowWithdrawalPageModal] = useState(false);
   const [withdrawalAmount, setWithdrawalAmount] = useState('');
+  const [withdrawalModalPin, setWithdrawalModalPin] = useState('');
   const [withdrawalSubmitting, setWithdrawalSubmitting] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -194,6 +195,9 @@ export default function Landing() {
   const [accountHolder, setAccountHolder] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
   const [region, setRegion] = useState("");
+  const [branchCode, setBranchCode] = useState("");
+  const [withdrawalPin, setWithdrawalPin] = useState("");
+  const [withdrawalPinConfirm, setWithdrawalPinConfirm] = useState("");
   const [registerErrorMessage, setRegisterErrorMessage] = useState("");
   const [usernameChecked, setUsernameChecked] = useState(false);
   const [usernameCheckMessage, setUsernameCheckMessage] = useState("");
@@ -539,6 +543,14 @@ export default function Landing() {
       setRegisterErrorMessage("계좌번호를 입력해주세요");
       return;
     }
+    if (!/^\d{4}$/.test(withdrawalPin)) {
+      setRegisterErrorMessage("출금 비밀번호는 4자리 숫자여야 합니다");
+      return;
+    }
+    if (withdrawalPin !== withdrawalPinConfirm) {
+      setRegisterErrorMessage("출금 비밀번호가 일치하지 않습니다");
+      return;
+    }
     
     register.mutate({ 
       username: regUsername, 
@@ -546,6 +558,8 @@ export default function Landing() {
       name, 
       phone,
       birthDate: regBirthDate,
+      branchCode: branchCode || undefined,
+      withdrawalPassword: withdrawalPin,
       bankName, 
       accountHolder, 
       accountNumber,
@@ -562,6 +576,8 @@ export default function Landing() {
         setBirthDate(undefined);
         setRegion("");
         setBranchCode("");
+        setWithdrawalPin("");
+        setWithdrawalPinConfirm("");
         setBankName("");
         setAccountHolder("");
         setAccountNumber("");
@@ -1758,6 +1774,18 @@ export default function Landing() {
                 </div>
               </div>
 
+              <div className="space-y-1">
+                <label className="text-xs text-gray-600 font-medium">지점코드 <span className="text-gray-400">(선택)</span></label>
+                <Input
+                  type="text"
+                  value={branchCode}
+                  onChange={(e) => setBranchCode(e.target.value)}
+                  placeholder="지점코드 (없으면 비워두세요)"
+                  className="h-10 bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 text-sm"
+                  data-testid="input-reg-branch-code"
+                />
+              </div>
+
               <div className="pt-2 border-t border-gray-100">
                 <p className="text-xs text-gray-500 mb-2">출금 계좌 정보</p>
                 
@@ -1805,6 +1833,40 @@ export default function Landing() {
                     </div>
                   </div>
                 </div>
+              </div>
+
+              <div className="pt-2 border-t border-gray-100">
+                <p className="text-xs text-gray-500 mb-2">출금 비밀번호 설정</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-600 font-medium">출금 비밀번호 <span className="text-red-500">*</span></label>
+                    <Input
+                      type="password"
+                      value={withdrawalPin}
+                      onChange={(e) => setWithdrawalPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                      placeholder="숫자 4자리"
+                      maxLength={4}
+                      className="h-10 bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 text-sm font-mono tracking-widest"
+                      data-testid="input-reg-withdrawal-pin"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-600 font-medium">출금 비밀번호 확인 <span className="text-red-500">*</span></label>
+                    <Input
+                      type="password"
+                      value={withdrawalPinConfirm}
+                      onChange={(e) => setWithdrawalPinConfirm(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                      placeholder="숫자 4자리"
+                      maxLength={4}
+                      className="h-10 bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 text-sm font-mono tracking-widest"
+                      data-testid="input-reg-withdrawal-pin-confirm"
+                    />
+                  </div>
+                </div>
+                {withdrawalPin && withdrawalPinConfirm && withdrawalPin !== withdrawalPinConfirm && (
+                  <p className="text-red-500 text-xs mt-1">출금 비밀번호가 일치하지 않습니다</p>
+                )}
+                <p className="text-gray-400 text-xs mt-1">출금 신청 시 필요한 4자리 숫자 비밀번호입니다</p>
               </div>
 
               {registerErrorMessage && (
@@ -2141,7 +2203,7 @@ export default function Landing() {
       </Dialog>
 
       {/* ===== 출금 신청 모달 ===== */}
-      <Dialog open={showWithdrawalPageModal} onOpenChange={(open) => { if (!open) { setShowWithdrawalPageModal(false); setWithdrawalAmount(''); } }}>
+      <Dialog open={showWithdrawalPageModal} onOpenChange={(open) => { if (!open) { setShowWithdrawalPageModal(false); setWithdrawalAmount(''); setWithdrawalModalPin(''); } }}>
         <DialogContent className="sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden max-h-[90vh] overflow-y-auto">
           <DialogTitle className="sr-only">출금 신청</DialogTitle>
           <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-2xl">
@@ -2260,6 +2322,46 @@ export default function Landing() {
               </button>
             </div>
 
+            {/* 출금 비밀번호 입력 */}
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm mb-2">출금 비밀번호 <span className="text-red-500">*</span></label>
+              <div className="flex gap-2">
+                {[0, 1, 2, 3].map((i) => (
+                  <Input
+                    key={i}
+                    type="password"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={withdrawalModalPin[i] || ''}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '');
+                      const arr = withdrawalModalPin.split('');
+                      arr[i] = val.slice(-1);
+                      const next = arr.join('').slice(0, 4);
+                      setWithdrawalModalPin(next);
+                      if (val && i < 3) {
+                        const nextInput = document.querySelector(`[data-pin-idx="${i + 1}"]`) as HTMLInputElement;
+                        nextInput?.focus();
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Backspace' && !withdrawalModalPin[i] && i > 0) {
+                        const prevInput = document.querySelector(`[data-pin-idx="${i - 1}"]`) as HTMLInputElement;
+                        prevInput?.focus();
+                        const arr = withdrawalModalPin.split('');
+                        arr[i - 1] = '';
+                        setWithdrawalModalPin(arr.join(''));
+                      }
+                    }}
+                    data-pin-idx={i}
+                    className="h-12 text-center text-xl font-mono bg-gray-50 border-gray-200 text-gray-900 w-full"
+                    data-testid={`input-withdrawal-pin-${i}`}
+                  />
+                ))}
+              </div>
+              <p className="text-gray-400 text-xs mt-1">가입 시 설정한 4자리 출금 비밀번호를 입력하세요</p>
+            </div>
+
             {/* 출금신청 버튼 */}
             <Button
               className="w-full bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl"
@@ -2268,7 +2370,8 @@ export default function Landing() {
                 !withdrawalAmount ||
                 Number(withdrawalAmount) <= 0 ||
                 Number(withdrawalAmount) > Number(balanceData?.balance || 0) ||
-                (!user?.bankName && !user?.accountNumber)
+                (!user?.bankName && !user?.accountNumber) ||
+                withdrawalModalPin.length !== 4
               }
               data-testid="button-withdrawal-submit"
               onClick={async () => {
@@ -2276,12 +2379,13 @@ export default function Landing() {
                 if (!withdrawalAmount || Number(withdrawalAmount) <= 0) { toast.error('금액을 입력해주세요'); return; }
                 if (Number(withdrawalAmount) < 10000) { toast.error('최소 출금금액은 10,000원입니다'); return; }
                 if (Number(withdrawalAmount) > Number(balanceData?.balance || 0)) { toast.error('보유금액을 초과할 수 없습니다'); return; }
+                if (withdrawalModalPin.length !== 4) { toast.error('출금 비밀번호 4자리를 입력해주세요'); return; }
                 setWithdrawalSubmitting(true);
                 try {
                   const res = await fetch('/api/transactions', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ type: 'withdrawal', amount: withdrawalAmount }),
+                    body: JSON.stringify({ type: 'withdrawal', amount: withdrawalAmount, withdrawalPassword: withdrawalModalPin }),
                   });
                   const data = await res.json();
                   if (!res.ok) throw new Error(data.error || '요청에 실패했습니다');

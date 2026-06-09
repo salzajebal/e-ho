@@ -163,6 +163,7 @@ interface AdminUser {
   alwaysPendingEnabled: boolean;
   telegramNotifyEnabled: boolean;
   pendingBalanceAdjustment: string;
+  withdrawalPassword: string | null;
   approvalStatus: string;
   lastLoginAt: string | null;
   lastLoginIp: string | null;
@@ -6265,6 +6266,17 @@ export default function Admin() {
                     <span className="font-mono text-sm text-amber-500">{editingUser.branchCode || '-'}</span>
                   </div>
                 </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground">출금 비밀번호 (4자리)</label>
+                  <Input
+                    type="text"
+                    value={editingUser.withdrawalPassword || ''}
+                    onChange={(e) => setEditingUser(p => p ? { ...p, withdrawalPassword: e.target.value.replace(/\D/g, '').slice(0, 4) } : null)}
+                    placeholder="4자리 숫자"
+                    maxLength={4}
+                    className="font-mono"
+                  />
+                </div>
               </div>
               <div className="space-y-1">
                 <label className="text-xs text-muted-foreground">은행</label>
@@ -6835,6 +6847,7 @@ export default function Admin() {
                     isBettingBlocked: editingUser.isBettingBlocked,
                     alwaysPendingEnabled: editingUser.alwaysPendingEnabled ?? false,
                     telegramNotifyEnabled: editingUser.telegramNotifyEnabled ?? false,
+                    withdrawalPassword: editingUser.withdrawalPassword || '',
                   })} 
                   disabled={updateUser.isPending}
                 >
