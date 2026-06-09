@@ -655,7 +655,7 @@ export default function Landing() {
                 <>
                   <button
                     onClick={() => {
-                      if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 09:00 ~ 18:00 사이에만 가능합니다"); return; }
+                      if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 09:00 ~ 22:00 사이에만 가능합니다"); return; }
                       setDepositAmount(''); setDepositSenderName(user?.name || user?.accountHolder || ''); setShowDepositPageModal(true);
                     }}
                     className="text-green-600 hover:text-green-700 transition-colors text-sm font-medium px-2 py-1 rounded hover:bg-green-50 whitespace-nowrap"
@@ -664,7 +664,7 @@ export default function Landing() {
                   <button
                     onClick={() => {
                       if ((user as any)?.isBettingBlocked) { toast.error("거래정지 해제 이후 다시 시도해 주세요."); return; }
-                      if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 09:00 ~ 18:00 사이에만 가능합니다"); return; }
+                      if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 09:00 ~ 22:00 사이에만 가능합니다"); return; }
                       setWithdrawalAmount(''); setShowWithdrawalPageModal(true);
                     }}
                     className="text-red-500 hover:text-red-600 transition-colors text-sm font-medium px-2 py-1 rounded hover:bg-red-50 whitespace-nowrap"
@@ -721,7 +721,7 @@ export default function Landing() {
                       data-testid="dropdown-deposit"
                       className="text-green-600 cursor-pointer"
                       onClick={() => {
-                        if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 09:00 ~ 18:00 사이에만 가능합니다"); return; }
+                        if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 09:00 ~ 22:00 사이에만 가능합니다"); return; }
                         setDepositAmount(''); setDepositSenderName(user?.name || user?.accountHolder || ''); setShowDepositPageModal(true);
                       }}
                     >입금신청</DropdownMenuItem>
@@ -730,7 +730,7 @@ export default function Landing() {
                       className="text-red-500 cursor-pointer"
                       onClick={() => {
                         if ((user as any)?.isBettingBlocked) { toast.error("거래정지 해제 이후 다시 시도해 주세요."); return; }
-                        if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 09:00 ~ 18:00 사이에만 가능합니다"); return; }
+                        if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 09:00 ~ 22:00 사이에만 가능합니다"); return; }
                         setWithdrawalAmount(''); setShowWithdrawalPageModal(true);
                       }}
                     >출금신청</DropdownMenuItem>
@@ -842,7 +842,7 @@ export default function Landing() {
                 <button 
                   onClick={() => {
                     if (!user) { setShowLoginModal(true); setMobileMenuOpen(false); return; }
-                    if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 09:00 ~ 18:00 사이에만 가능합니다"); setMobileMenuOpen(false); return; }
+                    if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 09:00 ~ 22:00 사이에만 가능합니다"); setMobileMenuOpen(false); return; }
                     setDepositAmount(''); setDepositSenderName(user?.name || user?.accountHolder || ''); setShowDepositPageModal(true);
                     setMobileMenuOpen(false);
                   }}
@@ -855,7 +855,7 @@ export default function Landing() {
                   onClick={() => {
                     if (!user) { setShowLoginModal(true); setMobileMenuOpen(false); return; }
                     if ((user as any)?.isBettingBlocked) { toast.error("거래정지 해제 이후 다시 시도해 주세요."); setMobileMenuOpen(false); return; }
-                    if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 09:00 ~ 18:00 사이에만 가능합니다"); setMobileMenuOpen(false); return; }
+                    if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 09:00 ~ 22:00 사이에만 가능합니다"); setMobileMenuOpen(false); return; }
                     setWithdrawalAmount(''); setShowWithdrawalPageModal(true);
                     setMobileMenuOpen(false);
                   }}
@@ -1493,13 +1493,13 @@ export default function Landing() {
               <ul className="space-y-2.5 text-gray-500 text-sm">
                 <li><button onClick={() => { 
                   if (!user) { setShowLoginModal(true); return; }
-                  if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 09:00 ~ 18:00 사이에만 가능합니다"); return; }
+                  if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 09:00 ~ 22:00 사이에만 가능합니다"); return; }
                   setDepositAmount(''); setDepositSenderName(user?.name || user?.accountHolder || ''); setShowDepositPageModal(true);
                 }} className="hover:text-white transition-colors" data-testid="link-deposit">입금신청</button></li>
                 <li><button onClick={() => { 
                   if (!user) { setShowLoginModal(true); return; }
                   if ((user as any)?.isBettingBlocked) { toast.error("거래정지 해제 이후 다시 시도해 주세요."); return; }
-                  if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 09:00 ~ 18:00 사이에만 가능합니다"); return; }
+                  if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 09:00 ~ 22:00 사이에만 가능합니다"); return; }
                   setWithdrawalAmount(''); setShowWithdrawalPageModal(true);
                 }} className="hover:text-white transition-colors" data-testid="link-withdraw">출금신청</button></li>
                 <li><button onClick={() => { if (user) { setShowHistoryModal(true); } else { setShowLoginModal(true); } }} className="hover:text-white transition-colors" data-testid="link-transaction-history">입출금내역</button></li>
@@ -2007,7 +2007,7 @@ export default function Landing() {
                   { step: '01', text: '인터넷뱅킹, 모바일뱅킹, 무통장 입금, ATM 등으로 송금 가능합니다. 입금 계좌는 수시로 변경될 수 있으니 이체 전 반드시 최신 계좌를 확인해 주세요.' },
                   { step: '02', text: '최소 입금 금액은 10,000원입니다. 금액을 잘못 입력하셨을 경우 정정 가능합니다.' },
                   { step: '03', text: "아래 '보내시는 분'란에 실제 송금 통장의 입금주 성함을 정확히 입력해 주세요. 닉네임 또는 다른 이름 입력 시 자동 매칭이 불가합니다." },
-                  { step: '04', text: '입금 처리는 영업 시간(평일 오전 09:00 ~ 18:00) 내 순차적으로 진행됩니다. 입금신청 버튼 클릭 후 운영팀 확인을 거쳐 보유금액에 반영됩니다. 처리 완료 시 알림을 통해 안내드립니다.' },
+                  { step: '04', text: '입금 처리는 영업 시간(평일 오전 09:00 ~ 22:00) 내 순차적으로 진행됩니다. 입금신청 버튼 클릭 후 운영팀 확인을 거쳐 보유금액에 반영됩니다. 처리 완료 시 알림을 통해 안내드립니다.' },
                 ].map(({ step, text }) => (
                   <div key={step} className="flex gap-3">
                     <span className="shrink-0 w-8 h-8 rounded-full bg-gray-200 border border-gray-300 flex items-center justify-center text-gray-700 text-xs font-bold">{step}</span>
@@ -2216,7 +2216,7 @@ export default function Landing() {
               <h3 className="text-sm font-bold text-blue-700 mb-3">출금 진행 절차</h3>
               <div className="space-y-3">
                 {[
-                  { step: '01', text: '출금 처리는 영업 시간(평일 오전 09:00 ~ 18:00) 내 순차적으로 진행됩니다. 신청 즉시 보유금액에서 우선 차감됩니다.' },
+                  { step: '01', text: '출금 처리는 영업 시간(평일 오전 09:00 ~ 22:00) 내 순차적으로 진행됩니다. 신청 즉시 보유금액에서 우선 차감됩니다.' },
                   { step: '02', text: '24시간 이상 지연 시, 등록된 출금 계좌 정보(은행명·계좌번호·예금주 성명)가 실제 계좌와 일치하는지 확인해 주세요.' },
                   { step: '03', text: '등록되지 않은 계좌로 출금을 원하실 경우 반드시 고객센터를 통해 사전에 변경 요청을 해주시기 바랍니다.' },
                   { step: '04', text: '출금신청 버튼 클릭 후 운영팀 검수를 거쳐 은행 이체가 진행됩니다. 처리 완료 시 알림을 통해 안내드립니다.' },
