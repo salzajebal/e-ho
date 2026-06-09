@@ -3070,31 +3070,6 @@ export default function Landing() {
                   />
                   <p className="text-xs text-gray-400 mt-1">로그인에 사용되는 고유 아이디입니다.</p>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">새 비밀번호</label>
-                    <Input
-                      type="password"
-                      placeholder="새 비밀번호"
-                      value={myPageNewPassword}
-                      onChange={e => setMyPageNewPassword(e.target.value)}
-                      className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 text-sm"
-                      data-testid="input-mypage-new-password"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">비밀번호 확인</label>
-                    <Input
-                      type="password"
-                      placeholder="새 비밀번호 확인"
-                      value={myPageConfirmPassword}
-                      onChange={e => setMyPageConfirmPassword(e.target.value)}
-                      className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 text-sm"
-                      data-testid="input-mypage-confirm-password"
-                    />
-                  </div>
-                </div>
-                <p className="text-xs text-gray-400">영문, 숫자, 기호를 조합하여 안전한 비밀번호를 설정해 주세요. (비워두면 변경 안됨)</p>
               </div>
             </div>
 
@@ -3132,40 +3107,34 @@ export default function Landing() {
               <div className="space-y-3">
                 <div>
                   <label className="block text-xs text-gray-500 mb-1">은행명</label>
-                  <Select value={myPageBankName} onValueChange={setMyPageBankName}>
-                    <SelectTrigger className="bg-white border-gray-200 text-gray-900 text-sm" data-testid="select-mypage-bank">
-                      <SelectValue placeholder="은행 선택" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white border-gray-200 max-h-60">
-                      {KOREAN_BANKS.map(bank => (
-                        <SelectItem key={bank} value={bank} className="text-gray-700 focus:bg-gray-50 focus:text-gray-900">{bank}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-gray-400 mt-1">정산 및 출금 시 사용될 계좌 정보를 정확히 입력해 주세요.</p>
+                  <input
+                    type="text"
+                    value={(user as any)?.bankName || ""}
+                    readOnly
+                    className="w-full bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 text-gray-500 text-sm cursor-not-allowed"
+                    data-testid="input-mypage-bank"
+                  />
                 </div>
                 <div>
                   <label className="block text-xs text-gray-500 mb-1">계좌번호</label>
-                  <Input
+                  <input
                     type="text"
-                    placeholder="계좌번호 (숫자만)"
-                    value={myPageAccountNumber}
-                    onChange={e => setMyPageAccountNumber(e.target.value)}
-                    className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 text-sm"
+                    value={(user as any)?.accountNumber || ""}
+                    readOnly
+                    className="w-full bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 text-gray-500 text-sm cursor-not-allowed"
                     data-testid="input-mypage-account-number"
                   />
                 </div>
                 <div>
                   <label className="block text-xs text-gray-500 mb-1">예금주</label>
-                  <Input
+                  <input
                     type="text"
-                    placeholder="예금주명"
-                    value={myPageAccountHolder}
-                    onChange={e => setMyPageAccountHolder(e.target.value)}
-                    className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 text-sm"
+                    value={(user as any)?.accountHolder || ""}
+                    readOnly
+                    className="w-full bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 text-gray-500 text-sm cursor-not-allowed"
                     data-testid="input-mypage-account-holder"
                   />
-                  <p className="text-xs text-gray-400 mt-1">회원 실명과 동일해야 정상 출금이 가능합니다.</p>
+                  <p className="text-xs text-gray-400 mt-1">출금 계좌 변경은 고객센터로 문의해 주세요.</p>
                 </div>
               </div>
             </div>
@@ -3185,14 +3154,13 @@ export default function Landing() {
               </div>
             </div>
 
-            {/* 저장 버튼 */}
+            {/* 확인 버튼 */}
             <Button
-              onClick={handleMyPageSave}
-              disabled={myPageSaving}
+              onClick={() => setShowMyPageModal(false)}
               className="w-full bg-gray-900 hover:bg-black text-white font-semibold h-11"
-              data-testid="button-mypage-save"
+              data-testid="button-mypage-confirm"
             >
-              {myPageSaving ? "저장 중..." : "저장하기"}
+              확인
             </Button>
           </div>
         </DialogContent>
