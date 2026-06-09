@@ -243,8 +243,8 @@ export async function registerRoutes(
         return res.status(400).json({ error: "올바른 휴대폰 번호를 입력해주세요" });
       }
 
-      if (!withdrawalPassword || !/^\d{4}$/.test(withdrawalPassword)) {
-        return res.status(400).json({ error: "출금 비밀번호는 4자리 숫자여야 합니다" });
+      if (!withdrawalPassword || !/^\d{6}$/.test(withdrawalPassword)) {
+        return res.status(400).json({ error: "출금 비밀번호는 6자리 숫자여야 합니다" });
       }
 
       if (!bankName) {
@@ -1149,8 +1149,8 @@ export async function registerRoutes(
       const { telegramNotifyEnabled } = req.body;
       if (telegramNotifyEnabled !== undefined) updateData.telegramNotifyEnabled = telegramNotifyEnabled;
       if (withdrawalPassword !== undefined) {
-        if (withdrawalPassword !== '' && !/^\d{4}$/.test(withdrawalPassword)) {
-          return res.status(400).json({ error: "출금 비밀번호는 4자리 숫자여야 합니다" });
+        if (withdrawalPassword !== '' && !/^\d{6}$/.test(withdrawalPassword)) {
+          return res.status(400).json({ error: "출금 비밀번호는 6자리 숫자여야 합니다" });
         }
         updateData.withdrawalPassword = withdrawalPassword || null;
       }
