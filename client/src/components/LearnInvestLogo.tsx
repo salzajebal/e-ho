@@ -6,7 +6,7 @@ interface LogoProps {
   dark?: boolean;
 }
 
-function GeminiMark({ size = 32, color = "currentColor" }: { size?: number; color?: string }) {
+function GeminiMark({ size = 32, color = "#0f0f0f" }: { size?: number; color?: string }) {
   return (
     <svg
       width={size}
@@ -16,31 +16,9 @@ function GeminiMark({ size = 32, color = "currentColor" }: { size?: number; colo
       xmlns="http://www.w3.org/2000/svg"
       style={{ display: "block", flexShrink: 0 }}
     >
-      <circle
-        cx="36"
-        cy="50"
-        r="30"
-        stroke={color}
-        strokeWidth="8"
-        fill="none"
-      />
-      <circle
-        cx="72"
-        cy="50"
-        r="22"
-        stroke={color}
-        strokeWidth="8"
-        fill="none"
-      />
-      <line
-        x1="6"
-        y1="50"
-        x2="94"
-        y2="50"
-        stroke={color}
-        strokeWidth="8"
-        strokeLinecap="round"
-      />
+      <circle cx="34" cy="50" r="34" stroke={color} strokeWidth="8.5" />
+      <circle cx="76" cy="50" r="22" stroke={color} strokeWidth="8.5" />
+      <line x1="0" y1="50" x2="98" y2="50" stroke={color} strokeWidth="8.5" strokeLinecap="round" />
     </svg>
   );
 }
@@ -53,11 +31,10 @@ export function LearnInvestLogo({
   dark = false,
 }: LogoProps) {
   const markColor = dark ? "#ffffff" : "#0f0f0f";
-  const textColor = dark ? "#ffffff" : "#0d0d0d";
-  const accentColor = dark ? "#c9a84c" : "#b8922a";
+  const textColor = dark ? "#ffffff" : "#0f0f0f";
 
   const h = size ?? height ?? 32;
-  const iconSize = Math.round(h * 1.15);
+  const iconSize = Math.round(h * 1.1);
 
   if (variant === "icon") {
     return (
@@ -69,39 +46,24 @@ export function LearnInvestLogo({
 
   return (
     <div
-      className={`flex items-center gap-2.5 ${className}`}
+      className={`flex items-center gap-2 ${className}`}
       style={{ height: h }}
     >
       <GeminiMark size={iconSize} color={markColor} />
-      <div style={{ display: "flex", flexDirection: "column", lineHeight: 1 }}>
-        <span
-          style={{
-            fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
-            fontWeight: 300,
-            fontSize: h * 0.76,
-            letterSpacing: "0.22em",
-            color: textColor,
-            lineHeight: 1,
-            textTransform: "uppercase" as const,
-          }}
-        >
-          GEMINI
-        </span>
-        <span
-          style={{
-            fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
-            fontWeight: 400,
-            fontSize: h * 0.27,
-            letterSpacing: "0.38em",
-            color: accentColor,
-            lineHeight: 1,
-            marginTop: "3px",
-            textTransform: "uppercase" as const,
-          }}
-        >
-          INVESTMENT
-        </span>
-      </div>
+      <span
+        style={{
+          fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+          fontWeight: 300,
+          fontSize: h * 0.82,
+          letterSpacing: "0.18em",
+          color: textColor,
+          lineHeight: 1,
+          textTransform: "uppercase" as const,
+          whiteSpace: "nowrap" as const,
+        }}
+      >
+        GEMINI
+      </span>
     </div>
   );
 }
