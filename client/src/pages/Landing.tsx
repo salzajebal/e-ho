@@ -715,7 +715,7 @@ export default function Landing() {
                     >출금신청</DropdownMenuItem>
                     <DropdownMenuItem
                       data-testid="dropdown-mypage"
-                      className="cursor-pointer"
+                      className="text-gray-700 cursor-pointer"
                       onClick={openMyPage}
                     >마이페이지</DropdownMenuItem>
                     {user.role === 'admin' && (
