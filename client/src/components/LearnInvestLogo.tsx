@@ -6,6 +6,45 @@ interface LogoProps {
   dark?: boolean;
 }
 
+function GeminiMark({ size = 32, color = "currentColor" }: { size?: number; color?: string }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      style={{ display: "block", flexShrink: 0 }}
+    >
+      <circle
+        cx="36"
+        cy="50"
+        r="30"
+        stroke={color}
+        strokeWidth="8"
+        fill="none"
+      />
+      <circle
+        cx="72"
+        cy="50"
+        r="22"
+        stroke={color}
+        strokeWidth="8"
+        fill="none"
+      />
+      <line
+        x1="6"
+        y1="50"
+        x2="94"
+        y2="50"
+        stroke={color}
+        strokeWidth="8"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 export function LearnInvestLogo({
   size,
   height,
@@ -13,37 +52,33 @@ export function LearnInvestLogo({
   variant = "full",
   dark = false,
 }: LogoProps) {
+  const markColor = dark ? "#ffffff" : "#0f0f0f";
   const textColor = dark ? "#ffffff" : "#0d0d0d";
   const accentColor = dark ? "#c9a84c" : "#b8922a";
 
-  const GeminiSymbol = ({ w, h }: { w: number; h: number }) => (
-    <svg width={w} height={h} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="35" cy="50" r="21" stroke="#00CFFF" strokeWidth="8" fill="none"/>
-      <circle cx="65" cy="50" r="21" stroke="#00CFFF" strokeWidth="8" fill="none"/>
-      <rect x="31" y="29" width="38" height="42" fill="white"/>
-      <line x1="35" y1="29" x2="35" y2="71" stroke="#00CFFF" strokeWidth="8"/>
-      <line x1="65" y1="29" x2="65" y2="71" stroke="#00CFFF" strokeWidth="8"/>
-      <line x1="31" y1="50" x2="69" y2="50" stroke="#00CFFF" strokeWidth="8"/>
-    </svg>
-  );
+  const h = size ?? height ?? 32;
+  const iconSize = Math.round(h * 1.15);
 
   if (variant === "icon") {
-    const h = size ?? height ?? 32;
-    return <GeminiSymbol w={h} h={h} />;
+    return (
+      <div className={className}>
+        <GeminiMark size={h} color={markColor} />
+      </div>
+    );
   }
 
-  const h = size ?? height ?? 32;
-  const iconSize = Math.round(h * 1.1);
-
   return (
-    <div className={`flex items-center gap-2 ${className}`} style={{ height: h }}>
-      <GeminiSymbol w={iconSize} h={iconSize} />
+    <div
+      className={`flex items-center gap-2.5 ${className}`}
+      style={{ height: h }}
+    >
+      <GeminiMark size={iconSize} color={markColor} />
       <div style={{ display: "flex", flexDirection: "column", lineHeight: 1 }}>
         <span
           style={{
             fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
             fontWeight: 300,
-            fontSize: h * 0.78,
+            fontSize: h * 0.76,
             letterSpacing: "0.22em",
             color: textColor,
             lineHeight: 1,
@@ -56,7 +91,7 @@ export function LearnInvestLogo({
           style={{
             fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
             fontWeight: 400,
-            fontSize: h * 0.28,
+            fontSize: h * 0.27,
             letterSpacing: "0.38em",
             color: accentColor,
             lineHeight: 1,
