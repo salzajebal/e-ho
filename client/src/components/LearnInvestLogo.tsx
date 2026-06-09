@@ -15,70 +15,29 @@ export function LearnInvestLogo({
 }: LogoProps) {
   const textColor = dark ? "#ffffff" : "#0d0d0d";
   const accentColor = dark ? "#c9a84c" : "#b8922a";
-  const gemColor1 = dark ? "#e8c96a" : "#c9a84c";
-  const gemColor2 = dark ? "#f0d88a" : "#dbb85e";
-  const gemShadow = dark ? "#a07820" : "#8a6010";
 
-  const GemIcon = ({ w, h }: { w: number; h: number }) => (
-    <svg width={w} height={h} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* Outer gem shape — hexagonal diamond */}
-      <polygon
-        points="20,3 33,11 33,29 20,37 7,29 7,11"
-        fill="none"
-        stroke={gemColor1}
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-      />
-      {/* Inner gem facets */}
-      <polygon
-        points="20,3 33,11 20,20"
-        fill={gemColor1}
-        fillOpacity="0.25"
-      />
-      <polygon
-        points="20,3 7,11 20,20"
-        fill={gemColor2}
-        fillOpacity="0.18"
-      />
-      <polygon
-        points="7,11 7,29 20,20"
-        fill={gemShadow}
-        fillOpacity="0.22"
-      />
-      <polygon
-        points="33,11 33,29 20,20"
-        fill={gemColor1}
-        fillOpacity="0.30"
-      />
-      <polygon
-        points="7,29 20,37 20,20"
-        fill={gemColor2}
-        fillOpacity="0.20"
-      />
-      <polygon
-        points="33,29 20,37 20,20"
-        fill={gemColor1}
-        fillOpacity="0.15"
-      />
-      {/* Center highlight */}
-      <circle cx="20" cy="20" r="2.5" fill={gemColor2} fillOpacity="0.7" />
-      {/* Top sparkle */}
-      <line x1="20" y1="0" x2="20" y2="3" stroke={gemColor2} strokeWidth="1.2" strokeLinecap="round" />
-      <line x1="18" y1="1.2" x2="22" y2="1.2" stroke={gemColor2} strokeWidth="0.8" strokeLinecap="round" />
+  const GeminiSymbol = ({ w, h }: { w: number; h: number }) => (
+    <svg width={w} height={h} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="35" cy="50" r="21" stroke="#00CFFF" strokeWidth="8" fill="none"/>
+      <circle cx="65" cy="50" r="21" stroke="#00CFFF" strokeWidth="8" fill="none"/>
+      <rect x="31" y="29" width="38" height="42" fill="white"/>
+      <line x1="35" y1="29" x2="35" y2="71" stroke="#00CFFF" strokeWidth="8"/>
+      <line x1="65" y1="29" x2="65" y2="71" stroke="#00CFFF" strokeWidth="8"/>
+      <line x1="31" y1="50" x2="69" y2="50" stroke="#00CFFF" strokeWidth="8"/>
     </svg>
   );
 
   if (variant === "icon") {
     const h = size ?? height ?? 32;
-    return <GemIcon w={h} h={h} />;
+    return <GeminiSymbol w={h} h={h} />;
   }
 
   const h = size ?? height ?? 32;
-  const iconSize = Math.round(h * 1.15);
+  const iconSize = Math.round(h * 1.1);
 
   return (
     <div className={`flex items-center gap-2 ${className}`} style={{ height: h }}>
-      <GemIcon w={iconSize} h={iconSize} />
+      <GeminiSymbol w={iconSize} h={iconSize} />
       <div style={{ display: "flex", flexDirection: "column", lineHeight: 1 }}>
         <span
           style={{
