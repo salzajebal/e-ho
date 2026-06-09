@@ -651,6 +651,27 @@ export default function Landing() {
                 className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium px-2 py-1 rounded hover:bg-gray-100 whitespace-nowrap" 
                 data-testid="nav-trade-history"
               >거래내역</button>
+              {user && (
+                <>
+                  <button
+                    onClick={() => {
+                      if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 09:00 ~ 18:00 사이에만 가능합니다"); return; }
+                      setDepositAmount(''); setDepositSenderName(user?.name || user?.accountHolder || ''); setShowDepositPageModal(true);
+                    }}
+                    className="text-green-600 hover:text-green-700 transition-colors text-sm font-medium px-2 py-1 rounded hover:bg-green-50 whitespace-nowrap"
+                    data-testid="nav-deposit"
+                  >입금신청</button>
+                  <button
+                    onClick={() => {
+                      if ((user as any)?.isBettingBlocked) { toast.error("거래정지 해제 이후 다시 시도해 주세요."); return; }
+                      if (!isWithinOperatingHours()) { toast.error("입출금 신청은 오전 09:00 ~ 18:00 사이에만 가능합니다"); return; }
+                      setWithdrawalAmount(''); setShowWithdrawalPageModal(true);
+                    }}
+                    className="text-red-500 hover:text-red-600 transition-colors text-sm font-medium px-2 py-1 rounded hover:bg-red-50 whitespace-nowrap"
+                    data-testid="nav-withdraw"
+                  >출금신청</button>
+                </>
+              )}
               <button 
                 onClick={() => setShowAnnouncementsModal(true)}
                 className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium px-2 py-1 rounded hover:bg-gray-100 whitespace-nowrap" 
