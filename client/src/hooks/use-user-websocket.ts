@@ -146,7 +146,7 @@ export function useUserWebSocket(isAuthenticated: boolean, options?: WebSocketOp
             fetch('/api/auth/logout', { method: 'POST' }).finally(() => {
               // Show alert and redirect to login page
               alert('로그아웃 되었습니다.');
-              window.location.href = '/login';
+              window.location.href = '/';
             });
           }
         } catch (err) {
