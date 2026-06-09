@@ -1433,45 +1433,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="py-20 px-4 bg-white">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <p className="font-semibold mb-2 text-sm tracking-wide uppercase text-gray-500">플랫폼 이용 후기</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900" data-testid="text-reviews-title">고객리뷰</h2>
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-6">
-            {[
-              "처음 보자마자 거래 플랫폼과 사랑에 빠졌습니다. 깔끔하고 간편한 디자인이 정말 마음에 들었거든요.",
-              "이 플랫폼을 통해 옵션 거래에 대해 많은 것을 배웠어요. 이제 투자를 통해 수익을 올릴 수 있게 되었죠.",
-              "지원팀 문의가 간단하고 쉽더라고요. 빠르게 문의 사항에 답변해 주시는 것에 놀랐습니다."
-            ].map((review, index) => (
-              <div 
-                key={index}
-                className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm"
-                data-testid={`card-review-${index}`}
-              >
-                <div className="flex items-center gap-3 mb-5">
-                  <div className="w-10 h-10 rounded-full bg-gray-900 flex items-center justify-center text-white font-bold text-sm">
-                    {index + 1}
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-900">투자자 {index + 1}</p>
-                    <p className="text-sm text-gray-500">Premium 회원</p>
-                  </div>
-                </div>
-                <div className="flex gap-0.5 mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <span key={i} className="text-gray-900 text-sm">★</span>
-                  ))}
-                </div>
-                <p className="text-gray-600 leading-relaxed text-sm">"{review}"</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* CTA Section - Only show for non-logged-in users */}
       {!user && (
@@ -1559,9 +1520,9 @@ export default function Landing() {
                 <h4 className="font-semibold mb-3 text-gray-400 text-xs uppercase tracking-wider">입·출금 및 상담 가능시간</h4>
                 <p className="text-gray-600 text-xs mb-2">(주말/공휴일 제외)</p>
                 <ul className="space-y-1 text-gray-500 text-xs">
-                  <li className="flex justify-between"><span>고객상담</span><span>평일 09:00 ~ 18:00</span></li>
-                  <li className="flex justify-between"><span>입금시간</span><span>평일 09:00 ~ 18:00</span></li>
-                  <li className="flex justify-between"><span>출금시간</span><span>평일 09:00 ~ 18:00</span></li>
+                  <li className="flex justify-between"><span>고객상담</span><span>평일 09:00 ~ 22:00</span></li>
+                  <li className="flex justify-between"><span>입금시간</span><span>평일 09:00 ~ 22:00</span></li>
+                  <li className="flex justify-between"><span>출금시간</span><span>평일 09:00 ~ 22:00</span></li>
                 </ul>
               </div>
               <div>
@@ -1580,7 +1541,7 @@ export default function Landing() {
           </div>
 
           <div className="border-t border-white/10 pt-6 text-center text-gray-600 text-sm">
-            <p>© 2024 GEMINI. All rights reserved.</p>
+            <p>© 2021 GEMINI. All rights reserved.</p>
           </div>
         </div>
       </footer>
