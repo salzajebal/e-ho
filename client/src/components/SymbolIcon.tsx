@@ -69,35 +69,22 @@ function ETHLogo({ size }: { size: number }) {
 function GOLDLogo({ size }: { size: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
-      <defs>
-        <linearGradient id="gold-grad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#FFD700" />
-          <stop offset="50%" stopColor="#C8960C" />
-          <stop offset="100%" stopColor="#8B6914" />
-        </linearGradient>
-        <linearGradient id="gold-shine" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#FFF176" stopOpacity="0.7" />
-          <stop offset="100%" stopColor="#FFD700" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <circle cx="16" cy="16" r="16" fill="url(#gold-grad)" />
-      <circle cx="16" cy="16" r="16" fill="url(#gold-shine)" />
-      {/* Gold bar shape */}
-      <rect x="8" y="11" width="16" height="10" rx="2" fill="white" fillOpacity="0.15" />
-      <rect x="9" y="12" width="14" height="8" rx="1.5" fill="none" stroke="white" strokeOpacity="0.5" strokeWidth="0.8" />
-      {/* "Au" chemical symbol */}
+      <circle cx="16" cy="16" r="16" fill="#C8960C" />
+      <circle cx="16" cy="16" r="16" fill="#FFD700" fillOpacity="0.45" />
+      <rect x="7" y="11" width="18" height="10" rx="2.5" fill="white" fillOpacity="0.18" />
+      <rect x="8" y="12" width="16" height="8" rx="2" fill="none" stroke="white" strokeOpacity="0.55" strokeWidth="1" />
+      <line x1="7" y1="16" x2="25" y2="16" stroke="white" strokeOpacity="0.35" strokeWidth="0.8" />
       <text
         x="16"
-        y="19.5"
+        y="19.8"
         textAnchor="middle"
-        fontFamily="'Georgia', serif"
+        fontFamily="Georgia, serif"
         fontSize="9"
         fontWeight="bold"
         fill="white"
         fillOpacity="0.95"
       >Au</text>
-      {/* Top shine */}
-      <ellipse cx="12" cy="13.5" rx="3" ry="1.5" fill="white" fillOpacity="0.25" transform="rotate(-20 12 13.5)" />
+      <ellipse cx="11.5" cy="13" rx="2.5" ry="1.2" fill="white" fillOpacity="0.28" transform="rotate(-15 11.5 13)" />
     </svg>
   );
 }
