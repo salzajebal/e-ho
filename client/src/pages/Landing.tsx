@@ -515,10 +515,6 @@ export default function Landing() {
       setRegisterErrorMessage("비밀번호는 4자 이상이어야 합니다");
       return;
     }
-    if (regPassword !== confirmPassword) {
-      setRegisterErrorMessage("비밀번호가 일치하지 않습니다");
-      return;
-    }
     if (!name) {
       setRegisterErrorMessage("이름을 입력해주세요");
       return;
