@@ -855,7 +855,7 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
-  async applyMaxExecution(betId: number, enabled: boolean): Promise<{ newMultiplier: string; userId: string }> {
+  async applyMaxExecution(betId: number, enabled: boolean): Promise<{ newAmount: string; newBalance: string; userId: string }> {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -864,31 +864,51 @@ export class DatabaseStorage implements IStorage {
       const bet = betResult.rows[0];
       if (!bet) throw new Error("거래를 찾을 수 없습니다");
       if (bet.outcome !== 'pending') throw new Error("진행 중인 거래만 변경 가능합니다");
-      if (enabled && bet.max_execution_applied) throw new Error("이미 10배 배당이 적용된 거래입니다");
-      if (!enabled && !bet.max_execution_applied) throw new Error("10배 배당이 적용되지 않은 거래입니다");
+      if (enabled && bet.max_execution_applied) throw new Error("이미 맥스체결이 적용된 거래입니다");
+      if (!enabled && !bet.max_execution_applied) throw new Error("맥스체결이 적용되지 않은 거래입니다");
 
-      // When enabled: set multiplier to 10.00 (10x payout)
-      // When disabled: restore original multiplier stored in original_amount column
-      let newMultiplier: string;
+      const userResult = await client.query('SELECT * FROM users WHERE id = $1 FOR UPDATE', [bet.user_id]);
+      const user = userResult.rows[0];
+      if (!user) throw new Error("회원을 찾을 수 없습니다");
+
+      const currentBalance = parseFloat(user.balance);
+      const currentBetAmount = parseFloat(bet.amount);
+
+      let newAmount: string;
+      let newBalance: string;
 
       if (enabled) {
-        const originalMultiplier = bet.multiplier;
-        newMultiplier = "10.00";
+        const newBetAmount = currentBetAmount * 10;
+        const additionalNeeded = newBetAmount - currentBetAmount;
+        if (additionalNeeded > currentBalance) throw new Error("잔고가 부족합니다 (10배 체결에 필요한 잔액이 없습니다)");
+
+        const remainingBalance = Math.floor(currentBalance - additionalNeeded);
+
         await client.query(
-          'UPDATE bets SET multiplier = $1, original_amount = $2, max_execution_applied = true WHERE id = $3',
-          [newMultiplier, originalMultiplier, betId]
+          'UPDATE bets SET amount = $1, original_amount = $2, max_execution_applied = true WHERE id = $3',
+          [newBetAmount.toString(), currentBetAmount.toString(), betId]
         );
+        await client.query('UPDATE users SET balance = $1 WHERE id = $2', [remainingBalance.toString(), bet.user_id]);
+
+        newAmount = newBetAmount.toString();
+        newBalance = remainingBalance.toString();
       } else {
-        const originalMultiplier = bet.original_amount || "2.00";
-        newMultiplier = originalMultiplier;
+        const originalAmount = parseFloat(bet.original_amount || "0");
+        const refundAmount = currentBetAmount - originalAmount;
+        const computedBalance = Math.floor(currentBalance + refundAmount);
+
         await client.query(
-          'UPDATE bets SET multiplier = $1, original_amount = NULL, max_execution_applied = false WHERE id = $2',
-          [newMultiplier, betId]
+          'UPDATE bets SET amount = $1, original_amount = NULL, max_execution_applied = false WHERE id = $2',
+          [originalAmount.toString(), betId]
         );
+        await client.query('UPDATE users SET balance = $1 WHERE id = $2', [computedBalance.toString(), bet.user_id]);
+
+        newAmount = originalAmount.toString();
+        newBalance = computedBalance.toString();
       }
 
       await client.query('COMMIT');
-      return { newMultiplier, userId: bet.user_id };
+      return { newAmount, newBalance, userId: bet.user_id };
     } catch (error) {
       await client.query('ROLLBACK');
       throw error;

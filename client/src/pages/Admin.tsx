@@ -3987,23 +3987,6 @@ export default function Admin() {
                           </td>
                           <td className="px-2 lg:px-3 py-1.5">
                             <div className="flex items-center gap-1">
-                              {bet.outcome === 'pending' && (() => {
-                                const isApplied = betMaxExecOverride[bet.id] !== undefined
-                                  ? betMaxExecOverride[bet.id]
-                                  : bet.maxExecutionApplied;
-                                return (
-                                  <button
-                                    onClick={() => toggleBetMaxExecution.mutate({ betId: bet.id, enabled: !isApplied })}
-                                    className={cn(
-                                      "px-1.5 py-0.5 rounded text-[10px] font-bold border transition-colors",
-                                      isApplied
-                                        ? "bg-yellow-500 text-white border-yellow-500"
-                                        : "border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10"
-                                    )}
-                                    title={isApplied ? "10배 체결 해제" : "10배 체결 적용"}
-                                  >10배</button>
-                                );
-                              })()}
                               {bet.outcome !== 'pending' && (
                                 <>
                                   <button
