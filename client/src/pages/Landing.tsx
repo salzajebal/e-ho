@@ -984,7 +984,7 @@ export default function Landing() {
                       data-testid="button-register"
                       onClick={() => setShowRegisterModal(true)}
                     >
-                      무료 가입
+                      회원가입
                     </Button>
                     <Button
                       size="lg"
