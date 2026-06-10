@@ -511,8 +511,8 @@ export default function Landing() {
       setRegisterErrorMessage("아이디 중복확인을 해주세요");
       return;
     }
-    if (regPassword.length < 4) {
-      setRegisterErrorMessage("비밀번호는 4자 이상이어야 합니다");
+    if (regPassword.length < 1) {
+      setRegisterErrorMessage("비밀번호를 입력해주세요");
       return;
     }
     if (!name) {
@@ -1695,7 +1695,6 @@ export default function Landing() {
                     />
                   </div>
                 </div>
-                <p className="text-xs text-gray-500">대소문자, 숫자, 특수문자 필수 기입 8자리 이상</p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">

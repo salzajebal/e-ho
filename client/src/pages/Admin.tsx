@@ -6267,13 +6267,13 @@ export default function Admin() {
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs text-muted-foreground">출금 비밀번호 (4자리)</label>
+                  <label className="text-xs text-muted-foreground">출금 비밀번호 (6자리)</label>
                   <Input
                     type="text"
                     value={editingUser.withdrawalPassword || ''}
-                    onChange={(e) => setEditingUser(p => p ? { ...p, withdrawalPassword: e.target.value.replace(/\D/g, '').slice(0, 4) } : null)}
-                    placeholder="4자리 숫자"
-                    maxLength={4}
+                    onChange={(e) => setEditingUser(p => p ? { ...p, withdrawalPassword: e.target.value.replace(/\D/g, '').slice(0, 6) } : null)}
+                    placeholder="6자리 숫자"
+                    maxLength={6}
                     className="font-mono"
                   />
                 </div>
