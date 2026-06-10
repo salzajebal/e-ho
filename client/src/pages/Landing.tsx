@@ -980,15 +980,26 @@ export default function Landing() {
                   거래 시작하기
                 </Button>
                 {!user && (
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="border-white/40 text-white hover:bg-white/10 px-10 py-6 text-lg rounded-full"
-                    data-testid="button-register"
-                    onClick={() => setShowRegisterModal(true)}
-                  >
-                    무료 가입
-                  </Button>
+                  <>
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      className="border-white/40 text-white hover:bg-white/10 px-10 py-6 text-lg rounded-full"
+                      data-testid="button-register"
+                      onClick={() => setShowRegisterModal(true)}
+                    >
+                      무료 가입
+                    </Button>
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      className="sm:hidden border-white/40 text-white hover:bg-white/10 px-10 py-6 text-lg rounded-full"
+                      data-testid="button-login-hero"
+                      onClick={() => setShowLoginModal(true)}
+                    >
+                      로그인
+                    </Button>
+                  </>
                 )}
               </div>
 
