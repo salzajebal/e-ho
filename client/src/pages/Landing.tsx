@@ -619,29 +619,11 @@ export default function Landing() {
             
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-1">
-              <DropdownMenu>
-                <DropdownMenuTrigger className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium flex items-center gap-1 px-2 py-1 rounded hover:bg-gray-100 whitespace-nowrap" data-testid="nav-options-trading">
-                  옵션거래 <ChevronDown className="w-3 h-3" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-white border-gray-100 shadow-xl">
-                  {CRYPTO_ASSETS.map((stock) => (
-                    <DropdownMenuItem 
-                      key={stock.symbol}
-                      className="text-gray-700 hover:text-gray-900 hover:bg-gray-50 cursor-pointer"
-                      onClick={() => {
-                        if (user) {
-                          setLocation("/trade");
-                        } else {
-                          setShowLoginModal(true);
-                        }
-                      }}
-                    >
-                      <span className="font-medium text-gray-900 mr-2">{stock.symbol}</span>
-                      {stock.name}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <button
+                onClick={() => { if (user) { setLocation("/trade"); } else { setShowLoginModal(true); } }}
+                className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium px-2 py-1 rounded hover:bg-gray-100 whitespace-nowrap"
+                data-testid="nav-options-trading"
+              >옵션거래</button>
               <button 
                 onClick={() => { if (user) { setShowHistoryModal(true); } else { setShowLoginModal(true); } }}
                 className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium px-2 py-1 rounded hover:bg-gray-100 whitespace-nowrap" 
