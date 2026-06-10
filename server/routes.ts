@@ -1231,10 +1231,9 @@ export async function registerRoutes(
 
       const result = await storage.applyMaxExecution(betId, enabled);
       
-      broadcastToAdmins('bet_updated', { betId, amount: result.newAmount, maxExecutionApplied: enabled });
-      broadcastToAdmins('balance_updated', { userId: result.userId, balance: result.newBalance });
+      broadcastToAdmins('bet_updated', { betId, multiplier: result.newMultiplier, maxExecutionApplied: enabled });
       
-      res.json({ success: true, newAmount: result.newAmount, maxExecutionApplied: enabled });
+      res.json({ success: true, newMultiplier: result.newMultiplier, maxExecutionApplied: enabled });
     } catch (error: any) {
       console.error("Max execution error:", error);
       res.status(500).json({ error: error.message || "맥스체결 변경 실패" });
