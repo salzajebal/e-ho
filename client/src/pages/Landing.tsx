@@ -1533,7 +1533,7 @@ export default function Landing() {
 
       {/* Login Modal */}
       <Dialog open={showLoginModal} onOpenChange={setShowLoginModal}>
-        <DialogContent className="sm:max-w-md p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+        <DialogContent className="sm:max-w-md p-0 bg-transparent border-none shadow-none [&>button]:hidden max-h-[90vh] overflow-y-auto">
           <DialogTitle className="sr-only">로그인</DialogTitle>
           <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-2xl">
             <button 
