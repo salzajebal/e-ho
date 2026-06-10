@@ -881,7 +881,7 @@ function RoundForcedTab() {
                 data-testid="toggle-round-display-up"
               >
                 <TrendingUp className="w-5 h-5 mr-2" />
-                결과↑ LONG
+                매수↑
                 {hasDisplay?.forcedDirection === 'display_up' && <Check className="w-4 h-4 ml-2" />}
               </Button>
               <Button
@@ -897,7 +897,7 @@ function RoundForcedTab() {
                 data-testid="toggle-round-display-down"
               >
                 <TrendingDown className="w-5 h-5 mr-2" />
-                결과↓ SHORT
+                매도↓
                 {hasDisplay?.forcedDirection === 'display_down' && <Check className="w-4 h-4 ml-2" />}
               </Button>
             </div>
@@ -929,7 +929,7 @@ function RoundForcedTab() {
                     "px-3 py-1.5 rounded-full text-sm font-bold",
                     hasDisplay.forcedDirection === 'display_up' ? "bg-cyan-600/20 text-cyan-500" : "bg-amber-600/20 text-amber-500"
                   )}>
-                    {hasDisplay.forcedDirection === 'display_up' ? '🔵 결과↑' : '🟠 결과↓'}
+                    {hasDisplay.forcedDirection === 'display_up' ? '🔵 매수↑' : '🟠 매도↓'}
                   </span>
                 )}
               </div>
@@ -995,8 +995,8 @@ function RoundForcedTab() {
                        item.forcedDirection === 'down' ? '매도' :
                        item.forcedDirection === 'all_win' ? '전체적중' :
                        item.forcedDirection === 'all_lose' ? '전체미적중' :
-                       item.forcedDirection === 'display_up' ? '결과↑' :
-                       item.forcedDirection === 'display_down' ? '결과↓' : item.forcedDirection}
+                       item.forcedDirection === 'display_up' ? '매수↑' :
+                       item.forcedDirection === 'display_down' ? '매도↓' : item.forcedDirection}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-center">
