@@ -778,7 +778,7 @@ export default function Landing() {
                 {user && (
                   <div className="flex items-center gap-2 bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 mb-4">
                     <Wallet className="w-4 h-4 text-gray-500" />
-                    <span className="text-gray-500 text-xs">보유금액</span>
+                    <span className="text-gray-500 text-xs">보유자산</span>
                     <span className="text-gray-900 font-bold text-sm">
                       {balanceData?.balance ? Math.floor(parseFloat(balanceData.balance)).toLocaleString() : '0'}원
                     </span>
