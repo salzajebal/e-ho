@@ -694,22 +694,26 @@ export function BettingForm({ currentPrice, game, balance, onBet, isBetting = fa
             <span className="font-semibold text-foreground text-sm lg:text-base">{game.label}</span>
           </div>
           <div className="grid grid-cols-2 gap-2 mt-2">
-            <div className="flex items-center justify-center bg-yellow-500/20 rounded py-2 px-2 overflow-hidden">
+            <div className="flex flex-col items-center justify-center bg-yellow-500/20 rounded py-2 px-2 overflow-hidden gap-0.5">
+              <span className="text-[10px] text-yellow-400/70 font-medium">현재회차</span>
               <span className="text-xs font-bold text-yellow-500 truncate">
                 #{currentRound}회차 {new Date().getHours().toString().padStart(2, '0')}:{new Date().getMinutes().toString().padStart(2, '0')}
               </span>
             </div>
             <div className={cn(
-              "flex items-center justify-center gap-2 rounded py-2 px-2",
+              "flex flex-col items-center justify-center gap-0.5 rounded py-2 px-2",
               isBettingLocked ? "bg-red-500/20 animate-pulse" : "bg-blue-500/20"
             )}>
-              <Timer className={cn("w-3.5 h-3.5", isBettingLocked ? "text-red-500" : "text-blue-500")} />
-              <span className={cn(
-                "text-lg font-bold font-mono",
-                isBettingLocked ? "text-red-500" : "text-blue-500"
-              )}>
-                {formatTime(timeRemaining)}
-              </span>
+              <span className={cn("text-[10px] font-medium", isBettingLocked ? "text-red-400/70" : "text-blue-400/70")}>남은시간</span>
+              <div className="flex items-center gap-1">
+                <Timer className={cn("w-3.5 h-3.5", isBettingLocked ? "text-red-500" : "text-blue-500")} />
+                <span className={cn(
+                  "text-lg font-bold font-mono",
+                  isBettingLocked ? "text-red-500" : "text-blue-500"
+                )}>
+                  {formatTime(timeRemaining)}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -717,7 +721,7 @@ export function BettingForm({ currentPrice, game, balance, onBet, isBetting = fa
         <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-muted/30 border border-border">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Wallet className="w-3.5 h-3.5" />
-            <span>보유금액</span>
+            <span>보유자산</span>
           </div>
           <span
             data-testid="text-available-balance"
