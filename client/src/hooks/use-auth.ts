@@ -113,6 +113,7 @@ export function useLogout() {
       queryClient.clear();
       toast.success("로그아웃되었습니다");
       setLocation("/");
+      window.scrollTo({ top: 0, behavior: "instant" });
     },
   });
 }
