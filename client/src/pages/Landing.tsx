@@ -770,11 +770,11 @@ export default function Landing() {
                 <Menu className="w-6 h-6" />
               </button>
             </SheetTrigger>
-            <SheetContent side="right" className="bg-white border-gray-100 w-[280px]">
+            <SheetContent side="right" className="bg-white border-gray-100 w-[280px] flex flex-col overflow-hidden">
               <SheetHeader>
                 <SheetTitle className="text-gray-900 text-left">메뉴</SheetTitle>
               </SheetHeader>
-              <nav className="flex flex-col gap-2 mt-6">
+              <nav className="flex flex-col gap-2 mt-6 overflow-y-auto flex-1 pb-6">
                 {user && (
                   <div className="flex items-center gap-2 bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 mb-4">
                     <Wallet className="w-4 h-4 text-gray-500" />
