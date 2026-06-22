@@ -2555,7 +2555,7 @@ export default function Landing() {
 
       {/* 출금 잠금 안내 모달 */}
       <Dialog open={showWithdrawalLockModal} onOpenChange={setShowWithdrawalLockModal}>
-        <DialogContent className="sm:max-w-md p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+        <DialogContent className="sm:max-w-md p-0 bg-transparent border-none shadow-none [&>button]:hidden max-h-[90vh] overflow-y-auto">
           <DialogTitle className="sr-only">출금 잠금 안내</DialogTitle>
           <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-2xl">
             <div className="flex items-center gap-3 mb-4">
