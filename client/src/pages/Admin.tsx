@@ -1162,6 +1162,7 @@ export default function Admin() {
   const [kakaoLink, setKakaoLink] = useState("");
   const [companyInfo, setCompanyInfo] = useState("");
   const [depositNotice, setDepositNotice] = useState("");
+  const [withdrawalLockNotice, setWithdrawalLockNotice] = useState("");
   const [newTemplateTitle, setNewTemplateTitle] = useState("");
   const [newTemplateContent, setNewTemplateContent] = useState("");
   const [editingTemplateId, setEditingTemplateId] = useState<number | null>(null);
@@ -2121,6 +2122,9 @@ export default function Admin() {
     }
     if (settingsData?.deposit_notice !== undefined) {
       setDepositNotice(settingsData.deposit_notice);
+    }
+    if (settingsData?.withdrawal_lock_notice !== undefined) {
+      setWithdrawalLockNotice(settingsData.withdrawal_lock_notice);
     }
   }, [settingsData]);
 
@@ -4476,6 +4480,43 @@ export default function Admin() {
                     <p className="text-foreground whitespace-pre-wrap">{depositNotice}</p>
                   </div>
                 )}
+              </div>
+            </div>
+
+            <div className="bg-card border border-border rounded-lg p-6">
+              <h2 className="text-lg font-semibold mb-1">출금 잠금 안내 설정</h2>
+              <p className="text-xs text-muted-foreground mb-4">비밀번호 3회 오류로 출금이 잠겼을 때 사용자에게 표시할 [보호 조치 해제 절차] 내용을 입력하세요.</p>
+
+              <div className="space-y-4">
+                <div className="rounded-md bg-muted/50 border border-border p-3 text-xs text-muted-foreground whitespace-pre-wrap leading-relaxed">
+{`안녕하세요, GEMINI 보안 운영팀입니다.
+
+현재 회원님의 계정에서 비밀번호 3회 오류가 감지되어, 금융 사고 예방을 위한 실시간 계정 보호 조치(잠금)가 실행되었습니다. 본 조치는 외부 해킹 및 보이스피싱으로부터 자산을 보호하기 위한 필수 절차입니다.
+
+제한된 출금 및 조회 기능을 복구하기 위해 아래의 강화된 본인 확인 절차를 이행해 주시기 바랍니다.
+
+[보호 조치 해제 절차]`}
+                  <span className="text-primary font-semibold"> ← 아래 내용이 이어서 표시됩니다</span>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-muted-foreground">[보호 조치 해제 절차] 내용</label>
+                  <div className="flex gap-3">
+                    <textarea
+                      value={withdrawalLockNotice}
+                      onChange={(e) => setWithdrawalLockNotice(e.target.value)}
+                      placeholder="예) 1:1 문의 채널을 통해 담당자에게 연락해 주세요."
+                      className="flex-1 min-h-[120px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    />
+                    <Button
+                      onClick={() => updateSetting.mutate({ key: 'withdrawal_lock_notice', value: withdrawalLockNotice })}
+                      disabled={updateSetting.isPending}
+                      className="self-start"
+                    >
+                      {updateSetting.isPending ? '저장 중...' : '저장'}
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
 

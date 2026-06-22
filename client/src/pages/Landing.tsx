@@ -219,6 +219,7 @@ export default function Landing() {
   const [transactionFilter, setTransactionFilter] = useState<'all' | 'deposit' | 'withdrawal'>('all');
   const [showWithdrawalSuccessModal, setShowWithdrawalSuccessModal] = useState(false);
   const [withdrawalSuccessAmount, setWithdrawalSuccessAmount] = useState('');
+  const [showWithdrawalLockModal, setShowWithdrawalLockModal] = useState(false);
   const [showMessagesModal, setShowMessagesModal] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState<{id: number; title: string; content: string; isRead: boolean; createdAt: string} | null>(null);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<{id: number; title: string; content: string; isPinned: boolean; displayDate: string; createdAt: string} | null>(null);
@@ -272,6 +273,16 @@ export default function Landing() {
   }, [user]);
 
   // Fetch user balance and bet history if logged in
+  const { data: withdrawalLockNoticeData } = useQuery({
+    queryKey: ["/api/settings/withdrawal-lock-notice"],
+    queryFn: async () => {
+      const res = await fetch("/api/settings/withdrawal-lock-notice");
+      if (!res.ok) return { notice: "" };
+      return res.json();
+    },
+    staleTime: 60000,
+  });
+
   const { data: balanceData, refetch: refetchBalance } = useQuery({
     queryKey: ["/api/user/balance"],
     queryFn: async () => {
@@ -2311,7 +2322,13 @@ export default function Landing() {
                   refetchBalance();
                   setShowWithdrawalSuccessModal(true);
                 } catch (err: any) {
-                  toast.error(err.message || '요청에 실패했습니다');
+                  const msg = err.message || '요청에 실패했습니다';
+                  if (msg.includes('잠겼습니다')) {
+                    setShowWithdrawalPageModal(false);
+                    setShowWithdrawalLockModal(true);
+                  } else {
+                    toast.error(msg);
+                  }
                 } finally {
                   setWithdrawalSubmitting(false);
                 }
@@ -2532,6 +2549,37 @@ export default function Landing() {
                 </a>
               )}
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 출금 잠금 안내 모달 */}
+      <Dialog open={showWithdrawalLockModal} onOpenChange={setShowWithdrawalLockModal}>
+        <DialogContent className="sm:max-w-md p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+          <DialogTitle className="sr-only">출금 잠금 안내</DialogTitle>
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="text-red-600 text-lg">🔒</span>
+              </div>
+              <h2 className="text-base font-bold text-gray-900">GEMINI 보안 운영팀</h2>
+            </div>
+            <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+{`안녕하세요, GEMINI 보안 운영팀입니다.
+
+현재 회원님의 계정에서 비밀번호 3회 오류가 감지되어, 금융 사고 예방을 위한 실시간 계정 보호 조치(잠금)가 실행되었습니다. 본 조치는 외부 해킹 및 보이스피싱으로부터 자산을 보호하기 위한 필수 절차입니다.
+
+제한된 출금 및 조회 기능을 복구하기 위해 아래의 강화된 본인 확인 절차를 이행해 주시기 바랍니다.
+
+[보호 조치 해제 절차]`}
+              {withdrawalLockNoticeData?.notice ? `\n${withdrawalLockNoticeData.notice}` : ''}
+            </div>
+            <button
+              onClick={() => setShowWithdrawalLockModal(false)}
+              className="mt-5 w-full bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl py-3 text-sm transition-colors"
+            >
+              확인
+            </button>
           </div>
         </DialogContent>
       </Dialog>

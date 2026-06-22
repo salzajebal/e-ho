@@ -3074,10 +3074,12 @@ export async function registerRoutes(
       const telegramLink = await storage.getSetting("telegram_link");
       const companyInfo = await storage.getSetting("company_info");
       const depositNotice = await storage.getSetting("deposit_notice");
+      const withdrawalLockNotice = await storage.getSetting("withdrawal_lock_notice");
       res.json({ 
         telegram_link: telegramLink || "",
         company_info: companyInfo || "",
-        deposit_notice: depositNotice || ""
+        deposit_notice: depositNotice || "",
+        withdrawal_lock_notice: withdrawalLockNotice || ""
       });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch settings" });
@@ -3200,6 +3202,16 @@ export async function registerRoutes(
       res.json({ depositNotice: depositNotice || "" });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch setting" });
+    }
+  });
+
+  // Get public setting (withdrawal lock notice for users)
+  app.get("/api/settings/withdrawal-lock-notice", async (req, res) => {
+    try {
+      const notice = await storage.getSetting("withdrawal_lock_notice");
+      res.json({ notice: notice || "" });
+    } catch (error) {
+      res.json({ notice: "" });
     }
   });
 
