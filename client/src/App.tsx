@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/use-auth";
+import { useInactivityLogout } from "@/hooks/use-inactivity-logout";
 import { ThemeProvider } from "@/lib/theme";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/Landing";
@@ -29,6 +30,12 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
   return <Component />;
 }
 
+function InactivityGuard({ children }: { children: React.ReactNode }) {
+  const { data: user } = useAuth();
+  useInactivityLogout(!!user);
+  return <>{children}</>;
+}
+
 function Router() {
   return (
     <Switch>
@@ -49,7 +56,9 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Toaster />
-          <Router />
+          <InactivityGuard>
+            <Router />
+          </InactivityGuard>
         </TooltipProvider>
       </QueryClientProvider>
     </ThemeProvider>
