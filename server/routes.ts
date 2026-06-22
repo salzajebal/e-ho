@@ -1465,6 +1465,26 @@ export async function registerRoutes(
     res.json({ locked: failures >= WITHDRAWAL_PIN_MAX_ATTEMPTS, failures });
   });
 
+  app.get("/api/admin/withdrawal-pin-locks", requireAdmin, async (_req, res) => {
+    const lockedIds: number[] = [];
+    withdrawalPinFailures.forEach((failures, userId) => {
+      if (failures >= WITHDRAWAL_PIN_MAX_ATTEMPTS) lockedIds.push(userId);
+    });
+    res.json({ lockedIds });
+  });
+
+  app.post("/api/admin/users/:id/lock-withdrawal-pin", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const user = await storage.getUser(id);
+      if (!user) return res.status(404).json({ error: "회원을 찾을 수 없습니다" });
+      withdrawalPinFailures.set(Number(id), WITHDRAWAL_PIN_MAX_ATTEMPTS);
+      res.json({ message: `${user.username} 출금이 잠금 처리되었습니다` });
+    } catch {
+      res.status(500).json({ error: "처리 중 오류가 발생했습니다" });
+    }
+  });
+
   app.post("/api/admin/users/:id/force-logout", requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;

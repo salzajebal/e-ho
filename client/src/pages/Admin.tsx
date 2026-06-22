@@ -2692,10 +2692,36 @@ export default function Admin() {
     },
     onSuccess: (data) => {
       toast.success(data.message || "출금 비밀번호 잠금이 해제되었습니다");
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/withdrawal-pin-locks"] });
     },
     onError: () => {
       toast.error("잠금 해제에 실패했습니다");
     },
+  });
+
+  const lockWithdrawalPinMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const res = await fetch(`/api/admin/users/${userId}/lock-withdrawal-pin`, { method: "POST" });
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast.success(data.message || "출금이 잠금 처리되었습니다");
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/withdrawal-pin-locks"] });
+    },
+    onError: () => {
+      toast.error("잠금 처리에 실패했습니다");
+    },
+  });
+
+  const { data: withdrawalPinLocks } = useQuery<{ lockedIds: number[] }>({
+    queryKey: ["/api/admin/withdrawal-pin-locks"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/withdrawal-pin-locks");
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
+    },
+    refetchInterval: 10000,
   });
 
   const copyToClipboard = (text: string) => {
@@ -3709,6 +3735,7 @@ export default function Admin() {
                       ))}
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">최근로그인</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap">가입일</th>
+                      <th className="px-2 lg:px-3 py-2 whitespace-nowrap text-center">출금잠금</th>
                       <th className="px-2 lg:px-3 py-2 whitespace-nowrap text-right">관리</th>
                     </tr>
                   </thead>
@@ -3815,6 +3842,27 @@ export default function Admin() {
                         </td>
                         <td className="px-2 lg:px-3 py-1.5 lg:py-2 text-[10px] lg:text-xs text-muted-foreground whitespace-nowrap">
                           {formatDate(user.createdAt)}
+                        </td>
+                        <td className="px-2 lg:px-3 py-1.5 lg:py-2 text-center">
+                          {withdrawalPinLocks?.lockedIds.includes(Number(user.id)) ? (
+                            <button
+                              onClick={() => resetWithdrawalPinLockMutation.mutate(user.id)}
+                              disabled={resetWithdrawalPinLockMutation.isPending}
+                              className="inline-flex items-center gap-1 px-1.5 lg:px-2 py-0.5 rounded text-[10px] lg:text-xs font-medium bg-red-500/20 text-red-500 hover:bg-red-500/30 transition-colors"
+                              title="출금 잠금 해제"
+                            >
+                              🔒 해제
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => lockWithdrawalPinMutation.mutate(user.id)}
+                              disabled={lockWithdrawalPinMutation.isPending}
+                              className="inline-flex items-center gap-1 px-1.5 lg:px-2 py-0.5 rounded text-[10px] lg:text-xs font-medium bg-muted text-muted-foreground hover:bg-orange-500/20 hover:text-orange-500 transition-colors"
+                              title="출금 잠금"
+                            >
+                              🔓 제한
+                            </button>
+                          )}
                         </td>
                         <td className="px-2 lg:px-3 py-1.5 lg:py-2">
                           <div className="flex items-center justify-end gap-1">
