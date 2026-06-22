@@ -2684,6 +2684,20 @@ export default function Admin() {
     },
   });
 
+  const resetWithdrawalPinLockMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const res = await fetch(`/api/admin/users/${userId}/reset-withdrawal-pin-lock`, { method: "POST" });
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast.success(data.message || "출금 비밀번호 잠금이 해제되었습니다");
+    },
+    onError: () => {
+      toast.error("잠금 해제에 실패했습니다");
+    },
+  });
+
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast.success("클립보드에 복사되었습니다");
@@ -6354,6 +6368,16 @@ export default function Admin() {
                     >
                       <LogOut className="w-3 h-3 mr-1" />
                       강제 로그아웃
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => resetWithdrawalPinLockMutation.mutate(editingUser.id)}
+                      disabled={resetWithdrawalPinLockMutation.isPending}
+                      className="h-7 text-xs border-orange-500/50 text-orange-500 hover:bg-orange-500/10"
+                      data-testid="button-reset-withdrawal-pin-lock"
+                    >
+                      🔓 출금잠금 해제
                     </Button>
                   </div>
                 </div>

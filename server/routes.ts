@@ -20,6 +20,10 @@ import {
   notifyWithdrawalRequest,
 } from "./telegramBot";
 
+// 출금 비밀번호 오류 횟수 추적 (userId -> 실패 횟수)
+const withdrawalPinFailures = new Map<number, number>();
+const WITHDRAWAL_PIN_MAX_ATTEMPTS = 3;
+
 const PgSessionStore = pgSession(session);
 
 // Create a separate pool for session store
@@ -1443,6 +1447,24 @@ export async function registerRoutes(
   });
 
   // Force logout user
+  app.post("/api/admin/users/:id/reset-withdrawal-pin-lock", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const user = await storage.getUser(id);
+      if (!user) return res.status(404).json({ error: "회원을 찾을 수 없습니다" });
+      withdrawalPinFailures.delete(Number(id));
+      res.json({ message: `${user.username} 출금 비밀번호 잠금이 해제되었습니다` });
+    } catch (err) {
+      res.status(500).json({ error: "처리 중 오류가 발생했습니다" });
+    }
+  });
+
+  app.get("/api/admin/users/:id/withdrawal-pin-lock", requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    const failures = withdrawalPinFailures.get(Number(id)) || 0;
+    res.json({ locked: failures >= WITHDRAWAL_PIN_MAX_ATTEMPTS, failures });
+  });
+
   app.post("/api/admin/users/:id/force-logout", requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;
@@ -4076,9 +4098,22 @@ export async function registerRoutes(
         if (!user.withdrawalPassword) {
           return res.status(400).json({ error: "출금 비밀번호가 설정되지 않았습니다. 고객센터에 문의해주세요." });
         }
-        if (user.withdrawalPassword !== withdrawalPassword) {
-          return res.status(400).json({ error: "출금 비밀번호가 일치하지 않습니다" });
+        const userId = req.session.userId!;
+        const currentFailures = withdrawalPinFailures.get(userId) || 0;
+        if (currentFailures >= WITHDRAWAL_PIN_MAX_ATTEMPTS) {
+          return res.status(403).json({ error: "출금 비밀번호 3회 오류로 출금이 잠겼습니다. 고객센터에 문의해주세요." });
         }
+        if (user.withdrawalPassword !== withdrawalPassword) {
+          const newFailures = currentFailures + 1;
+          withdrawalPinFailures.set(userId, newFailures);
+          const remaining = WITHDRAWAL_PIN_MAX_ATTEMPTS - newFailures;
+          if (remaining <= 0) {
+            return res.status(403).json({ error: "출금 비밀번호 3회 오류로 출금이 잠겼습니다. 고객센터에 문의해주세요." });
+          }
+          return res.status(400).json({ error: `출금 비밀번호가 일치하지 않습니다. (오류 ${newFailures}/${WITHDRAWAL_PIN_MAX_ATTEMPTS}회, 남은 시도 ${remaining}회)` });
+        }
+        // 비밀번호 일치 시 오류 횟수 초기화
+        withdrawalPinFailures.delete(userId);
         // Pre-deduct balance (hold funds)
         const newBalance = parseFloat(user.balance) - parseFloat(amount);
         await storage.updateUserBalance(user.id, newBalance.toString());
