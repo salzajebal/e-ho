@@ -2262,40 +2262,19 @@ export default function Landing() {
             {/* 출금 비밀번호 입력 */}
             <div className="mb-4">
               <label className="block text-gray-700 text-sm mb-2">출금 비밀번호 <span className="text-red-500">*</span></label>
-              <div className="flex gap-2">
-                {[0, 1, 2, 3, 4, 5].map((i) => (
-                  <Input
-                    key={i}
-                    type="password"
-                    inputMode="numeric"
-                    maxLength={1}
-                    value={withdrawalModalPin[i] || ''}
-                    onChange={(e) => {
-                      const val = e.target.value.replace(/\D/g, '');
-                      const arr = withdrawalModalPin.split('');
-                      arr[i] = val.slice(-1);
-                      const next = arr.join('').slice(0, 6);
-                      setWithdrawalModalPin(next);
-                      if (val && i < 5) {
-                        const nextInput = document.querySelector(`[data-pin-idx="${i + 1}"]`) as HTMLInputElement;
-                        nextInput?.focus();
-                      }
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Backspace' && !withdrawalModalPin[i] && i > 0) {
-                        const prevInput = document.querySelector(`[data-pin-idx="${i - 1}"]`) as HTMLInputElement;
-                        prevInput?.focus();
-                        const arr = withdrawalModalPin.split('');
-                        arr[i - 1] = '';
-                        setWithdrawalModalPin(arr.join(''));
-                      }
-                    }}
-                    data-pin-idx={i}
-                    className="h-12 text-center text-xl font-mono bg-gray-50 border-gray-200 text-gray-900 w-full"
-                    data-testid={`input-withdrawal-pin-${i}`}
-                  />
-                ))}
-              </div>
+              <Input
+                type="password"
+                inputMode="numeric"
+                maxLength={6}
+                value={withdrawalModalPin}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+                  setWithdrawalModalPin(val);
+                }}
+                placeholder="숫자 6자리 입력"
+                className="h-12 text-center text-xl font-mono tracking-widest bg-gray-50 border-gray-200 text-gray-900"
+                data-testid="input-withdrawal-pin"
+              />
               <p className="text-gray-400 text-xs mt-1">가입 시 설정한 6자리 출금 비밀번호를 입력하세요</p>
             </div>
 
