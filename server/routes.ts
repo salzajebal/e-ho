@@ -21,7 +21,7 @@ import {
 } from "./telegramBot";
 
 // 출금 비밀번호 오류 횟수 추적 (userId -> 실패 횟수)
-const withdrawalPinFailures = new Map<number, number>();
+const withdrawalPinFailures = new Map<string, number>();
 const WITHDRAWAL_PIN_MAX_ATTEMPTS = 3;
 
 const PgSessionStore = pgSession(session);
@@ -1452,7 +1452,7 @@ export async function registerRoutes(
       const { id } = req.params;
       const user = await storage.getUser(id);
       if (!user) return res.status(404).json({ error: "회원을 찾을 수 없습니다" });
-      withdrawalPinFailures.delete(Number(id));
+      withdrawalPinFailures.delete(String(id));
       res.json({ message: `${user.username} 출금 비밀번호 잠금이 해제되었습니다` });
     } catch (err) {
       res.status(500).json({ error: "처리 중 오류가 발생했습니다" });
@@ -1461,12 +1461,12 @@ export async function registerRoutes(
 
   app.get("/api/admin/users/:id/withdrawal-pin-lock", requireAdmin, async (req, res) => {
     const { id } = req.params;
-    const failures = withdrawalPinFailures.get(Number(id)) || 0;
+    const failures = withdrawalPinFailures.get(String(id)) || 0;
     res.json({ locked: failures >= WITHDRAWAL_PIN_MAX_ATTEMPTS, failures });
   });
 
   app.get("/api/admin/withdrawal-pin-locks", requireAdmin, async (_req, res) => {
-    const lockedIds: number[] = [];
+    const lockedIds: string[] = [];
     withdrawalPinFailures.forEach((failures, userId) => {
       if (failures >= WITHDRAWAL_PIN_MAX_ATTEMPTS) lockedIds.push(userId);
     });
@@ -1478,7 +1478,7 @@ export async function registerRoutes(
       const { id } = req.params;
       const user = await storage.getUser(id);
       if (!user) return res.status(404).json({ error: "회원을 찾을 수 없습니다" });
-      withdrawalPinFailures.set(Number(id), WITHDRAWAL_PIN_MAX_ATTEMPTS);
+      withdrawalPinFailures.set(String(id), WITHDRAWAL_PIN_MAX_ATTEMPTS);
       res.json({ message: `${user.username} 출금이 잠금 처리되었습니다` });
     } catch {
       res.status(500).json({ error: "처리 중 오류가 발생했습니다" });
