@@ -128,9 +128,15 @@ export async function initializeDatabase(): Promise<void> {
         grade TEXT NOT NULL DEFAULT '브론즈',
         always_pending_enabled BOOLEAN NOT NULL DEFAULT false,
         telegram_notify_enabled BOOLEAN NOT NULL DEFAULT false,
+        withdrawal_password TEXT,
+        is_withdrawal_locked BOOLEAN NOT NULL DEFAULT false,
         created_at TIMESTAMP NOT NULL DEFAULT NOW()
       )
     `);
+
+    // 기존 테이블에 누락된 컬럼 추가 (마이그레이션)
+    await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS withdrawal_password TEXT`);
+    await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_withdrawal_locked BOOLEAN NOT NULL DEFAULT false`);
     console.log('Users table ready');
 
     await client.query(`

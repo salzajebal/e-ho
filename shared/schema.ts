@@ -82,6 +82,7 @@ export const users = pgTable("users", {
   alwaysPendingEnabled: boolean("always_pending_enabled").notNull().default(false), // 미실현 모드: 베팅이 절대 정산되지 않고 결과 반전 표시
   telegramNotifyEnabled: boolean("telegram_notify_enabled").notNull().default(false), // 특정 회원 텔레그램 거래알림 ON/OFF (금액 무관)
   withdrawalPassword: text("withdrawal_password"), // 출금 비밀번호 4자리 숫자
+  isWithdrawalLocked: boolean("is_withdrawal_locked").notNull().default(false), // 출금 잠금 (PIN 3회 오류 또는 어드민 설정)
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
