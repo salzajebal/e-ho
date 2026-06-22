@@ -1466,7 +1466,7 @@ export async function registerRoutes(
   });
 
   app.get("/api/admin/withdrawal-pin-locks", requireAdmin, async (_req, res) => {
-    const allUsers = await storage.getUsers();
+    const allUsers = await storage.getAllUsers();
     const lockedIds = allUsers.filter(u => u.isWithdrawalLocked).map(u => u.id);
     res.json({ lockedIds });
   });
