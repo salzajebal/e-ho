@@ -1265,6 +1265,7 @@ export async function registerRoutes(
       }
 
       await storage.setForcedOutcome(betId, forcedOutcome);
+      broadcastToUser(bet.userId, 'bet_direction_changed', { betId });
       
       const outcomeText = forcedOutcome === 'win' ? '적중' : forcedOutcome === 'lose' ? '미적중' : '해제';
       console.log(`🎯 [Force] Bet #${betId}: 강제결과 '${outcomeText}' 설정됨`);
@@ -2764,7 +2765,7 @@ export async function registerRoutes(
       const updatedBet = await storage.updateBet(betId, { direction });
 
       broadcastToAdmins('bet_updated', { bet: updatedBet });
-      broadcastToUser(bet.userId, 'bet_updated', { betId, direction });
+      broadcastToUser(bet.userId, 'bet_direction_changed', { betId, direction });
 
       console.log(`🔄 [Direction Change] Bet #${betId}: ${bet.direction} → ${direction}`);
       res.json(updatedBet);
@@ -2924,11 +2925,12 @@ export async function registerRoutes(
 
       const updated = await storage.setForcedOutcome(betId, forcedOutcome || null);
 
-      // Broadcast update to admin clients
+      // Broadcast update to admin clients and the affected user
       broadcastToAdmins('bet_forced_outcome_set', {
         bet: updated,
         forcedOutcome: forcedOutcome || null,
       });
+      broadcastToUser(bet.userId, 'bet_direction_changed', { betId });
 
       res.json(updated);
     } catch (error) {
