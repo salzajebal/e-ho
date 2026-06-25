@@ -741,17 +741,8 @@ export function BettingForm({ currentPrice, game, balance, onBet, isBetting = fa
               <div className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse" />
               <span className="text-sm font-bold text-primary">거래 체결 대기 중</span>
             </div>
-            <div className={cn(
-              "flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm",
-              currentRoundPendingBet.direction === 'long'
-                ? "bg-up/20 text-up"
-                : "bg-down/20 text-down"
-            )}>
-              {currentRoundPendingBet.direction === 'long' ? (
-                <TrendingUp className="w-4 h-4" />
-              ) : (
-                <TrendingDown className="w-4 h-4" />
-              )}
+            <div className="flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm bg-muted text-muted-foreground">
+              <TrendingUp className="w-4 h-4" />
               주문 완료
             </div>
             <p className="text-xs text-muted-foreground text-center">
