@@ -752,7 +752,7 @@ export function BettingForm({ currentPrice, game, balance, onBet, isBetting = fa
               ) : (
                 <TrendingDown className="w-4 h-4" />
               )}
-              {currentRoundPendingBet.direction === 'long' ? '매수' : '매도'} 주문 완료
+              주문 완료
             </div>
             <p className="text-xs text-muted-foreground text-center">
               #{currentRound}회차 종료 후 결과가 자동으로 반영됩니다
