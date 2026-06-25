@@ -5,13 +5,12 @@ import { Ticker } from "@/components/dashboard/Ticker";
 import { MarketOverview } from "@/components/dashboard/MarketOverview";
 import { PriceChart } from "@/components/dashboard/PriceChart";
 import { BettingForm } from "@/components/dashboard/BettingForm";
-import { BetsPanel } from "@/components/dashboard/BetsPanel";
 import { useMarketData, INITIAL_MARKET_DATA } from "@/lib/marketData";
-import { useBets, useBetHistory, useCreateBet, useSettleBet, useUserBalance } from "@/hooks/use-bets";
+import { useBets, useCreateBet, useSettleBet, useUserBalance } from "@/hooks/use-bets";
 import { useAuth } from "@/hooks/use-auth";
 import { useUnreadMessages, useMessages, useMarkMessageRead, useMarkAllMessagesRead } from "@/hooks/use-messages";
 import { useUserWebSocket } from "@/hooks/use-user-websocket";
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -92,7 +91,6 @@ function HomeInner() {
   });
   
   const { data: activeBets = [] } = useBets();
-  const { data: historyBets = [] } = useBetHistory();
   const createBet = useCreateBet();
   const settleBet = useSettleBet();
   const { data: balanceData } = useUserBalance();
@@ -193,11 +191,6 @@ function HomeInner() {
     });
   };
 
-  const allBets = useMemo(() => {
-    const historyIds = new Set(historyBets.map(b => b.id));
-    const uniqueActiveBets = activeBets.filter(b => !historyIds.has(b.id));
-    return [...uniqueActiveBets, ...historyBets];
-  }, [activeBets, historyBets]);
 
   const currentMarket = marketData.find(m => m.symbol === selectedGame.symbol) || marketData[0] || INITIAL_MARKET_DATA[0];
 
@@ -226,12 +219,6 @@ function HomeInner() {
     });
   };
 
-  const handleBetExpire = (bet: any, currentPrice: number) => {
-    settleBet.mutate({
-      id: bet.id,
-      closePrice: currentPrice,
-    });
-  };
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground lg:overflow-hidden font-sans">
@@ -264,45 +251,21 @@ function HomeInner() {
               onBet={handleBet}
               isBetting={createBet.isPending}
               balance={balanceData?.balance}
-              userBets={allBets}
+              userBets={activeBets}
               allPrices={currentPrices}
               underMaintenance={isUnderMaintenance}
             />
           </div>
           
-          {/* Bets Panel */}
-          <div className="min-h-[220px]">
-            <BetsPanel 
-              bets={allBets} 
-              currentPrices={currentPrices}
-              onBetExpire={handleBetExpire}
-            />
-          </div>
         </div>
         
-        {/* Desktop Layout: Resizable center panels + sidebar */}
+        {/* Desktop Layout: Chart + sidebar */}
         <div className="hidden lg:flex flex-1 flex-row min-h-0">
-          {/* Center: Chart + Bets with Resizable */}
+          {/* Center: Chart */}
           <div className="flex-1 flex flex-col min-w-0">
-            <ResizablePanelGroup direction="vertical">
-              <ResizablePanel defaultSize={60} minSize={30}>
-                <div className="h-full border-b border-border">
-                  <PriceChart symbol={selectedGame.symbol} data={currentMarket} duration={selectedGame.duration} />
-                </div>
-              </ResizablePanel>
-              
-              <ResizableHandle withHandle />
-              
-              <ResizablePanel defaultSize={40} minSize={20}>
-                <div className="h-full">
-                  <BetsPanel 
-                    bets={allBets} 
-                    currentPrices={currentPrices}
-                    onBetExpire={handleBetExpire}
-                  />
-                </div>
-              </ResizablePanel>
-            </ResizablePanelGroup>
+            <div className="h-full border-b border-border">
+              <PriceChart symbol={selectedGame.symbol} data={currentMarket} duration={selectedGame.duration} />
+            </div>
           </div>
 
           {/* Right: Betting Form Sidebar */}
@@ -313,7 +276,7 @@ function HomeInner() {
               onBet={handleBet}
               isBetting={createBet.isPending}
               balance={balanceData?.balance}
-              userBets={allBets}
+              userBets={activeBets}
               allPrices={currentPrices}
               underMaintenance={isUnderMaintenance}
             />
