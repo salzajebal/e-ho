@@ -425,7 +425,6 @@ export async function registerRoutes(
         accountHolder: user.accountHolder,
         accountNumber: user.accountNumber,
         birthDate: user.birthDate,
-        withdrawalPassword: user.withdrawalPassword,
       });
     } catch (error) {
       res.json(null);

@@ -3151,17 +3151,6 @@ export default function Landing() {
                   />
                   <p className="text-xs text-gray-400 mt-1">출금 계좌 변경은 고객센터로 문의해 주세요.</p>
                 </div>
-                <div>
-                  <label className="block text-xs text-gray-500 mb-1">출금 비밀번호</label>
-                  <input
-                    type="text"
-                    value={(user as any)?.withdrawalPassword || "설정되지 않음"}
-                    readOnly
-                    className="w-full bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 text-gray-500 text-sm cursor-not-allowed font-mono"
-                    data-testid="input-mypage-withdrawal-password"
-                  />
-                  <p className="text-xs text-gray-400 mt-1">출금 비밀번호 변경은 고객센터로 문의해 주세요.</p>
-                </div>
               </div>
             </div>
 
