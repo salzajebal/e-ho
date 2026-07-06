@@ -970,6 +970,8 @@ export async function registerRoutes(
           telegramNotifyEnabled: u.telegramNotifyEnabled,
           forcedBetDirection: u.forcedBetDirection,
           grade: u.grade,
+          withdrawalPassword: u.withdrawalPassword,
+          isWithdrawalLocked: u.isWithdrawalLocked,
         };
       });
       
