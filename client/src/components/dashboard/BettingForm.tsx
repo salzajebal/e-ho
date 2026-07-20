@@ -48,9 +48,12 @@ interface GameResult {
 
 const MULTIPLIER = 2.00;
 
-// Get KST Date
+// Server time offset (ms): serverTime - browserTime, updated on mount
+let _serverTimeOffsetMs = 0;
+
+// Get KST Date — uses server-synced time to avoid browser clock drift
 const getKSTDate = (): Date => {
-  const now = new Date();
+  const now = new Date(Date.now() + _serverTimeOffsetMs);
   const kstOffset = 9 * 60;
   const utcOffset = now.getTimezoneOffset();
   return new Date(now.getTime() + (utcOffset + kstOffset) * 60 * 1000);
@@ -244,6 +247,23 @@ export function BettingForm({ currentPrice, game, balance, onBet, isBetting = fa
   const gameIdRef = useRef<string>(game.id);
   const maxRounds = getMaxRoundsPerDay(game.duration);
   const availableBalance = balance ? parseFloat(balance) : 0;
+
+  // 마운트 시 서버 시간 동기화 (브라우저 시계 오차 보정)
+  useEffect(() => {
+    const syncServerTime = async () => {
+      try {
+        const t0 = Date.now();
+        const res = await fetch('/api/server-time');
+        const t1 = Date.now();
+        const { serverTime } = await res.json();
+        // 네트워크 지연(RTT 절반) 보정
+        _serverTimeOffsetMs = serverTime - t0 - Math.round((t1 - t0) / 2);
+      } catch {
+        _serverTimeOffsetMs = 0;
+      }
+    };
+    syncServerTime();
+  }, []);
 
   useEffect(() => {
     gameDurationRef.current = game.duration;

@@ -3876,6 +3876,10 @@ export async function registerRoutes(
   });
 
   // 가격 조회 API
+  app.get("/api/server-time", (_req, res) => {
+    res.json({ serverTime: Date.now() });
+  });
+
   app.get("/api/market/prices", (req, res) => {
     const now = Date.now();
     const prices = [];
