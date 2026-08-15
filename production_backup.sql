@@ -1,5 +1,5 @@
 -- Production Database Backup
--- Generated: 2026-08-15T09:20:21.752Z
+-- Generated: 2026-08-15T09:25:00.613Z
 -- Tables: branches, affiliates, users, bets, transaction_requests, login_history, announcements, blocked_ips, inquiries, messages, round_forced_directions, settings, user_sessions
 
 SET client_encoding = 'UTF8';
@@ -8,7 +8,7 @@ SET standard_conforming_strings = on;
 -- PostgreSQL database dump
 --
 
-\restrict C5o2JKjyZv6McK6lNTONrz5a4LukZPEzoIYbGjFeebXhSSv3Nub2h7TBjmwlh58
+\restrict fxNrgrccUKFiNDCPKUWawCuSN16kMcKdtx7yXuwym6dd0nfAFFWR40wVTeMoFx6
 
 -- Dumped from database version 16.10
 -- Dumped by pg_dump version 16.10
@@ -1651,7 +1651,7 @@ INSERT INTO public.user_sessions (sid, sess, expire) VALUES ('GTHzASODA3eiUH_jZQ
 INSERT INTO public.user_sessions (sid, sess, expire) VALUES ('fhLLYKN3FhF95H2Eq5p5uLbQq81zPHNP', '{"cookie":{"originalMaxAge":604800000,"expires":"2026-08-01T15:30:54.905Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"userId":"9f315068-1efa-48a0-bfaf-f772c020ba4d"}', '2026-08-13 08:13:44');
 INSERT INTO public.user_sessions (sid, sess, expire) VALUES ('h3czYIWrDeLcqsUlchAiJuKb2bZ8VbGv', '{"cookie":{"originalMaxAge":604800000,"expires":"2026-08-11T12:02:53.525Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"userId":"9f8d272c-4c9a-4d51-a2da-403b92f6309f"}', '2026-08-14 05:32:47');
 INSERT INTO public.user_sessions (sid, sess, expire) VALUES ('vYU1rO8nJYP6bAysgc2rgcIXGR6nEgVA', '{"cookie":{"originalMaxAge":604800000,"expires":"2026-07-24T18:26:50.927Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"userId":"e5e759f5-df40-4c63-a294-1134a42ca4c8"}', '2026-08-14 13:26:46');
-INSERT INTO public.user_sessions (sid, sess, expire) VALUES ('NYpJVSKFDjYoWqgXBVdlydEURs9Mhynq', '{"cookie":{"originalMaxAge":604800000,"expires":"2026-08-22T09:20:21.698Z","secure":false,"httpOnly":true,"path":"/","sameSite":"lax"},"adminUserId":"a6ad16b1-105c-46ca-b2d5-cd10c2dd489c"}', '2026-08-22 09:20:22');
+INSERT INTO public.user_sessions (sid, sess, expire) VALUES ('NYpJVSKFDjYoWqgXBVdlydEURs9Mhynq', '{"cookie":{"originalMaxAge":604800000,"expires":"2026-08-22T09:20:21.698Z","secure":false,"httpOnly":true,"path":"/","sameSite":"lax"},"adminUserId":"a6ad16b1-105c-46ca-b2d5-cd10c2dd489c"}', '2026-08-22 09:20:25');
 
 
 --
@@ -1721,5 +1721,5 @@ SELECT pg_catalog.setval('public.transaction_requests_id_seq', 1, false);
 -- PostgreSQL database dump complete
 --
 
-\unrestrict C5o2JKjyZv6McK6lNTONrz5a4LukZPEzoIYbGjFeebXhSSv3Nub2h7TBjmwlh58
+\unrestrict fxNrgrccUKFiNDCPKUWawCuSN16kMcKdtx7yXuwym6dd0nfAFFWR40wVTeMoFx6
 
