@@ -1,11 +1,8 @@
 import pg from "pg";
 import fs from "fs";
 import path from "path";
-import { fileURLToPath } from "url";
 
 const { Pool } = pg;
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * 프로덕션 백업 SQL을 DB에 적용합니다.
@@ -24,8 +21,8 @@ export async function seedFromProductionBackup(pool: pg.Pool): Promise<void> {
       return;
     }
 
-    // 백업 파일 경로 (프로젝트 루트 기준)
-    const backupPath = path.resolve(__dirname, "..", "production_backup.sql");
+    // 백업 파일 경로 (CJS/ESM 모두 호환: process.cwd() 사용)
+    const backupPath = path.resolve(process.cwd(), "production_backup.sql");
 
     if (!fs.existsSync(backupPath)) {
       console.log("[Seed] production_backup.sql 파일 없음 — 건너뜀");
