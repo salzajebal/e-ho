@@ -4670,6 +4670,17 @@ export async function registerRoutes(
     }
   });
 
+  // 관리자 수동 DB 백업 트리거
+  app.post("/api/admin/backup-now", requireAdmin, async (req, res) => {
+    try {
+      const { runDatabaseBackup } = await import("./backupScheduler");
+      const result = await runDatabaseBackup();
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ success: false, message: error instanceof Error ? error.message : "백업 실패" });
+    }
+  });
+
   // Public endpoint to get active branches for registration
   app.get("/api/branches", async (req, res) => {
     try {

@@ -3,6 +3,7 @@ import { registerRoutes, validateWebSocketSession } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 import { testConnection, initializeDatabase } from "./db";
+import { startBackupScheduler } from "./backupScheduler";
 import { WebSocketServer, WebSocket } from "ws";
 
 // WebSocket clients storage
@@ -127,6 +128,9 @@ app.use((req, res, next) => {
     console.log("Registering routes...");
     await registerRoutes(httpServer, app);
     console.log("Routes registered successfully");
+
+    // 매일 새벽 3시 KST 자동 DB 백업
+    startBackupScheduler();
 
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
       const status = err.status || err.statusCode || 500;
