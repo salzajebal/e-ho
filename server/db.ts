@@ -2,6 +2,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 import * as schema from "@shared/schema";
 import { eq } from "drizzle-orm";
+import { seedFromProductionBackup } from "./seedFromBackup";
 
 const { Pool } = pg;
 
@@ -398,6 +399,9 @@ export async function initializeDatabase(): Promise<void> {
     }
 
     console.log('Database initialization complete');
+
+    // 유저 데이터가 없을 때 프로덕션 백업 자동 임포트
+    await seedFromProductionBackup(pool);
 
   } catch (error) {
     console.error('Database initialization failed:', error instanceof Error ? error.message : error);
