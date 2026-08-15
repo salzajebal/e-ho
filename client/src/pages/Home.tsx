@@ -314,7 +314,7 @@ function HomeInner() {
             <div className="space-y-4 mt-2">
               <div className="p-4 bg-muted/30 rounded-lg">
                 <h3 className="font-semibold text-lg mb-2">{messagePopup.title}</h3>
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{messagePopup.content}</p>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{messagePopup.content.replace(/\\n/g, '\n')}</p>
               </div>
               <div className="text-xs text-muted-foreground">
                 {formatMessageDate(messagePopup.createdAt as unknown as string)}
@@ -378,7 +378,7 @@ function HomeInner() {
                   <p className="text-xs text-muted-foreground mb-3">
                     {formatMessageDate(selectedMessage.createdAt as unknown as string)}
                   </p>
-                  <p className="text-sm whitespace-pre-wrap">{selectedMessage.content}</p>
+                  <p className="text-sm whitespace-pre-wrap">{selectedMessage.content.replace(/\\n/g, '\n')}</p>
                 </div>
               </div>
             ) : allMessages.length > 0 ? (
@@ -697,7 +697,7 @@ function HomeInner() {
                       {inquiry.reply && (
                         <div className="mt-3 pt-3 border-t border-white/10">
                           <p className="text-blue-400 text-xs font-medium mb-1">관리자 답변</p>
-                          <p className="text-gray-300 text-sm">{inquiry.reply}</p>
+                          <p className="text-gray-300 text-sm whitespace-pre-wrap">{inquiry.reply.replace(/\\n/g, '\n')}</p>
                         </div>
                       )}
                     </div>

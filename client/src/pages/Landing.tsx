@@ -1314,7 +1314,7 @@ export default function Landing() {
                         {ann.isPinned && <span className="text-[10px] px-1.5 py-0.5 bg-gray-200 text-gray-600 rounded font-medium">고정</span>}
                         <span className="text-gray-900 font-medium text-sm line-clamp-1">{ann.title}</span>
                       </div>
-                      <p className="text-gray-500 text-xs line-clamp-2">{ann.content}</p>
+                      <p className="text-gray-500 text-xs line-clamp-2">{ann.content.replace(/\\n/g, ' ')}</p>
                     </button>
                   ))
                 )}
@@ -3028,7 +3028,7 @@ export default function Landing() {
                   <p className="text-gray-400 text-xs mb-3">
                     등록일: {new Date(selectedAnnouncement.displayDate || selectedAnnouncement.createdAt).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' })}
                   </p>
-                  <p className="text-gray-700 text-sm whitespace-pre-wrap">{selectedAnnouncement.content}</p>
+                  <p className="text-gray-700 text-sm whitespace-pre-wrap">{selectedAnnouncement.content.replace(/\\n/g, '\n')}</p>
                 </div>
               </div>
             ) : (
@@ -3049,7 +3049,7 @@ export default function Landing() {
                         )}
                         <div className="flex-1">
                           <h3 className="text-gray-900 font-medium mb-1">{ann.title}</h3>
-                          <p className="text-gray-500 text-sm line-clamp-2">{ann.content}</p>
+                          <p className="text-gray-500 text-sm line-clamp-2">{ann.content.replace(/\\n/g, ' ')}</p>
                           <p className="text-gray-400 text-xs mt-1">
                             {new Date(ann.displayDate || ann.createdAt).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' })}
                           </p>
