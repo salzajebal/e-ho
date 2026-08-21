@@ -1,0 +1,1 @@
+- [Supabase TLS 연결](supabase-tls.md) — Session pooler의 표준 `sslmode=require`와 CA 검증의 적용 기준.

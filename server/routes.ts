@@ -3207,6 +3207,12 @@ export async function registerRoutes(
   const YAHOO_SYMBOLS: Record<string, string> = {
     GOLD: 'GC=F',
   };
+  const MARKET_TICKERS: Record<string, string> = {
+    BTC: 'BTCUSDT',
+    ETH: 'ETHUSDT',
+    GOLD: 'GC=F',
+  };
+  const MARKET_SYMBOLS = Object.keys(MARKET_TICKERS);
 
   const forexPrices: { [key: string]: { price: number; change: number; changePercent: number; high: number; low: number; volume: number; updatedAt: number; openPrice: number } } = {
     BTC: { price: 0, change: 0, changePercent: 0, high: 0, low: 0, volume: 0, updatedAt: 0, openPrice: 0 },
@@ -3903,8 +3909,7 @@ export async function registerRoutes(
     const { symbol } = req.params;
     const upperSymbol = symbol.toUpperCase();
     
-    const VALID_FOREX = ['SP500', 'DOW', 'DXY'];
-    if (!VALID_FOREX.includes(upperSymbol)) {
+    if (!MARKET_SYMBOLS.includes(upperSymbol)) {
       return res.status(400).json({ error: "지원하지 않는 심볼입니다" });
     }
 
@@ -3940,15 +3945,14 @@ export async function registerRoutes(
     const upperSymbol = symbol.toUpperCase();
     const duration = parseInt(req.query.duration as string) || 60;
     
-    const VALID_FOREX = ['SP500', 'DOW', 'DXY'];
-    if (!VALID_FOREX.includes(upperSymbol)) {
+    if (!MARKET_SYMBOLS.includes(upperSymbol)) {
       return res.status(400).json({ error: "지원하지 않는 심볼입니다" });
     }
 
     const validDurations = [300];
     const dur = validDurations.includes(duration) ? duration : 300;
 
-    const ticker = FOREX_TO_FINNHUB[upperSymbol];
+    const ticker = MARKET_TICKERS[upperSymbol];
     const candles = candleStore[upperSymbol]?.[dur] || [];
     
     res.json({ candles, ticker, symbol: upperSymbol });

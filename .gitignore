@@ -10,3 +10,5 @@ vite.config.ts.*
 backup.sql
 production_backup.sql
 *backup*.sql
+backups/
+*.dump

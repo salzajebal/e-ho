@@ -9,7 +9,10 @@
     "build": "tsx script/build.ts",
     "start": "node dist/index.cjs",
     "check": "tsc",
-    "db:push": "drizzle-kit push"
+    "db:push": "drizzle-kit push",
+    "db:export": "tsx script/database-transfer.ts export",
+    "db:import": "tsx script/database-transfer.ts import",
+    "db:migrate": "tsx script/database-transfer.ts migrate"
   },
   "engines": {
     "node": ">=20 <23"

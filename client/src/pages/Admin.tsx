@@ -1101,8 +1101,8 @@ export default function Admin() {
     };
   }, []);
 
-  type AdminTab = 'dashboard' | 'users' | 'bets' | 'settings' | 'approvals' | 'messages' | 'announcements' | 'blocked-ips' | 'maintenance' | 'forced-bet' | 'round-forced' | 'deposits' | 'withdrawals' | 'inquiries' | 'branches' | 'order-history';
-  const VALID_TABS: AdminTab[] = ['dashboard', 'users', 'bets', 'settings', 'approvals', 'messages', 'announcements', 'blocked-ips', 'maintenance', 'forced-bet', 'round-forced', 'deposits', 'withdrawals', 'inquiries', 'branches', 'order-history'];
+  type AdminTab = 'dashboard' | 'users' | 'bets' | 'settings' | 'approvals' | 'messages' | 'announcements' | 'blocked-ips' | 'maintenance' | 'forced-bet' | 'round-forced' | 'deposits' | 'withdrawals' | 'inquiries' | 'branches' | 'order-history' | 'affiliates';
+  const VALID_TABS: AdminTab[] = ['dashboard', 'users', 'bets', 'settings', 'approvals', 'messages', 'announcements', 'blocked-ips', 'maintenance', 'forced-bet', 'round-forced', 'deposits', 'withdrawals', 'inquiries', 'branches', 'order-history', 'affiliates'];
   const savedTab = localStorage.getItem('admin_active_tab') as AdminTab | null;
   const [activeTab, setActiveTabState] = useState<AdminTab>(savedTab && VALID_TABS.includes(savedTab) ? savedTab : 'users');
   const setActiveTab = (tab: AdminTab) => {

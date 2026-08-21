@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type ReactNode } from "react";
 import { SymbolIcon } from "@/components/SymbolIcon";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -2848,7 +2848,7 @@ export default function Landing() {
                     </div>
                   );
                 }
-                const statusMap: Record<string, { label: string; color: string; icon: JSX.Element }> = {
+                const statusMap: Record<string, { label: string; color: string; icon: ReactNode }> = {
                   pending: { label: '대기중', color: 'text-amber-700 bg-amber-100 border-amber-200', icon: <Clock className="w-3 h-3" /> },
                   approved: { label: '승인', color: 'text-green-700 bg-green-100 border-green-200', icon: <CheckCircle className="w-3 h-3" /> },
                   rejected: { label: '거절', color: 'text-red-600 bg-red-100 border-red-200', icon: <XCircle className="w-3 h-3" /> },

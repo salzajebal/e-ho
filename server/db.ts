@@ -37,7 +37,16 @@ function getSslConfig(url: string) {
     return undefined;
   }
 
-  return { rejectUnauthorized: true };
+  const ca = process.env.DATABASE_SSL_CA?.replace(/\\n/g, "\n");
+  const verifyCertificate =
+    Boolean(ca) ||
+    sslMode === "verify-ca" ||
+    sslMode === "verify-full" ||
+    process.env.DATABASE_SSL_REJECT_UNAUTHORIZED === "true";
+
+  return ca
+    ? { rejectUnauthorized: true, ca }
+    : { rejectUnauthorized: verifyCertificate };
 }
 
 console.log("Initializing database connection...");

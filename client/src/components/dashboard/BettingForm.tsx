@@ -20,7 +20,7 @@ interface UserBet {
   id: number;
   roundNumber?: number | null;
   direction: 'long' | 'short';
-  outcome: 'pending' | 'win' | 'lose';
+  outcome: 'pending' | 'win' | 'lose' | 'unrealized';
   strikePrice: string;
   closePrice?: string | null;
   createdAt: string;
