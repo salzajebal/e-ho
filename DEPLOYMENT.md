@@ -6,12 +6,12 @@
 
 GitHub 저장소를 Render에 연결한 뒤 아래 값을 사용합니다.
 
-- **Build Command:** `npm ci --no-audit --no-fund && npm run build`
+- **Build Command:** `npm ci --include=dev --no-audit --no-fund && npm run build`
 - **Start Command:** `npm run start`
 - **Health Check Path:** `/api/health`
 - **Node 버전:** `20.20.0` (저장소의 `.node-version`으로 고정)
 
-저장소의 `render.yaml`과 `.node-version`을 사용하는 경우 위 설정이 자동으로 적용됩니다. Node 22 계열에서 `npm ci`의 내부 오류가 발생할 수 있어, 이 프로젝트는 검증된 Node 20.20.0을 사용합니다.
+저장소의 `render.yaml`과 `.node-version`을 사용하는 경우 위 설정이 자동으로 적용됩니다. Node 22 계열에서 `npm ci`의 내부 오류가 발생할 수 있어, 이 프로젝트는 검증된 Node 20.20.0을 사용합니다. Render가 `NODE_ENV=production`으로 의존성을 설치해도 빌드 도구가 누락되지 않도록 `--include=dev`를 사용합니다.
 
 ## Render Environment Variables
 
