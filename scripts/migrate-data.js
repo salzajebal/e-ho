@@ -47,6 +47,10 @@ function isSupabase(url) {
   return url.hostname.endsWith(".supabase.co") || url.hostname.includes(".pooler.supabase.");
 }
 
+function isNeon(url) {
+  return url.hostname.endsWith(".neon.tech");
+}
+
 function sslConfig(connectionString) {
   const url = parseUrl(connectionString, "Database URL");
   const sslMode = url.searchParams.get("sslmode");
@@ -54,7 +58,8 @@ function sslConfig(connectionString) {
     sslMode === "require" ||
     sslMode === "verify-ca" ||
     sslMode === "verify-full" ||
-    isSupabase(url);
+    isSupabase(url) ||
+    isNeon(url);
 
   if (!requiresSsl || sslMode === "disable") {
     return undefined;
@@ -83,7 +88,7 @@ async function pgEnvironment(connectionString) {
     PGSSLMODE:
       sslMode === "verify-ca" || sslMode === "verify-full"
         ? sslMode
-        : sslMode === "require" || isSupabase(url)
+        : sslMode === "require" || isSupabase(url) || isNeon(url)
           ? "require"
           : "disable",
   };
@@ -240,6 +245,8 @@ async function importDatabase(targetConnectionString, dumpFile, force) {
         "--no-acl",
         "--exit-on-error",
         "--single-transaction",
+        "--dbname",
+        targetConnectionString,
         ...(force ? ["--clean", "--if-exists"] : []),
         path.resolve(dumpFile),
       ],
