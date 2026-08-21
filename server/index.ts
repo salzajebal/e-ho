@@ -151,8 +151,8 @@ app.use((req, res, next) => {
       await setupVite(httpServer, app);
     }
 
-    // Render provides PORT at runtime. Its default web-service port is 10000.
-    const port = parseInt(process.env.PORT || "10000", 10);
+    // VPS deployments use 3000 by default; managed platforms can override it with PORT.
+    const port = parseInt(process.env.PORT || "3000", 10);
     console.log(`Starting HTTP server on port ${port}...`);
     
     // Setup WebSocket servers using noServer mode to avoid interfering with Vite HMR

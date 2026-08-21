@@ -6,12 +6,12 @@ import { seedFromProductionBackup } from "./seedFromBackup";
 
 const { Pool } = pg;
 
-const databaseUrl = process.env.DATABASE_URL;
+export const LOCAL_DATABASE_URL = "postgresql://postgres:password@localhost:5432/myapp";
+const databaseUrl = process.env.DATABASE_URL || LOCAL_DATABASE_URL;
 
-if (!databaseUrl) {
-  console.error("DATABASE_URL must be set. Did you forget to provision a database?");
-  throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?",
+if (!process.env.DATABASE_URL) {
+  console.warn(
+    "DATABASE_URL is not set; using the local development default. Set DATABASE_URL explicitly on deployed servers.",
   );
 }
 

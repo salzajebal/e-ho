@@ -13,7 +13,10 @@
     "db:push": "drizzle-kit push",
     "db:export": "tsx script/database-transfer.ts export",
     "db:import": "tsx script/database-transfer.ts import",
-    "db:migrate": "tsx script/database-transfer.ts migrate"
+    "db:migrate": "tsx script/database-transfer.ts migrate",
+    "db:migrate:lightsail": "node scripts/migrate-data.js migrate",
+    "db:export:lightsail": "node scripts/migrate-data.js export",
+    "db:import:lightsail": "node scripts/migrate-data.js import"
   },
   "engines": {
     "node": ">=20 <23"
