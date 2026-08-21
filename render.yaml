@@ -2,7 +2,7 @@ services:
   - type: web
     name: e-ho
     runtime: node
-    buildCommand: npm ci --no-audit --no-fund && npm run build
+    buildCommand: npm ci --include=dev --no-audit --no-fund && npm run build
     startCommand: npm run start
     healthCheckPath: /api/health
     autoDeploy: true
