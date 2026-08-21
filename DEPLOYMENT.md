@@ -6,12 +6,14 @@
 
 GitHub 저장소를 Render에 연결한 뒤 아래 값을 사용합니다.
 
-- **Build Command:** `npm ci --include=dev --no-audit --no-fund && npm run build`
+- **Build Command:** `npm run check:render-lockfile && npm ci --include=dev --no-audit --no-fund && npm run build`
 - **Start Command:** `npm run start`
 - **Health Check Path:** `/api/health`
 - **Node 버전:** `20.20.0` (저장소의 `.node-version`으로 고정)
 
-저장소의 `render.yaml`과 `.node-version`을 사용하는 경우 위 설정이 자동으로 적용됩니다. Node 22 계열에서 `npm ci`의 내부 오류가 발생할 수 있어, 이 프로젝트는 검증된 Node 20.20.0을 사용합니다. Render가 `NODE_ENV=production`으로 의존성을 설치해도 빌드 도구가 누락되지 않도록 `--include=dev`를 사용합니다.
+저장소의 `render.yaml`과 `.node-version`을 사용하는 경우 위 설정이 자동으로 적용됩니다. 이 프로젝트는 검증된 Node 20.20.0을 사용하며, Render가 `NODE_ENV=production`으로 의존성을 설치해도 빌드 도구가 누락되지 않도록 `--include=dev`를 사용합니다.
+
+`package-lock.json`의 package tarball URL은 공개 npm 레지스트리를 가리켜야 합니다. Replit 내부 패키지 프록시 주소가 lockfile에 남아 있으면 Render가 해당 주소에 접근할 수 없어 설치가 실패하므로, 빌드 시작 전 `check:render-lockfile` 검사가 이를 차단합니다.
 
 ## Render Environment Variables
 
