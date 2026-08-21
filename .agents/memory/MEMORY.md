@@ -1,1 +1,2 @@
 - [Supabase TLS 연결](supabase-tls.md) — Session pooler의 표준 `sslmode=require`와 CA 검증의 적용 기준.
+- [GitHub 동기화 경로](github-sync.md) — 터미널 HTTPS push가 막히면 연결된 GitHub API로 비강제 커밋 갱신을 사용한다.
