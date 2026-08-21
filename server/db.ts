@@ -6,18 +6,45 @@ import { seedFromProductionBackup } from "./seedFromBackup";
 
 const { Pool } = pg;
 
-if (!process.env.DATABASE_URL) {
+const databaseUrl = process.env.DATABASE_URL;
+
+if (!databaseUrl) {
   console.error("DATABASE_URL must be set. Did you forget to provision a database?");
   throw new Error(
     "DATABASE_URL must be set. Did you forget to provision a database?",
   );
 }
 
+function getSslConfig(url: string) {
+  const databaseHost = new URL(url).hostname;
+  const sslMode = new URL(url).searchParams.get("sslmode");
+  const isSupabase =
+    databaseHost.endsWith(".supabase.co") ||
+    databaseHost.includes(".pooler.supabase.");
+
+  if (isSupabase && sslMode === "disable") {
+    throw new Error("Supabase connections require TLS. Remove sslmode=disable from DATABASE_URL.");
+  }
+
+  const requiresSsl =
+    process.env.DATABASE_SSL === "true" ||
+    sslMode === "require" ||
+    sslMode === "verify-ca" ||
+    sslMode === "verify-full" ||
+    isSupabase;
+
+  if (sslMode === "disable" || !requiresSsl) {
+    return undefined;
+  }
+
+  return { rejectUnauthorized: true };
+}
+
 console.log("Initializing database connection...");
-console.log("Database URL prefix:", process.env.DATABASE_URL?.substring(0, 30) + "...");
 
 export const pool = new Pool({ 
-  connectionString: process.env.DATABASE_URL,
+  connectionString: databaseUrl,
+  ssl: getSslConfig(databaseUrl),
   connectionTimeoutMillis: 15000,
   idleTimeoutMillis: 30000,
   max: 20,
@@ -369,39 +396,38 @@ export async function initializeDatabase(): Promise<void> {
 
     client.release();
 
-    console.log('Seeding admin user...');
-    // Check for old admin username first (migration)
-    const [oldAdmin] = await db.select().from(schema.users).where(eq(schema.users.username, 'admin'));
-    if (oldAdmin) {
-      await db.update(schema.users)
-        .set({ username: 'gemi488', password: '488153', approvalStatus: 'approved' })
-        .where(eq(schema.users.username, 'admin'));
-      console.log('Admin user migrated: admin → gemi488');
-    }
+    const adminUsername = process.env.ADMIN_USERNAME;
+    const adminPassword = process.env.ADMIN_PASSWORD;
 
-    const [existingAdmin] = await db.select().from(schema.users).where(eq(schema.users.username, 'gemi488'));
-
-    if (!existingAdmin) {
-      await db.insert(schema.users).values({
-        username: 'gemi488',
-        password: '488153',
-        name: '관리자',
-        role: 'admin',
-        balance: '100000000',
-        approvalStatus: 'approved',
-      });
-      console.log('Admin user created: gemi488');
+    if (!adminUsername || !adminPassword) {
+      console.log('Admin bootstrap credentials are not set; skipping administrator seed.');
     } else {
-      await db.update(schema.users)
-        .set({ approvalStatus: 'approved', password: '488153' })
-        .where(eq(schema.users.username, 'gemi488'));
-      console.log('Admin user verified: gemi488');
+      const [existingAdmin] = await db.select()
+        .from(schema.users)
+        .where(eq(schema.users.username, adminUsername));
+
+      if (!existingAdmin) {
+        await db.insert(schema.users).values({
+          username: adminUsername,
+          password: adminPassword,
+          name: '관리자',
+          role: 'admin',
+          balance: '100000000',
+          approvalStatus: 'approved',
+        });
+        console.log('Initial administrator account created.');
+      } else {
+        console.log('Administrator account already exists; leaving credentials unchanged.');
+      }
     }
 
     console.log('Database initialization complete');
 
-    // 유저 데이터가 없을 때 프로덕션 백업 자동 임포트
-    await seedFromProductionBackup(pool);
+    if (process.env.SEED_FROM_BACKUP === "true") {
+      await seedFromProductionBackup(pool);
+    } else {
+      console.log('Backup seed is disabled.');
+    }
 
   } catch (error) {
     console.error('Database initialization failed:', error instanceof Error ? error.message : error);

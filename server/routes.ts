@@ -5,7 +5,7 @@ import { insertBetSchema, loginSchema } from "@shared/schema";
 import { z } from "zod";
 import session from "express-session";
 import pgSession from "connect-pg-simple";
-import { Pool } from "pg";
+import { pool } from "./db";
 import { broadcastToAdmins, broadcastToUser, onlineUsers } from "./index";
 import { parse as parseCookie } from "cookie";
 import { unsign } from "cookie-signature";
@@ -26,10 +26,9 @@ const pinFailureCounter = new Map<string, number>();
 
 const PgSessionStore = pgSession(session);
 
-// Create a separate pool for session store
-const sessionPool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
+if (!process.env.SESSION_SECRET) {
+  throw new Error("SESSION_SECRET must be set.");
+}
 
 // Get KST Date (Korea Standard Time, UTC+9)
 const getKSTDate = (): Date => {
@@ -47,11 +46,11 @@ declare module "express-session" {
 }
 
 // Export session secret and store for WebSocket auth
-export const SESSION_SECRET = process.env.SESSION_SECRET || "myinfx-secret-key-2024";
+export const SESSION_SECRET = process.env.SESSION_SECRET;
 
 // Create shared session store instance using PostgreSQL
 const sessionStore = new PgSessionStore({
-  pool: sessionPool,
+  pool,
   tableName: 'user_sessions',
   createTableIfMissing: true,
   pruneSessionInterval: 60 * 15,
@@ -315,28 +314,11 @@ export async function registerRoutes(
         return res.status(400).json({ error: "아이디와 비밀번호를 입력해주세요" });
       }
 
-      // Admin login restriction: fixed credentials (ignoring env vars due to swap issue)
-      const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "gemi488";
-      const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "488153";
-      
       console.log("Querying database for user...");
       const user = await storage.getUserByUsername(username);
       console.log("User found:", user ? "yes" : "no", "DB query completed");
-      
-      // For admin users: only allow specific credentials (skip database password check)
-      if (user?.role === 'admin') {
-        if (username !== ADMIN_USERNAME || password !== ADMIN_PASSWORD) {
-          return res.status(401).json({ error: "아이디 또는 비밀번호가 올바르지 않습니다" });
-        }
-        // Admin credentials matched - skip database password check
-      } else {
-        // For regular users: check database password
-        if (!user || user.password !== password) {
-          return res.status(401).json({ error: "아이디 또는 비밀번호가 올바르지 않습니다" });
-        }
-      }
-      
-      if (!user) {
+
+      if (!user || user.password !== password) {
         return res.status(401).json({ error: "아이디 또는 비밀번호가 올바르지 않습니다" });
       }
 
@@ -920,7 +902,7 @@ export async function registerRoutes(
     try {
       const allUsers = await storage.getAllUsers();
       
-      const statsResult = await sessionPool.query(`
+      const statsResult = await pool.query(`
         SELECT user_id,
           COALESCE(SUM(CASE WHEN outcome != 'pending' THEN amount::numeric ELSE 0 END), 0) as total_bet,
           COALESCE(SUM(CASE WHEN outcome = 'win' THEN payout::numeric ELSE 0 END), 0) as total_win
@@ -1497,7 +1479,7 @@ export async function registerRoutes(
 
       // Delete all sessions for this user from the database
       try {
-        await sessionPool.query(
+        await pool.query(
           `DELETE FROM user_sessions WHERE sess::text LIKE $1`,
           [`%"userId":"${id}"%`]
         );
@@ -1634,7 +1616,7 @@ export async function registerRoutes(
       const totalUsers = allUsers.length;
       const activeUsers = allUsers.filter(u => u.isActive).length;
 
-      const betStats = await sessionPool.query(`
+      const betStats = await pool.query(`
         SELECT
           COUNT(*)::int as total_bets,
           COUNT(*) FILTER (WHERE outcome = 'pending')::int as pending_bets,

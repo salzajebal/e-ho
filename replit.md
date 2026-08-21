@@ -4,9 +4,11 @@
 
 한국어 이진 옵션 투자 플랫폼 (GEMINI INVESTMENT 브랜딩). 사용자가 BTC(비트코인), ETH(이더리움), GOLD(금)의 가격 변동 방향(상승/하락)에 베팅합니다. Binance WebSocket(BTC/ETH)과 Yahoo Finance(GOLD) 실시간 시세, lightweight-charts 캔들스틱 차트, 계좌 시스템을 제공합니다.
 
-## Admin Credentials
-- Username: `gemi488`
-- Password: `488153`
+## Running on Replit
+
+- Use the `Start application` workflow, which runs `npm run dev`.
+- The app serves its web preview on port 5000.
+- The app requires `DATABASE_URL` and `SESSION_SECRET`; see `DEPLOYMENT.md` for external Supabase and Render deployment.
 
 ## Trading Rules
 - **Operating Hours**: 24시간 (24/7)

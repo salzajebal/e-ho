@@ -115,22 +115,21 @@ app.use((req, res, next) => {
     console.log("Testing database connection...");
     const dbConnected = await testConnection();
     if (!dbConnected) {
-      console.error("Failed to connect to database. Server will start but may have issues.");
+      throw new Error("Failed to connect to database.");
     }
 
     console.log("Initializing database...");
-    try {
-      await initializeDatabase();
-    } catch (dbError) {
-      console.error("Database initialization failed, continuing anyway:", dbError instanceof Error ? dbError.message : dbError);
-    }
+    await initializeDatabase();
 
     console.log("Registering routes...");
     await registerRoutes(httpServer, app);
     console.log("Routes registered successfully");
 
-    // 매일 새벽 3시 KST 자동 DB 백업
-    startBackupScheduler();
+    if (process.env.ENABLE_GIT_BACKUPS === "true") {
+      startBackupScheduler();
+    } else {
+      console.log("Git database backups are disabled.");
+    }
 
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
       const status = err.status || err.statusCode || 500;
@@ -152,11 +151,8 @@ app.use((req, res, next) => {
       await setupVite(httpServer, app);
     }
 
-    // ALWAYS serve the app on the port specified in the environment variable PORT
-    // Other ports are firewalled. Default to 5000 if not specified.
-    // this serves both the API and the client.
-    // It is the only port that is not firewalled.
-    const port = parseInt(process.env.PORT || "5000", 10);
+    // Render provides PORT at runtime. Its default web-service port is 10000.
+    const port = parseInt(process.env.PORT || "10000", 10);
     console.log(`Starting HTTP server on port ${port}...`);
     
     // Setup WebSocket servers using noServer mode to avoid interfering with Vite HMR
